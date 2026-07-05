@@ -55,6 +55,20 @@ the skip).
 **The full gate** (what `materia-finalize` and CI run): every non-`none` row above,
 in table order, all green.
 
+**Bootstrap grace.** Until the bootstrap epic's gate spec merges, the
+commands above are *intended*, not yet real. While the marker line below is
+present, any skill running a gate treats a row whose command does not exist
+as **skip + record** (`gate-grace: <row> skipped (bootstrap grace)`), never a
+Blocker — except `check:docs`, which ships with the harness and is always
+binding. The spec that creates the gates carries "every § Gate row real and
+green" as acceptance criteria and **deletes the marker line in the same PR**;
+after that, a missing command is a failure like any other.
+
+{{Bootstrap grace: active until <S1 proposal id> merges. — /materia-init
+writes this line; the gate spec removes it. Delete the whole Bootstrap-grace
+paragraph AND this line once the gates are real, or immediately if the gate
+commands already exist at init time.}}
+
 ## Environment preflight
 
 The cold-start recipes a fresh session runs before dispatching any

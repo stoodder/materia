@@ -128,7 +128,9 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
      problem.
 
    **Gate.** `lint` and `typecheck` (`MATERIA.md` § Gate) clean and the
-   relevant tests green. E2e-authoring tasks are **not exempt** from the
+   relevant tests green. (While § Gate's Bootstrap-grace marker is present,
+   a row whose command does not exist is skip + record per that section —
+   `check:docs` always binding.) E2e-authoring tasks are **not exempt** from the
    typecheck — a test runner's list/collect mode does not type-check, so a
    task whose deliverable is a new e2e spec still runs `typecheck`; otherwise
    type errors in the new spec slip through to the review gate.

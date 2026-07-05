@@ -52,6 +52,7 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
 
 ```
 .claude/skills/materia-init/    the only live skill in the template — the /materia-init survey
+.claude/settings.json   permissions allowlist for routine pipeline commands (inherited by your repo; /materia-init extends it with your stack's commands)
 templates/
   MATERIA.md            the companion-doc template /materia-init fills in
   CLAUDE.md             the always-loaded guide template /materia-init fills in

@@ -116,7 +116,10 @@ Resolve, concretely enough to write `MATERIA.md` § Stack, § Run it, and
 - The dev-run recipe (command, URL/port, dev credentials if any).
 - The intended gate commands (`lint` · `typecheck` · `test` · `test:e2e`).
   These may not exist yet — the bootstrap epic creates them; write the
-  *intended* commands into § Gate.
+  *intended* commands into § Gate **plus its Bootstrap-grace marker line**
+  (naming the gate spec's proposal id) so pre-bootstrap runs skip-and-record
+  missing commands instead of blocking. Skip the marker only when the
+  commands already exist at init time.
 
 ### Phase 4 — Capability probes
 
@@ -182,7 +185,11 @@ On approve, in this order:
    contradictory.
 6. **Fill the remaining doc slots:** `docs/README.md`, `docs/contributing.md`
    (DoD + touch-map rows), `docs/glossary.md` (seed the Phase 1 entities +
-   the § Voice & tone vocabulary).
+   the § Voice & tone vocabulary). Extend `.claude/settings.json`
+   `permissions.allow` (shipped with the template — routine git/gh/docs-check
+   commands) with this stack's own routine commands: the § Gate rows, the
+   § Run it recipe, the package manager, and the § Eyes provisioning script.
+   Never add merge, delete, or deploy commands — those stay prompted.
 7. **Rewrite `README.md`** for the app: name, one-liner, run-it, a short
    "how changes ship here" section pointing at `docs/specs/README.md` and
    the skill roster.
@@ -206,7 +213,9 @@ members as genuinely single-shippable units; the typical decomposition:
 
 - **S1 — App skeleton + local gate:** framework init, folder layout per
   `docs/standards/architecture.md`, every § Gate row real and green, the
-  § Run it recipe working.
+  § Run it recipe working, and the `MATERIA.md` § Gate Bootstrap-grace
+  marker (and its paragraph) deleted in the same PR — each of these an
+  explicit acceptance criterion.
 - **S2 — CI:** the full gate + `check:docs` on every PR (per
   `docs/standards/workflow.md`).
 - **S3 (UI repos) — Eyes provisioning + first e2e:** the § Eyes provisioning

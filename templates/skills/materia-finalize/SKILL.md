@@ -71,7 +71,12 @@ acting on them wastes context.
 
    The gate is every non-`none` row of `MATERIA.md` § Gate, in table order
    (`lint` · `typecheck` · `test` · `test:e2e` where CI runs it ·
-   `check:docs` — `node scripts/check-docs.mjs`).
+   `check:docs` — `node scripts/check-docs.mjs`). While § Gate's
+   Bootstrap-grace marker is present, a row whose command does not exist is
+   skip + record per that section (`check:docs` always binding); state the
+   graced rows in the PR body. On the bootstrap gate spec itself, the grace
+   never excuses the run's own acceptance criteria — that spec's job is to
+   make the rows real.
 
    These are exactly what CI runs, so green here means green there.
 

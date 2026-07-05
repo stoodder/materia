@@ -556,6 +556,18 @@ Spawn these as a single message, one `Agent` call per angle, each at the
 from a given session. When a named skill is unavailable, running that angle
 inline is the documented procedure — not a deviation to record.
 
+**Repo-specific angles (`MATERIA.md` § Review angles).** After the standard
+rows, append **one reviewer per row** of `MATERIA.md` § Review angles (none
+when that section is `none`). Evaluate each row's Gate column the way the
+UI/data gates are evaluated — over the cumulative diff, decision recorded in
+`STATUS.md` (`<angle>-review: skipped (<reason>)` on a negative). Spawn at
+the row's Tier (§ Tier routing) with spawn-contract Blocks 1 + 3, briefing
+the reviewer with the row's "What it checks" text plus the standards docs it
+names. Findings use `category: "<angle>"` (kebab-case row name) and flow
+through the same remediation loop, severity rubric, convergence check, and
+session-limit fallback as every standard angle. The markdown-only exemption
+and trivial-diff collapse apply to these angles too.
+
 **Orchestrator-lane review angles.** The behavior (#4) and ui-review (#5)
 angles MAY run inline in the orchestrator lane when they require a long-lived
 server stack (database + Eyes toolchain + dev server), mirroring § Orchestrator
@@ -667,7 +679,7 @@ Every reviewer returns findings as a list of JSON-shaped records:
   "line_start": 42,
   "line_end": 47,
   "severity": "HIGH" | "MEDIUM" | "LOW",
-  "category": "correctness" | "security" | "spec-adherence" | "regression" | "behavior" | "coverage" | "simplicity" | "ui" | "data-safety",
+  "category": "correctness" | "security" | "spec-adherence" | "regression" | "behavior" | "coverage" | "simplicity" | "ui" | "data-safety" | "<repo-specific angle>",  // kebab-case row name from MATERIA.md § Review angles
   "recommendation": "revert" | "modify" | "keep_with_concern",
   "description": "<one-sentence reason>"
 }

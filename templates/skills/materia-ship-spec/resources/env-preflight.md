@@ -23,7 +23,10 @@ baseline instead of rediscovering the cold-start gap:
    containers), per the same section.
 
 Surface any preflight failure once, up front. Record in `STATUS.md` that the
-preflight ran (or was skipped for a docs-only run).
+preflight ran (or was skipped for a docs-only run). While `MATERIA.md`
+§ Gate's Bootstrap-grace marker is present, a missing gate command or
+not-yet-provisionable service is **skip + record** per that section — never a
+preflight failure; `check:docs` remains binding.
 
 ## Standing rules (stack-independent)
 
