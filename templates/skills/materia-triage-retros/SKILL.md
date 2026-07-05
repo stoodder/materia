@@ -580,12 +580,13 @@ Then **amend the Mark-processed commit** (message unchanged) and push:
 git add docs/specs/**/retro.processed.md docs/bugs/**/retro.processed.md \
         docs/specs/_improvements/<dated-slug>/pipeline-improvements.md \
         docs/specs/_improvements/README.md
-git commit --amend --no-edit
-git push --force-with-lease
+git commit -m "triage-retros: backfill PR URL"
+git push
 ```
 
-This is the run's **only** force-push — `--force-with-lease` on a
-single-operator chore branch (see design-notes for why this is consistent
+The backfill lands as a **follow-up commit — no amend, no force-push** (the
+shipped permission rules deny force spellings; see design-notes for why this
+is consistent
 with the repo's force-push rule). After backfill the branch history reads:
 plan commit → fold-feedback ×N → mark-processed (amended with the URL). Gate
 2f matches on any later invocation.

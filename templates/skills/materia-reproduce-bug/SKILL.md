@@ -59,7 +59,7 @@ artifact), and confirm the failure is genuine before gating the next stage.
 
 2. **Identify the test surface.** Determine the exact module(s) whose behavior
    the bug violates. This is the module the failing test(s) must target
-   (placed per `docs/standards/testing.md`).
+   (placed per `docs/standards/testing.md`). Decide the test shape:
    one test file per layer or one integration test — whichever is the
    lowest-level surface that will catch the regression.
 

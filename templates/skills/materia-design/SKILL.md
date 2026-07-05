@@ -71,8 +71,8 @@ standalone runs apply it on first use.
    models/contracts).
 
 5. **Interaction notes.** Target sizes, reach/ergonomics at the canonical
-   viewport (`MATERIA.md` § Eyes), optimistic feedback
-   save feedback, debounce — per the repo's UI and API-layer standards.
+   viewport (`MATERIA.md` § Eyes), optimistic save feedback, debounce —
+   per the repo's UI and API-layer standards.
 
 6. **Cohesion anchors.** For each new or changed screen, pick the **1–3
    existing screens most similar in role** (list page, detail page,

@@ -76,14 +76,15 @@ re-asking costs one cheap round-trip; advancing on an ambiguous approval
 risks shipping unwanted changes. The strictness is a safety property of the
 human gate; do not "improve" it with intent inference.
 
-## PR-URL backfill amends with `--force-with-lease`
+## PR-URL backfill is a follow-up commit
 
 The rename commit deliberately defers the PR URL (unknown until
-`gh pr create` returns). Amending that one commit — the run's only
-force-push, `--force-with-lease`, on a single-operator chore branch — keeps
-the history a clean "renamed and recorded the PR URL" story instead of a
-noisy two-step. This is consistent with the repo rule's intent (no
-force-push to `main` or shared branches).
+`gh pr create` returns). The backfill lands as its own follow-up commit —
+no amend, no force-push. An amend + `--force-with-lease` would read as a
+cleaner one-commit story, but the shipped permission rules deny every
+force-push spelling (the deny is deliberately blunt: agents should never
+rewrite pushed history), and a two-commit branch is a fine price for that
+invariant.
 
 ## Templates are shape truth (2026-07-01 restructure)
 
@@ -95,8 +96,8 @@ planner↔executor parse contract. The same restructure split this SKILL.md
 into a lean always-read core plus phase-scoped resources, cutting the per-run
 context cost of a skill that previously needed a paginated read of itself.
 
-## Scoped Prettier formatting is load-bearing
+## Scoped formatting is load-bearing
 
 A pre-split run shipped a generated artifact that failed the PR's own
-`the repo formatter check (MATERIA.md § Gate, lint row)` gate. Formatting is scoped to the files the run wrote —
+formatter gate (MATERIA.md § Gate, lint row). Formatting is scoped to the files the run wrote —
 never `--write .` — so unrelated files don't sweep into the diff.

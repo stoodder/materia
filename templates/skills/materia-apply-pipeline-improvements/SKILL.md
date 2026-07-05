@@ -778,14 +778,15 @@ The PR body closes with the Materia sigil naming
 ### PR-URL backfill
 
 Once `gh pr create` returns the URL, rewrite the `<filled by PR open>`
-placeholder in the `pipeline-improvements.processed.md` footer with the real URL and
-**amend the mark-processed commit** (the only force-push in the run, with
-`--force-with-lease` on this single-operator chore branch):
+placeholder in the `pipeline-improvements.processed.md` footer with the real
+URL and land it as a **follow-up commit — no amend, no force-push** (the
+shipped permission rules deny force spellings; a two-commit story is the
+price of a force-free branch):
 
 ```bash
 git add docs/specs/_improvements/<plan-slug>/pipeline-improvements.processed.md
-git commit --amend --no-edit
-git push --force-with-lease
+git commit -m "apply-pipeline-improvements: backfill PR URL"
+git push
 ```
 
 ### Closing report

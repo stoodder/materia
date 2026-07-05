@@ -81,10 +81,12 @@ report (phase-level) before returning control cleanly.
      stand the stack up directly, then launch the dev server in the background
      and wait for the dev URL to answer.
    - **Still down → clean exit.** If neither path makes the app reachable within
-     the bounded wait, print the remediation step — "App not reachable. Start
-     it with the § Run it recipe, then re-run." — and exit
-     cleanly **without writing any file** (the original safe-exit behaviour,
-     preserved as the final fallback).
+     the bounded wait, **first tear down anything the autostart attempts
+     already started** (the services/processes recorded above — a partially
+     up stack is still this run's to stop), then print the remediation step —
+     "App not reachable. Start it with the § Run it recipe, then re-run." —
+     and exit cleanly **without writing any file** (the original safe-exit
+     behaviour, preserved as the final fallback).
 3. Read `docs/surface-map.md` § Pages and announce the run plan: "App reachable.
    N surfaces to inspect at the canonical viewport."
 4. **Interactive abort prompt.** Present a single yes/no checkpoint before

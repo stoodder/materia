@@ -53,7 +53,9 @@
       "Bash(git push --delete:*)",
       "Bash(git push origin --delete:*)",
       "Bash(git clean:*)",
-      "Bash(git reset --hard:*)"
+      "Bash(git reset --hard:*)",
+      "Bash(git restore --staged --worktree:*)",
+      "Bash(git restore --staged -W:*)"
     ]
   }
 }

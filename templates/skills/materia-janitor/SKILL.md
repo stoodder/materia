@@ -133,9 +133,11 @@ notes, and the deferred remainder. In the remote execution environment (no
 
 Repeat until green, **bounded at 3 rounds**:
 
-1. **Conflicts?** `git fetch origin main && git rebase origin/main`; re-derive
-   each conflicted fix against `main`'s content (drop it if moot), then
-   `git push --force-with-lease`.
+1. **Conflicts?** `git fetch origin main && git merge origin/main` —
+   **merge, never rebase, never force-push** (same rule as the librarian and
+   ship-spec's merge watch; the shipped permission rules deny force
+   spellings); re-derive each conflicted fix against `main`'s content (drop
+   it if moot), then push normally.
 2. **Wait for CI:** `gh pr checks <num> --watch`.
 3. **CI failed?** Failure caused by this diff → fix on the branch, re-gate
    locally, push, loop. Unrelated failure (flaky e2e, `main` already red) →

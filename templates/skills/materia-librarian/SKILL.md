@@ -169,8 +169,9 @@ Repeat until merged, **bounded at 3 rounds**:
 2. **Wait for CI:** `gh pr checks <num> --watch` (poll `gh pr checks <num>`
    if `--watch` is unavailable).
 3. **CI failed?** Read the failing job log (`gh run view <id> --log-failed`).
-   - Failure caused by this diff (a `docs` job failure, a prettier complaint
-     on an edited `.md`) → fix on the branch, re-gate locally, push, loop.
+   - Failure caused by this diff (a `docs` job failure, a formatter
+     complaint on an edited `.md`) → fix on the branch, re-gate locally,
+     push, loop.
    - Failure unrelated to the diff (a flaky e2e, `main` already red) → retry
      the job once (`gh run rerun <id> --failed`); if still red, **stop**:
      leave the PR open, comment on it naming the failing job and why it looks
@@ -218,8 +219,11 @@ auto-merge privilege exists only inside this envelope.
 **Scale guard (mechanical, same assertion points).** The envelope constrains
 file *kind*; this constrains *magnitude*. Compute
 `git diff main...HEAD --numstat` and use the **deleted-lines column**
-(insertions never offset deletions — a balanced rewrite is still a rewrite).
-If the diff **deletes any file**, shows a **binary entry** (`-`), deletes
+(insertions never offset deletions — a balanced rewrite is still a rewrite),
+plus `git diff main...HEAD --name-status --diff-filter=D` for whole-file
+deletions (numstat alone can't distinguish them).
+If the deletion filter reports **any file**, numstat shows a **binary
+entry** (`-`), or the diff deletes
 more than **50 lines from any single file**, or deletes more than **150
 lines in total**, the run keeps its PR but **forfeits auto-merge** — report
 the PR URL and stop, exactly as a `--no-merge` run would. Whole-doc removals

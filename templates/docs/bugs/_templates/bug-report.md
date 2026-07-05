@@ -42,8 +42,9 @@ _Medium._ Mirrors the frontmatter `severity` field; both must agree.
 ## Affected surface / route / module
 
 _Inferred from description. See docs/surface-map.md for the surface
-inventory (routes/pages, commands, or public API)._
-open question below._
+inventory (routes/pages, commands, or public API). If the affected surface
+is ambiguous, name the best guess here and record the ambiguity as an open
+question below._
 
 ## Preconditions / data setup
 
