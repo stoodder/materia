@@ -36,16 +36,16 @@ orchestrator gets no signal and only discovers the death by inspecting
 transcript mtime against the wall clock. Run every scan, grep, and edit
 yourself.
 
-If a gate step fails because Postgres is unreachable, **restart the DB before
-treating it as a task failure** — a dead DB mid-task is the most common
-silent-stall cause (recipe:
-`.claude/skills/ship-spec/resources/env-preflight.md` § Dead Postgres
-mid-task). If it can't be revived, write the blocker into `STATUS.md` and stop
-(see § Guardrail); don't hang waiting on it.
+If a gate step fails because a required service (database, container) is
+unreachable, **restart the service before treating it as a task failure** — a
+dead service mid-task is the most common silent-stall cause (recipe:
+`.claude/skills/ship-spec/resources/env-preflight.md` § Standing rules +
+`MATERIA.md` § Environment preflight). If it can't be revived, write the
+blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
 
 ## Outputs
 
-- The code + sibling `.spec.ts`; the **directly-touched** docs updated in the
+- The code + its tests; the **directly-touched** docs updated in the
   same commit (per Step 6 below); the task marked `[x]` in `tasks.md`;
   `STATUS.md` updated (and, if applicable, the task ID added to
   `behavior-deferred:`); committed and pushed. (Or, if blocked, a
@@ -84,27 +84,26 @@ mid-task). If it can't be revived, write the blocker into `STATUS.md` and stop
    the choice most consistent with the standards and proceed.
 
    **When `spec.md` and `tasks.md` disagree, follow `spec.md`.** The spec is
-   the binding intent oracle; a task field that contradicts it (a wrong Prisma
+   the binding intent oracle; a task field that contradicts it (a wrong schema
    key, a missing step the spec requires) is a plan gap, not a new decision.
    Implement to the spec and **note the divergence in this task's retro entry**
    (under "Unexpected" or "What could be improved") so the correction is durable
    and the reviewer can trace it — don't silently follow the task letter.
 
 3. **Implement** to the standards and the Definition of Done
-   (`docs/contributing.md`): kind-pure placement, one export per file, no UI/
-   reactivity in models/contracts, `requireAuth` on routes, optimistic cache
-   patches, etc.
+   (`docs/contributing.md`): placement, layering, and every invariant the
+   task's cited `docs/standards/*` docs name.
 
    **UI work matches its cohesion anchors.** When the task touches UI, read
    `design.md` § Cohesion anchors (when present) and build by **reusing the
-   anchor screens' components and `composables/ui/` hooks** — open the anchor
+   anchor screens' components and shared presentation hooks** — open the anchor
    page's source and match its tone-ladder rungs, spacing/typography, and
    list/card/sheet idioms before inventing a variant. Visual consistency
    comes from reuse, not from re-deriving tokens per screen; `ui-review`
    compares your screens against the anchors side-by-side.
 
-4. **Tests.** Add/extend the sibling `.spec.ts` for every source module you
-   touch (`docs/standards/testing.md`).
+4. **Tests.** Add/extend tests for every source module you touch, following
+   the repo's testing standard (`docs/standards/testing.md`).
 
    **AC→test traceability.** Name each test after the AC it covers — e.g.
    `it('AC-7: rejects a non-finite multiplier', …)` — and give each invalid
@@ -115,42 +114,28 @@ mid-task). If it can't be revived, write the blocker into `STATUS.md` and stop
 
 5. **Task gate.**
 
-   **Preflight: Node version (with nvm auto-switch).** Before running
-   lint/typecheck/tests, check that the installed Node major matches the
-   repo's `engines.node` field in `package.json` (compare `node -v` against
-   the engines value). If they don't match, try to switch automatically:
+   **Preflight: runtime version.** Before running lint/typecheck/tests, check
+   that the installed runtime version matches what `MATERIA.md` § Environment
+   preflight requires, and switch/install per its recipe if not.
 
-   - **Prefer a hard PATH prefix over `nvm use`.** In this environment `nvm`
-     state is inconsistent across non-persistent shells, so `nvm use` is
-     unreliable. If Node 24 is installed, prepend its `bin` to `PATH` directly
-     for each gate command — e.g.
-     `PATH=/root/.nvm/versions/node/v24.16.0/bin:$PATH pnpm lint` (adjust the
-     path to wherever v24 actually lives; `nvm which 24` or a glob under the
-     nvm versions dir finds it). This is more reliable than sourcing
-     `~/.nvm/nvm.sh` + `nvm use`.
-   - As a fallback, if a `.nvmrc` is present run `nvm use` (sourcing nvm from
-     `~/.nvm/nvm.sh` first, or noting nvm may already be in `PATH`); otherwise
-     derive the desired major from `engines.node` and `nvm use <major>`.
-   - If the switch succeeds and `node -v` now matches, continue.
-   - **Markdown-only tasks may proceed on the resident Node.** If this task
-     touches only `*.md` (docs/skills, no `*.ts`/`*.vue`/schema), the
-     pure-Node `check:docs` gate runs fine on Node 22 — proceed and note the
-     version in the commit. **Code-touching tasks block** when Node 24 is
-     unavailable: halt with a clear remediation naming the desired major (e.g.
-     "Node 24 required by engines field; install with `nvm install 24`"). Do
-     **not** run lint/typecheck/tests for code under the wrong Node — that
-     produces cryptic `Object.groupBy is not a function` / oxc-walker errors
-     that obscure the real problem.
+   - **Markdown-only tasks may proceed on the resident runtime.** If this task
+     touches only `*.md` (docs/skills, no source or schema files), the
+     pure-Node `check:docs` gate runs fine on any recent Node — proceed and
+     note the version in the commit. **Code-touching tasks block** when the
+     required runtime is unavailable: halt with a clear remediation naming the
+     desired version. Do **not** run lint/typecheck/tests for code under the
+     wrong runtime — that produces cryptic errors that obscure the real
+     problem.
 
-   **Gate.** `pnpm lint` and `pnpm exec nuxt typecheck` clean and the
-   relevant specs green. E2e-authoring tasks are **not exempt** from the
-   typecheck: `playwright --list` does not type-check, so a task whose
-   deliverable is a new e2e spec still runs `pnpm exec nuxt typecheck` —
-   otherwise type errors in the new spec slip through to the review gate.
-   Run **`prettier --check` on the changed files** (or
-   `pnpm run lint:fix`) as part of this gate — `pnpm lint` includes Prettier, but
-   checking the touched files explicitly surfaces formatting failures **per-task**
-   rather than letting them pile up into a finalize-time `pnpm lint` failure
+   **Gate.** `lint` and `typecheck` (`MATERIA.md` § Gate) clean and the
+   relevant tests green. E2e-authoring tasks are **not exempt** from the
+   typecheck — a test runner's list/collect mode does not type-check, so a
+   task whose deliverable is a new e2e spec still runs `typecheck`; otherwise
+   type errors in the new spec slip through to the review gate.
+   Run the **formatter check on the changed files** (the `lint` row's
+   auto-fix variant in `MATERIA.md` § Gate) as part of this gate — checking
+   the touched files explicitly surfaces formatting failures **per-task**
+   rather than letting them pile up into a finalize-time `lint` failure
    across many files. Adversarial review is deferred to the
    post-implementation review pass (see `ship-spec/SKILL.md` § Review);
    your job is to leave the local gate green so the review pass starts
@@ -205,7 +190,7 @@ your returned retro block:
   a broken link and fails the gate. Write it in arrow/prose form instead
   (`text → path`).
 - **Read the gate verdict from the exit code, not the display line.** Treat
-  `pnpm run check:docs` (and every gate command) as passing **iff its exit code
+  `node scripts/check-docs.mjs` (and every gate command) as passing **iff its exit code
   is 0** — do not judge it by the trailing summary/display line it prints, which
   can read as success while the command exits non-zero.
 
@@ -217,7 +202,7 @@ it to the human. The run resumes cleanly once the blocker is cleared.
 
 ## Done when
 
-- Acceptance criteria met; tests added and green; `pnpm lint` + typecheck clean.
+- Acceptance criteria met; tests added and green; `lint` + `typecheck` clean (MATERIA.md § Gate).
 - Directly-touched docs updated (cross-cutting deferred to `docs-sync`); task
   `[x]` with its AC checkboxes ticked to reflect what was actually built;
   `STATUS.md` updated (and, if applicable, the task ID added to

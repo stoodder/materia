@@ -595,7 +595,7 @@ land **green**:
    PR:
 
    ```bash
-   pnpm lint && pnpm exec nuxt typecheck && pnpm test && pnpm run check:docs
+   pnpm lint && pnpm exec nuxt typecheck && pnpm test && node scripts/check-docs.mjs
    ```
 
    Pipeline edits are markdown (`SKILL.md` files), so `prettier --check` and

@@ -1,6 +1,6 @@
 ---
 name: design
-description: From a feature spec, produce a UX design doc (user flows, screens, and their loading/empty/error/ready states) at docs/specs/<dated-slug>/design.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-ab24f9-lift-feeling). Stage 2 of the ship-spec pipeline (UI-gated — spawned only when the feature ships UI; skipped and recorded on non-UI runs); usable standalone after a spec exists.
+description: From a feature spec, produce a UX design doc (user flows, screens, and their loading/empty/error/ready states) at docs/specs/<dated-slug>/design.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-ab24f9-csv-export). Stage 2 of the ship-spec pipeline (UI-gated — spawned only when the feature ships UI; skipped and recorded on non-UI runs); usable standalone after a spec exists.
 ---
 
 # design — UX flows & screens from a spec
@@ -36,9 +36,10 @@ acting on them wastes context.
 
 ## Environment
 
-If a `pnpm`/gate command fails oddly (wrong Node major, missing
-`node_modules`, Prisma engines, unreachable Postgres), apply the recipes in
-`.claude/skills/ship-spec/resources/env-preflight.md` before treating it as a
+If a gate command fails oddly (wrong runtime version, missing dependencies,
+stale codegen, an unreachable service), apply the recipes in
+`.claude/skills/ship-spec/resources/env-preflight.md` (concrete recipes:
+`MATERIA.md` § Environment preflight) before treating it as a
 real failure. In the orchestrator lane the session preflight has already run;
 standalone runs apply it on first use.
 

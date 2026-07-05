@@ -135,7 +135,7 @@
        ui-test-plan: skipped (non-UI — <reason>) | ran
 
      For ui-review:
-       ui-review: skipped (non-UI — <reason>) | skipped (exit-144 instability — degrade path) | ran
+       ui-review: skipped (non-UI — <reason>) | skipped (eyes-instability — degrade path) | ran
 
      For the data-safety review angle (ship-spec/SKILL.md § Data-surface gate):
        data-safety-review: skipped (non-data — <reason>) | ran

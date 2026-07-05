@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: From a spec (and, on UI runs, a design), produce a technical architecture document grounded in the repo docs — reusing existing resources wherever possible — at docs/specs/<dated-slug>/architecture.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-ab24f9-lift-feeling). Stage 4 of the ship-spec pipeline.
+description: From a spec (and, on UI runs, a design), produce a technical architecture document grounded in the repo docs — reusing existing resources wherever possible — at docs/specs/<dated-slug>/architecture.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-ab24f9-csv-export). Stage 4 of the ship-spec pipeline.
 ---
 
 # architecture — the technical plan, grounded in the docs
@@ -33,9 +33,10 @@ acting on them wastes context.
 
 ## Environment
 
-If a `pnpm`/gate command fails oddly (wrong Node major, missing
-`node_modules`, Prisma engines, unreachable Postgres), apply the recipes in
-`.claude/skills/ship-spec/resources/env-preflight.md` before treating it as a
+If a gate command fails oddly (wrong runtime version, missing dependencies,
+stale codegen, an unreachable service), apply the recipes in
+`.claude/skills/ship-spec/resources/env-preflight.md` (concrete recipes:
+`MATERIA.md` § Environment preflight) before treating it as a
 real failure. In the orchestrator lane the session preflight has already run;
 standalone runs apply it on first use.
 
@@ -81,19 +82,21 @@ standalone runs apply it on first use.
      "no glossary entry needed."
 
 3. **Specify changes**, following the standards. **If the change has no
-   Prisma/Nitro/Vue surface** (a Claude Code skill, a docs reorganization, a
+   product surface** (a Claude Code skill, a docs reorganization, a
    CLI/build helper), skip the product-shaped bullets below and jump straight to
-   § Non-product features (no Prisma/Nitro/Vue) for the skeleton variant, rather
-   than re-deriving the product structure here.
-   - **Data model & migration** — Prisma changes + unique indexes for upserts
-     (`docs/standards/data-and-loads.md`).
+   § Non-product features (no product surface) for the skeleton variant, rather
+   than re-deriving the product structure here. The bullets below are the
+   typical product layers — use the layer vocabulary the repo's
+   `docs/standards/*` set actually defines, citing each layer's standard:
+   - **Data model & migration** — schema changes + unique indexes for upserts
+     (the repo's data standard).
    - **API surface** — new/changed routes: METHOD · path · auth · contract ·
-     payload (`server-routes.md`, link `surface-map.md`).
-   - **Contracts & models** — verb+noun contract names, `from`/`toJSON`, payload
-     types, no UI/reactivity (`contracts-and-models.md`).
-   - **Client state** — query cache keys + mutations (optimistic patch /
-     dependent refresh) (`api-layer.md`).
-   - **UI** — pages/components/presentation hooks (`ui-components.md`).
+     payload (the repo's server-routes standard; link `surface-map.md`).
+   - **Contracts & models** — wire shapes and their construction/serialization
+     conventions (the repo's contracts standard).
+   - **Client state** — query caching + mutation strategy (the repo's
+     API-layer standard).
+   - **UI** — pages/components/presentation hooks (the repo's UI standard).
 4. **Call out** risks/trade-offs, the test strategy (`testing.md`), and explicit
    out-of-scope/follow-ups.
 
@@ -139,7 +142,7 @@ standalone runs apply it on first use.
    `architecture.md` for relative markdown links (`](./` or `](../` or
    `](docs/`) and verify each target resolves on disk. Catches broken
    cross-links at the source rather than several stages downstream when
-   `docs-sync` runs `pnpm run check:docs` over the whole branch.
+   `docs-sync` runs `node scripts/check-docs.mjs` over the whole branch.
 
    **Convention for to-be-created docs.** When `architecture.md`
    references a doc that this PR will create in a later stage (e.g. a
@@ -152,7 +155,7 @@ standalone runs apply it on first use.
    human-readable prose and is ignored by the link-checker. After the
    to-be-created doc lands in a later commit, a markdown link is fine.
 
-   **Inline-backtick hazard.** `pnpm run check:docs` only strips
+   **Inline-backtick hazard.** `node scripts/check-docs.mjs` only strips
    fenced (triple-backtick) blocks when extracting links; inline
    single-backtick code spans are NOT stripped. So an inline example
    like `` `[bar](baz.md)` `` (illustrating link syntax in prose) will
@@ -173,7 +176,7 @@ standalone runs apply it on first use.
 - It's concrete enough that `plan-tasks` can decompose it without re-deciding.
 - `STATUS.md` updated; architecture committed + pushed.
 
-## Non-product features (no Prisma/Nitro/Vue)
+## Non-product features (no product surface)
 
 Step 3 above is laid out for product features that touch the data model,
 server routes, contracts/models, client state, and UI. For features that

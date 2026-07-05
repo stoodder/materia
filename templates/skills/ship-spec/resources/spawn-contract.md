@@ -74,9 +74,8 @@ orchestrator's brief, not other reviewers' raw outputs)
 
 - **Spec + architecture grounding.** A short section naming the load-bearing
   facts from `spec.md` / `architecture.md` / `CLAUDE.md` that bound the change
-  (single-user app, UI-gated states, client-only state, by-design
-  invariants) — many MEDIUM dismissals hinge on facts a reviewer can't infer
-  from the diff alone.
+  (deployment model, by-design invariants, gated states) — many MEDIUM
+  dismissals hinge on facts a reviewer can't infer from the diff alone.
 - **Dismissed-findings carry-forward.** One line per HIGH/MEDIUM dismissed in
   an earlier round, in the format
   `dismissed-prior-round: <finding> — <why> (verified @ <sha>)`. A reviewer

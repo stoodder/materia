@@ -115,7 +115,7 @@ the parent stays the sole committer.
 ### 5. Gate locally, then PR
 
 ```bash
-pnpm lint && pnpm exec nuxt typecheck && pnpm test && pnpm run check:docs
+pnpm lint && pnpm exec nuxt typecheck && pnpm test && node scripts/check-docs.mjs
 git push -u origin janitor/sweep-<YYYY-MM-DD>
 gh pr create --title "janitor: standards-drift sweep <YYYY-MM-DD>" --body "<body>"
 ```

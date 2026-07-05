@@ -77,7 +77,7 @@ breadth over depth — most defaults come from a few canonical docs.
   `docs/standards/workflow.md`.
 
 **Read for exemplars:** glance at 1–2 existing specs in `docs/specs/`
-(e.g. `2026-06-13-230ee-lift-feeling/spec.md`,
+(e.g. `2026-06-13-230ee-csv-export/spec.md`,
 `2026-06-14-3b4d3-gymii-rebrand/spec.md`) so the proposal matches the
 quality bar set by what already shipped.
 
@@ -243,7 +243,7 @@ abandoned Q&A above this step leaves no stray branch behind.
 
 3. **Verify link integrity, then commit** the proposal file(s):
 
-   Verify link integrity per the lifecycle invariant (`pnpm run check:docs`;
+   Verify link integrity per the lifecycle invariant (`node scripts/check-docs.mjs`;
    fix any links the new files introduce), then commit:
 
    ```bash
@@ -366,7 +366,7 @@ Use **absolute-from-repo-root** link paths in proposal bodies (e.g.
 `docs/specs/_proposed/<file>.md`, but `intake-spec` adopts the body
 **verbatim** into `docs/specs/<dated-slug>/spec.md` at a different folder
 depth. Relative paths that resolve from `_proposed/` will silently break
-when copied into `<dated-slug>/spec.md` (and trigger `pnpm run check:docs`
+when copied into `<dated-slug>/spec.md` (and trigger `node scripts/check-docs.mjs`
 failures downstream). Absolute-from-repo-root paths resolve identically
 from both locations.
 

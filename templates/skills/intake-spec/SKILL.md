@@ -57,7 +57,7 @@ name:
 - `<slug>` — short, kebab-case, feature-descriptive (e.g. `rest-timer`,
   `exercise-swaps`).
 
-Example: `2026-06-13-ab24f9-lift-feeling`.
+Example: `2026-06-13-ab24f9-csv-export`.
 
 This keeps every spec folder globally unique and chronologically sortable, even
 if two specs share a slug. Use the full dated form everywhere a path is written
@@ -66,9 +66,10 @@ if two specs share a slug. Use the full dated form everywhere a path is written
 
 ## Environment
 
-If a `pnpm`/gate command fails oddly (wrong Node major, missing
-`node_modules`, Prisma engines, unreachable Postgres), apply the recipes in
-`.claude/skills/ship-spec/resources/env-preflight.md` before treating it as a
+If a gate command fails oddly (wrong runtime version, missing dependencies,
+stale codegen, an unreachable service), apply the recipes in
+`.claude/skills/ship-spec/resources/env-preflight.md` (concrete recipes:
+`MATERIA.md` § Environment preflight) before treating it as a
 real failure. In the orchestrator lane the session preflight has already run;
 standalone runs apply it on first use.
 
@@ -186,8 +187,8 @@ standalone runs apply it on first use.
    the spec, run two cheap sanity checks against the draft:
 
    - **Named-path existence check.** For every file or directory the
-     spec body references by literal path (e.g. `enums/WeekDay.ts`,
-     `tailwind.config.ts`, `prisma/seed.mjs`), verify the path resolves
+     spec body references by literal path (source files, config files,
+     seed files), verify the path resolves
      on disk via `git ls-files <path>` (or `ls`). If any path is missing,
      either correct the spec (the referenced file may have moved or
      been renamed — a common source is `.ts` vs `.js` extension drift)
@@ -198,10 +199,10 @@ standalone runs apply it on first use.
      that interacts with existing tooling (formatter rule, lint rule,
      file-naming convention, schema-validation rule), run the tooling
      against a minimal example of that convention before committing
-     the rule. E.g. a 30-second `pnpm exec prettier --check <example>`
-     against an example of the proposed rule will catch conflicts (an
-     uppercase-CSS-hex rule that Prettier 3 silently reverts to
-     lowercase) before they propagate into the implementation stage.
+     the rule. E.g. a 30-second formatter check (`MATERIA.md` § Gate,
+     `lint` row) against an example of the proposed rule will catch
+     conflicts (a casing rule the formatter silently reverts) before
+     they propagate into the implementation stage.
      If the tooling rejects the proposed rule, either reverse the
      convention to match the tooling OR flag the conflict explicitly
      as a tooling-policy decision the operator must resolve before

@@ -156,7 +156,7 @@ human comments and no `Blocker`.
 |---|---|---|---|
 | **Orchestrator** | operator session | none (dispatches others) | `ship-spec`, `triage-retros`, `apply-pipeline-improvements` |
 | **Sub-skill** | a fresh-context subagent the orchestrator spawns | `## Recommended tier` | `intake-spec`, `design`, `architecture`, `plan-tasks`, `implement-task`, `finalize`, `docs-sync`, `docs-audit` |
-| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `suggestions-to-specs`, `logs-to-specs`, `report-bug`, `bugs-to-reports`, `exception-triage`, `ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
+| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `suggestions-to-specs`, `logs-to-specs`, `report-bug`, `bugs-to-reports`, `ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
 | **Maintainer** | operator session (or scheduled) | none | `librarian` (sweeps the living docs) and `janitor` (sweeps the code against `docs/standards/`) — each fixes drift directly and opens one PR instead of filing queue entries. Only the librarian **auto-merges its own PR**: a standing exception to the "no auto-merge" invariant, valid only behind a mechanical diff envelope + green CI (its § The docs-only envelope); the janitor's diff is product code, so it stops for human review. Per-run exception: `--auto` (§ The `--auto` argument). |
 
 A producer additionally MUST conform to the queue's frontmatter/filename
@@ -184,7 +184,7 @@ skill.
 
 - **Interactive** (`report-bug`, `propose-spec`, `propose-epic`,
   `reconcile-epic` standalone, `suggestions-to-specs`,
-  `bugs-to-reports`, `exception-triage`): draft everything
+  `bugs-to-reports`): draft everything
   in-memory, present one confirmation block, then pause. Reply verbs, with
   exactly these semantics: `approve` (write + ship), `edit: <feedback>`
   (adjust all drafts, re-present), `edit <id>: <feedback>` (adjust one),
@@ -204,7 +204,7 @@ skill.
   `git checkout main && git pull` then branch; the branch holds **zero
   diffs** until approve.
 - **Branch-at-approve** (Q&A producers — `report-bug`, `propose-spec`,
-  `propose-epic`, `reconcile-epic` standalone, `exception-triage`): the
+  `propose-epic`, `reconcile-epic` standalone): the
   whole Q&A is in-memory; the branch is created only on `approve`, so an
   abandoned conversation leaves no trace.
 
@@ -228,7 +228,7 @@ rerun), append a short hex suffix (`openssl rand -hex 2`).
   `.processed.md` name with a one-line `processed_on: <YYYY-MM-DD>` footer,
   in the same commit as the entries it produced.
 - **Link integrity on new files** — before committing, run
-  `pnpm run check:docs` and fix any link the *new* files introduce
+  `node scripts/check-docs.mjs` and fix any link the *new* files introduce
   (pre-existing debt on `main` is not this run's job). If `check:docs` isn't
   runnable, grep the new files for `](../` and `](./` and verify each target
   manually.

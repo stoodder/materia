@@ -212,7 +212,7 @@ the lifecycle).
 Then verify links, stage, and commit:
 
 ```bash
-pnpm run check:docs   # confirm the new proposal file(s) add no broken links
+node scripts/check-docs.mjs   # confirm the new proposal file(s) add no broken links
 git add docs/specs/_proposed/
 git commit -m "logs-to-specs: <P> proposal(s) from log triage (<window>, <service>)"
 ```
@@ -294,7 +294,7 @@ detector matches on the H1 plus `## Problem`, `## Goals`,
 `.claude/skills/propose-spec/SKILL.md` § File format → Link paths. `intake-spec`
 adopts the body verbatim into `docs/specs/<dated-slug>/spec.md` at a different
 folder depth, so relative paths that resolve from `_proposed/` break downstream
-and trip `pnpm run check:docs`.
+and trip `node scripts/check-docs.mjs`.
 
 The body MUST NOT repeat frontmatter metadata (no second `id:` line, no `Source:`
 heading) and MUST NOT embed raw log dumps — the evidence lives in the snapshot

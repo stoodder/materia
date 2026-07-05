@@ -25,8 +25,7 @@ duplicated here — one fact, one place.
 `triage-retros` classifies retro signal as defects and gathers them into a
 `bug-reports.md` hand-off; `/bugs-to-reports` then reads that hand-off and writes
 conformant reports into `docs/bugs/_reports/`; `triage-retros` itself only gathers.
-A third producer, `/exception-triage`, triages the Sentry inbox and writes conformant
-reports for unresolved issues the operator approves. A fourth, `/ui-inspection`, drives
+A third producer, `/ui-inspection`, drives
 the running app across the surface-map and files one consolidated UI/UX checklist report.
 See the Producers table in [`_reports/README.md`](_reports/README.md).
 

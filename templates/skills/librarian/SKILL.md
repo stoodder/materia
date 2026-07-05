@@ -45,7 +45,7 @@ ambiguous fix is skipped and noted, never guessed at (§ Rules).
 - `docs/standards/docs.md` (the authoring standard) and
   `docs/contributing.md` (the touch-X→update-Y map, read in reverse: which
   code would have demanded which doc).
-- `scripts/check-docs.mjs` via `pnpm run check:docs` (the mechanical gate).
+- `scripts/check-docs.mjs` via `node scripts/check-docs.mjs` (the mechanical gate).
 
 **Not inputs, never edited:** `docs/specs/**`, `docs/bugs/**`,
 `docs/epics/**`, `docs/research/**` — historical run artifacts, exempt by the
@@ -101,7 +101,7 @@ that proves the doc wrong).
    supports…", change-log-shaped sections), facts duplicated across docs
    instead of linked to their one home, table-cell bloat, multi-sentence
    glossary entries. Fix by rewriting to present-state.
-5. **Mechanical gate.** Run `pnpm run check:docs`; any failure on `main` is a
+5. **Mechanical gate.** Run `node scripts/check-docs.mjs`; any failure on `main` is a
    finding to fix (narration phrases, over-long lines, duplicate lines,
    glossary order, broken links, unresolvable `#anchor` fragments).
 
@@ -136,7 +136,7 @@ alphabetical position). Commit in small scoped commits
 ### 5. Gate locally, then PR
 
 ```bash
-pnpm run check:docs && pnpm lint     # style/links + prettier over the .md diff
+node scripts/check-docs.mjs && pnpm lint     # style/links + prettier over the .md diff
 git diff main...HEAD --name-only     # § The docs-only envelope — assert now
 git push -u origin librarian/sweep-<YYYY-MM-DD>
 gh pr create --title "librarian: docs-drift sweep <YYYY-MM-DD>" --body "<body>"

@@ -140,7 +140,7 @@ Examples:
 ```
 
 Notice how each filename mirrors the shape of a spec folder name like
-`2026-06-13-ab24f9-lift-feeling` — the same `<date>-<rand>-<slug>` triad,
+`2026-06-13-ab24f9-csv-export` — the same `<date>-<rand>-<slug>` triad,
 just with a `.md` suffix on a file rather than a `/` on a directory.
 
 The filename is a **convenience for humans and `ls` ordering only**.

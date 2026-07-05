@@ -8,9 +8,9 @@ docs/specs/<yyyy-mm-dd>-<rand>-<slug>/
 
 — today's date, a fresh 6-character base36 token (e.g. `ab24f9`), and a
 short kebab-case feature slug. Example:
-`docs/specs/2026-06-13-ab24f9-lift-feeling/`. This makes every spec folder
+`docs/specs/2026-06-13-ab24f9-csv-export/`. This makes every spec folder
 globally unique and chronologically sortable, even when two features share a
-slug. The bare `<slug>` is still used for the branch name (e.g. `lift-feeling`);
+slug. The bare `<slug>` is still used for the branch name (e.g. `csv-export`);
 the full dated form is used everywhere a path is written.
 
 Each folder holds the artifacts the pipeline produces, in order:
@@ -95,8 +95,7 @@ A separate `docs/bugs/` tree (queue at [`docs/bugs/_reports/`](../bugs/_reports/
 overview at [`docs/bugs/README.md`](../bugs/README.md)) mirrors this one for
 bug reports. Producers that write into the queue: `/report-bug` (operator-described bugs),
 `/bugs-to-reports` (files the gathered `bug-reports.md` hand-offs that `triage-retros`
-emits), `/exception-triage` (triages the Sentry inbox and writes conformant reports for
-issues the operator approves), and `/ui-inspection` (drives the live app
+emits), and `/ui-inspection` (drives the live app
 across the full surface-map and files one consolidated checklist bug report).
 `/fix-bug` is the consumer that drives a report through reproduce-bug (RED gate)
 → bug-analysis → plan-tasks → implement → review → docs-sync ⇄ docs-audit →
@@ -157,7 +156,7 @@ follow the skill-authoring conventions in
 
 | Slug | Feature | Stage |
 |---|---|---|
-| [lift-feeling](2026-06-13-230ee-lift-feeling/spec.md) | One "How did it feel?" per lift per workout (replaces per-set) | intake ✓ · design ✓ · architecture ✓ → plan-tasks |
+| [csv-export](2026-06-13-230ee-csv-export/spec.md) | One "How did it feel?" per lift per workout (replaces per-set) | intake ✓ · design ✓ · architecture ✓ → plan-tasks |
 | [improve-pipeline](2026-06-14-e4a97-improve-pipeline/spec.md) | Manually-triggered skill that consumes unprocessed `retro.md` files, synthesizes an improvement plan, and ships pipeline-skill edits as one PR | intake ✓ → design |
 | [gymii-rebrand](2026-06-14-3b4d3-gymii-rebrand/spec.md) | Rebrand GymCycle → Gymii: green primary + warm-orange accent palette, paper-clean visual language (negative-space separation, no hard borders) | intake ✓ → design |
 | [normalize-hex-casing-across-visual-surfaces](2026-06-14-6d556-normalize-hex-casing-across-visual-surfaces/spec.md) | Pick a hex-case convention, fix current drift in `manifest.webmanifest`, document the rule in `visual-language.md` | intake ✓ → design |

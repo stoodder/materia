@@ -17,9 +17,9 @@ skill leans on (read at the phase that needs them):
   and effort→guidance-sentence map.
 - [`resources/spawn-contract.md`](resources/spawn-contract.md) — the verbatim
   standing rules injected into every spawn prompt (per spawn kind).
-- [`resources/env-preflight.md`](resources/env-preflight.md) — the single
-  source for every environment cold-start recipe (Node, Prisma, Playwright,
-  Postgres, host-fallback gate).
+- [`resources/env-preflight.md`](resources/env-preflight.md) — the cold-start
+  *procedure*; the repo-specific recipes live in `MATERIA.md` § Environment
+  preflight.
 
 ## Each stage runs as a subagent
 
@@ -47,12 +47,12 @@ Every spec lives at `docs/specs/<dated-slug>/`, where `<dated-slug>` is
 
 — today's date, a fresh 6-char base36 token, and a short kebab slug (see
 `intake-spec` for the full rule). Example:
-`docs/specs/2026-06-13-ab24f9-lift-feeling/`. Use the full dated form in every
+`docs/specs/2026-06-13-ab24f9-csv-export/`. Use the full dated form in every
 path you write or read; the bare `<slug>` is only the human-readable suffix.
 
 ## Resume (run this first, every time)
 
-If the user names a feature (e.g. `lift-feeling`) or a proposal id (e.g.
+If the user names a feature (e.g. `csv-export`) or a proposal id (e.g.
 `a91c2f`) and a matching in-flight spec folder exists, **resume — do not
 restart**.
 
@@ -445,14 +445,13 @@ and the § Fable gate step above. The fallback never blocks the run.
 
 Before dispatching any code-touching stage, run the **one-time session
 preflight** from [`resources/env-preflight.md`](resources/env-preflight.md)
-(Node major → deps → Prisma client) so implement/review subagents inherit a
+(runtime → deps → codegen → services) so implement/review subagents inherit a
 green baseline instead of each rediscovering the cold-start gap — historically
-the single biggest slice of wall-clock. That file is the single source for all
-environment recipes (Node 24 PATH-prefix + nvm-absent fallback, Prisma engines
-mirror, Playwright revision symlink, Postgres TCP env, dead-DB restart,
-host-fallback gate). Surface any preflight failure once, up front. A
-markdown/docs-only run may skip the preflight — see `finalize/SKILL.md`
-§ Procedure's docs/skills-only gate profile.
+the single biggest slice of wall-clock. The concrete recipes and known
+failure signatures live in `MATERIA.md` § Environment preflight. Surface any
+preflight failure once, up front. A markdown/docs-only run may skip the
+preflight — see `finalize/SKILL.md` § Procedure's docs/skills-only gate
+profile.
 
 ## STATUS.md ownership (orchestrator lane)
 
@@ -485,8 +484,8 @@ fresh-context reviewer this pipeline mandates is therefore
 ## Orchestrator behavioral-verify lane
 
 Some tasks can only be verified **behaviorally**, against long-lived servers
-(Postgres + Playwright, a live `nuxt dev`). That verification cannot live in a
-fresh-context subagent — long-lived servers make a backgrounded subagent stall
+(a database, the Eyes toolchain, a live dev server — `MATERIA.md` § Run it +
+§ Eyes). That verification cannot live in a fresh-context subagent — long-lived servers make a backgrounded subagent stall
 and go quiet (§ Subagent liveness). So this is a **named, first-class lane**:
 when a task's only real safety net is behavioral and needs a long-lived
 server, the **orchestrator runs the behavioral verification itself** (stand up
@@ -496,13 +495,13 @@ that the check ran in the orchestrator lane and what it covered.
 **Run it in the foreground with explicit exit-code capture — not
 `nohup … &`.** A backgrounded launcher returns immediately and produces a
 misleading "exit 0" notification that reports the *launcher* finishing, not
-the e2e run (e.g. `pnpm test:e2e; echo "exit=$?"`). Two further notes:
-**check e2e response-stub shapes against the `*Payload` types** — a stub of
-the wrong shape silently stalls a page in loading until this lane catches it;
-and **CI also gates e2e** — every PR runs the full `pnpm test:e2e` suite as a
-parallel job (`docs/standards/testing.md` § CI e2e gate), so this lane is the
-earlier, pre-PR signal that keeps red e2e from reaching CI, not the only
-guard.
+the e2e run (e.g. `<test:e2e command>; echo "exit=$?"` — the command from
+`MATERIA.md` § Gate). Two further notes: **check e2e response-stub shapes
+against the real wire types** — a stub of the wrong shape silently stalls a
+page in loading until this lane catches it; and **CI also gates e2e** when
+the repo has a non-`none` `test:e2e` row (`MATERIA.md` § Gate), so this lane
+is the earlier, pre-PR signal that keeps red e2e from reaching CI, not the
+only guard.
 
 Two capture-hygiene rules, learned the hard way: **reset the capture
 fixtures first** — truncate or reseed the feature's tables before UI-proof
@@ -529,12 +528,12 @@ wait indefinitely:
   Edits-look-done is not done — **only the completion notification is a
   reliable done-signal**. Never commit, kill processes under, or otherwise act
   on a presumed-stalled subagent's tree: a legitimately long task (e.g. an
-  e2e-iteration loop with repeated `nuxt dev` boots) looks identical to a
+  e2e-iteration loop with repeated dev-server boots) looks identical to a
   stall from the outside, and acting on it mid-flight kills live work and
   forces the subagent to churn through recovery. Distinguish a true stall
   (stale transcript well past budget) from a spawn in final wrap-up; when in
   doubt, wait longer.
-- **Hoist long-lived `nuxt dev`/e2e work to the orchestrator lane** — never
+- **Hoist long-lived dev-server/e2e work to the orchestrator lane** — never
   run it inside an implement/review subagent, where its runtime reads as a
   stall from the outside and its processes are exposed to a mistaken kill
   (mirroring § Orchestrator behavioral-verify lane).
@@ -563,12 +562,12 @@ Spawn these as a single message, one `Agent` call per angle, each at the
 
 | # | Angle | How | Tier |
 |---|---|---|---|
-| 1 | Correctness + simplicity + test-coverage | invoke the `code-review` skill if the session provides it; otherwise run the same angle inline (covers test coverage in practice). Explicit sub-mandates: **test quality** (a test that asserts nothing, or mocks the unit under test, is a finding), **optimistic-cache coherence** (mutations must patch the cache and refresh dependent keys per `docs/standards/api-layer.md`), and **e2e stub shapes** checked against the `*Payload` types | `fable/high` |
+| 1 | Correctness + simplicity + test-coverage | invoke the `code-review` skill if the session provides it; otherwise run the same angle inline (covers test coverage in practice). Explicit sub-mandates: **test quality** (a test that asserts nothing, or mocks the unit under test, is a finding), plus the repo-specific correctness invariants named in `MATERIA.md` § Review angles and the standards docs the tasks cite | `fable/high` |
 | 2 | Security | invoke the `security-review` skill if the session provides it; otherwise run the same angle inline | `sonnet/high` |
 | 3 | Spec-adherence + regression/blast-radius | Agent: verifies each AC literally across `tasks.md`, flags AC bullets that under-cover `spec.md`, identifies callers/dependents of changed exports, and checks regression by reading the pre-branch state via `git show <baseline>:<path>` | `sonnet/medium` (`haiku/low` on the markdown-only exemption path) |
 | 4 | Behavior | invoke the `verify` skill over the merged branch — covers every task in `behavior-deferred:` and any user-visible AC across the diff | `sonnet/medium` |
-| 5 | UI (UI-gated) | invoke the `ui-review` skill — Pixel-5 Playwright pass judged against `docs/standards/visual-language.md` **plus the cross-screen cohesion comparison** against the sibling screens named in `design.md` § Cohesion anchors. **Spawned only when the diff is UI-affecting** per § UI-surface gate; its committed `ui-proof/` screenshots are a mandatory deliverable checked by § Screenshot-presence check | `fable/high` |
-| 6 | Data-safety (data-gated) | Agent: reviews the data-layer diff for **destructive migration operations** against existing data (dropped/narrowed columns, table drops), **seed idempotency** (re-seeding preserves user-entered values — 1RMs, user weeks, logs — per `docs/standards/data-and-loads.md`), **unique indexes backing every upsert**, and **Prisma-string→enum casts** at the route boundary. **Spawned only when the diff is data-affecting** per § Data-surface gate | `sonnet/high` |
+| 5 | UI (UI-gated) | invoke the `ui-review` skill — an Eyes pass (`MATERIA.md` § Eyes: toolchain + canonical viewport) judged against the repo's visual standards docs **plus the cross-screen cohesion comparison** against the sibling screens named in `design.md` § Cohesion anchors. **Spawned only when the diff is UI-affecting** per § UI-surface gate; its committed `ui-proof/` screenshots are a mandatory deliverable checked by § Screenshot-presence check | `fable/high` |
+| 6 | Data-safety (data-gated) | Agent: reviews the data-layer diff for **destructive migration operations** against existing data (dropped/narrowed columns, table drops), **seed idempotency** (re-seeding preserves user-entered values), **unique indexes backing every upsert**, and the repo-specific invariants in `MATERIA.md` § Data layer. **Spawned only when the diff is data-affecting** per § Data-surface gate | `sonnet/high` |
 
 **Skill availability.** Only `ui-review` ships under `.claude/skills/`;
 `code-review` and `security-review` are harness-provided and may be absent
@@ -577,21 +576,21 @@ inline is the documented procedure — not a deviation to record.
 
 **Orchestrator-lane review angles.** The behavior (#4) and ui-review (#5)
 angles MAY run inline in the orchestrator lane when they require a long-lived
-server stack (Postgres + Playwright + `nuxt dev`), mirroring § Orchestrator
+server stack (database + Eyes toolchain + dev server), mirroring § Orchestrator
 behavioral-verify lane — a standing contract, not a per-run deviation. The
 orchestrator records the lane decision and the fresh-context deviation in
 `STATUS.md`, the review retro entry, and the PR body.
 
-**Markdown-only exemption.** If the cumulative diff contains no
-`.ts`/`.vue`/`.mjs`/`.prisma` source changes and no `.spec.ts` additions, skip
+**Markdown-only exemption.** If the cumulative diff contains no source-code
+changes (no changed file outside markdown/docs) and no test additions, skip
 the correctness / security / behavior reviewers — the spec-adherence reviewer
 runs alone. (The data-safety angle still runs when its own gate is positive —
-a `prisma/seed-data/*.json`-only diff is markdown-exempt but data-affecting.)
+a seed-data-only diff can be markdown-exempt but data-affecting.)
 
 **Trivial-diff threshold.** When the diff *does* touch source but is trivially
 small — roughly **≤ 10 changed lines**, pure presentation/mechanical (copy
-tweak, className change, constant rename), no new control flow, no new
-exported surface, no `.spec.ts` additions — collapse the fan-out to the
+tweak, class change, constant rename), no new control flow, no new
+exported surface, no test additions — collapse the fan-out to the
 **spec-adherence angle alone**. If in any doubt, run the full fan-out; record
 the collapse decision (and line count) in `STATUS.md`.
 
@@ -604,12 +603,9 @@ predicate). The sub-skills reference this gate **by section name**; nothing
 re-states the pattern list.
 
 A diff is **UI-affecting** when `git diff <baseline>...HEAD --name-only`
-matches any of:
-
-- `*.vue`;
-- a path under `pages/`, `layouts/`, `components/`, or `composables/ui/`;
-- a Tailwind config (`tailwind.config.*`);
-- an asset (`assets/**`, `public/**`).
+matches the UI-affecting pattern list in `MATERIA.md` § Surface gates
+(§ UI-affecting). When that section is `none`, every UI-gate decision in
+this pipeline is negative by definition.
 
 **Two evaluation forms.** Post-implementation evaluations (the review
 fan-out, finalize's e2e-coverage and UI-proof gates) use the diff predicate
@@ -636,13 +632,9 @@ findings prescribes.
 ### Data-surface gate
 
 The positive predicate that gates the data-safety angle (#6). A diff is
-**data-affecting** when `git diff <baseline>...HEAD --name-only` matches any
-of:
-
-- `prisma/schema.prisma`;
-- a path under `prisma/migrations/`;
-- `prisma/seed.mjs` or a path under `prisma/seed-data/`;
-- `server/utils/computeLoad*`.
+**data-affecting** when `git diff <baseline>...HEAD --name-only` matches the
+data-affecting pattern list in `MATERIA.md` § Surface gates
+(§ Data-affecting). When that section is `none`, the angle never runs.
 
 The orchestrator evaluates this once before the review fan-out and records
 the decision in `STATUS.md`: on a negative it omits the angle, noting
@@ -659,7 +651,7 @@ deliverable**, not a best-effort by-product of `ui-review`. After the
 
 - **PNGs present** → note `ui-proof: <n> screenshots committed` in
   `STATUS.md` § Notes and continue.
-- **Empty, with a recorded reason** (the exact exit-144 line, or a
+- **Empty, with a recorded reason** (the exact eyes-instability line, or a
   `ui-proof: capture failed — <reason>` note written by `ui-review`) →
   continue; finalize renders the degraded note from that reason.
 - **Empty, with NO recorded reason** → treat as a reviewer contract

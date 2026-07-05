@@ -112,16 +112,6 @@ long-running local runtime to harvest.
   a platform CLI command}}
 - **Noise profile:** {{known benign signatures to filter, if any}}
 
-## Exception tracker
-
-The durable error inbox for `/exception-triage`. `none` if the app has no
-exception tracking service.
-
-- **Service:** {{e.g. Sentry}}
-- **API access:** {{how to list/resolve/ignore issues — CLI, REST + token
-  env var, MCP tool}}
-- **Inbox scope:** {{which project(s)/environments count}}
-
 ## Data layer
 
 What the data-safety review angle checks beyond the generic rubric
@@ -152,4 +142,4 @@ pruned skill from the materia template if the capability arrives later.
 
 | Skill | Reason pruned |
 |---|---|
-| {{e.g. exception-triage}} | {{e.g. no exception tracker (§ Exception tracker: none)}} |
+| {{e.g. logs-to-specs}} | {{e.g. no runtime log source (§ Logs: none)}} |

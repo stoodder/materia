@@ -61,7 +61,7 @@ contracts, routes, client API, UI, rules, and canonical files.
 | [resources/workout-log.md](resources/workout-log.md) | `WorkoutLog` — a run of a session (start/finish) |
 | [resources/set.md](resources/set.md) | `Set` — a planned set |
 | [resources/set-log.md](resources/set-log.md) | `SetLog` — a logged set (done / actuals) |
-| [resources/lift-feeling.md](resources/lift-feeling.md) | `LiftFeeling` — one "how did it feel?" answer per lift per run |
+| [resources/csv-export.md](resources/csv-export.md) | `LiftFeeling` — one "how did it feel?" answer per lift per run |
 | [resources/strength-metric.md](resources/strength-metric.md) | `StrengthMetric` — the user's 1RMs / benchmarks |
 | [resources/load-rule.md](resources/load-rule.md) | `LoadRule` — load-derivation rules |
 | [resources/exercise-template.md](resources/exercise-template.md) | `ExerciseTemplate` — user-editable movement library (display defaults + paired `LoadRule`) |

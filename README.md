@@ -16,9 +16,9 @@ spec-to-ship pipeline tailored to your tech stack:
   reuses the same mid-stages.
 - **Producers** — skills that fill the queues from every signal source you
   have: your ideas (`/propose-spec`, `/propose-epic`), your runtime logs
-  (`/logs-to-specs`), your exception tracker (`/exception-triage`), your own
-  eyes (`/report-bug`), the app's UI (`/ui-inspection`), and the pipeline's
-  own retrospectives (`/suggestions-to-specs`, `/bugs-to-reports`).
+  (`/logs-to-specs`), your own eyes (`/report-bug`), the app's UI
+  (`/ui-inspection`), and the pipeline's own retrospectives
+  (`/suggestions-to-specs`, `/bugs-to-reports`).
 - **Maintainers** — `/janitor` sweeps the code against your standards docs;
   `/librarian` sweeps the docs against the code. Both fix drift directly.
 - **A self-improvement loop** — every pipeline run writes a `retro.md`;
@@ -43,8 +43,8 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
 2. Run **`/init`**. It interviews you about what you're building, helps you
    pick a stack, then writes `MATERIA.md`, `CLAUDE.md`, the `docs/` skeleton,
    and the pipeline skills into place — pruning anything your stack can't use
-   (no UI → no eyes-dependent skills; no exception tracker → no
-   `/exception-triage`).
+   (no UI → no eyes-dependent skills; no runtime log source → no
+   `/logs-to-specs`).
 3. `/init` finishes by seeding `docs/specs/_proposed/` with a **bootstrap
    epic**: the scaffolding of your app skeleton, CI, and gates as the
    pipeline's own first specs. Run `/ship-spec` and the harness builds your

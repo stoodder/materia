@@ -1,47 +1,42 @@
 ---
 name: ui-inspection
-description: Run on demand to inspect the whole running app for UI/UX quality and file one consolidated checklist bug report into docs/bugs/_reports/. Provisions Playwright on-demand via scripts/provision-e2e.sh, drives every page in docs/surface-map.md § Pages in the Pixel-5 viewport, captures a screenshot + DOM snapshot per surface, judges each against docs/standards/visual-language.md and docs/standards/ui-components.md, and writes one bug report with source ui-inspection. Observe-and-report only — never edits product code, never fixes anything, never opens a ship-spec or fix-bug run. Reach for it before a polish pass when you want a prioritized punch-list of UI/UX cleanups.
+description: Run on demand to inspect the whole running app for UI/UX quality and file one consolidated checklist bug report into docs/bugs/_reports/. Provisions the Eyes toolchain on-demand per MATERIA.md § Eyes, drives every page in docs/surface-map.md § Pages at the canonical viewport, captures a screenshot + DOM snapshot per surface, judges each against the repo's visual standards docs, and writes one bug report with source ui-inspection. Observe-and-report only — never edits product code, never fixes anything, never opens a ship-spec or fix-bug run. Reach for it before a polish pass when you want a prioritized punch-list of UI/UX cleanups.
 ---
 
 # ui-inspection — drive the whole app, file one UI/UX punch-list
 
 A single-shot **producer** skill. It drives the live local app across every
-surface in `docs/surface-map.md` § Pages in a Pixel-5 browser, judges each page
-against the visual-language and ui-components standards, and files **one**
-consolidated, checklist-style bug report into the bug queue at
-[`docs/bugs/_reports/`](../../../docs/bugs/_reports/README.md). It runs in the
-operator's session — it is **not** a `ship-spec` stage, and it is distinct from
-[`ui-review`](../ui-review/SKILL.md): `ui-review` is the in-pipeline fifth review
-angle scoped to a single feature diff and feeds the remediation loop, whereas
-`ui-inspection` sweeps the **whole running app** breadth-first and feeds the bug
-queue. It reuses `ui-review`'s Playwright machinery (`scripts/provision-e2e.sh`,
-the Postgres env block, the Pixel-5 device, the screenshot + DOM-snapshot
-technique) but applies the same visual rubric across every surface rather than
-one diff. It is observe-only: its sole side effects are the report file it writes
-and the producer-bookkeeping screenshots it captures.
+surface in `docs/surface-map.md` § Pages at the canonical viewport
+(`MATERIA.md` § Eyes), judges each page against the repo's visual standards
+docs, and files **one** consolidated, checklist-style bug report into the bug
+queue at [`docs/bugs/_reports/`](../../../docs/bugs/_reports/README.md). It
+runs in the operator's session — it is **not** a `ship-spec` stage, and it is
+distinct from [`ui-review`](../ui-review/SKILL.md): `ui-review` is the
+in-pipeline fifth review angle scoped to a single feature diff and feeds the
+remediation loop, whereas `ui-inspection` sweeps the **whole running app**
+breadth-first and feeds the bug queue. It reuses `ui-review`'s Eyes machinery
+(the provisioning recipe, service env block, canonical viewport, and the
+screenshot + DOM-snapshot technique — all from `MATERIA.md` § Eyes) but
+applies the same visual rubric across every surface rather than one diff. It
+is observe-only: its sole side effects are the report file it writes and the
+producer-bookkeeping screenshots it captures.
 
 **Lifecycle:** autonomous (PR-is-the-gate) — per the shared producer contract
 at `docs/standards/skills.md` § Producer lifecycle (zero-work exit, id
 minting, link integrity, one PR + tooling, no session survival); the clean
-exits below (Phase 0 abort, exit-144 degrade) are its zero-work paths.
+exits below (Phase 0 abort, instability degrade) are its zero-work paths.
 
 ## Inputs
 
-- **The running app at `localhost:3000`** — the skill probes it for liveness in
-  Phase 0 and drives it via Playwright. If it is **not** already running, Phase 0
-  **starts it** (preferring `docker compose up -d`, falling back to a native
-  no-Docker bring-up) rather than aborting; the operator no longer has to bring
-  it up by hand first.
+- **The running app at its dev URL** (`MATERIA.md` § Run it) — the skill
+  probes it for liveness in Phase 0 and drives it via the Eyes toolchain. If
+  it is **not** already running, Phase 0 **starts it** (per the § Run it
+  recipe, falling back to the § Eyes provisioning recipe) rather than
+  aborting; the operator no longer has to bring it up by hand first.
 - **[`docs/surface-map.md`](../../../docs/surface-map.md) § Pages** — the
-  inventory of routes to visit, in the order listed there (`/`, `/login`,
-  `/weeks`, `/strength`, `/exercises`, `/week/:week`,
-  `/workout/:id`).
-- **[`docs/standards/visual-language.md`](../../../docs/standards/visual-language.md)**
-  — the visual rubric (dark UI tokens, surface-tone ladder, no hard borders,
-  colour semantics): the judgment basis for findings.
-- **[`docs/standards/ui-components.md`](../../../docs/standards/ui-components.md)**
-  — the component rubric (hooks own classes, no design in models): the second
-  judgment basis.
+  inventory of routes to visit, in the order listed there.
+- **The repo's visual standards docs** (the visual-language / UI-components
+  standards under `docs/standards/`) — the judgment basis for findings.
 - **The queue contract:
   [`docs/bugs/_reports/README.md`](../../../docs/bugs/_reports/README.md)** — the
   frontmatter shape, filename pattern, body sections, and bookkeeping convention
@@ -68,35 +63,26 @@ report (phase-level) before returning control cleanly.
 
 ### Phase 0 — Preflight
 
-1. Probe the running app for liveness (TCP probe of `localhost:3000`). If it is
-   already reachable, continue to step 3.
+1. Probe the running app for liveness (TCP probe of the dev URL from
+   `MATERIA.md` § Run it). If it is already reachable, continue to step 3.
 2. **Autostart when not reachable.** If the probe fails, do **not** abort —
    bring the app up, then re-probe (bounded wait, ~120s). Announce
-   "App not reachable at localhost:3000 — starting it." and start it via the
+   "App not reachable — starting it." and start it via the
    first path that applies:
-   - **Docker path (preferred).** If a Docker daemon is available, run
-     `docker compose up -d` (the documented dev stack: Postgres + schema push +
-     seed + `nuxt dev`) and wait for `localhost:3000` to answer.
-   - **Native no-Docker fallback.** If Docker is unavailable (e.g. Claude Code
-     web), bring the stack up directly, reusing the same machinery Phase 1 uses:
-     1. `bash scripts/provision-e2e.sh` — brings up Postgres on `localhost:5432`
-        and ensures the Chromium binary (idempotent; see Phase 1).
-     2. Export the TCP-mode Postgres env block (`PGHOST`/`PGUSER`/`PGPASSWORD`/
-        `PGPORT` — see Phase 1) and set
-        `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/gymcycle?schema=public`,
-        a ≥32-char `SESSION_SECRET`, and `APP_PIN=0000`.
-     3. Create the dev `gymcycle` database if absent, then
-        `pnpm exec prisma migrate deploy` and `node prisma/seed.mjs` (the seed is
-        idempotent and preserves user 1RMs).
-     4. Launch `nuxt dev` in the background against that env and wait for
-        `localhost:3000` to answer.
+   - **Documented dev stack (preferred).** Run the `MATERIA.md` § Run it
+     recipe and wait for the dev URL to answer.
+   - **Provisioning fallback.** If the primary recipe cannot run in this
+     environment, apply the Eyes provisioning recipe (`MATERIA.md` § Eyes)
+     plus the environment preflight (`MATERIA.md` § Environment preflight) to
+     stand the stack up directly, then launch the dev server in the background
+     and wait for the dev URL to answer.
    - **Still down → clean exit.** If neither path makes the app reachable within
-     the bounded wait, print the remediation step — "App not reachable at
-     localhost:3000. Start it with `docker compose up`, then re-run." — and exit
+     the bounded wait, print the remediation step — "App not reachable. Start
+     it with the § Run it recipe, then re-run." — and exit
      cleanly **without writing any file** (the original safe-exit behaviour,
      preserved as the final fallback).
 3. Read `docs/surface-map.md` § Pages and announce the run plan: "App reachable.
-   N surfaces to inspect in the Pixel-5 viewport."
+   N surfaces to inspect at the canonical viewport."
 4. **Interactive abort prompt.** Present a single yes/no checkpoint before
    provisioning begins: **"Ready to inspect N surfaces? (y/n)"**. This is cheap
    insurance against running on an unseeded or premature app.
@@ -112,30 +98,20 @@ report (phase-level) before returning control cleanly.
 
 ### Phase 1 — Provision
 
-1. **Run `bash scripts/provision-e2e.sh` as step 1** — always the first action of
-   this phase, never skipped even if the environment looks already provisioned
-   (the script is idempotent: it no-ops when Postgres is already listening and
-   when the Chromium binary is already cached).
-2. **Export the TCP-mode Postgres environment variables** before driving the
-   browser:
-
-   ```bash
-   export PGHOST=localhost
-   export PGUSER=postgres
-   export PGPASSWORD=postgres
-   export PGPORT=5432
-   ```
-
-   Without these, the createdb/dropdb path defaults to local-socket mode, which
-   requires the OS user `root` to have a Postgres role; the TCP-mode path forces
-   connection as the `postgres` role.
-3. **Log in via Playwright** at PIN `0000` (the seed default) to reach the
-   authenticated surfaces. (If the operator has changed their PIN they pass it;
-   `0000` is the default.)
-4. **Provisioning failure / exit-144 degrade path.** If provisioning fails or
-   `provision-e2e.sh` / the browser drive exits with code **144** (the
-   Postgres + `nuxt dev` co-running race — not a product bug), follow the
-   degrade path: print "Playwright provisioning failed (exit-144 instability).
+1. **Run the Eyes provisioning recipe (`MATERIA.md` § Eyes) as step 1** —
+   always the first action of this phase, never skipped even if the
+   environment looks already provisioned (the recipe must be idempotent).
+2. **Export the service environment variables the recipe names** before
+   driving the browser, in the same command as the drive (shell state does not
+   persist between tool calls).
+3. **Authenticate** using the dev credentials from `MATERIA.md` § Run it to
+   reach any authenticated surfaces. (If the operator has changed the
+   credentials they pass them; the § Run it values are the default. Skip when
+   the app has no auth.)
+4. **Provisioning failure / instability degrade path.** If provisioning fails
+   or the browser drive exits with a signature `MATERIA.md` § Eyes lists as
+   known environment instability (not a product bug), follow the
+   degrade path: print "Eyes provisioning failed (known instability).
    Recording a note and stopping.", **write a stub report** (`source:
    ui-inspection`, `severity: low`, body noting the provisioning failure under
    `## Steps to reproduce` / `## Evidence`), and stop. **Never crash the
@@ -154,8 +130,7 @@ report (phase-level) before returning control cleanly.
    can reference it immediately).
 
 1. Visit each page from `docs/surface-map.md` § Pages **in surface-map order**,
-   in the **Pixel-5 device** viewport (`devices['Pixel 5']`, 393×851 — the same
-   device the `authenticated` project in `playwright.config.ts` uses).
+   at the **canonical viewport** (`MATERIA.md` § Eyes).
 2. For each surface, capture a **screenshot and a DOM snapshot** (the same
    "capture so judgment is grounded in observed output, not inference" technique
    `ui-review` uses) into the report folder as
@@ -163,18 +138,18 @@ report (phase-level) before returning control cleanly.
    `docs/bugs/_reports/<dated-slug>/<surface-slug>.html`.
 3. **Per-surface error recovery.** If a surface returns an HTTP error, fails to
    render, or its capture fails, record a note under the report's
-   `## Preconditions / data setup` section ("Surface `/workout/99` returned an
+   `## Preconditions / data setup` section ("Surface `<route>` returned an
    HTTP error; skipped") and **continue to the next surface** — the run does not
    abort. If **all** surfaces error and zero are captured, write a report with
    zero findings and a consolidated "all surfaces failed to load" note.
 
 ### Phase 3 — Judge
 
-1. Evaluate each captured surface against the visual rubric — **only**
-   `docs/standards/visual-language.md` and `docs/standards/ui-components.md`
-   (dark UI tokens, surface-tone ladder, no hard borders, colour semantics;
-   hooks own classes, no design in models). Anchor every finding to a **named
-   standard** it violates — no free-floating opinions.
+1. Evaluate each captured surface against the visual rubric — **only** the
+   repo's visual-language and UI-components standards under `docs/standards/`
+   (token discipline, surface conventions, semantic color roles, component
+   rules). Anchor every finding to a **named standard** it violates — no
+   free-floating opinions.
 2. Accumulate findings up to the **finding cap (default 20)**. The operator may
    pass `--effort low|medium|high` to lower/keep/raise the cap (low → fewer,
    medium → default 20, high → more). The chosen cap and effort level are
@@ -203,13 +178,13 @@ report (phase-level) before returning control cleanly.
    PR is the operator's review surface, mirroring `logs-to-specs`'
    PR-is-the-gate model — there is no second "approve" checkpoint). Sync `main`
    and branch `ui-inspection/<id>-<slug>`, write the report file and its
-   co-located captures, run `pnpm run check:docs` to verify link integrity,
+   co-located captures, run `node scripts/check-docs.mjs` to verify link integrity,
    commit, push `-u origin ui-inspection/<id>-<slug>`, and open a PR with
    `gh pr create` (title `ui-inspection: <title>`, body with the rendered report
    inline and a closing "Triage with `/fix-bug <id>` once this PR lands"). The
    only terminal paths that do **not** open a PR are the clean exits defined
-   earlier: the Phase 0 abort / unreachable-app exit, and the Phase 1 exit-144
-   degrade (which writes a stub report and stops).
+   earlier: the Phase 0 abort / unreachable-app exit, and the Phase 1
+   instability degrade (which writes a stub report and stops).
 5. Report the outcome to the operator: the path to the report, the finding
    count, whether the cap was hit, and the PR URL.
 
@@ -226,10 +201,11 @@ inspection-specific sections are filled as follows:
   severity among all findings (`low` if zero findings); `title: UI/UX
   inspection — <YYYY-MM-DD>`; `source_refs:` points at
   `docs/bugs/_reports/<dated-slug>/` when any captures exist.
-- **`## Steps to reproduce`** — describes the inspection run: provision, log in
-  at PIN `0000`, visit each surface in the Pixel-5 viewport.
-- **`## Expected`** — "All surfaces comply with visual-language.md and
-  ui-components.md standards."
+- **`## Steps to reproduce`** — describes the inspection run: provision,
+  authenticate with the dev credentials, visit each surface at the canonical
+  viewport.
+- **`## Expected`** — "All surfaces comply with the repo's visual standards
+  docs."
 - **`## Actual`** — "See the findings checklist in ## Evidence."
 - **`## Reproducibility`** — "Reproducible on demand; run `/ui-inspection` to
   regenerate."
@@ -240,7 +216,7 @@ inspection-specific sections are filled as follows:
 - **`## Workaround`** — "Not applicable; findings are cosmetic / UI-standard
   violations with no functional workaround."
 - **`## Open questions`** — populated only when an ambiguous violation is found
-  (e.g. unclear whether a border is allowlisted).
+  (e.g. unclear whether a treatment is allowlisted).
 
 **The `## Evidence` findings checklist.** Each finding is one list item carrying
 the **surface**, the **observed issue**, the **standard violated**, and an
@@ -251,7 +227,7 @@ the **surface**, the **observed issue**, the **standard violated**, and an
 
 <!-- Consolidated findings checklist from ui-inspection run -->
 - [ ] **[<surface>]** <observed issue>
-      Standard violated: <token or rule name from visual-language.md / ui-components.md>
+      Standard violated: <token or rule name from the repo's visual standards docs>
       Screenshot: <surface-slug>.png (if captured)
 ```
 
@@ -270,20 +246,19 @@ judgment basis:
 ```markdown
 ## Summary
 
-Automated UI/UX inspection run on <YYYY-MM-DD>. Visited <N> surfaces in the
-Pixel-5 viewport. Found <F> issues (cap: <cap>); <D> findings dropped.
-Judgment basis: docs/standards/visual-language.md and docs/standards/ui-components.md.
+Automated UI/UX inspection run on <YYYY-MM-DD>. Visited <N> surfaces at the
+canonical viewport. Found <F> issues (cap: <cap>); <D> findings dropped.
+Judgment basis: the repo's visual-language and UI-components standards.
 ```
 
 ## Scope
 
 This skill is **observe-and-report only**. It does **NOT**:
 
-- **Edit product files.** It never touches `pages/`, `components/`,
-  `composables/`, `server/`, `models/`, `contracts/`, schema, styles, or any
-  other product code or UI. Its **only writes** are the one report folder in
-  `docs/bugs/_reports/<dated-slug>/` — the `report.md` file and its co-located
-  captures (`<surface-slug>.{png,html}`).
+- **Edit product files.** It never touches product source, schema, styles, or
+  any other product code or UI. Its **only writes** are the one report folder
+  in `docs/bugs/_reports/<dated-slug>/` — the `report.md` file and its
+  co-located captures (`<surface-slug>.{png,html}`).
 - **Fix anything.** It records UI/UX violations; it never remedies them.
 - **Open a `ship-spec` or `fix-bug` run**, or trigger any downstream pipeline
   stage. Triage of the filed report (and any fix) is the operator's call via
@@ -291,7 +266,7 @@ This skill is **observe-and-report only**. It does **NOT**:
 - **Wire into `ship-spec`'s review loop** — that remains `ui-review`'s job. This
   is a standalone producer.
 - **Modify the `docs/bugs/_reports/` contract**, baseline visual regressions, or
-  pixel-diff. Judgment stays qualitative against the two rubric docs.
+  pixel-diff. Judgment stays qualitative against the visual standards docs.
 - **Survive session interruption.** It is not resumable mid-run; re-invoke from
   scratch (a fresh `id` is minted). An orphaned **report folder** from a crashed
   run is manually deletable and does not block a fresh run.
@@ -299,24 +274,25 @@ This skill is **observe-and-report only**. It does **NOT**:
 ## Rules
 
 - **Autostart before aborting.** When the Phase 0 liveness probe fails, start
-  the app (Docker path preferred, native no-Docker fallback) and re-probe before
-  giving up. The remediation-message clean exit is the **final** fallback, taken
-  only when autostart cannot make `localhost:3000` reachable — never the first
-  response to a down app.
-- **`bash scripts/provision-e2e.sh` is always step 1** of provisioning — never
+  the app (§ Run it recipe preferred, provisioning fallback second) and
+  re-probe before giving up. The remediation-message clean exit is the
+  **final** fallback, taken only when autostart cannot make the app reachable
+  — never the first response to a down app.
+- **The Eyes provisioning recipe is always step 1** of provisioning — never
   skipped even when the environment looks provisioned (its idempotency makes a
-  repeat call safe). The Phase 0 native-fallback autostart and Phase 1
-  provisioning both call it; the idempotency makes the repeat safe.
-- **Export the `PGHOST` / `PGUSER` / `PGPASSWORD` / `PGPORT` env block before
-  driving the browser** — mandatory on the no-Docker path.
-- **Degrade gracefully, never crash the session.** On exit-144 / provisioning
-  failure, write a stub report (`source: ui-inspection`, `severity: low`, body
-  notes the failure) and stop. Surface-level errors record a note and continue.
+  repeat call safe). The Phase 0 fallback autostart and Phase 1 provisioning
+  both call it; the idempotency makes the repeat safe.
+- **Export the service env block the recipe names before driving the
+  browser** — mandatory whenever the recipe defines one.
+- **Degrade gracefully, never crash the session.** On known instability /
+  provisioning failure, write a stub report (`source: ui-inspection`,
+  `severity: low`, body notes the failure) and stop. Surface-level errors
+  record a note and continue.
 - **Cap findings** at the default 20 (or the `--effort`-adjusted value), sort by
   severity before capping, and append the drop note when the cap is reached.
   Record the cap and effort level in `## Summary`.
-- **Judge against `visual-language.md` and `ui-components.md` only** — every
-  finding cites a named standard it violates; no free-floating opinions.
+- **Judge against the repo's visual standards docs only** — every finding
+  cites a named standard it violates; no free-floating opinions.
 - **One report per run with a fresh `id`.** Each invocation mints a new `id` and
   writes one report; multiple reports from successive runs coexist in the queue.
   De-duplication across runs is the operator's responsibility per the queue
@@ -328,15 +304,15 @@ This skill is **observe-and-report only**. It does **NOT**:
 
 ## Done when
 
-- The app was probed — and, when not already running, autostarted (Docker or
-  native fallback) and re-probed, or the clean remediation exit taken if it could
-  not be brought up — and the surface plan announced; the abort gate honored
-  (interactive) or auto-proceeded (Auto Mode).
-- Playwright was provisioned (or the exit-144 / failure degrade path was taken
-  and a stub report written).
+- The app was probed — and, when not already running, autostarted (§ Run it
+  recipe or provisioning fallback) and re-probed, or the clean remediation
+  exit taken if it could not be brought up — and the surface plan announced;
+  the abort gate honored (interactive) or auto-proceeded (Auto Mode).
+- The Eyes toolchain was provisioned (or the instability / failure degrade
+  path was taken and a stub report written).
 - Each surface in `docs/surface-map.md` § Pages was visited and captured (or its
   error recorded), and findings were judged and capped.
 - Exactly one conformant bug report was written to `docs/bugs/_reports/` with
   `source: ui-inspection`, and — on any run that completes past the Phase 0 gate
-  without taking the exit-144 degrade path — the branch was pushed and a PR
+  without taking the instability degrade path — the branch was pushed and a PR
   opened.

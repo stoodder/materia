@@ -211,7 +211,7 @@ workflow.
 4. **Verify link integrity, then stage + commit** the proposals, the
    renames, and the footer edits together:
 
-   Verify link integrity per the lifecycle invariant (`pnpm run check:docs`;
+   Verify link integrity per the lifecycle invariant (`node scripts/check-docs.mjs`;
    fix any links the new files introduce), then commit:
 
    ```bash
@@ -293,7 +293,7 @@ thin. `intake-spec`'s detector matches on the H1 plus `## Problem`,
 format → Link paths. The reason is identical: `intake-spec` adopts the
 body verbatim into `docs/specs/<dated-slug>/spec.md` at a different
 folder depth, so relative paths that resolve from `_proposed/` will
-silently break in `<dated-slug>/spec.md` and trip `pnpm run check:docs`
+silently break in `<dated-slug>/spec.md` and trip `node scripts/check-docs.mjs`
 downstream.
 
 ### Filename

@@ -8,7 +8,7 @@ description: Final gate for a feature — re-run `verify` for any tasks that def
 Take the finished tasks to a green, documented, open PR. Runs as a subagent in
 `ship-spec`; usable standalone once tasks are done. **Orchestrator-lane
 exception:** when step 1's behavioral re-check stands up a live stack
-(Postgres + Playwright + `nuxt dev`), that re-check must run in the
+(database + Eyes toolchain + dev server), that re-check must run in the
 orchestrator lane — foreground, exit code captured — never backgrounded
 inside a subagent, where a backgrounded launcher yields a false "exit 0"
 that masks a real failure (see step 1 and `ship-spec/SKILL.md`
@@ -46,7 +46,7 @@ acting on them wastes context.
    `STATUS.md`. For each task ID listed, look up its acceptance criteria in
    `tasks.md`; if any AC is user-visible, invoke the `verify` skill once over
    the merged branch covering the union of those ACs. When this re-check stands
-   up a long-lived stack (Postgres + Playwright + `nuxt dev`), run it in the
+   up a long-lived stack (database + Eyes toolchain + dev server), run it in the
    **foreground with explicit exit-code capture**, never `nohup … &` — a
    backgrounded launcher yields a false "exit 0" notification that masks a real
    failure (see `ship-spec/SKILL.md` § Orchestrator behavioral-verify lane).
@@ -62,30 +62,25 @@ acting on them wastes context.
 2. **Run the full gate** from the repo root and **fix everything it surfaces**
    (loop until all green, **≤3 rounds**):
 
-   **Gate preflight (deps + Node).** Before the first gate run, ensure the
+   **Gate preflight (deps + runtime).** Before the first gate run, ensure the
    environment is provisioned per
-   `.claude/skills/ship-spec/resources/env-preflight.md` (Node 24 via hard
-   PATH prefix; `pnpm install` when `node_modules` is absent — its
-   `nuxt prepare` postinstall generates `.nuxt/eslint.config.mjs`, whose
-   absence makes `pnpm lint` fail obscurely). If Docker Hub rate-limits block
-   the Docker gate, use that file's **host-fallback gate** (host Node 24 + a
-   local PostgreSQL 16 — a complete equivalent; record in the PR that the
-   fallback was used).
+   `.claude/skills/ship-spec/resources/env-preflight.md` (runtime → deps →
+   codegen → services; the concrete recipes and any documented fallback gates
+   live in `MATERIA.md` § Environment preflight — when a fallback gate is
+   used, record it in the PR).
 
-   - `pnpm lint` — ESLint/Prettier.
-   - `pnpm exec nuxt typecheck` — types.
-   - `pnpm test` — the sibling unit specs.
-   - `pnpm run check:docs` — docs cross-links.
+   The gate is every non-`none` row of `MATERIA.md` § Gate, in table order
+   (`lint` · `typecheck` · `test` · `test:e2e` where CI runs it ·
+   `check:docs` — `node scripts/check-docs.mjs`).
 
-   These are exactly what CI runs (`.github/workflows/ci.yml`), so green here
-   means green there.
+   These are exactly what CI runs, so green here means green there.
 
    **docs/skills-only gate profile.** When the cumulative diff is **zero-code
-   and all-markdown** — no `.ts`/`.vue`/`.mjs`/`.prisma` source changes and no
-   `.spec.ts` additions (the same predicate as `ship-spec` § Review's
-   markdown-only exemption) — `pnpm lint`, `pnpm exec nuxt typecheck`, and
-   `pnpm test` cover nothing on this branch. Declare them **no-ops for this
-   branch** and name `pnpm run check:docs` the **binding gate**, instead of
+   and all-markdown** — no source-code changes and no test additions (the
+   same predicate as `ship-spec` § Review's markdown-only exemption) — the
+   code gates (`lint`, `typecheck`, `test`) cover nothing on this branch.
+   Declare them **no-ops for this
+   branch** and name `node scripts/check-docs.mjs` the **binding gate**, instead of
    re-reasoning that conclusion each run. State the profile explicitly in the PR
    body. If the no-op gates can't even run (Node/deps gap), say so in the PR
    rather than claiming they passed — `check:docs` remains the gate of record
@@ -113,7 +108,7 @@ acting on them wastes context.
      finalize ran._" — not a Blocker; the operator's deletion was
      deliberate.
 
-   - **Re-run `pnpm run check:docs` against the staged (file-removed)
+   - **Re-run `node scripts/check-docs.mjs` against the staged (file-removed)
      working tree.** If green, commit the dequeue:
 
      ```bash
@@ -142,11 +137,14 @@ acting on them wastes context.
 
    - **Non-UI feature:** skip this step entirely. No gate check, no PR body
      mention.
-   - **UI-affecting feature:** require evidence of e2e test coverage. Check the
-     branch diff (`git diff origin/main...HEAD --name-only`) for any new or
-     updated files under `tests/e2e/`. Then check `STATUS.md` for a
+   - **UI-affecting feature:** require evidence of e2e test coverage. (When
+     `MATERIA.md` § Gate's `test:e2e` row is `none`, record
+     `e2e-coverage: skipped (no e2e suite)` in `STATUS.md` and skip this
+     gate.) Check the branch diff (`git diff origin/main...HEAD --name-only`)
+     for any new or updated files under the repo's e2e suite directory (named
+     in the `test:e2e` row's Notes). Then check `STATUS.md` for a
      `ui-coverage-waiver:` line. One of the following must be true:
-     - *Coverage present:* A file under `tests/e2e/` appears in the diff.
+     - *Coverage present:* A file under the e2e suite directory appears in the diff.
        Continue; note the spec paths in the PR body under a `## E2e coverage`
        section (see the PR-body section below).
      - *Waiver present:* `STATUS.md` contains a line matching the pattern
@@ -154,7 +152,7 @@ acting on them wastes context.
        Continue; render in the PR body: `### No e2e coverage added — rationale:
        <reason>` (still under PR-body coverage section).
      - *Neither:* Write to `STATUS.md` a `Blocker:` entry with exactly this
-       text: "UI-affecting feature — no `tests/e2e/` coverage and no
+       text: "UI-affecting feature — no e2e coverage and no
        `ui-coverage-waiver` recorded in STATUS.md". Commit + push, and **stop**
        — do not proceed to step 4. Resume once the blocker is cleared.
 
@@ -180,7 +178,7 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
 
    **E2e-coverage block in the PR body (UI features only).** If step 3'' passed
    with coverage present, render a `## E2e coverage` section listing the spec
-   paths (file paths under `tests/e2e/` that were added or updated in the diff).
+   paths (e2e files that were added or updated in the diff).
    If step 3'' passed with a waiver, render under the same section:
    `### No e2e coverage added — rationale: <reason>` (the `<reason>` is the
    text from the `ui-coverage-waiver:` line in STATUS.md). For non-UI features,
@@ -255,7 +253,7 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
      `STATUS.md` `## Notes`:
 
      - **Reason recorded** — one of:
-       `ui-review: skipped (exit-144 instability — degrade path)`, a
+       `ui-review: skipped (eyes-instability — degrade path)`, a
        `ui-proof: capture failed — <reason>` note, or `ui-proof/` absent
        because `ui-review` never ran under the `ui-coverage-waiver` path
        (then use `ui-coverage-waiver recorded` as the reason). Render a
@@ -332,8 +330,8 @@ follow from it:
   task ID and what it covered) in the PR body instead of re-running `verify` from
   scratch — step 1's re-check is satisfied by the recorded orchestrator-lane run.
 - **Gate can't run due to the env gap → state it in the PR body (named
-  gate-profile).** When a gate (`pnpm lint` / `nuxt typecheck` / `pnpm test`)
-  can't run because of the Node/deps env gap rather than a real failure, **say so
+  gate-profile).** When a code gate (`lint` / `typecheck` / `test`)
+  can't run because of the runtime/deps env gap rather than a real failure, **say so
   explicitly in the PR body** and name `check:docs` (or the host-fallback gate)
   as the gate of record — never claim a gate passed that did not run. This is an
   explicit gate-profile branch, parallel to step 2's docs/skills-only profile,
@@ -376,7 +374,7 @@ surface it. Resume once it's cleared.
 
 - `verify` succeeded for every `behavior-deferred` task (or behavior-deferred
   was empty).
-- `pnpm lint`, `nuxt typecheck`, `pnpm test`, and `check:docs` are all green.
+- Every non-`none` gate row in `MATERIA.md` § Gate is green.
 - Every acceptance criterion met; tasks marked done.
 - If the run came from a proposal: the proposal file has been `git rm`ed in
   a dedicated commit and the post-stage `check:docs` rerun was green.

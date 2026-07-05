@@ -86,7 +86,7 @@ network, no AI) enforces three layers:
 Run it from the repo root; it exits non-zero and lists every failure:
 
 ```bash
-pnpm run check:docs
+node scripts/check-docs.mjs
 ```
 
 CI runs it on every PR (the `docs` job in `.github/workflows/ci.yml`), so a

@@ -173,7 +173,7 @@ The directory is a **transient queue**:
      YAML frontmatter block, mints a `<dated-slug>`, and creates a
      `docs/bugs/<dated-slug>/` run folder on a `fix/<slug>` branch. At the
      terminal state (finalize), the report folder is staged for `git rm -r`,
-     `pnpm run check:docs` is re-run against the staged removal, and the dequeue
+     `node scripts/check-docs.mjs` is re-run against the staged removal, and the dequeue
      is committed as part of the finalize PR.
    - **Close** — delete the folder manually (e.g. `git rm -r` or via a follow-up
      PR). No state is persisted; closed reports leave no trace except in git
@@ -186,7 +186,7 @@ The directory is a **transient queue**:
 | Status | Who sets it | When |
 |---|---|---|
 | `reported` | producer (`/report-bug`) | Folder is written into `_reports/` |
-| _(removed by `/fix-bug`)_ | `/fix-bug` orchestrator at finalize | `/fix-bug` stages `git rm -r <report-folder>`, re-runs `pnpm run check:docs` against the staged removal, and commits the dequeue as part of the finalize PR (commit message pattern: `fix-bug(stake): dequeue report <id> from _reports/`) |
+| _(removed by `/fix-bug`)_ | `/fix-bug` orchestrator at finalize | `/fix-bug` stages `git rm -r <report-folder>`, re-runs `node scripts/check-docs.mjs` against the staged removal, and commits the dequeue as part of the finalize PR (commit message pattern: `fix-bug(stake): dequeue report <id> from _reports/`) |
 | _(closed manually)_ | operator | Folder deleted without a fix run; no trace except git history |
 
 If `/fix-bug` halts mid-run (Blocker, session crash, abort), the report folder
@@ -236,7 +236,6 @@ MUST:
 |---|---|---|
 | `bug-report` | [`/report-bug`](../../../.claude/skills/report-bug/SKILL.md) | The operator's raw bug description, refined via in-memory Q&A; on approve it branches, writes the report, and opens a PR |
 | `bugs-to-reports` | [`/bugs-to-reports`](../../../.claude/skills/bugs-to-reports/SKILL.md) | Gathered `bug-reports.md` hand-offs from `docs/specs/_improvements/**/`; drafts conformant reports and files them into `docs/bugs/_reports/`; `triage-retros` gathers the items but no longer writes queue files directly |
-| `exception-triage` | [`/exception-triage`](../../../.claude/skills/exception-triage/SKILL.md) | Unresolved Sentry issues via the Issues REST API; on approve writes reports + resolves the issue with a link-back comment |
 | `janitor` | [`/janitor`](../../../.claude/skills/janitor/SKILL.md) | Legacy key — carried only by reports still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
 | `ui-inspection` | [`/ui-inspection`](../../../.claude/skills/ui-inspection/SKILL.md) | The running app at `localhost:3000`, driven across `docs/surface-map.md § Pages` in the Pixel-5 viewport; judged against `visual-language.md` + `ui-components.md`. Writes one consolidated checklist report; captures co-located in the report folder as `<surface-slug>.{png,html}`. |
 
@@ -261,7 +260,7 @@ Resolves a selection **by frontmatter `id` only, never by folder name**.
 kebab rendering of the report's `title`).
 
 **Terminal-state dequeue lifecycle:** at finalize, `/fix-bug` stages
-`git rm -r docs/bugs/_reports/<dated-slug>/`, re-runs `pnpm run check:docs`
+`git rm -r docs/bugs/_reports/<dated-slug>/`, re-runs `node scripts/check-docs.mjs`
 against the staged removal, and commits the removal as part of the finalize PR.
 The dequeue commit message pattern is:
 

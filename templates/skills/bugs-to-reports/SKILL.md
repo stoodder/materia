@@ -204,7 +204,7 @@ On `approve`, run the write + rename steps first, then the git workflow.
 4. **Verify link integrity, then stage + commit** the reports, the renames, and
    the footer edits together:
 
-   Verify link integrity per the lifecycle invariant (`pnpm run check:docs`;
+   Verify link integrity per the lifecycle invariant (`node scripts/check-docs.mjs`;
    fix any links the new files introduce), then commit:
 
    ```bash

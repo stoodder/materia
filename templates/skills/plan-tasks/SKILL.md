@@ -1,6 +1,6 @@
 ---
 name: plan-tasks
-description: Decompose an architecture document into a dependency-ordered list of small, independently shippable tasks with testable acceptance criteria at docs/specs/<dated-slug>/tasks.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-ab24f9-lift-feeling). Stage 5 of the ship-spec pipeline.
+description: Decompose an architecture document into a dependency-ordered list of small, independently shippable tasks with testable acceptance criteria at docs/specs/<dated-slug>/tasks.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-ab24f9-csv-export). Stage 5 of the ship-spec pipeline.
 ---
 
 # plan-tasks — architecture → ordered tasks
@@ -30,9 +30,10 @@ acting on them wastes context.
 
 ## Environment
 
-If a `pnpm`/gate command fails oddly (wrong Node major, missing
-`node_modules`, Prisma engines, unreachable Postgres), apply the recipes in
-`.claude/skills/ship-spec/resources/env-preflight.md` before treating it as a
+If a gate command fails oddly (wrong runtime version, missing dependencies,
+stale codegen, an unreachable service), apply the recipes in
+`.claude/skills/ship-spec/resources/env-preflight.md` (concrete recipes:
+`MATERIA.md` § Environment preflight) before treating it as a
 real failure. In the orchestrator lane the session preflight has already run;
 standalone runs apply it on first use.
 
@@ -43,9 +44,11 @@ standalone runs apply it on first use.
    end-to-end route recipe sets the natural task order).
 
 2. **Decompose** into small tasks. Order by dependency, generally following the
-   layer direction: types → contracts → server route → composable → presentation
-   hook → page, plus schema/migration first when present. Each task should be a
-   coherent vertical or layer slice that can be reviewed and committed on its own.
+   repo's layer direction (lowest layer first — the dependency layering
+   `docs/standards/architecture.md` defines, e.g. types → wire contracts →
+   server → client state → presentation), plus schema/migration first when
+   present. Each task should be a coherent vertical or layer slice that can be
+   reviewed and committed on its own.
 
 3. **Specify each task**: id, **depends-on**, **model/effort**, area/files, scope, **testable
    acceptance criteria**, the standards/resource docs to read first, which
@@ -114,11 +117,11 @@ standalone runs apply it on first use.
    actionable per-task under the architecture-flagged override above —
    resolve that reconciliation here, at planning time, instead of making
    each implementer re-derive it. Worked example — **deferred, with
-   rationale:** a pure-recolor fix touching only `composables/ui/`
-   presentation hooks carries an empty floor and records "docs: deferred to
+   rationale:** a pure-recolor fix touching only presentation hooks carries
+   an empty floor and records "docs: deferred to
    docs-sync — presentation-only change; the standards docs keep no per-file
    inventory of plain presentation hooks". **In-floor:** a task adding a
-   `types/api/` alias updates `docs/standards/types-enums.md` in the same
+   new type alias updates the repo's types standard in the same
    commit — the doc describes the exact layout the task extends, and the
    task's files trigger the touch-`types/**` heuristic above.
 
@@ -147,8 +150,8 @@ standalone runs apply it on first use.
      "`git grep X` returns 0" only converge after later tasks or docs-sync
      land, so a mid-pipeline task can't satisfy them literally. Phrase them
      as the task's own contribution ("contributes 0 broken links"; "> 0"
-     rather than an exact hit count), and exclude `prisma/migrations/**`,
-     `docs/**`, and absence-asserting tests from any grep-zero AC. Route
+     rather than an exact hit count), and exclude generated migration
+     directories, `docs/**`, and absence-asserting tests from any grep-zero AC. Route
      pure grep/case checks to the review pass or to spy assertions — a
      runtime `it()` doing a naive substring test self-matches the assertion
      literal or the file's own comments naming the forbidden API.
@@ -214,19 +217,19 @@ moved route 404s only in the real app. Three rules:
   and reconcile every hit into a task. This catches request-body fields, utils,
   and copy strings that an architecture-level inventory misses. Record the grep
   and its hit count so `implement-task` and the reviewer can re-run it.
-  The ripple grep must reach past the obvious `Xxx.from(` call pattern: also
-  match `.fromPrisma(` call sites and `XxxPayload`-typed literals — a model
-  gaining a **required** payload field breaks every typed literal in sibling
-  specs, not just `.from()` callers. And whenever contracts are deleted,
-  enumerate `contracts/index.ts` alongside `models/index.ts`/`types/index.ts`:
-  the barrel re-exports the deleted contracts and breaks even when no other
-  file references them.
-- **A task that renames or changes a source file owns that file's sibling
-  `.spec.ts`.** Pair each source-file rename/change with its sibling-spec updates
-  **in the same task**, so every task leaves its relevant specs green and is
-  independently gate-green. Never defer a renamed file's sibling-spec update to a
-  later task — that leaves the earlier task's specs red against
-  `implement-task`'s "relevant specs green" gate and creates an artificial
+  The ripple grep must reach past the obvious primary-constructor call
+  pattern: also match secondary construction call sites and typed literals —
+  a model gaining a **required** wire field breaks every typed literal in
+  sibling tests, not just direct constructor callers. And whenever exported
+  shapes are deleted, enumerate the repo's barrel/index files: a barrel
+  re-exports the deleted items and breaks even when no other file references
+  them.
+- **A task that renames or changes a source file owns that file's tests.**
+  Pair each source-file rename/change with its test updates
+  **in the same task**, so every task leaves its relevant tests green and is
+  independently gate-green. Never defer a renamed file's test update to a
+  later task — that leaves the earlier task's tests red against
+  `implement-task`'s "relevant tests green" gate and creates an artificial
   inter-task dependency.
 
 ## Done when
@@ -239,8 +242,8 @@ moved route 404s only in the real app. Three rules:
 ## Non-product features (skills, docs, tooling)
 
 For non-product features (a Claude Code skill, a docs change, a CLI helper),
-the layer stratification in step 2 (types → contracts → server route →
-composable → presentation hook → page) does not apply. Defaults:
+the layer stratification in step 2 (the repo's dependency layering) does not
+apply. Defaults:
 
 - **Single-file decomposition.** Tasks are typically section-by-section
   edits of one markdown file (e.g. `.claude/skills/<name>/SKILL.md`); serial
@@ -249,7 +252,7 @@ composable → presentation hook → page) does not apply. Defaults:
   `docs/README.md`, `surface-map.md`, `glossary.md`) are still deferred to
   `finalize` → `docs-sync` exactly as in product runs.
 - **`Tests:` field can be `none — verification is read-against-spec`.**
-  Markdown tasks have no sibling `.spec.ts`; the spec-adherence reviewer is
+  Markdown tasks have no test files; the spec-adherence reviewer is
   the only adversarial check that has anything to bite on (see
   `implement-task/SKILL.md` step 5 markdown exemption).
 - **Parallel-execution summary** will usually read "no parallel-safe pair" —
@@ -265,30 +268,27 @@ apply unchanged — no e2e task is derived.
 
 The e2e-authoring task must:
 
-1. **Scope.** Target file `tests/e2e/<feature>.spec.ts` (where `<feature>` is
-   derived from the spec slug, e.g. `tests/e2e/workout-logging.spec.ts` for
-   feature slug `workout-logging`).
+1. **Scope.** Target file in the repo's e2e suite directory, named for the
+   feature slug (the directory and naming convention:
+   `docs/standards/testing.md` § End-to-end).
 
-2. **Edit `playwright.config.ts` `testMatch` in the same task.** The task must
-   update the `authenticated` project's manually-enumerated `testMatch` array
-   (not a glob — see evidence at `docs/standards/testing.md` § End-to-end and
-   `architecture.md` § Reuse map) by adding an entry for the new spec:
-   `'**/tests/e2e/<feature>.spec.ts'`. This edit is **required scope**, not a
-   separate task.
+2. **Register the new spec with the e2e runner in the same task.** If the
+   repo's e2e runner enumerates specs explicitly (a `testMatch`-style list
+   rather than a glob — `docs/standards/testing.md` § End-to-end says which),
+   the task must add the new spec's entry to that list. This edit is
+   **required scope**, not a separate task.
 
-3. **Encode the `testMatch` trap.** The task must carry an acceptance criterion
-   that explicitly verifies `pnpm test:e2e` actually **picks up and runs** the new
-   spec (i.e. the test is executed, not just the file committed). The AC must
-   assert the presence of the `testMatch` entry, not merely the file's existence
-   — this prevents the silent gap where a spec is committed but never run because
-   the `testMatch` entry was forgotten.
+3. **Encode the registration trap.** The task must carry an acceptance
+   criterion that explicitly verifies the `test:e2e` gate (`MATERIA.md`
+   § Gate) actually **picks up and runs** the new spec (i.e. the test is
+   executed, not just the file committed) — this prevents the silent gap
+   where a spec is committed but never run because its registration was
+   forgotten.
 
 4. **Follow testing conventions.** The derived task's acceptance criteria and
    specification must reference `docs/standards/testing.md` § End-to-end —
-   specifically the `authenticated` project, seed-value assertions (e.g.
-   `expect(input).toHaveValue('370')` asserting known seed values), and Pixel-5
-   viewport (`devices['Pixel 5']`) conventions. No Vitest config changes needed
-   (`tests/e2e/**` is already excluded).
+   seed-value assertions against known fixture values, and the canonical
+   viewport/surface from `MATERIA.md` § Eyes.
 
 The existing § Non-product features **defaults are not overridden** for
 non-UI features: the serial order, per-task decomposition, and

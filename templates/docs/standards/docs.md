@@ -26,7 +26,7 @@
 - **Size discipline.** A resource doc drifting past ~300 lines is usually
   restating a standard, keeping prose in table cells, or hosting a fact that
   belongs elsewhere. Compress before splitting; split before exceeding.
-- **Mechanically checked.** `pnpm run check:docs` enforces the checkable
+- **Mechanically checked.** `node scripts/check-docs.mjs` enforces the checkable
   subset: links and `#anchor` fragments resolve, no change-narration phrases,
   no over-long lines, the glossary is alphabetical, no duplicated long lines
   (copy-paste drift). CI runs it on every PR.
@@ -71,7 +71,7 @@ rewrite the section.
 
 - Every file under `docs/` root, `docs/resources/`, `docs/standards/`, and
   `docs/_templates/`, plus `CLAUDE.md`.
-- Enforcement: `scripts/check-docs.mjs` (`pnpm run check:docs`; the `docs` CI
+- Enforcement: `scripts/check-docs.mjs` (`node scripts/check-docs.mjs`; the `docs` CI
   job).
 
 ## Related
