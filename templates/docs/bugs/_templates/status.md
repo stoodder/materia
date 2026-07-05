@@ -28,6 +28,9 @@
 - [ ] 3. plan-tasks — tasks.md
 - [ ] 4. implement — per-task (see `tasks.md` statuses)
 - [ ] 5. review — post-implementation (multi-angle)
+  <!-- unlike the spec template (where review has no checkbox), the bug
+       template gives review a row; the orchestrator ticks it when the
+       review loop converges. -->
 - [ ] 6. docs-sync — doc edits committed
 - [ ] 7. docs-audit — audit clean, no HIGH/MEDIUM
 - [ ] 8. finalize — behavior re-check, gate green, PR opened (dequeue)

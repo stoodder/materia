@@ -117,9 +117,10 @@ Resolve, concretely enough to write `MATERIA.md` § Stack, § Run it, and
 - The intended gate commands (`lint` · `typecheck` · `test` · `test:e2e`).
   These may not exist yet — the bootstrap epic creates them; write the
   *intended* commands into § Gate **plus its Bootstrap-grace marker line**
-  (naming the gate spec's proposal id) so pre-bootstrap runs skip-and-record
-  missing commands instead of blocking. Skip the marker only when the
-  commands already exist at init time.
+  (the gate spec's proposal id is minted in Phase 7 — write the marker now,
+  patch the id there) so pre-bootstrap runs skip-and-record missing commands
+  instead of blocking. Skip the marker only when the commands already exist
+  at init time.
 
 ### Phase 4 — Capability probes
 
@@ -157,7 +158,11 @@ On approve, in this order:
 
 1. **Copy the skeleton:** `templates/docs/**` → `docs/`;
    `templates/scripts/check-docs.mjs` → `scripts/`; `templates/skills/**` →
-   `.claude/skills/` **minus the pruned skills**.
+   `.claude/skills/` **minus the pruned skills**. Pruning a **producer**
+   additionally deletes its row from the target queue's producers table
+   (`docs/specs/_proposed/README.md` / `docs/bugs/_reports/README.md`) and
+   any other registration surface that links it — a pruned skill must never
+   stay advertised (and its dangling link would fail the self-check).
 2. **Write `MATERIA.md`** from `templates/MATERIA.md`: fill every slot,
    mark absent capabilities `none`, fill `## Pruned skills`, delete the
    `<!-- init: … -->` comments.
@@ -185,7 +190,8 @@ On approve, in this order:
    contradictory.
 6. **Fill the remaining doc slots:** `docs/README.md`, `docs/contributing.md`
    (DoD + touch-map rows), `docs/glossary.md` (seed the Phase 1 entities +
-   the § Voice & tone vocabulary). Extend `.claude/settings.json`
+   the § Voice & tone vocabulary), and `docs/surface-map.md` (adapt its
+   tables to the surface vocabulary; delete its init comment). Extend `.claude/settings.json`
    `permissions.allow` (shipped with the template — routine git/gh/docs-check
    commands) with this stack's own routine commands: the § Gate rows, the
    § Run it recipe, the package manager, and the § Eyes provisioning script.
@@ -196,10 +202,10 @@ On approve, in this order:
 8. **Remove `templates/` and `.claude/skills/materia-init/`** — everything now lives
    in its materialized location; git history keeps the originals. (Skip this
    step if the engineer asked to keep them at the checkpoint.)
-9. **Self-check:** run `node scripts/check-docs.mjs` and fix every failure it
-   reports — init must hand over a green docs gate. Grep the materialized
-   tree for any surviving `{{` slot marker or `<!-- init:` comment; zero is
-   the exit criterion.
+9. **Interim check:** run `node scripts/check-docs.mjs` and fix every failure
+   it reports. This is the *interim* pass — the **binding** self-check runs at
+   the end of Phase 7, after the bootstrap epic exists, so the green-gate
+   guarantee covers everything init writes.
 10. **Commit** in logical chunks (skeleton · MATERIA/CLAUDE · product brief ·
     standards · README/cleanup) directly to `main`, and push if a remote exists.
 
@@ -207,9 +213,18 @@ On approve, in this order:
 
 Write the app's first epic per the `docs/epics/README.md` contract —
 `epic.md` (+ a brief `research.md` when Phase 3 involved real trade-off
-research) — and 2–N member proposals into `docs/specs/_proposed/` with
-`source: epic`, `epic: <epic-id>`, and a `depends_on` graph. Shape the
-members as genuinely single-shippable units; the typical decomposition:
+research; **if you skip `research.md`, also remove `epic.md`'s templated
+link to it**) — and 2–N member proposals into `docs/specs/_proposed/` with
+`source: epic`, `epic: <epic-id>`, and a `depends_on` graph. **Link hygiene
+in epic/proposal bodies:** write any reference to another repo file in
+backtick/arrow form (`` text → path ``), never as a live markdown link —
+these bodies are copied into differently-nested folders later, and a live
+relative link is wrong in at least one location. Mint every member's `id`
+**first**, then **patch the `MATERIA.md` § Gate Bootstrap-grace marker with
+S1's real proposal id** (Phase 6 wrote the marker with the id pending — a
+marker still reading `<S1 proposal id>` after this step is a defect the
+final self-check must catch). Shape the members as genuinely
+single-shippable units; the typical decomposition:
 
 - **S1 — App skeleton + local gate:** framework init, folder layout per
   `docs/standards/architecture.md`, every § Gate row real and green, the
@@ -222,6 +237,13 @@ members as genuinely single-shippable units; the typical decomposition:
   recipe as a real script, one smoke e2e, the `test:e2e` gate row live.
 - **S4+ —** the first thin vertical slice of the actual product, per
   Phase 1 — shaped by the brief's § Product principles.
+
+**Final self-check (binding):** re-run `node scripts/check-docs.mjs` over
+the full tree — now including the epic + proposals — and fix every failure;
+then grep for any surviving `{{` slot marker, `<!-- init:` comment, or
+angle-bracket placeholder (`<S1 proposal id>`, `<epic-id>`-style tokens
+outside code fences). Zero on all three is the exit criterion; init never
+hands over a repo that fails its own docs gate.
 
 Commit the epic + members to `main` (still bootstrap), then hand off: tell
 the engineer to run `/materia-ship-spec` (or `/materia-ship-spec --auto`) — from this point
@@ -239,7 +261,10 @@ next step (`/materia-ship-spec`).
 
 Re-running init **before any bootstrap spec has shipped** is safe: it
 re-enters the survey with the previous `MATERIA.md` answers as defaults and
-rewrites the materialized files wholesale. After the pipeline has started
+rewrites the materialized files wholesale. (After the default Phase 6
+self-removal, first restore the inputs from history —
+`git checkout <pre-init-sha> -- templates/ .claude/skills/materia-init/` —
+then re-invoke; § Idempotency assumes that restore.) After the pipeline has started
 shipping, init refuses to run wholesale (the repo is now the pipeline's to
 evolve) and instead points at the right tool: `MATERIA.md` edits for stack
 changes, `/materia-propose-spec` for new capabilities, re-copying a single pruned

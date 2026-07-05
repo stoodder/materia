@@ -35,7 +35,7 @@ status: running
 
      ## Entry <N> — <stage-id> — <ISO timestamp>
 
-     - **Stage:** <intake | design | architecture | plan-tasks | implement-task:T<n> | docs-sync | docs-audit | finalize | orchestrator (pipeline-level)>
+     - **Stage:** <intake | design | ui-test-plan | architecture | plan-tasks | implement-task:T<n> | docs-sync | docs-audit | reconcile-epic | finalize | orchestrator (pipeline-level)>
      - **Outcome:** ok | blocked | failed | partial
      - **Subagent return:** ok          <!-- or: crashed | empty | malformed -->
 

@@ -58,6 +58,7 @@ user do math", "one obvious action per screen"}}
 ## Related
 
 - [MATERIA.md](../MATERIA.md) § Identity — the one-liner this expands.
-- [standards/visual-language.md](standards/visual-language.md) — the binding
-  visual rules derived from § Design feel & taste (when the repo ships UI).
+- `visual-language → docs/standards/visual-language.md` — the binding
+  visual rules derived from § Design feel & taste (UI repos only; on a
+  non-UI repo this pointer is simply inert — no file to link).
 - [glossary.md](glossary.md) — the vocabulary § Voice & tone seeds.

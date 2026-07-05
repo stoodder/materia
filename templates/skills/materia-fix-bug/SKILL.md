@@ -209,8 +209,18 @@ spawn, resolve the tier first and pass it as the `model` override — see
 5. **review** (orchestrator-spawned, post-implementation). After every task in
    `tasks.md` is `[x]`. See § Review for the angles and the loop.
 
-6. **finalize** (`materia-finalize`) → docs-sync, gate, dequeue report, PR opened.
-   See § Finalize for the spawn prompt additions.
+6. **docs-sync** (`materia-docs-sync`) → doc edits committed. Spawned after the
+   review loop exits clean — same contract as the spec pipeline, with the
+   bug-run folder and `bug-analysis.md` standing in for `architecture.md` as
+   the intent source alongside `spec`-equivalent report body.
+
+7. **docs-audit** (`materia-docs-audit`) → verify pass. **Orchestrator-managed
+   loop identical to `materia-ship-spec/SKILL.md` § Pipeline step 9:** on
+   HIGH/MEDIUM findings re-spawn docs-sync then docs-audit; **bound ≤2
+   rounds**; on non-convergence write `Blocker` and stop.
+
+8. **finalize** (`materia-finalize`) → behavior re-check, gate, dequeue report,
+   PR opened. See § Finalize for the spawn prompt additions.
 
 After each stage: update `STATUS.md` (tick the stage, set `Next`), then
 commit + push.
@@ -249,18 +259,20 @@ orchestrator parameterises the path in the spawn prompt.
 > `STATUS.md`, and commit under `docs/bugs/<dated-slug>/`. `bug-analysis.md`'s
 > **Affected files** list is the "Affected existing resources" set for your
 > § step-3 reconciliation and pre-task grep validation.
-> **Stage-number override:** your procedure says "tick stage 4 in STATUS.md",
+> **Stage-number override:** your procedure says "tick stage 5 in STATUS.md",
 > but in this bug-run STATUS.md `materia-plan-tasks` is **stage 3** (stage 4 is
-> `implement`). Tick **stage 3**, not stage 4, and set `Next: T1`.
+> `implement`). Tick **stage 3**, not stage 5, and set `Next: T1`.
 
 **Why the stage-number override matters.** `materia-plan-tasks/SKILL.md` step 6
-hard-codes "tick stage 4" because in the *spec* pipeline plan-tasks is stage 4.
-The bug pipeline's stage list is `reproduce-bug · bug-analysis · plan-tasks ·
-implement · review · finalize`, so plan-tasks is stage 3. Without the override
-the reused skill would tick stage 4 (`implement`) on its own commit. This is a
-spawn-prompt content override, not a fork — `materia-plan-tasks/SKILL.md` is untouched.
-(The other reused stage skills don't collide: `materia-finalize` is stage 6 in both
-numberings, and `implement`/`review` stage ticks are orchestrator-driven here.)
+hard-codes "tick stage 5" because in the *spec* pipeline plan-tasks is
+checkbox row 5. The bug pipeline's stage list is `reproduce-bug ·
+bug-analysis · plan-tasks · implement · review · docs-sync · docs-audit ·
+finalize`, so plan-tasks is stage 3. Without the override the reused skill
+would tick stage 5 (`review`) on its own commit. This is a spawn-prompt
+content override, not a fork — `materia-plan-tasks/SKILL.md` is untouched.
+(The other reused stage skills don't collide: `materia-finalize` carries its
+own per-template row numbers — row 9 spec / row 8 bug — and the
+`implement`/`review`/docs-stage ticks are orchestrator-driven here.)
 
 Three consequences the template + sub-skill must guarantee so the substitution
 is lossless:
@@ -317,8 +329,8 @@ intact in the cumulative diff.
 ## Finalize (dequeue + PR)
 
 Spawn the `materia-finalize` skill with the bug-run folder path and the dequeue target.
-`materia-finalize` runs its normal docs-sync → behavior re-check → gate → PR flow
-unchanged. The **one bug-run delta is the dequeue**, and it must be driven
+`materia-finalize` runs its normal behavior re-check → gate → PR flow
+unchanged (docs-sync ⇄ docs-audit already ran as stages 6–7). The **one bug-run delta is the dequeue**, and it must be driven
 **explicitly by this orchestrator's spawn prompt** — not left to `materia-finalize`'s
 built-in step 4'.
 
@@ -377,8 +389,10 @@ the schema, touchpoints, flush discipline, and robustness rules are identical.
 **Bug-run specifics:**
 - `retro.md` lives at `docs/bugs/<dated-slug>/retro.md` (sibling to
   `STATUS.md`, seeded from `docs/specs/_templates/retro.md`).
-- Stage-id vocabulary for entries extends to: `materia-reproduce-bug`, `materia-bug-analysis`,
-  `materia-plan-tasks`, `implement-task:T<n>`, `materia-finalize`, `orchestrator (pipeline-level)`.
+- Stage-id vocabulary for entries extends to: `reproduce-bug`, `bug-analysis`,
+  `plan-tasks`, `implement-task:T<n>`, `docs-sync`, `docs-audit`, `finalize`,
+  `orchestrator (pipeline-level)` — Stage ids stay bare per
+  `docs/standards/skills.md` § Namespace prefix.
 - `materia-triage-retros` harvests `docs/bugs/**/retro.md` alongside spec retros
   (its Discovery globs both trees), so this retro joins the same
   self-improvement loop.

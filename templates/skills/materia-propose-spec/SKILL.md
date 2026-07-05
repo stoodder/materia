@@ -360,19 +360,19 @@ heading itself MUST be present so `materia-intake-spec`'s detector matches.
 
 ### Link paths
 
-Use **absolute-from-repo-root** link paths in proposal bodies (e.g.
-`docs/standards/visual-language.md`, not `../resources/today.md` or
-`../../docs/standards/types-enums.md`). Proposal files live under
-`docs/specs/_proposed/<file>.md`, but `materia-intake-spec` adopts the body
-**verbatim** into `docs/specs/<dated-slug>/spec.md` at a different folder
-depth. Relative paths that resolve from `_proposed/` will silently break
-when copied into `<dated-slug>/spec.md` (and trigger `node scripts/check-docs.mjs`
-failures downstream). Absolute-from-repo-root paths resolve identically
-from both locations.
+**Never write a live markdown link to another repo file in a proposal
+body.** Proposal files live under `docs/specs/_proposed/<file>.md`, but
+`materia-intake-spec` adopts the body **verbatim** into
+`docs/specs/<dated-slug>/spec.md` at a different folder depth — a relative
+link that resolves from one location is broken from the other, and
+`check-docs.mjs` resolves every link against the containing file's own
+directory (repo-root-style paths do NOT resolve from either location).
 
-Markdown link forms are fine; just keep the path absolute from the repo
-root: `[visual-language](docs/standards/visual-language.md)`, not
-`[visual-language](../../docs/standards/visual-language.md)`.
+Reference repo files in backtick/arrow prose form instead —
+`visual-language → docs/standards/visual-language.md` — which `check:docs`
+exempts and which reads correctly from any depth. This matches the standing
+spawn-contract authoring rule the pipeline already applies to
+`docs/specs/**` text.
 
 ### Filename
 

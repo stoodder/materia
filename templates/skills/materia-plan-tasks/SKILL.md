@@ -187,7 +187,7 @@ standalone runs apply it on first use.
    pointing at a non-link path fails the gate. Authors default to wikilink
    syntax, so apply this when writing every cross-reference.
 
-6. **Persist:** tick stage 4 in `STATUS.md` and set `Next: T1`; commit + push. **Orchestrator-lane exception:** when spawned by `materia-ship-spec`/`materia-fix-bug`, do **not** tick `STATUS.md` or commit it — the orchestrator owns both (see `materia-ship-spec/SKILL.md` § STATUS.md ownership (orchestrator lane)); write only your own artifact.
+6. **Persist:** tick stage 5 in `STATUS.md` and set `Next: T1`; commit + push. **Orchestrator-lane exception:** when spawned by `materia-ship-spec`/`materia-fix-bug`, do **not** tick `STATUS.md` or commit it — the orchestrator owns both (see `materia-ship-spec/SKILL.md` § STATUS.md ownership (orchestrator lane)); write only your own artifact.
 
 **Internal-consistency ripple edits are permitted.** State in each task (or once
 in the `tasks.md` preamble) that an implementer MAY make small ripple edits

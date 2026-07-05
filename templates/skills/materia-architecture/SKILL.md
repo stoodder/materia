@@ -164,7 +164,7 @@ standalone runs apply it on first use.
    fenced block, or write them as plain prose without the bracket
    form.
 
-8. **Persist:** tick stage 3 in `STATUS.md` and set `Next: plan-tasks`; commit
+8. **Persist:** tick stage 4 in `STATUS.md` and set `Next: plan-tasks`; commit
    + push. **Orchestrator-lane exception:** when spawned by `materia-ship-spec`/`materia-fix-bug`, do **not** tick `STATUS.md` or commit it — the orchestrator owns both (see `materia-ship-spec/SKILL.md` § STATUS.md ownership (orchestrator lane)); write only your own artifact.
 
 ## Done when
