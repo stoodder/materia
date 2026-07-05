@@ -20,7 +20,7 @@ or delete it without consulting any other artifact.
 ```
 docs/specs/_proposed/
   README.md            ← this file (the contract)
-  <YYYY-MM-DD-id-slug>.md         ← top-level files = pending proposals
+  <YYYY-MM-DD-HHMMSS-id-slug>.md         ← top-level files = pending proposals
   …
 ```
 
@@ -76,7 +76,8 @@ status: proposed                         # always literally `proposed` while in 
 - **`title`** — one-line human-readable title. SHOULD match the spec body's
   H1. Used in indexes and PR descriptions.
 - **`date`** — ISO date (`YYYY-MM-DD`) the proposal was drafted. Drives the
-  filename prefix.
+  date part of the filename prefix (the `HHMMSS` time part is minted at
+  write time, not stored in frontmatter).
 - **`status`** — always literally `proposed` while the file lives here. The
   field exists for forward-compat with possible workflow states (`triaged`,
   `accepted`, `rejected`) but in v1 the only terminal states are
@@ -88,16 +89,18 @@ status: proposed                         # always literally `proposed` while in 
 Files are named:
 
 ```
-<YYYY-MM-DD>-<id>-<slug>.md
+<YYYY-MM-DD-HHMMSS>-<id>-<slug>.md
 ```
 
-This matches the **`<yyyy-mm-dd>-<rand>-<slug>` convention** used by
+This matches the **`<yyyy-mm-dd-hhmmss>-<rand>-<slug>` convention** used by
 spec folders under `docs/specs/` and improvement folders under
 `docs/specs/_improvements/` — the `id` and the `<rand>` token are
 the same shape (a 6-character base36 token) and serve the same
 role: a chronologically-sortable, globally-unique disambiguator.
 
-- `<YYYY-MM-DD>` — the frontmatter `date`.
+- `<YYYY-MM-DD-HHMMSS>` — the creation timestamp, UTC: the date part
+  matches the frontmatter `date`; the time part is minted at write time
+  (`date -u +%Y-%m-%d-%H%M%S`) so queue files `ls`-sort in creation order.
 - `<id>` — the frontmatter `id` (6-char base36; the same shape as
   `<rand>` in spec/improvement folder names).
 - `<slug>` — a short kebab-case rendering of the title; see § Kebab-slug
@@ -134,13 +137,13 @@ Examples:
 ### Filename examples
 
 ```
-2026-06-14-a91c2m-undo-action-is-one-tap.md
-2026-06-14-7b30dx-remove-dead-runtime-config-public-app.md
-2026-06-21-9c4f1q-export-csv-chart-data.md
+2026-06-14-084112-a91c2m-undo-action-is-one-tap.md
+2026-06-14-160940-7b30dx-remove-dead-runtime-config-public-app.md
+2026-06-21-113059-9c4f1q-export-csv-chart-data.md
 ```
 
 Notice how each filename mirrors the shape of a spec folder name like
-`2026-06-13-ab24f9-csv-export` — the same `<date>-<rand>-<slug>` triad,
+`2026-06-13-142530-ab24f9-csv-export` — the same `<date-time>-<rand>-<slug>` triad,
 just with a `.md` suffix on a file rather than a `/` on a directory.
 
 The filename is a **convenience for humans and `ls` ordering only**.

@@ -84,9 +84,9 @@ a pure hand-off to `suggestions-to-specs`); `bugs[]` is the defect bucket
 
 ## Common rules
 
-- **Title case** — split `slug` on `-`, drop the leading date + rand tokens
-  (first two segments), title-case the rest joined with spaces
-  (`2026-06-21-9c2a3-weekly-roundup` → `Weekly Roundup`).
+- **Title case** — strip the leading `<yyyy-mm-dd-hhmmss>-<rand>-` prefix
+  from `slug`, split the remainder on `-`, and title-case it joined with
+  spaces (`2026-06-21-134501-9c2a3-weekly-roundup` → `Weekly Roundup`).
 - **Traceback format** — per `actions-contract.md` § Findings traceback
   format, identical across all artifacts.
 - **Formatting** — before staging any commit that touches generated

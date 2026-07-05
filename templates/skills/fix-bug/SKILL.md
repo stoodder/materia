@@ -18,12 +18,12 @@ Read `docs/bugs/README.md` and `docs/bugs/_reports/README.md` first.
 Every bug run lives at `docs/bugs/<dated-slug>/`, where `<dated-slug>` is:
 
 ```
-<yyyy-mm-dd>-<rand>-<slug>
+<yyyy-mm-dd-hhmmss>-<rand>-<slug>
 ```
 
-— today's date, a fresh 6-char base36 token, and a short kebab slug
-derived from the report's `title` field. Example:
-`docs/bugs/2026-06-20-a3f2bc-set-log-undo-discards-wrong-row/`.
+— the UTC creation timestamp (to the second), a fresh 6-char base36 token,
+and a short kebab slug derived from the report's `title` field. Example:
+`docs/bugs/2026-06-20-101533-a3f2bc-set-log-undo-discards-wrong-row/`.
 
 The branch uses the bare `fix/<slug>` prefix (not the dated folder name).
 Use the full `<dated-slug>` in every path you write or read; the bare `<slug>`
@@ -54,7 +54,7 @@ exists, **resume — do not restart**.
    that folder. The id match is the canonical resume key — it survives slug
    collisions.
 2. **Slug suffix match** — match by the kebab `<slug>` suffix of the bug-run
-   folder. If multiple folders share a suffix, prefer the newest by date prefix.
+   folder. If multiple folders share a suffix, prefer the newest by timestamp prefix.
 
 Then:
 
@@ -158,7 +158,8 @@ claim before spawning any subagent. This makes the pick durable on disk.
 
 1. Strip frontmatter from the report file (BOM + `^---\r?\n` opener +
    `^---\r?\n` closer). The body is the bare bug report text.
-2. Mint `<dated-slug>`: today's date + fresh 6-char base36 token + the kebab
+2. Mint `<dated-slug>`: the UTC creation timestamp
+   (`date -u +%Y-%m-%d-%H%M%S`) + fresh 6-char base36 token + the kebab
    slug derived from `frontmatter.title`.
 3. Create branch `fix/<slug>` off latest `main`.
 4. `mkdir docs/bugs/<dated-slug>/`.

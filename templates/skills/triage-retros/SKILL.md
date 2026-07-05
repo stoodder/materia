@@ -142,7 +142,7 @@ git fetch origin main
 git checkout -b chore/triage-retros-<dated-slug> origin/main
 ```
 
-**Minting the `<dated-slug>`** — same `<yyyy-mm-dd>-<rand>-<slug>` convention
+**Minting the `<dated-slug>`** — same `<yyyy-mm-dd-hhmmss>-<rand>-<slug>` convention
 as `intake-spec`: today's ISO date; a fresh 6-char base36 token
 (`LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6`); a short kebab-case
 batch slug by this heuristic (operator may rename folder + branch after the

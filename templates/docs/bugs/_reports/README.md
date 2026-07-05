@@ -89,18 +89,20 @@ status: reported                            # always literally `reported` while 
 Report folders are named:
 
 ```
-<YYYY-MM-DD>-<id>-<slug>/
+<YYYY-MM-DD-HHMMSS>-<id>-<slug>/
 ```
 
-and the report itself lives at `<YYYY-MM-DD>-<id>-<slug>/report.md`.
+and the report itself lives at `<YYYY-MM-DD-HHMMSS>-<id>-<slug>/report.md`.
 
-This matches the `<yyyy-mm-dd>-<rand>-<slug>` convention used by spec folders
+This matches the `<yyyy-mm-dd-hhmmss>-<rand>-<slug>` convention used by spec folders
 under `docs/specs/` and improvement folders under `docs/specs/_improvements/` —
 the `id` and the `<rand>` token are the same shape (a 6-character base36
 token) and serve the same role: a chronologically-sortable, globally-unique
 disambiguator.
 
-- `<YYYY-MM-DD>` — the frontmatter `date`.
+- `<YYYY-MM-DD-HHMMSS>` — the creation timestamp, UTC: the date part
+  matches the frontmatter `date`; the time part is minted at write time
+  (`date -u +%Y-%m-%d-%H%M%S`) so report folders `ls`-sort in creation order.
 - `<id>` — the frontmatter `id` (6-char base36).
 - `<slug>` — a short kebab-case rendering of the title; see
   [`docs/specs/_proposed/README.md`](../../specs/_proposed/README.md) § Kebab-slug derivation

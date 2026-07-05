@@ -65,11 +65,11 @@ No unprocessed pipeline-improvements.md found under docs/specs/_improvements/. N
 ```
 
 For each surviving path, derive `{ path, slug }` where `slug` is the parent
-folder name (e.g. `2026-06-21-9c2a3-weekly-roundup`). Print the set:
+folder name (e.g. `2026-06-21-134501-9c2a3-weekly-roundup`). Print the set:
 
 ```
 Found <N> unprocessed improvement plan(s):
-  - docs/specs/_improvements/2026-06-21-9c2a3-weekly-roundup/pipeline-improvements.md  (weekly-roundup)
+  - docs/specs/_improvements/2026-06-21-134501-9c2a3-weekly-roundup/pipeline-improvements.md  (weekly-roundup)
   …
 ```
 

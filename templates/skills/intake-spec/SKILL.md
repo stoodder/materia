@@ -47,20 +47,23 @@ Every spec folder is uniquely identified by a timestamped, kebab-case folder
 name:
 
 ```
-<yyyy-mm-dd>-<rand>-<slug>
+<yyyy-mm-dd-hhmmss>-<rand>-<slug>
 ```
 
-- `<yyyy-mm-dd>` — today's date in ISO form (the date intake runs).
+- `<yyyy-mm-dd-hhmmss>` — the creation timestamp: today's date plus the
+  time-of-day to the second, UTC (`date -u +%Y-%m-%d-%H%M%S`) — minted the
+  moment intake creates the folder, so sibling folders `ls`-sort in true
+  creation order.
 - `<rand>` — a 6-character base36 token (lowercase a–z and 0–9), freshly generated per spec
   (e.g. `ab24f9`). Use `LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6` — never
   reuse a previous one.
 - `<slug>` — short, kebab-case, feature-descriptive (e.g. `rest-timer`,
   `exercise-swaps`).
 
-Example: `2026-06-13-ab24f9-csv-export`.
+Example: `2026-06-13-142530-ab24f9-csv-export`.
 
-This keeps every spec folder globally unique and chronologically sortable, even
-if two specs share a slug. Use the full dated form everywhere a path is written
+This keeps every spec folder globally unique and chronologically sortable —
+to the second — even if two specs share a slug or a day. Use the full dated form everywhere a path is written
 — in code, in docs, and in `STATUS.md`'s `Slug:` field (which stores the
 **full dated folder name**, not just the bare `<slug>`).
 
@@ -80,7 +83,7 @@ standalone runs apply it on first use.
    you use the project's vocabulary.
 
 2. **Mint the `<dated-slug>` (skipped on the proposal path).** Per the rule
-   above (today's date + a fresh 6-char base36 token + a short kebab slug), create
+   above (the UTC creation timestamp + a fresh 6-char base36 token + a short kebab slug), create
    `docs/specs/<dated-slug>/` and seed `STATUS.md` from
    `docs/specs/_templates/status.md`, filling `Slug:` with the full dated
    folder name and the `## Provenance` block with `—` in every field (ad-hoc

@@ -60,7 +60,7 @@ git checkout main && git pull
 git checkout -b propose/from-suggestions-<YYYY-MM-DD>
 ```
 
-`<YYYY-MM-DD>` is today's date (same-day collision + dirty-pull handling
+`<YYYY-MM-DD>` is today's date (branch names stay date-only; same-day collision + dirty-pull handling
 per the lifecycle).
 
 For each surviving path, derive `{ path, slug }` where `slug` is the
@@ -299,7 +299,7 @@ downstream.
 ### Filename
 
 ```
-<YYYY-MM-DD>-<id>-<slug>.md
+<YYYY-MM-DD-HHMMSS>-<id>-<slug>.md
 ```
 
 `<slug>` is derived from `title` via the normative kebab-slug algorithm

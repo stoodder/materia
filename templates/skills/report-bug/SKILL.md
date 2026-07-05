@@ -341,7 +341,7 @@ break there; absolute paths resolve identically from both locations.
 The report lives at:
 
 ```
-docs/bugs/_reports/<YYYY-MM-DD>-<id>-<slug>/report.md
+docs/bugs/_reports/<YYYY-MM-DD-HHMMSS>-<id>-<slug>/report.md
 ```
 
 `<slug>` is derived from the title via the **normative kebab-slug algorithm** in

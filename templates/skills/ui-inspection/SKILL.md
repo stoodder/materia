@@ -124,8 +124,9 @@ report (phase-level) before returning control cleanly.
    6-char base36 `id` (`LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6`),
    derive the `<slug>` from the fixed title `UI/UX inspection — <YYYY-MM-DD>`
    via the normative kebab-slug algorithm in
-   `docs/specs/_proposed/README.md` § Kebab-slug derivation, and assemble
-   `<dated-slug>` as `<YYYY-MM-DD>-<id>-<slug>`. This is the same mint recipe
+   `docs/specs/_proposed/README.md` § Kebab-slug derivation, mint the
+   timestamp prefix with `date -u +%Y-%m-%d-%H%M%S`, and assemble
+   `<dated-slug>` as `<YYYY-MM-DD-HHMMSS>-<id>-<slug>`. This is the same mint recipe
    used in Phase 4 (formerly step 1 of Phase 4; it now lives here so captures
    can reference it immediately).
 
@@ -164,7 +165,7 @@ report (phase-level) before returning control cleanly.
 ### Phase 4 — Assemble & write
 
 1. **Use the `<dated-slug>` minted at the top of Phase 2** — do not mint again
-   here. The `id`, `<slug>`, and assembled `<dated-slug>` (`<YYYY-MM-DD>-<id>-<slug>`)
+   here. The `id`, `<slug>`, and assembled `<dated-slug>` (`<YYYY-MM-DD-HHMMSS>-<id>-<slug>`)
    are already in scope from Phase 2 step 0.
 2. **Build the report** with the standard frontmatter and the full 13-section
    body required by the queue contract (see § Report shape below). The findings

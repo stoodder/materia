@@ -220,7 +220,7 @@ On `approve` (nothing has touched the repo before this):
    `git checkout -b epic/<epic-id>-<kebab-slug>` (dirty-pull + collision
    handling per the lifecycle).
 2. Write `docs/epics/<dated-slug>/epic.md` + `research.md`, then each
-   member proposal to `docs/specs/_proposed/<YYYY-MM-DD>-<id>-<slug>.md`.
+   member proposal to `docs/specs/_proposed/<YYYY-MM-DD-HHMMSS>-<id>-<slug>.md`.
 3. Verify link integrity per the lifecycle invariant, then commit — one
    commit for the epic folder, one for the member proposals, message prefix
    `propose-epic:`.

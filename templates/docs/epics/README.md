@@ -17,13 +17,13 @@ maintains them as member specs ship. Anything else reads but does not write.
 
 ## What lives here
 
-One folder per epic, named with the same `<yyyy-mm-dd>-<rand>-<slug>` triad
+One folder per epic, named with the same `<yyyy-mm-dd-hhmmss>-<rand>-<slug>` triad
 used by spec folders, improvement folders, and proposal filenames:
 
 ```
 docs/epics/
   README.md                            ← this file (the contract)
-  <yyyy-mm-dd>-<rand>-<slug>/
+  <yyyy-mm-dd-hhmmss>-<rand>-<slug>/
     epic.md                            ← the epic document (format below)
     research.md                        ← synthesized research brief + sources
 ```

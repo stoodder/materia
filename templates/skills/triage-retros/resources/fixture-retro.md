@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-slug: 2026-06-18-abcde-fixture-verification
+slug: 2026-06-18-120000-abcde-fixture-verification
 branch: fixture/verification
 started_at: 2026-06-18T10:00:00Z
 finalized_at: 2026-06-18T10:30:00Z

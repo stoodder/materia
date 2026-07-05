@@ -3,20 +3,20 @@
 Each feature gets its own **timestamped folder** here, named
 
 ```
-docs/specs/<yyyy-mm-dd>-<rand>-<slug>/
+docs/specs/<yyyy-mm-dd-hhmmss>-<rand>-<slug>/
 ```
 
-— today's date, a fresh 6-character base36 token (e.g. `ab24f9`), and a
-short kebab-case feature slug. Example:
-`docs/specs/2026-06-13-ab24f9-csv-export/`. This makes every spec folder
-globally unique and chronologically sortable, even when two features share a
-slug. The bare `<slug>` is still used for the branch name (e.g. `csv-export`);
+— the UTC creation timestamp to the second, a fresh 6-character base36
+token (e.g. `ab24f9`), and a short kebab-case feature slug. Example:
+`docs/specs/2026-06-13-142530-ab24f9-csv-export/`. This makes every spec folder
+globally unique and chronologically sortable — in true creation order, even
+when two features share a slug or a day. The bare `<slug>` is still used for the branch name (e.g. `csv-export`);
 the full dated form is used everywhere a path is written.
 
 Each folder holds the artifacts the pipeline produces, in order:
 
 ```
-docs/specs/<yyyy-mm-dd>-<rand>-<slug>/
+docs/specs/<yyyy-mm-dd-hhmmss>-<rand>-<slug>/
   STATUS.md        ← resumable pipeline state (stages done, next stage/task, blocker, PR, ## Provenance block)
   spec.md          ← what & why (problem, users, acceptance criteria)
   design.md        ← UX flows, screens, states (UI-gated — absent on non-UI runs)
@@ -112,7 +112,7 @@ trend toward empty.
 
 The frontmatter contract (`id`, `source`, `source_refs`, `title`, `date`,
 `status: proposed`) and the filename pattern
-(`<YYYY-MM-DD>-<id>-<slug>.md`, matching the `<yyyy-mm-dd>-<rand>-<slug>`
+(`<YYYY-MM-DD-HHMMSS>-<id>-<slug>.md`, matching the `<yyyy-mm-dd-hhmmss>-<rand>-<slug>`
 shape used by spec and improvement folders) are documented in
 [`_proposed/README.md`](_proposed/README.md). Any producer that drops a file
 there MUST conform; any consumer that reads from there MAY rely on it.

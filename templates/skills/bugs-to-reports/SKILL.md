@@ -58,7 +58,7 @@ git checkout main && git pull
 git checkout -b file/from-bug-reports-<YYYY-MM-DD>
 ```
 
-`<YYYY-MM-DD>` is today's date (same-day collision + dirty-pull handling per
+`<YYYY-MM-DD>` is today's date (branch names stay date-only; same-day collision + dirty-pull handling per
 the lifecycle).
 
 For each surviving path, derive `{ path, slug }` where `slug` is the parent
@@ -286,7 +286,7 @@ The body **MUST NOT** repeat metadata already in the frontmatter (no second
 ### Folder
 
 The report lives at `docs/bugs/_reports/<dated-slug>/report.md`, where
-`<dated-slug>` is `<YYYY-MM-DD>-<id>-<slug>`.
+`<dated-slug>` is `<YYYY-MM-DD-HHMMSS>-<id>-<slug>`.
 
 `<slug>` is derived from `title` via the normative kebab-slug algorithm at
 [`docs/specs/_proposed/README.md` § Kebab-slug

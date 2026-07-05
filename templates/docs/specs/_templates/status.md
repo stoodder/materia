@@ -2,7 +2,7 @@
      resume across sessions. Every stage updates it, then commits + pushes. -->
 # <Feature> — status
 
-- **Slug:** <dated-slug>  <!-- full folder name: yyyy-mm-dd-<rand>-<slug> -->
+- **Slug:** <dated-slug>  <!-- full folder name: yyyy-mm-dd-hhmmss-<rand>-<slug> -->
 - **Branch:** <type>/<slug>  <!-- branch uses the bare slug, not the dated folder name -->
 - **Updated:** <date>
 

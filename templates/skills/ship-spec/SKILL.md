@@ -42,12 +42,13 @@ pays a discovery-and-recovery pass before task work can start.
 Every spec lives at `docs/specs/<dated-slug>/`, where `<dated-slug>` is
 
 ```
-<yyyy-mm-dd>-<rand>-<slug>
+<yyyy-mm-dd-hhmmss>-<rand>-<slug>
 ```
 
-— today's date, a fresh 6-char base36 token, and a short kebab slug (see
+— the UTC creation timestamp (to the second), a fresh 6-char base36 token,
+and a short kebab slug (see
 `intake-spec` for the full rule). Example:
-`docs/specs/2026-06-13-ab24f9-csv-export/`. Use the full dated form in every
+`docs/specs/2026-06-13-142530-ab24f9-csv-export/`. Use the full dated form in every
 path you write or read; the bare `<slug>` is only the human-readable suffix.
 
 ## Resume (run this first, every time)
@@ -64,8 +65,8 @@ restart**.
    `docs/specs/_proposed/`, resume that folder. The id match is the canonical
    resume key — it survives slug collisions.
 2. **Slug suffix match** — match by the kebab `<slug>` suffix of the spec
-   folder (the date+rand prefix can be anything). If multiple folders share a
-   suffix, prefer the newest by date prefix.
+   folder (the timestamp+rand prefix can be anything). If multiple folders share a
+   suffix, prefer the newest by timestamp prefix.
 
 Then:
 

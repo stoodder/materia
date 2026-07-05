@@ -174,7 +174,10 @@ rerun), append a short hex suffix (`openssl rand -hex 2`).
 - **Zero-work exit** — nothing to do → print why and end the turn; no
   branch, no files, no PR.
 - **Id minting** — `LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6` (a
-  fresh 6-char base36 token; the single canonical command). Never reuse an
+  fresh 6-char base36 token; the single canonical command). The filename/
+  folder timestamp prefix is minted alongside it:
+  `date -u +%Y-%m-%d-%H%M%S` (UTC, to the second — creation order is the
+  sort order). Never reuse an
   id on disk in either queue or visible in the recent merge log. On a
   filename/folder collision, regenerate once and retry; a second collision
   halts with the colliding path.

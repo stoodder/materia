@@ -77,8 +77,8 @@ breadth over depth — most defaults come from a few canonical docs.
   `docs/standards/workflow.md`.
 
 **Read for exemplars:** glance at 1–2 existing specs in `docs/specs/`
-(e.g. `2026-06-13-230ee-csv-export/spec.md`,
-`2026-06-14-3b4d3-csv-export/spec.md`) so the proposal matches the
+(e.g. `2026-06-13-091215-230ee-csv-export/spec.md`,
+`2026-06-14-103007-3b4d3-csv-export/spec.md`) so the proposal matches the
 quality bar set by what already shipped.
 
 This context-loading happens **silently** — the user shouldn't see a wall
@@ -377,10 +377,10 @@ root: `[visual-language](docs/standards/visual-language.md)`, not
 ### Filename
 
 ```
-<YYYY-MM-DD>-<id>-<slug>.md
+<YYYY-MM-DD-HHMMSS>-<id>-<slug>.md
 ```
 
-This matches the **`<yyyy-mm-dd>-<rand>-<slug>` convention** used by
+This matches the **`<yyyy-mm-dd-hhmmss>-<rand>-<slug>` convention** used by
 spec folders and improvement folders — same shape, just a file rather
 than a directory. The `source` field is in frontmatter only, not in the
 filename.
