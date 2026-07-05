@@ -15,7 +15,7 @@
 
 | Resource (doc) | Change |
 |---|---|
-| [<entity>](../../resources/<entity>.md) | … |
+| `<entity>` — resources/<entity>.md | … |
 
 ## New resources (if any)
 

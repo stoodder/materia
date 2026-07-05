@@ -67,8 +67,7 @@ status: reported                            # always literally `reported` while 
   convention; no enum is enforced.
 - **`severity`** — a **required** closed enum: `low | medium | high | critical`.
   Gives the downstream `/materia-fix-bug` consumer a stable field to filter and
-  prioritize on. Justified by the repo's "enums for closed string sets" rule
-  ([`docs/standards/types-enums.md`](../../standards/types-enums.md)). The
+  prioritize on (a closed set, deliberately — never free text). The
   `severity` field mirrors the "Severity & impact" H2 section in the report
   body; both must agree.
 - **`title`** — one-line human-readable title. SHOULD match the report body's
