@@ -770,6 +770,10 @@ Build the body from the plan so each change is explained and traceable:
 9. **schema_version note** — if the plan's `schema_version` was unrecognised,
    say so, so the reviewer can sanity-check the parse.
 
+The PR body closes with the Materia sigil naming
+`materia-apply-pipeline-improvements` as the caster
+(`docs/standards/skills.md` § PR attribution — the Materia sigil).
+
 ### PR-URL backfill
 
 Once `gh pr create` returns the URL, rewrite the `<filled by PR open>`

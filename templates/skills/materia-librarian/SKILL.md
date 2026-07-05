@@ -142,6 +142,9 @@ git push -u origin librarian/sweep-<YYYY-MM-DD>
 gh pr create --title "librarian: docs-drift sweep <YYYY-MM-DD>" --body "<body>"
 ```
 
+The `<body>` closes with the Materia sigil naming `materia-librarian` as the
+caster (`docs/standards/skills.md` § PR attribution — the Materia sigil).
+
 The PR body carries: the fix list (one line each, with the oracle that proved
 the drift), the skipped list with rationales, the needs-human notes, and the
 deferred remainder. In the remote execution environment (no `gh` CLI), use

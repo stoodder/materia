@@ -120,7 +120,8 @@ the operator saying up front "don't wait for me."
     `STATUS.md` § Notes and the retro entry that made the call.
   - **After finalize** — § Merge watch runs, through to the merge.
   - **PR transparency** — instruct finalize (spawn prompt) to append one line
-    to the PR body: `> Autopilot run (--auto): operator checkpoints
+    to the PR body (above the closing Materia sigil, which stays last):
+    `> Autopilot run (--auto): operator checkpoints
     auto-accepted; this PR auto-merges once CI is green.`
 - **What does NOT change:** Blockers still stop the run. Autopilot never
   overrides a `Blocker`, widens a loop bound (review ≤3, docs ≤2, gate ≤3,

@@ -203,13 +203,38 @@ rerun), append a short hex suffix (`openssl rand -hex 2`).
   manually.
 - **One PR per run, no auto-merge.** PR body carries the rendered entries
   inline (reviewers read without fetching) plus the dropped/skipped list
-  with one-line rationales — nothing is silently discarded.
+  with one-line rationales — nothing is silently discarded. The body's last
+  element is the Materia sigil (§ PR attribution — the Materia sigil).
 - **PR tooling** — `gh pr create` locally; in the remote execution
   environment there is **no `gh` CLI** — open the PR via the GitHub MCP
   `create_pull_request` tool (same title/body). Both paths produce the same
   PR.
 - **No session survival** — an interrupted run is re-invoked fresh; a stray
   pre-push branch is deleted or pushed manually by the operator.
+
+### PR attribution — the Materia sigil
+
+Every PR any Materia skill opens closes its body with the **sigil** — the
+harness's attribution footer. It is always the last element of the PR body,
+after a horizontal rule, with the casting skill's name substituted:
+
+```markdown
+---
+
+🔮 Forged with [Materia](https://github.com/stoodder/materia) · cast by `materia-<skill>` · *equipped skills level up with use*
+```
+
+- `materia-<skill>` = the skill that opened the PR (`materia-finalize` names
+  the orchestrator that drove it instead — `materia-ship-spec` or
+  `materia-fix-bug` — since finalize ships on their behalf).
+- One sigil per PR, always last — CI-fix pushes, remediation rounds, and PR
+  body edits never duplicate or reposition it.
+- The sigil is attribution, not content: skills never cite it, and reviewers
+  can ignore it. Keep the line's shape stable so it stays greppable
+  (`Forged with [Materia]`).
+- The "levels up" clause is literal: merged work feeds `retro.md` →
+  `materia-triage-retros` → `materia-apply-pipeline-improvements`, which
+  edits these skills in place.
 
 ### Registration surfaces — update in the same change
 

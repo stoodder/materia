@@ -182,7 +182,8 @@ report (phase-level) before returning control cleanly.
    co-located captures, run `node scripts/check-docs.mjs` to verify link integrity,
    commit, push `-u origin ui-inspection/<id>-<slug>`, and open a PR with
    `gh pr create` (title `ui-inspection: <title>`, body with the rendered report
-   inline and a closing "Triage with `/materia-fix-bug <id>` once this PR lands"). The
+   inline, a closing "Triage with `/materia-fix-bug <id>` once this PR lands",
+   and the Materia sigil last — `docs/standards/skills.md` § PR attribution). The
    only terminal paths that do **not** open a PR are the clean exits defined
    earlier: the Phase 0 abort / unreachable-app exit, and the Phase 1
    instability degrade (which writes a stub report and stops).

@@ -120,6 +120,9 @@ git push -u origin janitor/sweep-<YYYY-MM-DD>
 gh pr create --title "janitor: standards-drift sweep <YYYY-MM-DD>" --body "<body>"
 ```
 
+The `<body>` closes with the Materia sigil naming `materia-janitor` as the
+caster (`docs/standards/skills.md` § PR attribution — the Materia sigil).
+
 A gate failure a fix caused is fixed on the branch before pushing; a fix that
 can't be made green is reverted and demoted to a needs-human note. The PR body
 carries the fix list (each naming its standard rule), skips, needs-human

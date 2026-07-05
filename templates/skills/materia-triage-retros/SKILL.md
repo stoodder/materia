@@ -540,7 +540,9 @@ naming the file + commit SHA and the unwind options (`git reset HEAD~1` /
 
 ## PR open
 
-Exactly one PR against `main`. No `--draft`, no auto-merge — the operator
+Exactly one PR against `main`, its body closing with the Materia sigil
+naming `materia-triage-retros` as the caster (`docs/standards/skills.md`
+§ PR attribution — the Materia sigil). No `--draft`, no auto-merge — the operator
 merges after review. **Tooling:** `gh pr create` locally; in the remote
 environment (no `gh` CLI) use the GitHub MCP `create_pull_request` with the
 same base/head/title/body. Everything else is tool-agnostic.

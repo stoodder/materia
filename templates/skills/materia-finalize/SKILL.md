@@ -168,7 +168,11 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
    the approach, the tasks shipped, and the gate status (lint/typecheck/tests/docs
    green; behavior re-verified for deferred tasks; docs were reconciled + audited
    by the preceding docs-sync ⇄ docs-audit stages; e2e coverage present or waived).
-   Link the `docs/specs/<dated-slug>/` artifacts.
+   Link the `docs/specs/<dated-slug>/` artifacts. Close the body with the
+   Materia sigil (`docs/standards/skills.md` § PR attribution — the Materia
+   sigil), naming the driving orchestrator (`materia-ship-spec` /
+   `materia-fix-bug`) as the caster; it stays the last element through every
+   later body edit.
 
    **PR-creation tool.** Use `gh pr create` when the `gh` CLI is available. In
    the remote execution environment there is **no `gh` CLI** — open the PR via
