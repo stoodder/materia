@@ -26,7 +26,7 @@ acting on them wastes context.
 
 ## Recommended tier
 
-`sonnet/medium` — see [tier vocabulary](../ship-spec/resources/tiers.md) for the model and effort definitions. Decomposing a well-specified architecture into task slices is systematic bookkeeping; the natural task order is set by layer dependencies.
+`sonnet/medium` — see `MATERIA.md` § Tiers for the model and effort definitions. Decomposing a well-specified architecture into task slices is systematic bookkeeping; the natural task order is set by layer dependencies.
 
 ## Environment
 
@@ -55,7 +55,7 @@ standalone runs apply it on first use.
    sibling specs to add/change, and a **docs-scope floor**.
 
    **Model/effort.** Assign each task a tier from the vocabulary at
-   [`../ship-spec/resources/tiers.md`](../ship-spec/resources/tiers.md),
+   `MATERIA.md` § Tiers,
    drawn from the three complexity buckets:
 
    - **markdown-only / bookkeeping / single-doc-edit** → `haiku/low`
@@ -69,7 +69,7 @@ standalone runs apply it on first use.
 
    The tier governs which model (and effort guidance) the `implement-task`
    subagent runs under. An absent `Model/effort` field falls back to `opus/high`
-   (matching the `tiers.md` vocabulary).
+   (matching the `MATERIA.md` § Tiers vocabulary).
 
    The **docs-scope floor** is the minimum set of docs the task must update at
    commit time, derived from `docs/contributing.md`'s touch-X→update-Y rows

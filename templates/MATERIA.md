@@ -114,6 +114,65 @@ type casts at the storage boundary). `none` if § Surface gates
 must preserve user-entered values", "all writes go through the ORM, never raw
 SQL", transaction rules}}
 
+## Tiers
+
+The single source of truth for model/effort routing — every skill that
+declares a `## Recommended tier`, every `tasks.md` `Model/effort` field, and
+every review-angle `Tier` column resolves against this section. One
+representation everywhere: the token pair **`<model>/<effort>`**
+(e.g. `sonnet/medium`).
+
+### Model set
+
+The models available for spawn routing in this repo, and their availability:
+
+| Model | Availability | Notes |
+|---|---|---|
+| {{e.g. haiku}} | {{default}} | {{cheap/mechanical units}} |
+| {{e.g. sonnet}} | {{default}} | |
+| {{e.g. opus}} | {{default}} | {{the fallback tier}} |
+| {{e.g. a premium tier}} | {{opt-in — see below, or omit the row entirely}} | {{billed differently, reserved for the highest-judgement units}} |
+
+- **`default`** — resolves whenever a unit declares it.
+- **`opt-in`** — resolves **only** when the operator has explicitly enabled it
+  (flip this cell to `default`, or give a per-run instruction that the
+  orchestrator records in `STATUS.md` § Notes). Otherwise a unit declaring it
+  coerces to the fallback with the standard one-line note. This is how a
+  premium, per-token-billed model stays available to the routing vocabulary
+  without ever being spent silently.
+- A model a skill declares that is **not in the table at all** coerces to the
+  fallback (see § Coercion) — canonical skills may name tiers this repo
+  doesn't carry; that is expected, not an error.
+
+### Fallback
+
+The single fallback pair is **{{e.g. opus/high}}**. It applies to any absent
+/ malformed / out-of-table / not-enabled / `Agent`-rejected tier. The
+fallback never blocks a run.
+
+### Effort set
+
+`low · medium · high · xhigh` — advisory-only; never an `Agent` parameter.
+The matching guidance sentence is injected into the spawn prompt verbatim:
+
+| effort | Guidance sentence injected into the spawn prompt |
+|---|---|
+| `low` | "Run this at low reasoning effort — it's mechanical; don't over-deliberate." |
+| `medium` | "Run this at medium reasoning effort." |
+| `high` | "Run this at high reasoning effort — reason carefully before acting." |
+| `xhigh` | "Run this at maximum reasoning effort — this is the highest-stakes unit; be exhaustive." |
+
+### Coercion
+
+When a tier value is absent, syntactically malformed, not in the model set,
+or not enabled, coerce to the fallback and record a one-line note:
+
+```
+tier-fallback: <unit> … → <fallback> (<reason>)
+```
+
+Never block the run for a bad tier value.
+
 ## Review angles
 
 The standard review fan-out is defined in `ship-spec/SKILL.md` § Review

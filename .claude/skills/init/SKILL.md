@@ -96,6 +96,7 @@ Each probe maps to a `MATERIA.md` section and a prune decision:
 | Does it persist data? | § Surface gates § Data-affecting, § Data layer | the data-safety review angle (recorded in § Data layer as `none`) |
 | Any extra review angles the domain demands (a11y, perf budgets, compliance)? | § Review angles | — |
 | Anything unusual about cold-start (runtime versions, codegen, services)? | § Environment preflight | — |
+| Which models are available for spawn routing, and is any premium tier opt-in? (Sensible default: haiku/sonnet/opus as `default`, the premium tier as `opt-in`; the fallback pair.) | § Tiers | — (a declared model outside the set coerces to the fallback) |
 
 Skills that are never pruned: the two orchestrators, all pipeline mid-stages,
 `propose-spec`, `propose-epic`, `reconcile-epic`, `report-bug`,
@@ -106,8 +107,9 @@ Skills that are never pruned: the two orchestrators, all pipeline mid-stages,
 
 Draft everything in-memory and present one confirmation block: the § Identity
 sentence, the stack, the § Gate table, the surface-gate patterns, the Eyes
-choice, the prune list with reasons, and the bootstrap epic's proposed member
-specs (titles + one-liners). Reply verbs, with producer-lifecycle semantics
+choice, the § Tiers model set (availability + fallback), the prune list with
+reasons, and the bootstrap epic's proposed member specs (titles +
+one-liners). Reply verbs, with producer-lifecycle semantics
 (`docs/standards/skills.md` § Producer lifecycle once materialized):
 `approve` · `edit: <feedback>` · `cancel`. Nothing is written until
 `approve`.

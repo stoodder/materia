@@ -44,7 +44,7 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
 
 ## Recommended tier
 
-`sonnet/high` — see [tier vocabulary](../ship-spec/resources/tiers.md) for
+`sonnet/high` — see `MATERIA.md` § Tiers for
 the model and effort definitions. Reproducing a bug requires careful reasoning
 to locate the right test surface (the module that actually owns the invariant),
 write a test that fails for the real reason (not a harness/timeout/setup

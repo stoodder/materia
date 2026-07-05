@@ -21,19 +21,6 @@
 - **Bug-source:** <`source` from the report frontmatter, or `—`>
 - **Bug-severity:** <`severity` from the report frontmatter, or `—`>
 
-## Fable posture
-
-<!-- The orchestrator owns this block (like ## Provenance). Written once at run
-     start from the `--with-fable` invocation flag; the Resume gate reads it so
-     a resumed run keeps the same posture rather than silently reverting. Flag
-     spelling + dash-variant tolerance: docs/standards/skills.md § The
-     --with-fable argument. -->
-
-- **fable:** coerced (no `--with-fable` at invocation)
-  <!-- or: unlocked (`--with-fable` passed at invocation) -->
-- **Note:** <optional free-text; e.g. why the posture affects nothing on a run
-  whose fable-tagged catalog is itself mid-change>
-
 ## Stages
 
 - [ ] 1. reproduce-bug — reproduction.md + failing tests (RED gate: stage ticks only when reproduction confirmed RED)
@@ -87,7 +74,4 @@
      - missing `docs-sync:` row → the docs-sync stage creates it
      - missing `## Bug-report provenance` block → `finalize` treats as ad-hoc
        (no report dequeue)
-     - missing `## Fable posture` block (a `STATUS.md` predating this
-       feature) → resumes as `coerced` — never assume `unlocked` when the
-       block is silent
      New runs should always fill these in. -->

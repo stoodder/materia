@@ -31,22 +31,9 @@
        `reconcile-epic` stage (pipeline mode) between docs-audit and
        finalize — see ship-spec/SKILL.md § Pipeline. -->
 
-## Fable posture
-
-<!-- The orchestrator owns this block (like ## Provenance). Written once at run
-     start from the `--with-fable` invocation flag; the Resume gate reads it so
-     a resumed run keeps the same posture rather than silently reverting. Flag
-     spelling + dash-variant tolerance: docs/standards/skills.md § The
-     --with-fable argument. -->
-
-- **fable:** coerced (no `--with-fable` at invocation)
-  <!-- or: unlocked (`--with-fable` passed at invocation) -->
-- **Note:** <optional free-text; e.g. why the posture affects nothing on a run
-  whose fable-tagged catalog is itself mid-change>
-
 ## Autopilot posture
 
-<!-- The orchestrator owns this block (like ## Fable posture). Written once at
+<!-- The orchestrator owns this block (like ## Provenance). Written once at
      run start from the `--auto` invocation flag; the Resume gate preserves it
      (an explicit `--auto` on a resume upgrades off → on; nothing downgrades
      implicitly). `on` ⇒ operator checkpoints auto-accept grounded defaults
@@ -185,9 +172,6 @@
      - missing `docs-sync:` row → the docs-sync stage creates it
      - missing `## Provenance` block → `finalize` treats as ad-hoc (no
        proposal dequeue)
-     - missing `## Fable posture` block (a `STATUS.md` predating this
-       feature) → resumes as `coerced` — never assume `unlocked` when the
-       block is silent
      - missing `## Autopilot posture` block → resumes as `off` — never
        assume autopilot when the block is silent
      New runs should always fill these in. -->

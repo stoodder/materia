@@ -54,7 +54,7 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
 
 ## Recommended tier
 
-`sonnet/medium` — see [tier vocabulary](../ship-spec/resources/tiers.md) for the model and effort definitions. **Standalone backstop:** during a ship-spec run, the per-task `Model/effort` field in `tasks.md` overrides this line; a silent task field falls to the `opus/high` fallback (not to this recommendation).
+`sonnet/medium` — see `MATERIA.md` § Tiers for the model and effort definitions. **Standalone backstop:** during a ship-spec run, the per-task `Model/effort` field in `tasks.md` overrides this line; a silent task field falls to the `opus/high` fallback (not to this recommendation).
 
 ## Procedure
 

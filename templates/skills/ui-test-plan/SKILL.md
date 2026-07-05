@@ -36,7 +36,7 @@ acting on them wastes context.
 
 ## Recommended tier
 
-`sonnet/medium` — see [tier vocabulary](../ship-spec/resources/tiers.md) for the
+`sonnet/medium` — see `MATERIA.md` § Tiers for the
 model and effort definitions. Enumerating flows worth guarding from an
 already-resolved design artifact is systematic decomposition, not novel
 architecture reasoning.

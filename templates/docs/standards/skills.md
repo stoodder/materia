@@ -17,13 +17,12 @@
   does NOT do_, and _the rules_ in the same places every time.
 - **Declare the tier where one applies.** A **sub-skill** (dispatched by an
   orchestrator) carries a `## Recommended tier` line in `<model>/<effort>`
-  notation from the single source of truth,
-  [`.claude/skills/ship-spec/resources/tiers.md`](../../.claude/skills/ship-spec/resources/tiers.md).
+  notation from the single source of truth, `MATERIA.md` § Tiers (the model
+  set, availability, fallback, and effort→guidance map all live there).
   An **orchestrator/producer** runs in the operator's session and declares no
-  tier. A `fable/<effort>` declaration is valid **only** on a `ship-spec` /
-  `fix-bug` build-pipeline unit (a stage, a review angle, or the contradiction
-  tiebreaker); producers and aggregators never declare a fable tier — see
-  § The `--with-fable` argument for the confinement and why it holds.
+  tier. A declared model that `MATERIA.md` § Tiers lists as `opt-in` (or does
+  not list at all) coerces to the fallback unless the operator has enabled
+  it — availability is durable repo config, not a per-run flag.
 - **Keep state in the diff** where the skill's nature allows — prefer a
   reviewable PR/working-tree diff over a side audit folder; say so under Scope.
 - **A skill change is not done until its registration surfaces are updated**
@@ -51,7 +50,7 @@ The common spine across this repo's skills — match it so skills read alike:
 | `---` frontmatter (`name`, `description`) | every skill | identity + routing |
 | Intro paragraph | every skill | one-breath "what this is" + where it sits in the loop |
 | `## Inputs` / `## Outputs` (or an Inputs/Outputs table) | every skill | the contract — what it reads, what it leaves behind; if the skill produces a committed artifact (a file written to the branch), document it in `## Outputs`; a producing stage's `_templates/` stub is part of that artifact contract and must be kept in sync whenever the artifact's shape changes |
-| `## Recommended tier` | **sub-skills only** | `<model>/<effort>` per [tiers.md](../../.claude/skills/ship-spec/resources/tiers.md) |
+| `## Recommended tier` | **sub-skills only** | `<model>/<effort>` per `MATERIA.md` § Tiers |
 | `## Procedure` (numbered steps) | every skill | the actual algorithm |
 | `## Scope` ("what this skill does NOT do") | every skill | the guardrails — prevents overreach |
 | `## Rules` | most skills | invariants the procedure must hold |
@@ -60,7 +59,7 @@ The common spine across this repo's skills — match it so skills read alike:
 **Progressive disclosure for long skills:** when a SKILL.md outgrows a single
 comfortable read, keep an always-read core (the spine above) and move
 phase-scoped detail into `resources/*.md` files that the procedure names at
-the phase that needs them (precedent: `ship-spec/resources/tiers.md`,
+the phase that needs them (precedent: `ship-spec/resources/spawn-contract.md`,
 `triage-retros/resources/`). Contract text that other skills parse remains a
 protected contract wherever it lives — moving it between files means updating
 every consumer's pointer in the same change.
@@ -82,57 +81,21 @@ reuse it when reworking any skill):
 5. **Check environment parity** — every `gh` call needs its GitHub-MCP twin;
    every reviewer/implementer brief carries the inline-only/no-nested-spawn
    rule.
-6. **Keep tiers generic** — `<model>/<effort>` per `tiers.md`; never pin a
-   dated model name in a skill body.
+6. **Keep tiers generic** — `<model>/<effort>` per `MATERIA.md` § Tiers;
+   never pin a dated model name in a skill body.
 7. **Update registration surfaces in the same change**, flagging moved
    protected-contract text loudly.
 
-### The `--with-fable` argument
-
-`--with-fable` is a universal, presence-only (boolean, no `=`) argument that ANY
-skill's invocation accepts syntactically. It is the operator's per-run opt-in to
-the per-token `fable` model tier — see
-[`tiers.md`](../../.claude/skills/ship-spec/resources/tiers.md) § Closed model
-set for the gate it unlocks (this subsection defines the flag; that section
-defines what an unlocked flag does). Semantics:
-
-- **Present → posture `unlocked`.** Every `fable`-tagged unit in the run resolves
-  to the fable model, subject to the availability tolerance stated in `tiers.md`.
-- **Absent → posture `coerced`.** Every `fable`-tagged unit coerces to
-  `opus/high`. This is the default, and it is byte-for-byte identical to
-  pre-feature behaviour.
-- **No-op where nothing is tagged.** A skill that carries no `fable`-tagged unit
-  accepts the flag without error and behaves identically to the no-flag
-  invocation. Only `ship-spec` / `fix-bug` build-pipeline units carry fable tags
-  (the binding six — the re-tiered stage bodies, the `## Review` angles, and the
-  contradiction tiebreaker); producers and aggregators (`triage-retros`,
-  `apply-pipeline-improvements`, `propose-epic`'s research fan-out,
-  `reconcile-epic` in either mode) carry zero, so the flag is deliberately a
-  harmless no-op there.
-- **Dash-variant tolerance (binding).** Before matching, normalize the *leading*
-  dash run of each argument token: replace any leading run of hyphen-minus
-  (U+002D), en dash (U+2013), or em dash (U+2014) characters — in any repetition
-  or mixture — with exactly two hyphen-minus characters, then compare the result
-  against the literal `--with-fable`. Normalize the leading dash run **only**;
-  dashes elsewhere in the token (the `with-fable` hyphen included) are not
-  normalized.
-- **Fail open toward the cost-safe default.** Any near-miss the normalization
-  does not cover — wrong case (`--With-Fable`), a single dash (`-with-fable`), a
-  typo (`--with-fabel`) — is treated as **NOT PRESENT** (posture stays
-  `coerced`), never as a hard parse error that halts the run. The only way to
-  spend fable tokens is an exact post-normalization match; every ambiguity
-  resolves toward *not* spending.
-- **Persistence.** For resumable pipelines (`ship-spec` / `fix-bug`) the posture
-  is written once into `STATUS.md` § Fable posture at run start and preserved by
-  the Resume gate, so a resumed run keeps the same posture rather than silently
-  reverting.
-
 ### The `--auto` argument (ship-spec autopilot)
 
-`--auto` is a presence-only argument with the same leading-dash normalization
-and fail-open parsing as `--with-fable` (any near-miss is treated as NOT
-PRESENT; posture stays `off` — every ambiguity resolves toward *not* granting
-autonomy). Its semantics live entirely in `ship-spec`: posture `on`
+`--auto` is a presence-only argument with fail-open parsing: before matching,
+normalize the *leading* dash run of each argument token — replace any leading
+run of hyphen-minus (U+002D), en dash (U+2013), or em dash (U+2014)
+characters, in any repetition or mixture, with exactly two hyphen-minus
+characters — then compare against the literal `--auto`. Any near-miss the
+normalization does not cover (wrong case, single dash, typo) is treated as
+NOT PRESENT; posture stays `off` — every ambiguity resolves toward *not*
+granting autonomy. Its semantics live entirely in `ship-spec`: posture `on`
 auto-accepts the run's operator checkpoints (intake defaults, non-blocking
 judgement calls), and after finalize opens the PR the orchestrator watches
 CI, fixes failures, resolves merge conflicts, and **merges once green** — see
@@ -166,12 +129,6 @@ contract and register its `source` key — see § Registration surfaces.
 run standalone but a tier-carrying sub-skill when `ship-spec`'s epic gate
 spawns it in pipeline mode (see its SKILL.md § Pipeline mode) — it declares a
 `## Recommended tier` for that mode only.
-
-**Every kind accepts `--with-fable`.** All three kinds accept the universal
-`--with-fable` argument syntactically; it is a documented no-op wherever the
-skill carries no fable-tagged unit — which is every orchestrator and producer,
-and every sub-skill outside the `ship-spec` / `fix-bug` build-pipeline fable
-carriers. See § The `--with-fable` argument.
 
 ### Producer lifecycle — the shared contract
 
@@ -254,7 +211,7 @@ touch-X→update-Y map:
 | [`CLAUDE.md`](../../CLAUDE.md) — the spec-to-ship pipeline paragraph | the pipeline's shape or the producer count changes |
 | [`docs/specs/README.md`](../specs/README.md) — pipeline / closing-loop / producers tables | a stage, sibling, or producer skill changes |
 | The **target queue's** producers table + `source` key (e.g. [`docs/specs/_proposed/README.md`](../specs/_proposed/README.md) for spec proposals, [`docs/bugs/_reports/README.md`](../bugs/_reports/README.md) for bug reports); the epic family additionally keeps [`docs/epics/README.md`](../epics/README.md) true | a **producer** skill is added or its source key changes |
-| The skill's `## Recommended tier` + [`tiers.md`](../../.claude/skills/ship-spec/resources/tiers.md) | a sub-skill's model/effort changes |
+| The skill's `## Recommended tier` + `MATERIA.md` § Tiers (when the model set or availability changes) | a sub-skill's model/effort changes |
 | This standard (including `### Retro touchpoint contract` below) | the authoring convention itself changes, **including** any change to the retro touchpoint sole-writer invariant or the ` ```retro ` fenced-block contract |
 
 ### Retro touchpoint contract
@@ -303,7 +260,7 @@ This section states the invariant; that file carries the implementation detail.
 ## Where it lives
 
 - `.claude/skills/<name>/SKILL.md` — every skill.
-- `.claude/skills/ship-spec/resources/tiers.md` — the tier vocabulary (single
+- `MATERIA.md` § Tiers — the tier vocabulary (single
   source of truth for `<model>/<effort>`).
 - The registration surfaces listed above — how skills are advertised.
 

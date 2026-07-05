@@ -65,13 +65,6 @@ Then:
 4. If `retro.md` already exists in the folder, **open and append** — never
    restart it. If header `status:` is `blocked`, set it back to `running` once
    the blocker is cleared. See § Retrospective capture.
-5. Read `## Fable posture` and carry it forward **unchanged** — do not
-   re-derive it from the resuming invocation's own arguments, and do not flip
-   `unlocked` → `coerced` (or vice versa) just because the resuming command
-   line omitted or added `--with-fable`. A bare resume changes nothing; an
-   explicit operator override recorded in `STATUS.md` § Notes still wins
-   (mirrors the operator-override-wins rule in § Tier routing).
-
 Fresh run: go to **§ Bug-report selection** (below) first.
 
 ## Bug-report selection (the run's entry point)
@@ -178,12 +171,6 @@ claim before spawning any subagent. This makes the pick durable on disk.
      - `Bug-report:` → `docs/bugs/_reports/<dated-slug>/report.md`
      - `Bug-source:` → `frontmatter.source`
      - `Bug-severity:` → `frontmatter.severity`
-   - `## Fable posture` block: `unlocked` if the invocation carried
-     `--with-fable` (post dash-normalization per `docs/standards/skills.md` §
-     The `--with-fable` argument), else `coerced`. `fix-bug` has no
-     ad-hoc-vs-proposal split — every run mints `STATUS.md` from a resolved
-     bug report at exactly this step, so the posture write happens in this
-     one place only.
 6. Seed `retro.md` from `docs/specs/_templates/retro.md` (fill `slug`,
    `branch`, `started_at`).
 7. Commit:
@@ -294,14 +281,12 @@ is lossless:
 
 ## Tier routing
 
-See `ship-spec/SKILL.md` § "Tier routing" and
-[`.claude/skills/ship-spec/resources/tiers.md`](../ship-spec/resources/tiers.md)
-— the three-step resolve→map→spawn is identical. The new sub-skills' tiers:
-`reproduce-bug` = `sonnet/high`; `bug-analysis` = `fable/medium` (from their
-`## Recommended tier` lines). The `opus/high` fallback applies unchanged.
-The § Fable gate from `ship-spec/SKILL.md` § "Tier routing" applies to this
-`fable/medium`-tagged `bug-analysis` unit exactly as to any fable-tagged
-ship-spec unit.
+See `ship-spec/SKILL.md` § "Tier routing" and `MATERIA.md` § Tiers — the
+resolve→availability→map→spawn steps are identical. The new sub-skills'
+tiers: `reproduce-bug` = `sonnet/high`; `bug-analysis` = `fable/medium` (from
+their `## Recommended tier` lines; availability per `MATERIA.md` § Tiers
+§ Model set). The fallback from `MATERIA.md` § Tiers § Fallback applies
+unchanged.
 
 ## Fresh-context reviewer spawning
 

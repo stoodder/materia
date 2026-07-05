@@ -82,7 +82,7 @@ acting on them wastes context.
 
 ## Recommended tier
 
-`sonnet/medium` — see [tier vocabulary](../ship-spec/resources/tiers.md) for the model and effort definitions. Auditing docs against intent oracles and applying the touch-X→update-Y map is systematic synthesis; the scope is bounded by cross-cutting doc boundaries.
+`sonnet/medium` — see `MATERIA.md` § Tiers for the model and effort definitions. Auditing docs against intent oracles and applying the touch-X→update-Y map is systematic synthesis; the scope is bounded by cross-cutting doc boundaries.
 
 ## Environment
 

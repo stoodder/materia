@@ -38,7 +38,7 @@ acting on them wastes context.
 
 ## Recommended tier
 
-`sonnet/high` — see [tier vocabulary](../ship-spec/resources/tiers.md) for the model and effort definitions. The final stage orchestrates gate checks, deferred behavior verification, and PR opening; careful reasoning ensures a clean handoff.
+`sonnet/high` — see `MATERIA.md` § Tiers for the model and effort definitions. The final stage orchestrates gate checks, deferred behavior verification, and PR opening; careful reasoning ensures a clean handoff.
 
 ## Procedure
 

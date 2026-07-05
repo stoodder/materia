@@ -48,7 +48,7 @@ does **not** re-derive the reproduction (that is `reproduce-bug`'s role).
 
 ## Recommended tier
 
-`fable/medium` — see [tier vocabulary](../ship-spec/resources/tiers.md) for
+`fable/medium` — see `MATERIA.md` § Tiers for
 the model and effort definitions. This is a synthesis task: two structured
 artifacts (`reproduction.md` + the bug report) feed a thin, well-shaped
 output (`bug-analysis.md`). The structure is defined by the template; the

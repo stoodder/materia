@@ -59,7 +59,7 @@ Runs as a **fresh-context subagent** spawned by `ship-spec` — never by
 
 ## Recommended tier
 
-`sonnet/medium` — see [tier vocabulary](../ship-spec/resources/tiers.md) for
+`sonnet/medium` — see `MATERIA.md` § Tiers for
 the model and effort definitions. Auditing docs for five well-defined properties
 (coverage, accuracy, consistency, authoring-standard conformance, the
 mechanical gate) from a bounded set of inputs is systematic but does not

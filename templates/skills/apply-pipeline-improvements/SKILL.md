@@ -614,7 +614,7 @@ implemented diff against the plan — this skill is orchestrator-invoked, so it
 may spawn a reviewer (per `ship-spec` § Fresh-context reviewer spawning, a
 directly-invoked skill is an orchestrator and can spawn; subagents cannot).
 Spawn it at **`opus/high`** (tier vocabulary + fallback:
-`.claude/skills/ship-spec/resources/tiers.md`), and include this line
+`MATERIA.md` § Tiers), and include this line
 verbatim in its brief — reviewer subagents attempting nested spawns have
 stalled or returned malformed in past runs:
 

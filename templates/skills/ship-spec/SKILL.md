@@ -13,7 +13,7 @@ once during intake; otherwise it runs to a finished PR for human review.
 Read `docs/specs/README.md` and `docs/README.md` first. Shared resources this
 skill leans on (read at the phase that needs them):
 
-- [`resources/tiers.md`](resources/tiers.md) — the tier vocabulary, fallback,
+- `MATERIA.md` § Tiers — the tier vocabulary, model availability, fallback,
   and effort→guidance-sentence map.
 - [`resources/spawn-contract.md`](resources/spawn-contract.md) — the verbatim
   standing rules injected into every spawn prompt (per spawn kind).
@@ -76,18 +76,12 @@ Then:
 4. If `retro.md` already exists in the folder, **open and append** — never
    restart it. If header `status:` is `blocked`, set it back to `running` once
    the blocker is cleared. See § Retrospective capture.
-5. Read `## Fable posture` and carry it forward **unchanged** — do not
-   re-derive it from the resuming invocation's own arguments, and do not flip
-   `unlocked` → `coerced` (or vice versa) just because the resuming command
-   line omitted or added `--with-fable`. A bare resume changes nothing; an
-   explicit operator override recorded in `STATUS.md` § Notes still wins
-   (mirrors the operator-override-wins rule in § Tier routing).
-6. Read `## Autopilot posture` (missing block → `off`) and carry it forward.
-   Unlike the fable posture, an **explicit `--auto` on the resuming
-   invocation upgrades `off → on`** (record the upgrade in § Notes) — it is
-   a deliberate operator action, not command-line noise. Absence of the flag
-   never downgrades `on → off`; only an explicit operator instruction
-   recorded in § Notes does. See § Autopilot (`--auto`).
+5. Read `## Autopilot posture` (missing block → `off`) and carry it forward.
+   An **explicit `--auto` on the resuming invocation upgrades `off → on`**
+   (record the upgrade in § Notes) — it is a deliberate operator action, not
+   command-line noise. Absence of the flag never downgrades `on → off`; only
+   an explicit operator instruction recorded in § Notes does. See § Autopilot
+   (`--auto`).
 
 Fresh feature: run **§ Proposal selection** first — the run's entry point is
 the proposed-specs queue at `docs/specs/_proposed/`. Selection chooses one
@@ -98,10 +92,10 @@ uses the bare `<slug>`; the spec folder uses the full `<dated-slug>`.
 
 ## Autopilot (`--auto`)
 
-`--auto` is a presence-only invocation argument with the same leading-dash
-normalization and fail-open parsing as `--with-fable` (near-misses are treated
-as NOT PRESENT; posture stays `off` — see `docs/standards/skills.md` § The
-`--auto` argument). It is the operator's **per-run grant of end-to-end
+`--auto` is a presence-only invocation argument with leading-dash
+normalization and fail-open parsing (near-misses are treated as NOT PRESENT;
+posture stays `off` — the normalization rule lives in
+`docs/standards/skills.md` § The `--auto` argument). It is the operator's **per-run grant of end-to-end
 autonomy**: run the pipeline on grounded defaults, open the PR, ride it to
 green, and **merge it** — without pausing at the operator checkpoints.
 
@@ -111,7 +105,7 @@ the operator saying up front "don't wait for me."
 
 - **Posture.** Written once at run start into `STATUS.md` § Autopilot posture
   (`on` / `off`; a missing block or a pre-feature `STATUS.md` → `off`). The
-  Resume gate carries it forward (§ Resume step 6): an explicit `--auto` at
+  Resume gate carries it forward (§ Resume step 5): an explicit `--auto` at
   resume upgrades `off → on`; nothing downgrades implicitly.
 - **What changes when `on`:**
   - **Proposal selection** — a named `<id>` behaves as usual; a bare autopilot
@@ -237,24 +231,18 @@ fills the `## Provenance` block with `—`):
    `frontmatter.source_refs[]` joined by `,` · `Proposed-id-selection:` ←
    `manual | named-arg | auto-deferred` · `Epic-id:` ← `frontmatter.epic`
    when present, else `—` (this sets the § Epic gate). Additionally fill
-   `## Fable posture` at this same moment: `unlocked` if the invocation
-   carried `--with-fable` (post dash-normalization per
-   `docs/standards/skills.md` § The `--with-fable` argument), else `coerced`.
-   Fill `## Autopilot posture` the same way: `on` if the invocation carried
-   `--auto` (same normalization), else `off`.
+   `## Autopilot posture` at this same moment: `on` if the invocation carried
+   `--auto` (post dash-normalization per `docs/standards/skills.md` § The
+   `--auto` argument), else `off`.
 5. Commit: `ship-spec(intake): claim proposal <id> for spec <dated-slug>`
 6. Push.
 
 **Ad-hoc path — a distinct case, not covered by the numbered steps above:**
 the ad-hoc fallback defers minting to `intake-spec`, which seeds `STATUS.md`
-straight from the template — a template that ships `## Fable posture`
-defaulting to `coerced`. `intake-spec`'s own body carries **no posture-write
-logic of its own**; it inherits the template default unchanged (only its
-`## Recommended tier` token may change, per `tiers.md` § Closed model set).
-The orchestrator is the one that upgrades the posture to `unlocked`, on
-its own first post-intake `STATUS.md` commit, when the invocation carried
-`--with-fable` — and likewise sets `## Autopilot posture` to `on` there when
-the invocation carried `--auto`.
+straight from the template — a template whose `## Autopilot posture` defaults
+to `off`. `intake-spec` carries no posture-write logic of its own; the
+orchestrator sets `## Autopilot posture` to `on` on its own first post-intake
+`STATUS.md` commit when the invocation carried `--auto`.
 
 ### Spawn intake
 
@@ -407,39 +395,31 @@ assumed — the PR reviewer reads it there.
 ## Tier routing
 
 Every `Agent` spawn (stage, task, reviewer) is dispatched at a declared
-model + effort tier. Vocabulary, fallback, and coercion:
-[`resources/tiers.md`](resources/tiers.md). At each spawn point:
-
-**Fable gate (evaluated once, applied at every spawn).** At run start read the
-posture from `STATUS.md` § Fable posture — `unlocked` or `coerced`; a missing
-block, or a `STATUS.md` predating this feature, defaults to `coerced` (never
-assume unlocked when the block is silent). Then, at each spawn whose resolved
-tier (step 1) is `fable/<effort>`:
-
-- posture `unlocked` → map + spawn on the fable model (steps 2–3); the
-  availability tolerance in `tiers.md` § Closed model set still catches an
-  unreachable model, recorded `tier-fallback: <unit> fable/<effort> →
-  opus/high (fable unreachable)`.
-- posture `coerced` → coerce to `opus/high`, recorded
-  `tier-fallback: <unit> fable/<effort> → opus/high (fable not unlocked)`.
-
-An operator override at spawn time (step 1) is orthogonal to the gate and still
-wins, recorded as the usual `tier-override:` note.
+model + effort tier. Vocabulary, model availability, fallback, and coercion:
+`MATERIA.md` § Tiers. At each spawn point:
 
 1. **Read** the unit's tier — stage → its `## Recommended tier` line; task →
    its `Model/effort` field; reviewer → the `Tier` column in § Review. An
    explicit operator override wins; record
    `tier-override: <unit> <artifact-value> → <operator-value>`.
-2. **Map** `<model>/<effort>` → `(model, effortSentence)` per `tiers.md`.
-3. **Spawn** `Agent(..., model: <model>)` with the effort sentence prepended
+2. **Resolve availability** against `MATERIA.md` § Tiers § Model set: a
+   `default` model resolves as declared; an `opt-in` model resolves only when
+   the operator has enabled it (a per-run instruction recorded in `STATUS.md`
+   § Notes, or the availability cell flipped to `default`), otherwise coerce
+   to the fallback with `tier-fallback: <unit> <tier> → <fallback> (not
+   enabled)`; a model absent from the table coerces the same way (reason
+   `not in model set`).
+3. **Map** `<model>/<effort>` → `(model, effortSentence)` per `MATERIA.md`
+   § Tiers § Effort set.
+4. **Spawn** `Agent(..., model: <model>)` with the effort sentence prepended
    to the prompt. Record the resolved tier per spawn for the retro.
 
-**Fallback:** absent / malformed / out-of-vocabulary / `Agent`-rejected tiers
-coerce to `opus/high` per `tiers.md`, with a one-line note. A `fable`-tagged
-tier is NOT an unconditional member of that list — it coerces only when the
-run's fable posture is `coerced` (no `--with-fable`), or the flag is set but the
-model is unreachable; see `tiers.md` § Closed model set for the flag-gated rule
-and the § Fable gate step above. The fallback never blocks the run.
+**Fallback:** absent / malformed / not-enabled / out-of-table /
+`Agent`-rejected tiers coerce to the fallback pair from `MATERIA.md` § Tiers
+§ Fallback, with the standard one-line note. An `Agent` call that rejects or
+errors on an available model coerces that spawn the same way (reason
+`<model> unreachable`) — never block or pause the run waiting for a model to
+come back. The fallback never blocks the run.
 
 ## Session-start environment preflight
 
@@ -779,9 +759,8 @@ the AC bullets, the diff lines in question, and the spec excerpt. Record its
 choice in the review-loop commit message
 (`tiebreaker: <file>:<line> — chose <recommendation> over <other>`).
 
-**Tier:** `fable/high` (see `tiers.md`). Read this tier and apply the § Fable
-gate before spawning the tiebreaker subagent, exactly as for a declared
-`## Recommended tier`.
+**Tier:** `fable/high` — resolve it through § Tier routing (availability per
+`MATERIA.md` § Tiers) exactly as for a declared `## Recommended tier`.
 
 ## Merge watch (autopilot runs only)
 

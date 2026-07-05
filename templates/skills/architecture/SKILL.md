@@ -29,7 +29,7 @@ acting on them wastes context.
 
 ## Recommended tier
 
-`fable/high` — see [tier vocabulary](../ship-spec/resources/tiers.md) for the model and effort definitions. Grounding the technical plan in existing resources and surfacing reuse opportunities across the codebase is the highest-stakes planning task.
+`fable/high` — see `MATERIA.md` § Tiers for the model and effort definitions. Grounding the technical plan in existing resources and surfacing reuse opportunities across the codebase is the highest-stakes planning task.
 
 ## Environment
 

@@ -39,7 +39,7 @@ acting on them wastes context.
 
 ## Recommended tier
 
-`fable/high` — see [tier vocabulary](../ship-spec/resources/tiers.md) for the model and effort definitions. This interactive intake checkpoint calls for high-effort synthesis to resolve spec ambiguities before later autonomous stages run.
+`fable/high` — see `MATERIA.md` § Tiers for the model and effort definitions. This interactive intake checkpoint calls for high-effort synthesis to resolve spec ambiguities before later autonomous stages run.
 
 ## The `<dated-slug>` folder name
 

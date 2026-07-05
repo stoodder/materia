@@ -54,7 +54,7 @@ acting on them wastes context.
 
 ## Recommended tier
 
-`fable/high` — see [tier vocabulary](../ship-spec/resources/tiers.md) for the
+`fable/high` — see `MATERIA.md` § Tiers for the
 model and effort definitions. Judging rendered output is no longer a pure
 checklist pass: the cross-screen cohesion comparison (does the new screen read
 as native next to its anchor siblings?) is exactly the qualitative visual

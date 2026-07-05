@@ -225,7 +225,7 @@ How they're produced depends on batch size:
   saved on small batches; see design-notes.)
 
 **Sub-agent tier: `sonnet/low`** (vocabulary:
-`.claude/skills/ship-spec/resources/tiers.md`) — bucketing and quoting over
+`MATERIA.md` § Tiers) — bucketing and quoting over
 one small retro is mechanical; the genuine reasoning (clustering, triage,
 prioritisation, protected-contract flagging) lives in the parent's Synthesis.
 

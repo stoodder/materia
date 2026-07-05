@@ -102,7 +102,7 @@ knowledge only.
 
 Spawn **one fresh-context subagent per question, in parallel**. Tier each
 question to the cheapest pair that can do the job, using the vocabulary in
-[`ship-spec/resources/tiers.md`](../ship-spec/resources/tiers.md):
+`MATERIA.md` § Tiers:
 
 - `haiku/low` — default: gather-and-summarize questions ("what are the
   standard approaches to X", "how do comparable apps present Y").
@@ -112,7 +112,7 @@ question to the cheapest pair that can do the job, using the vocabulary in
 - Never above `sonnet/medium` — a question that seems to need `opus` is
   really the orchestrator's synthesis job (step 5), not a gathering job.
 
-Inject the matching effort guidance sentence from `tiers.md` verbatim into
+Inject the matching effort guidance sentence from `MATERIA.md` § Tiers verbatim into
 each spawn prompt. Each brief carries: the research question; 2–3 sentences
 of epic context; the instruction to use web search/fetch; the required
 return shape — a `## Findings` list (each finding one bold claim + 1–3
@@ -286,7 +286,7 @@ backlink required by the epic contract's bi-directional-linkage rule.
   than a third brainstorm round.
 - **Research is tiered down.** `haiku/low` default, `sonnet/medium` ceiling,
   per § 4; tier notation and fallback per
-  [`tiers.md`](../ship-spec/resources/tiers.md). The orchestrator does the
+  `MATERIA.md` § Tiers. The orchestrator does the
   thinking; subagents do the fetching.
 - **Every member is independently shippable** and its body self-contained;
   `depends_on` edges exist only for real build-on relationships.

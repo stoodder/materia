@@ -32,7 +32,7 @@ acting on them wastes context.
 
 ## Recommended tier
 
-`sonnet/high` — see [tier vocabulary](../ship-spec/resources/tiers.md) for the model and effort definitions. UX design from a spec calls for careful reasoning to define flows and states across all screen surfaces.
+`sonnet/high` — see `MATERIA.md` § Tiers for the model and effort definitions. UX design from a spec calls for careful reasoning to define flows and states across all screen surfaces.
 
 ## Environment
 

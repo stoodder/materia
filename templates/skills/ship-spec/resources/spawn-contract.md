@@ -6,8 +6,8 @@ spawn prompts, assembled per spawn kind: **Block 1** goes into every spawn;
 into every reviewer spawn. Keeping the copies here (one source) is what stops
 the rules drifting apart across the orchestrator's many spawn sites.
 
-The tier's effort guidance sentence (from `tiers.md` § effort →
-guidance-sentence map) is prepended before Block 1.
+The tier's effort guidance sentence (from `MATERIA.md` § Tiers § Effort
+set) is prepended before Block 1.
 
 ## Block 1 — every spawn
 
