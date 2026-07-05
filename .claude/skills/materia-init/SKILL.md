@@ -1,6 +1,6 @@
 ---
 name: materia-init
-description: Materialize the Materia harness into this repo. Interviews the engineer about what they're building (brainstorm survey → tech-stack selection → capability probes), then writes MATERIA.md + CLAUDE.md, generates the stack-specific standards docs, copies the pipeline skills and docs skeleton into place (pruning what the stack can't use), and seeds docs/specs/_proposed/ with a bootstrap epic so the pipeline's own first /materia-ship-spec run scaffolds the app. Run once on a fresh repo created from the Materia template; idempotent to re-run before the first bootstrap spec ships.
+description: Materialize the Materia harness into this repo. Interviews the engineer about what they're building (brainstorm survey → product identity & taste → tech-stack selection → capability probes), then writes MATERIA.md + CLAUDE.md + the docs/product.md product brief, generates the stack-specific standards docs, copies the pipeline skills and docs skeleton into place (pruning what the stack can't use), and seeds docs/specs/_proposed/ with a bootstrap epic so the pipeline's own first /materia-ship-spec run scaffolds the app. Run once on a fresh repo created from the Materia template; idempotent to re-run before the first bootstrap spec ships.
 ---
 
 # materia-init — materialize Materia into this repo
@@ -36,11 +36,12 @@ discipline — there is nothing to diff against yet):
 - `MATERIA.md` (repo root) — every section filled, `none` where a capability
   is absent, `## Pruned skills` recording what was left out and why.
 - `CLAUDE.md` (repo root) — the always-loaded guide, slots filled.
-- `docs/**` — the skeleton, plus the generated stack-specific standards.
+- `docs/**` — the skeleton, the filled `docs/product.md` product brief, plus
+  the generated stack-specific standards.
 - `.claude/skills/**` — the pipeline skills, minus pruned ones.
 - `scripts/check-docs.mjs`.
 - `docs/epics/<dated-slug>/` + 2–N member proposals in
-  `docs/specs/_proposed/` — the **bootstrap epic** (see Phase 6).
+  `docs/specs/_proposed/` — the **bootstrap epic** (see Phase 7).
 - `README.md` rewritten for the app; `templates/` and `.claude/skills/materia-init/`
   removed (their content now lives in its materialized locations; git history
   keeps the originals).
@@ -62,11 +63,43 @@ a short paragraph for `CLAUDE.md` § What this is. Resolve at minimum:
 - Deploy intent (local-only, a PaaS, containers, serverless) — shapes the
   workflow standard and CI spec.
 
+Product depth (name, market, taste) gets its own pass next — don't rush it
+here; Phase 1 establishes *what*, Phase 2 establishes *for whom and how it
+should feel*.
+
 Use `AskUserQuestion` for discrete choices when available; otherwise plain
 conversational turns. This phase is a conversation, not a form — follow the
 interesting threads, then summarize back what you heard and confirm.
 
-### Phase 2 — Stack selection
+### Phase 2 — Product identity & taste
+
+The questions engineers skip and then pay for in bland, incoherent features.
+Everything lands in `docs/product.md` (the product brief — the pipeline's
+taste and audience oracle); nothing here is throwaway color. Probe until
+every brief section has a real answer:
+
+- **Name & positioning** — the product's name (or working name), and the
+  one-sentence way it should be described next to its alternatives.
+- **Audience & market** — the primary user as a singular persona (role,
+  context, sophistication); the market/space and the 2–3 adjacent or
+  competing products; what this one deliberately does differently; who and
+  what it is explicitly *not* for.
+- **Design feel & taste** — five adjectives for how it should feel; 2–4
+  taste-reference products with *what* to borrow from each (spacing, motion,
+  density, color courage) and one anti-reference; palette direction,
+  light/dark stance, typography vibe; how expressive motion should be.
+- **Voice & tone** — how the product talks: terse or chatty, playful or
+  neutral, error-message temperament; words it always/never uses.
+- **Product principles** — 3–5 opinionated tie-breakers that settle feature
+  debates before they start ("speed of capture beats completeness").
+
+Offer grounded suggestions rather than blank questions — propose a feel and
+taste references inferred from Phase 1 and let the engineer react; a
+concrete wrong guess draws out taste faster than an open prompt. On repos
+with no user-facing UI, compress to name, positioning, audience, voice
+(CLI/API output has tone too), and principles — skip visual taste.
+
+### Phase 3 — Stack selection
 
 Recommend a stack **grounded in Phase 1**, not a menu of everything. Present
 2–3 coherent options (framework + language + persistence + styling + test
@@ -85,7 +118,7 @@ Resolve, concretely enough to write `MATERIA.md` § Stack, § Run it, and
   These may not exist yet — the bootstrap epic creates them; write the
   *intended* commands into § Gate.
 
-### Phase 3 — Capability probes
+### Phase 4 — Capability probes
 
 Each probe maps to a `MATERIA.md` section and a prune decision:
 
@@ -103,18 +136,19 @@ Skills that are never pruned: the two orchestrators, all pipeline mid-stages,
 `materia-suggestions-to-specs`, `materia-bugs-to-reports`, `materia-triage-retros`,
 `materia-apply-pipeline-improvements`, `materia-janitor`, `materia-librarian`.
 
-### Phase 4 — Confirmation checkpoint
+### Phase 5 — Confirmation checkpoint
 
 Draft everything in-memory and present one confirmation block: the § Identity
-sentence, the stack, the § Gate table, the surface-gate patterns, the Eyes
-choice, the § Tiers model set (availability + fallback), the prune list with
-reasons, and the bootstrap epic's proposed member specs (titles +
-one-liners). Reply verbs, with producer-lifecycle semantics
+sentence, the product brief's spine (name/positioning · audience · the five
+feel adjectives · taste references · principles), the stack, the § Gate
+table, the surface-gate patterns, the Eyes choice, the § Tiers model set
+(availability + fallback), the prune list with reasons, and the bootstrap
+epic's proposed member specs (titles + one-liners). Reply verbs, with producer-lifecycle semantics
 (`docs/standards/skills.md` § Producer lifecycle once materialized):
 `approve` · `edit: <feedback>` · `cancel`. Nothing is written until
 `approve`.
 
-### Phase 5 — Materialize
+### Phase 6 — Materialize
 
 On approve, in this order:
 
@@ -141,25 +175,31 @@ On approve, in this order:
      init (the design language barely exists yet); they grow via `materia-docs-sync`.
    - Register every generated standard as a row in `docs/README.md`
      § Standards and in `docs/contributing.md`'s touch-map slot.
-5. **Fill the remaining doc slots:** `docs/README.md`, `docs/contributing.md`
-   (DoD + touch-map rows), `docs/glossary.md` (seed the Phase 1 entities).
-6. **Rewrite `README.md`** for the app: name, one-liner, run-it, a short
+5. **Write `docs/product.md`** from `templates/docs/product.md`: every
+   section filled from Phase 2, opinionated, `{{slots}}` gone. When the repo
+   ships UI, derive the `visual-language.md` seed from its § Design feel &
+   taste (palette direction, density, motion stance) so the two never start
+   contradictory.
+6. **Fill the remaining doc slots:** `docs/README.md`, `docs/contributing.md`
+   (DoD + touch-map rows), `docs/glossary.md` (seed the Phase 1 entities +
+   the § Voice & tone vocabulary).
+7. **Rewrite `README.md`** for the app: name, one-liner, run-it, a short
    "how changes ship here" section pointing at `docs/specs/README.md` and
    the skill roster.
-7. **Remove `templates/` and `.claude/skills/materia-init/`** — everything now lives
+8. **Remove `templates/` and `.claude/skills/materia-init/`** — everything now lives
    in its materialized location; git history keeps the originals. (Skip this
    step if the engineer asked to keep them at the checkpoint.)
-8. **Self-check:** run `node scripts/check-docs.mjs` and fix every failure it
+9. **Self-check:** run `node scripts/check-docs.mjs` and fix every failure it
    reports — init must hand over a green docs gate. Grep the materialized
    tree for any surviving `{{` slot marker or `<!-- init:` comment; zero is
    the exit criterion.
-9. **Commit** in logical chunks (skeleton · MATERIA/CLAUDE · standards ·
-   README/cleanup) directly to `main`, and push if a remote exists.
+10. **Commit** in logical chunks (skeleton · MATERIA/CLAUDE · product brief ·
+    standards · README/cleanup) directly to `main`, and push if a remote exists.
 
-### Phase 6 — Seed the bootstrap epic
+### Phase 7 — Seed the bootstrap epic
 
 Write the app's first epic per the `docs/epics/README.md` contract —
-`epic.md` (+ a brief `research.md` when Phase 2 involved real trade-off
+`epic.md` (+ a brief `research.md` when Phase 3 involved real trade-off
 research) — and 2–N member proposals into `docs/specs/_proposed/` with
 `source: epic`, `epic: <epic-id>`, and a `depends_on` graph. Shape the
 members as genuinely single-shippable units; the typical decomposition:
@@ -171,16 +211,18 @@ members as genuinely single-shippable units; the typical decomposition:
   `docs/standards/workflow.md`).
 - **S3 (UI repos) — Eyes provisioning + first e2e:** the § Eyes provisioning
   recipe as a real script, one smoke e2e, the `test:e2e` gate row live.
-- **S4+ —** the first thin vertical slice of the actual product, per Phase 1.
+- **S4+ —** the first thin vertical slice of the actual product, per
+  Phase 1 — shaped by the brief's § Product principles.
 
 Commit the epic + members to `main` (still bootstrap), then hand off: tell
 the engineer to run `/materia-ship-spec` (or `/materia-ship-spec --auto`) — from this point
 every change flows through the pipeline and lands via PR.
 
-### Phase 7 — Report
+### Phase 8 — Report
 
 Close with: what was materialized (counts: skills copied, skills pruned,
-standards generated), the MATERIA.md sections marked `none`, the bootstrap
+standards generated, the product brief), the MATERIA.md sections marked
+`none`, the bootstrap
 epic's member list with the recommended shipping order, and the one-line
 next step (`/materia-ship-spec`).
 
@@ -204,7 +246,7 @@ skill from git history (`git show`) when a capability arrives later.
 
 ## Rules
 
-- Nothing is written before the Phase 4 `approve`.
+- Nothing is written before the Phase 5 `approve`.
 - Every `MATERIA.md` section heading ships exactly as the template spells it
   — the pipeline skills reference them by name.
 - A capability the engineer doesn't have is `none` + a prune, never a guessed

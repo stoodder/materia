@@ -108,7 +108,7 @@ wherever the project context makes the answer obvious:
 | `## Problem` | Often inferable from the idea alone; the user named the friction. Pad with context from CLAUDE.md / standards if relevant. |
 | `## Goals` | Inferable from the idea + the project's existing patterns. Default to one outcome per coherent feature. |
 | `## Non-goals` | Project-wide defaults: no multi-user, no analytics dashboards, no offline-first sync, no new auth model — unless the idea explicitly wants one. List the ones most likely to be scope creep for *this* idea. |
-| `## Users & context` | The app's universal usage context from `MATERIA.md` § Identity / `CLAUDE.md` § What this is |
+| `## Users & context` | The app's universal usage context from `docs/product.md` § Audience & market (one-liner: `MATERIA.md` § Identity) |
 | `## User stories & acceptance criteria` | Infer ≥2 user stories from the idea and the relevant standards. Write **testable** ACs (the standards docs make this easier — they spell out what observable behavior to expect from each layer). |
 | `## Constraints` | Always include: mobile-first, follows existing standards (linked), dark UI per visual-language, optimistic-save / `Saving…/Saved ✓` per api-layer if relevant. |
 | `## Open questions` | Use this section for the few things you genuinely can't infer. Aim for **≤3 bullets**; if you have more, you're probably under-using project context. |

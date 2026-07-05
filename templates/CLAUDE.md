@@ -12,6 +12,9 @@ then follow the context protocol below **before writing anything**.
 (local + prod). Mirrors MATERIA.md § Identity but written for a working
 agent's orientation.}}
 
+Product depth — audience, market, design feel & taste, voice, principles:
+[docs/product.md](docs/product.md).
+
 ## Context protocol — build context in this order, every time
 
 1. **This file** — the rules in brief + the map below. (You're here.)

@@ -5,7 +5,8 @@ description: From a feature spec, produce a UX design doc (user flows, screens, 
 
 # materia-design — UX flows & screens from a spec
 
-Turn `spec.md` into a concrete, mobile-first `design.md`. Runs as a subagent in
+Turn `spec.md` into a concrete `design.md` that lands inside the product's
+taste (`docs/product.md`). Runs as a subagent in
 `materia-ship-spec`; usable standalone after a spec exists.
 
 **UI-gated.** This stage designs screens; a feature that ships no UI has
@@ -17,9 +18,11 @@ features (its § Non-product features).
 
 ## Inputs
 
-- `docs/specs/<dated-slug>/spec.md`; `docs/standards/ui-components.md`;
-  `docs/standards/visual-language.md` (palette, surface-tone ladder, "no hard
-  borders"); relevant resource docs for screens you'll touch.
+- `docs/specs/<dated-slug>/spec.md`; `docs/product.md` (§ Design feel &
+  taste + § Voice & tone — the taste oracle every screen must land inside);
+  `docs/standards/ui-components.md`; `docs/standards/visual-language.md`
+  (the binding visual rules); relevant resource docs for screens you'll
+  touch.
 
 ## Harness noise
 
@@ -46,13 +49,15 @@ standalone runs apply it on first use.
 ## Procedure
 
 1. **Read** `docs/specs/<dated-slug>/spec.md`, `docs/specs/_templates/design.md`,
-   `docs/standards/ui-components.md` (conventions),
-   `docs/standards/visual-language.md` (palette, tone ladder, border rules),
-   and `docs/glossary.md`. Skim related resource docs for screens you'll touch
-   (e.g. `docs/resources/today.md`, `set-log.md`).
+   `docs/product.md` (§ Design feel & taste, § Voice & tone, § Product
+   principles — the judgement baseline), `docs/standards/ui-components.md`
+   (conventions), `docs/standards/visual-language.md` (the binding visual
+   rules), and `docs/glossary.md`. Skim related resource docs for screens
+   you'll touch.
 
 2. **Flows.** For each user story, write the step-by-step path the user takes
-   (entry → actions → outcome). Single-user, on a phone, mid-workout.
+   (entry → actions → outcome), grounded in the usage context from
+   `docs/product.md` § Audience & market.
 
 3. **Screens & states.** For every screen/route, define purpose, key elements,
    and **all four states**: loading, empty, error, ready — matching the existing

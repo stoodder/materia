@@ -126,8 +126,9 @@ standalone runs apply it on first use.
 3'. **Draft the spec** from the template (freeform path only): problem,
    goals, non-goals, users & context, user stories with **testable
    acceptance criteria**, constraints. Assume the app's universal usage
-   context (`MATERIA.md` § Identity + `CLAUDE.md` § What this is) unless the
-   input says otherwise.
+   context (`docs/product.md` § Audience & market; one-liner at `MATERIA.md`
+   § Identity) unless the input says otherwise, and keep copy/naming inside
+   `docs/product.md` § Voice & tone.
 
 4. **Find the gaps and ASK.** Anything ambiguous or unstated that changes scope,
    UX, or data — ask the human via clarifying questions (use the AskUserQuestion

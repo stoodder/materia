@@ -58,6 +58,7 @@ table starts empty and grows as the app grows — `materia-docs-sync` and
 
 | Doc | What |
 |---|---|
+| [product.md](product.md) | the product brief — name, audience & market, design feel & taste, voice, product principles; the taste oracle intake/design read |
 | [glossary.md](glossary.md) | domain + codebase terms, one line each |
 | [surface-map.md](surface-map.md) | every HTTP route + every page, in one table |
 | [contributing.md](contributing.md) | **read before calling a change done** — Definition of Done, doc-update map, how to add a doc |
