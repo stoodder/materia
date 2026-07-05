@@ -1,0 +1,30 @@
+<!--
+  Copy this to docs/standards/<topic>.md and fill it in. Read a finished
+  example first: docs/standards/architecture.md (gold standard) — and follow
+  docs/standards/docs.md (present-state only, short cells, one home per fact).
+  Delete these comments. After writing: add the doc to the table in
+  docs/README.md and run the checks (see docs/contributing.md).
+-->
+# <Standard>
+
+> One sentence: the rule in a breath.
+
+## Rule
+
+<!-- The must-follow, terse. Bullets. -->
+
+## Why
+
+<!-- The reason it exists. -->
+
+## How
+
+<!-- Examples, do / don't. Prefer a table or short snippet over prose. -->
+
+## Where it lives
+
+<!-- Paths/patterns that embody it. -->
+
+## Related
+
+<!-- Links to other docs. -->
