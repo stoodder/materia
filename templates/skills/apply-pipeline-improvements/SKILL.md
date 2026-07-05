@@ -19,7 +19,7 @@ consumes `pipeline-improvements.md` and edits `.claude/skills/**`. The inputs an
 edited paths are disjoint, so the two can run in parallel without contending.
 
 The stack is markdown + `git` + `gh` + the Claude Code skill harness — no
-Prisma, no Nitro routes, no Vue. **Manual invocation only** for now (a schedule
+schema, no server routes, no UI. **Manual invocation only** for now (a schedule
 can trigger it later); **one PR per plan**; **no auto-merge** — every
 pipeline change is approved by a human on the PR.
 
@@ -584,10 +584,10 @@ land **green**:
    scoped to the files the run edited — never the whole tree:
 
    ```bash
-   pnpm exec prettier --write <each touched file>
+   <formatter — the lint row's auto-fix variant, MATERIA.md § Gate — scoped to each touched file>
    ```
 
-   (Equivalently `pnpm run lint:fix`, but scope to the edited files to keep the
+   (Equivalently the repo-wide auto-fix command, but scope to the edited files to keep the
    diff tight.) Do this before staging each action's commit, or as a final
    format pass before the pre-PR sweep.
 
@@ -595,7 +595,7 @@ land **green**:
    PR:
 
    ```bash
-   pnpm lint && pnpm exec nuxt typecheck && pnpm test && node scripts/check-docs.mjs
+   <full gate — every non-`none` row of MATERIA.md § Gate, in table order>
    ```
 
    Pipeline edits are markdown (`SKILL.md` files), so `prettier --check` and
@@ -603,7 +603,7 @@ land **green**:
    unaffected but are run so the PR is verified end-to-end. Fix anything the
    gate flags (a formatting nit, a broken doc link introduced by an edit) in
    place and re-run before proceeding. If the gate isn't runnable in the
-   current environment (e.g. wrong Node version, missing `pnpm`), say so
+   current environment (e.g. wrong runtime version, missing toolchain), say so
    explicitly in the PR description so the reviewer knows CI is the gate of
    record — do not claim it passed.
 

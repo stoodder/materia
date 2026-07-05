@@ -82,7 +82,7 @@ files. Medium effort is appropriate — no novel design is required.
 
 4. **Sketch the fix approach.** Write a thin fix sketch — the change shape,
    not a design. Examples: "add a null-guard before the multiplication in
-   `computeLoad`"; "validate the request body field before passing to Prisma."
+   the derivation util"; "validate the request body field before it reaches the data layer."
    Then list the standards/resource docs the fix tasks must read (the
    docs-scope floor for `plan-tasks`). Do not enumerate specific task steps —
    that is `plan-tasks`'s job.

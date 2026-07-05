@@ -31,7 +31,7 @@ instead. It is NOT a producer (writes no queue entries), NOT a pipeline stage
   for a human.
 - Default — full sweep: fix → PR → ride CI → merge.
 
-No mid-run checkpoint (the lifecycle is autonomous, like `logs-to-specs`);
+No mid-run checkpoint (the lifecycle is autonomous, like `ui-inspection`);
 `--dry-run` is the preview mechanism. Judgment is therefore conservative: an
 ambiguous fix is skipped and noted, never guessed at (§ Rules).
 
@@ -39,9 +39,9 @@ ambiguous fix is skipped and noted, never guessed at (§ Rules).
 
 - The living docs: `docs/*.md` (root), `docs/resources/`, `docs/standards/`,
   `docs/_templates/`, plus `CLAUDE.md` and `README.md`.
-- The codebase as the oracle: `git ls-files`, `server/api/**`, `pages/**`,
-  `prisma/schema.prisma`, `enums/`, `constants/`, `composables/**`,
-  `components/**`, `.claude/skills/*/SKILL.md` frontmatter.
+- The codebase as the oracle: `git ls-files`, the source folders the
+  standards docs name (routes, pages, schema, shared modules), and
+  `.claude/skills/*/SKILL.md` frontmatter.
 - `docs/standards/docs.md` (the authoring standard) and
   `docs/contributing.md` (the touch-X→update-Y map, read in reverse: which
   code would have demanded which doc).
@@ -65,9 +65,9 @@ same rule that exempts them from `check:docs` style checks.
 ### 1. Preflight
 
 `git checkout main && git pull` (halt and surface if blocked by local
-changes). Verify `gh auth status` and the Node toolchain (`pnpm run
-check:docs` must be runnable — apply
-`.claude/skills/ship-spec/resources/env-preflight.md` recipes if not).
+changes). Verify `gh auth status` and that `node scripts/check-docs.mjs` is runnable —
+apply `.claude/skills/ship-spec/resources/env-preflight.md` (and `MATERIA.md`
+§ Environment preflight) recipes if not.
 Read `docs/standards/docs.md` and the doc indexes into context.
 
 ### 2. Scan — the drift taxonomy
@@ -82,11 +82,11 @@ that proves the doc wrong).
    path is drift: find where the thing lives now (rename) or remove the
    claim (deletion).
 2. **Inventory coverage, both directions.**
-   - `docs/surface-map.md` routes ⇄ `server/api/**` handlers; pages table ⇄
-     `pages/**`.
+   - `docs/surface-map.md` routes ⇄ the server route handlers; pages table ⇄
+     the page sources.
    - `docs/README.md` Resources/Standards index tables ⇄ the files in
      `docs/resources/` / `docs/standards/`.
-   - `prisma/schema.prisma` models ⇄ resource docs (a model with no doc is a
+   - schema models ⇄ resource docs (a model with no doc is a
      needs-human note, not a doc the librarian invents; a doc for a dropped
      model is drift to fix).
    - README.md § Shipping changes skill tables ⇄ `.claude/skills/*/SKILL.md`
@@ -136,7 +136,7 @@ alphabetical position). Commit in small scoped commits
 ### 5. Gate locally, then PR
 
 ```bash
-node scripts/check-docs.mjs && pnpm lint     # style/links + prettier over the .md diff
+node scripts/check-docs.mjs && <lint — MATERIA.md § Gate>   # links/style + formatting over the .md diff
 git diff main...HEAD --name-only     # § The docs-only envelope — assert now
 git push -u origin librarian/sweep-<YYYY-MM-DD>
 gh pr create --title "librarian: docs-drift sweep <YYYY-MM-DD>" --body "<body>"
@@ -199,7 +199,7 @@ docs/standards/**
 docs/_templates/**
 ```
 
-Anything else in the diff — any `.ts`/`.vue`/config file, anything under
+Anything else in the diff — any source or config file, anything under
 `.claude/`, `docs/specs/`, `docs/bugs/`, `docs/epics/`, `docs/research/` —
 means the run has escaped its envelope: **revert the offending change and if
 the fix genuinely requires it, drop that fix with a needs-human note.** The

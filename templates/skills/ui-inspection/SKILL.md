@@ -175,8 +175,8 @@ report (phase-level) before returning control cleanly.
    discard findings.
 4. **Branch / commit / open the PR** — the run is autonomous past the Phase 0
    gate, so once the report is assembled it always finishes on a PR (the opened
-   PR is the operator's review surface, mirroring `logs-to-specs`'
-   PR-is-the-gate model — there is no second "approve" checkpoint). Sync `main`
+   PR is the operator's review surface — PR-is-the-gate; there is no second
+   "approve" checkpoint). Sync `main`
    and branch `ui-inspection/<id>-<slug>`, write the report file and its
    co-located captures, run `node scripts/check-docs.mjs` to verify link integrity,
    commit, push `-u origin ui-inspection/<id>-<slug>`, and open a PR with

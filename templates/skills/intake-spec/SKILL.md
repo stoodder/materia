@@ -122,8 +122,9 @@ standalone runs apply it on first use.
 
 3'. **Draft the spec** from the template (freeform path only): problem,
    goals, non-goals, users & context, user stories with **testable
-   acceptance criteria**, constraints. Single-user gym app — assume phone,
-   in-gym, mobile-first.
+   acceptance criteria**, constraints. Assume the app's universal usage
+   context (`MATERIA.md` § Identity + `CLAUDE.md` § What this is) unless the
+   input says otherwise.
 
 4. **Find the gaps and ASK.** Anything ambiguous or unstated that changes scope,
    UX, or data — ask the human via clarifying questions (use the AskUserQuestion

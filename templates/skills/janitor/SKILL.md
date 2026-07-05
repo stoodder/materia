@@ -115,7 +115,7 @@ the parent stays the sole committer.
 ### 5. Gate locally, then PR
 
 ```bash
-pnpm lint && pnpm exec nuxt typecheck && pnpm test && node scripts/check-docs.mjs
+<full gate - every non-`none` row of MATERIA.md § Gate, in table order>
 git push -u origin janitor/sweep-<YYYY-MM-DD>
 gh pr create --title "janitor: standards-drift sweep <YYYY-MM-DD>" --body "<body>"
 ```
@@ -150,18 +150,14 @@ groups, deferred remainder, PR URL — and end the turn.
 
 ## Scan strategy
 
-| Standard | Primary source targets |
-|---|---|
-| `architecture.md` | All folders (kind-purity, one-export-per-file, filename = export) |
-| `api-layer.md` | `composables/api/`, `server/api/` |
-| `server-routes.md` | `server/api/`, `server/utils/` |
-| `contracts-and-models.md` | `contracts/`, `models/` |
-| `ui-components.md` | `components/`, `composables/ui/`, `pages/` |
-| `types-enums.md` | `types/`, `enums/`, all TS files |
-| `data-and-loads.md` | `server/utils/`, `prisma/` |
-| `testing.md` | All `*.spec.ts` files vs. their source modules |
-| `visual-language.md` | `components/`, `pages/`, `composables/ui/` |
-| `workflow.md` | `package.json`, CI config, `docker-compose.yml` |
+Derive the scan groups from the repo itself: one group per doc under
+`docs/standards/`, with that standard's primary source targets taken from the
+folders/files the standard names (its "Where it lives" section) and the
+`docs/contributing.md` touch-X→update-Y map read in reverse. Typical shape:
+the architecture standard scans all folders (placement, naming, layering);
+each layer standard scans its layer's folders; the testing standard scans
+test files against their source modules; the workflow standard scans the
+package manifest and CI config.
 
 ## Scope (what this skill does NOT do)
 
@@ -175,7 +171,7 @@ groups, deferred remainder, PR URL — and end the turn.
 - **NEVER edits** the historical trees (`docs/specs/**`, `docs/bugs/**`,
   `docs/epics/**`, `docs/research/**`) or the skills (`.claude/skills/**`).
 - **Not a linter replacement** — it targets cross-file drift, duplication,
-  dead code, and standards conformance `pnpm lint` cannot express.
+  dead code, and standards conformance the `lint` gate cannot express.
 
 ## Rules
 

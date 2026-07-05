@@ -74,7 +74,7 @@ full procedure below only when at least one flow is worth guarding.
      defined for that flow in `design.md`. Assertions describe *what the test
      should observe* (e.g. "heading is visible", "empty-state text reads X",
      "error banner contains Y", "value field shows seed value Z") — not the
-     Playwright API calls (those belong in the implementation task).
+     driver API calls (those belong in the implementation task).
    - **Seed values** — note any seeded data values (`docs/standards/testing.md`
      seed-value assertion convention) the assertions should use.
 
@@ -98,11 +98,11 @@ full procedure below only when at least one flow is worth guarding.
 
 This skill does **not**:
 
-- Write Playwright test code — that is the e2e-authoring task `plan-tasks`
+- Write e2e test code — that is the e2e-authoring task `plan-tasks`
   derives from `ui-test-plan.md`.
 - Enumerate all possible edge-case assertions — the plan covers the states
   `design.md` defines, not exhaustive coverage.
-- Modify `playwright.config.ts` — that is part of the per-feature e2e-authoring
+- Modify the e2e runner's config — that is part of the per-feature e2e-authoring
   task.
 - Evaluate the UI-surface gate itself — the orchestrator evaluates
   `ship-spec/SKILL.md` § Review — § UI-surface gate before spawning this skill;

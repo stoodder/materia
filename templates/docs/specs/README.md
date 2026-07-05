@@ -121,12 +121,10 @@ there MUST conform; any consumer that reads from there MAY rely on it.
 |---|---|---|
 | `suggestions-to-specs` | `retro-suggestions` | Drafts proposed specs from `docs/specs/_improvements/**/product-suggestions.md`, presents them for approval, then on approve writes the file(s), renames each consumed `product-suggestions.md` → `product-suggestions.processed.md`, and opens a single PR (no auto-merge). |
 | `propose-spec` | `user-proposed` | Drafts proposed specs from the user's raw idea via in-conversation Q&A; splits sprawling ideas into separate single-shippable-unit proposals. Q&A is in-memory; on approve it branches, writes the file(s), commits, and opens a PR. |
-| `logs-to-specs` | `log-triage` | Triages the running app's container logs (`docker compose logs`) into bug proposals — cross-checking each log signature against the working tree to filter stale-cache noise — and snapshots the supporting log excerpts under `_proposed/_log-triage/` for durable provenance. Fully autonomous: writes proposals and opens one PR (the review gate). |
 | `propose-epic` | `epic` | Develops the operator's large multi-spec idea into an epic under [`docs/epics/`](../epics/README.md) (iterative brainstorm Q&A + a parallel low-tier web-research fan-out), then decomposes it into 2–N member proposals wired by a `depends_on` dependency graph — epic folder + members land in one PR. When a member is later shipped, `ship-spec`'s epic gate spawns the sibling `reconcile-epic` skill (pipeline mode) to sync the epic from as-built reality and cascade changes into the remaining pending members inside the member's own PR; standalone `/reconcile-epic` is the backstop. |
 
 See [../../.claude/skills/suggestions-to-specs/SKILL.md](../../.claude/skills/suggestions-to-specs/SKILL.md),
 [../../.claude/skills/propose-spec/SKILL.md](../../.claude/skills/propose-spec/SKILL.md),
-[../../.claude/skills/logs-to-specs/SKILL.md](../../.claude/skills/logs-to-specs/SKILL.md),
 and [../../.claude/skills/propose-epic/SKILL.md](../../.claude/skills/propose-epic/SKILL.md)
 for the full procedures. Epics themselves (the parent initiative documents,
 their member-linkage contract, and the `reconcile-epic` cascade lifecycle)

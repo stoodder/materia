@@ -415,7 +415,7 @@ Render per `resources/rendering.md` (shape truth:
 - `bug-reports.md` — iff `bugs.length > 0` (gather-only: no ids minted, no
   `docs/bugs/_reports/` writes — `bugs-to-reports` files them later)
 
-Format the written files (`pnpm exec prettier --write`, scoped to exactly the
+Format the written files (the formatter from MATERIA.md § Gate's lint row, scoped to exactly the
 files written — see rendering.md § Common rules), then stage everything plus
 the README seed/row in **one atomic plan commit**:
 

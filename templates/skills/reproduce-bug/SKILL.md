@@ -23,7 +23,7 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
 - `docs/bugs/<dated-slug>/STATUS.md` — the bug run's live state; this skill
   ticks stage 1 here on success (or sets `Blocker:`).
 - `docs/standards/testing.md` — the repo's testing standard: co-location
-  rules, auto-import stubbing, `.spec.ts` naming convention, Vitest API.
+  rules, stubbing conventions, test-file naming, and the test runner's API.
 - The resource/standards docs for the affected surface — resolved by reading
   the report's "Affected surface / route / module" section and cross-referencing
   `docs/surface-map.md` to find the matching `docs/resources/` and
@@ -70,14 +70,15 @@ artifact), and confirm the failure is genuine before gating the next stage.
      `it("returns 0 when no sets are logged")`, not
      `it("does not crash when sets is null")`.
    - Follow all conventions in `docs/standards/testing.md`: co-location,
-     auto-import stubbing, Vitest API, one `it` per distinct case.
+     the repo's stubbing conventions and test-runner API, one test per
+     distinct case.
    - Not import the fix (the fix does not exist yet — the test must fail on
      current code).
 
 4. **Run the tests to confirm RED.**
 
    ```
-   pnpm test path/to/file.spec.ts
+   <test command — MATERIA.md § Gate — scoped to the new test file>
    ```
 
    Capture the full stderr/stdout output and the commit SHA (`git rev-parse
@@ -90,7 +91,7 @@ artifact), and confirm the failure is genuine before gating the next stage.
    the bug), diagnose a Node-version mismatch or a stopped database before
    treating it as a blocker — recipes in
    `.claude/skills/ship-spec/resources/env-preflight.md` (Node major via hard
-   PATH prefix; dead-Postgres restart).
+   runtime selection; dead-service restart).
 
 5. **On RED confirmed — fill `reproduction.md` and tick stage 1.** Write
    `docs/bugs/<dated-slug>/reproduction.md` from the template, populating:

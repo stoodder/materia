@@ -185,7 +185,7 @@ standalone runs apply it on first use.
 5. **Apply the routine cross-cutting updates** that the touch-X→update-Y map
    demands and are NOT silent-oracle (i.e. the spec/architecture *does* name
    them):
-   - New Prisma model named in `architecture.md` → ensure
+   - New schema model named in `architecture.md` → ensure
      `docs/resources/<entity>.md` exists (copy from `docs/_templates/resource.md`
      if not) and is registered in the Resources index of `docs/README.md`.
    - New route named in `architecture.md` → add a row to `docs/surface-map.md`.

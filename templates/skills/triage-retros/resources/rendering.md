@@ -90,7 +90,7 @@ a pure hand-off to `suggestions-to-specs`); `bugs[]` is the defect bucket
 - **Traceback format** — per `actions-contract.md` § Findings traceback
   format, identical across all artifacts.
 - **Formatting** — before staging any commit that touches generated
-  artifacts, run `pnpm exec prettier --write` scoped to **only the files the
+  artifacts, run the repo formatter (MATERIA.md § Gate, lint row) scoped to **only the files the
   run actually wrote** (never `--write .`). This is load-bearing: hand-written
   markdown trips the CI `prettier --check` gate.
 

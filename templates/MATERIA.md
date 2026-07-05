@@ -103,15 +103,6 @@ UI work — the toolchain behind `design`, `ui-test-plan`, `ui-review`,
 - **Capture:** {{how to take a screenshot/snapshot and where proofs land —
   keep the `docs/specs/<dated-slug>/ui-proof/` convention}}
 
-## Logs
-
-Where runtime signal lives for `/logs-to-specs`. `none` if there is no
-long-running local runtime to harvest.
-
-- **Source:** {{e.g. `docker compose logs --since 24h` · a log file path ·
-  a platform CLI command}}
-- **Noise profile:** {{known benign signatures to filter, if any}}
-
 ## Data layer
 
 What the data-safety review angle checks beyond the generic rubric
@@ -142,4 +133,4 @@ pruned skill from the materia template if the capability arrives later.
 
 | Skill | Reason pruned |
 |---|---|
-| {{e.g. logs-to-specs}} | {{e.g. no runtime log source (§ Logs: none)}} |
+| {{e.g. ui-inspection}} | {{e.g. no user-facing UI (§ Eyes: none)}} |

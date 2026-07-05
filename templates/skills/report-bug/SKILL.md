@@ -77,7 +77,7 @@ the project context makes the answer obvious:
 | Section | Sensible default sources |
 |---|---|
 | **Summary** | One sentence inferred from the description. |
-| **Environment** | Node 24 · pnpm 9 · Nuxt 4 · Postgres (from `CLAUDE.md`); operator overrides for non-default envs. |
+| **Environment** | The stack defaults from `MATERIA.md` § Stack / `CLAUDE.md`; operator overrides for non-default envs. |
 | **Steps to reproduce** | Numbered list inferred from description; `_Unknown — please clarify_` if indeterminate. |
 | **Expected** | Inferred from domain knowledge + description. |
 | **Actual** | Taken verbatim from description. |
@@ -121,7 +121,7 @@ Drafted 1 bug report from your description + project context.
   <full inline body — frontmatter + all template sections>
 
 Defaults I applied (you can override any of these):
-  - Environment: Node 24, pnpm 9, Nuxt 4, Postgres (project defaults from CLAUDE.md).
+  - Environment: the project defaults from MATERIA.md § Stack.
   - Severity: medium (adjust if higher/lower impact).
   - Affected surface: <inferred from description or "Unknown">.
   - Reproducibility: intermittent (override if always/once).
@@ -269,7 +269,7 @@ signals to the reviewer that more detail is needed.
 
 ## Environment
 
-Node 24 · pnpm 9 · Nuxt 4 · Postgres
+<the stack defaults from MATERIA.md § Stack>
 
 ## Steps to reproduce
 

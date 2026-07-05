@@ -156,7 +156,7 @@ human comments and no `Blocker`.
 |---|---|---|---|
 | **Orchestrator** | operator session | none (dispatches others) | `ship-spec`, `triage-retros`, `apply-pipeline-improvements` |
 | **Sub-skill** | a fresh-context subagent the orchestrator spawns | `## Recommended tier` | `intake-spec`, `design`, `architecture`, `plan-tasks`, `implement-task`, `finalize`, `docs-sync`, `docs-audit` |
-| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `suggestions-to-specs`, `logs-to-specs`, `report-bug`, `bugs-to-reports`, `ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
+| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `suggestions-to-specs`, `report-bug`, `bugs-to-reports`, `ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
 | **Maintainer** | operator session (or scheduled) | none | `librarian` (sweeps the living docs) and `janitor` (sweeps the code against `docs/standards/`) — each fixes drift directly and opens one PR instead of filing queue entries. Only the librarian **auto-merges its own PR**: a standing exception to the "no auto-merge" invariant, valid only behind a mechanical diff envelope + green CI (its § The docs-only envelope); the janitor's diff is product code, so it stops for human review. Per-run exception: `--auto` (§ The `--auto` argument). |
 
 A producer additionally MUST conform to the queue's frontmatter/filename
@@ -193,7 +193,7 @@ skill.
   it). Fold-and-re-present loops until `approve`; usually one round — on
   round 5+ prefer a fresh re-draft over incremental edits. Silence is fine;
   nothing lands until `approve`.
-- **Autonomous** (`logs-to-specs`, `ui-inspection`): no mid-run checkpoint —
+- **Autonomous** (`ui-inspection`): no mid-run checkpoint —
   the PR is the operator's review gate, so triage MUST be conservative (when
   in doubt, drop and list it; a false entry costs more than a missed one).
 
