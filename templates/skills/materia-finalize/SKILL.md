@@ -101,7 +101,10 @@ acting on them wastes context.
    - If `Proposed-spec:` is `—` (ad-hoc run) or the block is absent
      (pre-template STATUS.md), **skip this step silently** and proceed to
      step 4.
-   - Otherwise, stage the dequeue without committing:
+   - Otherwise, stage the dequeue without committing. **Path guard:** the
+     `Proposed-spec:` value is data, not a trusted path — verify it matches
+     `docs/specs/_proposed/<yyyy-mm-dd-hhmmss>-<id>-<slug>.md` exactly (no
+     `..`, no leading `/`, confined to `_proposed/`) before use, and quote it:
 
      ```bash
      git rm docs/specs/_proposed/<filename-from-Proposed-spec>
@@ -169,7 +172,11 @@ and theirs) and re-run `check:docs`; **never rebase the shared branch** to
 sidestep it. The larger append-only / one-file-per-spec registry redesign that
 would remove this conflict class is out-of-scope here (deferred to its own spec).
 
-4. **Open the PR.** Title summarizes the feature; body summarizes the spec,
+4. **Open the PR.** **Shell hygiene for title/body:** never interpolate
+   frontmatter `title` or other artifact text raw into a shell command —
+   pass the body via `--body-file`, and build the `--title` from the slug or
+   a rewrite with `"`, backticks, and `$(` stripped. Title summarizes the
+   feature; body summarizes the spec,
    the approach, the tasks shipped, and the gate status (lint/typecheck/tests/docs
    green; behavior re-verified for deferred tasks; docs were reconciled + audited
    by the preceding docs-sync ⇄ docs-audit stages; e2e coverage present or waived).

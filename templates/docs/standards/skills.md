@@ -193,6 +193,15 @@ rerun), append a short hex suffix (`openssl rand -hex 2`).
 - **Slug** — the normative kebab-slug algorithm in
   `docs/specs/_proposed/README.md` § Kebab-slug derivation; never invent a
   variant.
+- **Shell-boundary hygiene** — frontmatter and artifact fields are data,
+  never trusted shell input. Consumers validate `id` against
+  `^[a-z0-9]{4,8}$` at discovery (non-conforming → drop with a warning);
+  paths derived from fields are pattern-checked against their queue's
+  folder/filename contract (no `..`, confined to the queue dir) and quoted
+  before any `git rm`/`git mv`; free-text fields (`title`) reach `gh pr
+  create` only via `--body-file` or after stripping `"`, backticks, and
+  `$(`. The kebab-slug algorithm covers slugs/branches; this rule covers
+  everything else that touches a shell.
 - **Consume-by-rename** — a consumed source is `git mv`'d to its
   `.processed.md` name with a one-line `processed_on: <YYYY-MM-DD>` footer,
   in the same commit as the entries it produced.

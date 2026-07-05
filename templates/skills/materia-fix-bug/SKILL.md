@@ -92,7 +92,10 @@ git ls-files 'docs/bugs/_reports/*/report.md'
 
 One `report.md` per report folder. For each surviving
 path, parse the frontmatter (see § Frontmatter parser) and validate required
-fields (`id`, `title`, `severity`, `date`, `status: reported`). Drop any file
+fields (`id`, `title`, `severity`, `date`, `status: reported`). **Validate
+`id` against `^[a-z0-9]{4,8}$`** — it is interpolated into branch names,
+commit messages, and STATUS fields; a non-conforming id is dropped like a
+parse failure. Drop any file
 whose parse failed or whose `status` isn't `reported`, recording a one-line
 warning so the operator sees why a file was skipped.
 
@@ -359,7 +362,11 @@ and acceptance (step 4) pass, mirroring step 4''s semantics:
 
 1. If `Bug-report:` is `—` (ad-hoc run), **skip the dequeue silently**.
 2. Derive `<report-folder>` as the parent folder of the `Bug-report:` path (strip
-   trailing `/report.md`). Stage the removal: `git rm -r <report-folder>`. If the
+   trailing `/report.md`). **Path guard:** before any `git rm`, verify the
+   derived folder matches
+   `docs/bugs/_reports/<yyyy-mm-dd-hhmmss>-<id>-<slug>/` exactly (no `..`,
+   no leading `/`, confined to `_reports/`) — a STATUS field is data, not a
+   trusted path. Quote it. Then stage the removal: `git rm -r <report-folder>`. If the
    folder is already gone (operator removed it mid-run), skip the `git rm -r` and
    note "_report already removed from `_reports/`_" in the PR body — not a Blocker.
 3. Re-run `node scripts/check-docs.mjs` against the staged removal. If green, commit

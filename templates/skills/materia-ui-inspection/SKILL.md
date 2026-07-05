@@ -65,10 +65,14 @@ report (phase-level) before returning control cleanly.
 
 1. Probe the running app for liveness (TCP probe of the dev URL from
    `MATERIA.md` § Run it). If it is already reachable, continue to step 3.
-2. **Autostart when not reachable.** If the probe fails, do **not** abort —
-   bring the app up, then re-probe (bounded wait, ~120s). Announce
-   "App not reachable — starting it." and start it via the
-   first path that applies:
+2. **Autostart when not reachable — interactive runs only.** Starting
+   services and seeding a database are operator-visible machine-state
+   changes: on a **non-interactive run** (Auto Mode / scheduled, and no
+   explicit `--yes`), a down app takes the clean exit below instead of
+   autostarting. On an interactive (or `--yes`) run, do not abort —
+   announce "App not reachable — starting it.", **record every service and
+   process this run starts** (for Phase 4 teardown), bring the app up, then
+   re-probe (bounded wait, ~120s), via the first path that applies:
    - **Documented dev stack (preferred).** Run the `MATERIA.md` § Run it
      recipe and wait for the dev URL to answer.
    - **Provisioning fallback.** If the primary recipe cannot run in this
@@ -187,8 +191,12 @@ report (phase-level) before returning control cleanly.
    only terminal paths that do **not** open a PR are the clean exits defined
    earlier: the Phase 0 abort / unreachable-app exit, and the Phase 1
    instability degrade (which writes a stub report and stops).
-5. Report the outcome to the operator: the path to the report, the finding
-   count, whether the cap was hit, and the PR URL.
+5. **Teardown what this run started.** Stop exactly the processes/services
+   recorded in Phase 0/Phase 1 (the backgrounded dev server, containers this
+   run launched) — and nothing that was already running before the probe.
+   Issue teardown as its own command, never chained with follow-up work.
+6. Report the outcome to the operator: the path to the report, the finding
+   count, whether the cap was hit, the PR URL, and what was torn down.
 
 ### Report shape
 

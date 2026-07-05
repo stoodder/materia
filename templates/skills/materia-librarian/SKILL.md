@@ -38,7 +38,9 @@ ambiguous fix is skipped and noted, never guessed at (§ Rules).
 ## Inputs
 
 - The living docs: `docs/*.md` (root), `docs/resources/`, `docs/standards/`,
-  `docs/_templates/`, plus `CLAUDE.md` and `README.md`.
+  `docs/_templates/`, plus `CLAUDE.md`, `README.md`, and `MATERIA.md`
+  (swept for drift like any living doc — but any diff touching it downgrades
+  the run to no-auto-merge; see § The docs-only envelope).
 - The codebase as the oracle: `git ls-files`, the source folders the
   standards docs name (routes, pages, schema, shared modules), and
   `.claude/skills/*/SKILL.md` frontmatter.
@@ -196,6 +198,7 @@ Before **every push** and again **immediately before merge**, assert that
 ```
 CLAUDE.md
 README.md
+MATERIA.md                (sweepable — but touching it forfeits auto-merge)
 docs/*.md                 (root files)
 docs/resources/**
 docs/standards/**
@@ -207,6 +210,19 @@ Anything else in the diff — any source or config file, anything under
 means the run has escaped its envelope: **revert the offending change and if
 the fix genuinely requires it, drop that fix with a needs-human note.** The
 auto-merge privilege exists only inside this envelope.
+
+**Scale guard (mechanical, same assertion points).** The envelope constrains
+file *kind*; this constrains *magnitude*. Compute
+`git diff main...HEAD --numstat`. If the diff **deletes any file**, or any
+single file's net line loss exceeds **50**, or the whole diff's net loss
+exceeds **150**, the run keeps its PR but **forfeits auto-merge** — report
+the PR URL and stop, exactly as a `--no-merge` run would. Whole-doc removals
+and large rewrites are human decisions; a drift sweep that big is a signal,
+not a chore.
+
+**MATERIA.md forfeit (same mechanism).** A diff that touches `MATERIA.md`
+is envelope-legal but **never auto-merges** — its § Gate and § Tiers are
+enforcement configuration, not prose; a human reviews every change to them.
 
 ## Scope (what this skill does NOT do)
 

@@ -126,8 +126,9 @@ the operator saying up front "don't wait for me."
 - **What does NOT change:** Blockers still stop the run. Autopilot never
   overrides a `Blocker`, widens a loop bound (review ≤3, docs ≤2, gate ≤3,
   CI-fix ≤3), skips a gate (e2e-coverage, screenshot-presence, epic,
-  UI-surface, data-surface), or force-pushes. Autopilot removes **waits**,
-  not safety.
+  UI-surface, data-surface), force-pushes, or **merges under bootstrap
+  grace** (§ Merge watch step 6 — graced CI is not green CI). Autopilot
+  removes **waits**, not safety.
 
 ## Proposal selection (the run's entry point)
 
@@ -153,7 +154,10 @@ Precedence on ambiguity: an explicit `<id>` arg wins over any trailing text.
 (underscore-prefixed subdirectories are producer bookkeeping), **excluding
 `README.md`**. Parse each frontmatter (§ Frontmatter parser) and validate
 required fields (`id`, `title`, `source`, `date`, `status: proposed`;
-`schema_version` informational). Drop files whose parse failed or whose
+`schema_version` informational). **Validate `id` against `^[a-z0-9]{4,8}$`**
+— ids are interpolated into branch names, commit messages, and STATUS
+fields, so a non-conforming one is dropped like a parse failure, never
+"cleaned up". Drop files whose parse failed or whose
 `status` isn't `proposed`, with a one-line warning each so the operator sees
 why a file was skipped.
 
@@ -809,7 +813,12 @@ the orchestrator continues in its own lane after finalize returns:
    the operator in the final turn message.
 6. **Never merge** over a `Blocker`, a red or pending check, or unresolved
    human PR comments — if the operator commented mid-run, stop and surface
-   the comments instead. Autopilot's merge authority is exactly the
+   the comments instead. **Never merge while `MATERIA.md` § Gate carries the
+   Bootstrap-grace marker** — green CI under grace can mean only `check:docs`
+   ran; write `Blocker: auto-merge — bootstrap grace active (gates not yet
+   real)` and surface to the human. Sole exception: the PR being merged is
+   itself the bootstrap gate spec whose own diff makes every § Gate row real
+   and deletes the marker. Autopilot's merge authority is exactly the
    operator's explicit `--auto` at invocation, nothing broader.
 
 ## Course corrections (mid-pipeline)

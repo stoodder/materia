@@ -47,6 +47,13 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
    epic**: the scaffolding of your app skeleton, CI, and gates as the
    pipeline's own first specs. Run `/materia-ship-spec` and the harness builds your
    app from commit one — dogfooding itself.
+4. **Protect `main`** (Settings → Branches, or
+   `gh api` — require a pull request before merging). The shipped allowlist
+   denies the force-push/push-to-main spellings it can express, but pattern
+   matching has limits; branch protection is the mechanical backstop that
+   makes "every change lands via PR" true regardless of what an agent types.
+   With required approvals enabled, `--auto` autopilot merges wait for your
+   approval instead of completing on green — both behaviors are correct.
 
 ## Repo layout
 
