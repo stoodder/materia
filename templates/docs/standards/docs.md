@@ -57,7 +57,7 @@ counter-pressure that keeps them state-shaped.
 | ✓ Do | ✗ Don't |
 |---|---|
 | "`startDate` is cosmetic — it drives no computation." | "`startDate` (added in the schedule pass) replaces the old auto-advance…" |
-| Cell: "`pages/schedule.vue` — the week inventory; details below." + bullets under the table | a 1,500-character single cell narrating the whole page |
+| Cell: "`pages/schedule.ext` — the schedule page; details below." + bullets under the table | a 1,500-character single cell narrating the whole page |
 | "See [api-layer.md](api-layer.md) § cache keys." | restating the cache-key rules inside a resource doc |
 | Glossary: one sentence + Detail link | a five-sentence glossary mini-doc |
 | State the invariant: "the algorithm is fixed; change it only via a spec" | `LOCKED per spec 2026-06-27-eb9kr3 § TDEE calculation` |

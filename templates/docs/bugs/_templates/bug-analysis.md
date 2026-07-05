@@ -17,7 +17,7 @@ _One short paragraph: why the bug happens (the mechanism, not the symptom)._
 | Path | What's wrong / what changes |
 |------|----------------------------|
 | `path/to/file.ts` | _One-line description of the defect or change._ |
-| `path/to/other.vue` | _One-line description._ |
+| `path/to/other.ext` | _One-line description._ |
 
 ## Fix approach
 

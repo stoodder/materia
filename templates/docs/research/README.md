@@ -12,9 +12,6 @@ a standing corpus. A proposal drafted from a note cites it via `source_refs`.
 
 | Doc | What |
 |---|---|
-| [2026-06-29-pipeline-improvement-research.md](2026-06-29-pipeline-improvement-research.md) | External practice + agent research (2024–2026) on improving the `ship-spec` pipeline; 24 adversarially-verified claims mapped to the six pipeline dimensions. Source for the `uk5oqz` / `q590ho` / `kjmf9u` proposals. |
-| [2026-07-03-ux-refinement-audit.md](2026-07-03-ux-refinement-audit.md) | Playwright-grounded UX audit of every page at Pixel-5 (sheets, pull-to-refresh, workout-screen density, list clutter); the problem statements, design principles, and pass plan behind the `feat/ux-refinement-pass` branch. |
-| [2026-07-04-ux-product-refinement-audit.md](2026-07-04-ux-product-refinement-audit.md) | Second-generation product-experience audit (workout-wall density, home briefing, weeks orientation, body-background token drift, completion moments); the design direction and pass plan behind the second UX refinement pass. |
 
 ## Authoring a note
 

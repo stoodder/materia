@@ -15,28 +15,27 @@
 
 | Resource (doc) | Change |
 |---|---|
-| [week](../../resources/week.md) | … |
+| [<entity>](../../resources/<entity>.md) | … |
 
 ## New resources (if any)
 
 <!-- Only when nothing existing fits. For each: the model / contract / route /
-     composable / page to add, following the standards. Note the verb+noun
-     contract names and the cache key. -->
+     client-state / page piece to add, following the standards. -->
 
 ## Data model & migration
 
-<!-- Prisma schema changes + the migration. Unique indexes for upserts. See
-     ../../standards/data-and-loads.md. -->
+<!-- Schema changes + the migration. Unique indexes for upserts. See the
+     repo's data standard under ../../standards/. -->
 
 ## API surface
 
-<!-- New/changed routes: METHOD · path · auth · contract · payload. See
-     ../../standards/server-routes.md and ../../surface-map.md. -->
+<!-- New/changed routes: METHOD · path · auth · contract · payload. See the
+     repo's server-routes standard under ../../standards/ and ../../surface-map.md. -->
 
 ## Client state
 
-<!-- New queries (cache keys) + mutations (optimistic patch / dependent
-     refresh). See ../../standards/api-layer.md. -->
+<!-- New queries + mutations and their caching strategy. See the repo's
+     API-layer standard under ../../standards/. -->
 
 ## Standards in play
 
@@ -46,7 +45,7 @@
 
 ## Test strategy
 
-<!-- Which sibling specs get added/changed; integration coverage if any. See
+<!-- Which tests get added/changed; integration coverage if any. See
      ../../standards/testing.md. -->
 
 ## Out of scope / follow-ups
@@ -54,8 +53,8 @@
 <!-- ============================================================
      NON-PRODUCT (skills / docs / tooling) — skeleton variant
      ============================================================
-     For a skills/docs/tooling feature there is no Prisma model, route, or
-     composable to design. The product sections above (Data model & migration,
+     For a skills/docs/tooling feature there is no schema model, route, or
+     client state to design. The product sections above (Data model & migration,
      API surface, Client state) collapse; use this skeleton instead of forcing
      empty product headings:
 

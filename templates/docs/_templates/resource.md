@@ -5,7 +5,7 @@
   Delete these comments. After writing: add the doc to the table in
   docs/README.md and run the checks (see docs/contributing.md).
 -->
-# <Entity> (`PrismaModel`)
+# <Entity> (`SchemaModel`)
 
 > One sentence: what it is.
 
@@ -15,7 +15,7 @@
 
 ## Data model
 
-<!-- Prisma model(s), key fields, relations, unique indexes — note which upserts use them. -->
+<!-- schema model(s), key fields, relations, unique indexes — note which upserts use them. -->
 
 ## Backend model(s)
 

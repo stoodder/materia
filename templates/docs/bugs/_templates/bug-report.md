@@ -14,8 +14,8 @@ _One sentence describing the defect — inferred from the description._
 
 ## Environment
 
-Node 24 · pnpm 9 · Nuxt 4 · Postgres (project defaults). Override if your
-environment differs (e.g. a specific Docker image tag, Heroku dyno, or
+<the stack defaults from MATERIA.md § Stack>. Override if your
+environment differs (e.g. a specific container image tag, deploy target, or
 browser).
 
 ## Steps to reproduce

@@ -24,7 +24,7 @@ Repo-root-relative path(s) to the `.spec.ts` or integration test file(s) written
 <verbatim failing-test output — the full stderr/stdout of the failed test run>
 ```
 
-**Command run:** `pnpm test path/to/file.spec.ts`
+**Command run:** `<test command — MATERIA.md § Gate — scoped to the test file>`
 
 **SHA:** `<commit hash this was run at>`
 

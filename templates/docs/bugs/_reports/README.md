@@ -148,8 +148,8 @@ future schema version may reorder or rename sections.
 A producer MAY populate the `## Evidence` section as a checklist of multiple
 findings rather than a narrative for a single defect. Each checklist item carries:
 the surface where the issue was observed, the observed issue itself, the standard
-it violates (referenced by name from `docs/standards/visual-language.md` or
-`docs/standards/ui-components.md`), and an optional screenshot reference. This
+it violates (referenced by name from the repo's visual standards docs under
+`docs/standards/`), and an optional screenshot reference. This
 variant uses all 13 required sections in the same order; only the internal content
 of `## Evidence` differs. Consumers MUST NOT rely on body-section internals
 (consistent with the rule above) — a consumer reading a checklist-variant report
@@ -237,7 +237,7 @@ MUST:
 | `bug-report` | [`/report-bug`](../../../.claude/skills/report-bug/SKILL.md) | The operator's raw bug description, refined via in-memory Q&A; on approve it branches, writes the report, and opens a PR |
 | `bugs-to-reports` | [`/bugs-to-reports`](../../../.claude/skills/bugs-to-reports/SKILL.md) | Gathered `bug-reports.md` hand-offs from `docs/specs/_improvements/**/`; drafts conformant reports and files them into `docs/bugs/_reports/`; `triage-retros` gathers the items but no longer writes queue files directly |
 | `janitor` | [`/janitor`](../../../.claude/skills/janitor/SKILL.md) | Legacy key — carried only by reports still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
-| `ui-inspection` | [`/ui-inspection`](../../../.claude/skills/ui-inspection/SKILL.md) | The running app at `localhost:3000`, driven across `docs/surface-map.md § Pages` in the Pixel-5 viewport; judged against `visual-language.md` + `ui-components.md`. Writes one consolidated checklist report; captures co-located in the report folder as `<surface-slug>.{png,html}`. |
+| `ui-inspection` | [`/ui-inspection`](../../../.claude/skills/ui-inspection/SKILL.md) | The running app, driven across `docs/surface-map.md § Pages` at the canonical viewport (MATERIA.md § Eyes); judged against the repo's visual standards docs. Writes one consolidated checklist report; captures co-located in the report folder as `<surface-slug>.{png,html}`. |
 
 When a new producer is added, it MUST update this table with one row.
 **Adding a producer row is NOT a contract change** — it is a registration

@@ -127,14 +127,14 @@ Examples:
 
 | Title | Slug |
 |---|---|
-| `Set log undo is one tap too deep on mobile` | `set-log-undo-is-one-tap` |
+| `Undo action is one tap too deep on mobile` | `undo-action-is-one-tap` |
 | `Remove dead runtimeConfig.public.appName` | `remove-dead-runtime-config-public-app` |
 | `Export CSV (chart data)` | `export-csv-chart-data` |
 
 ### Filename examples
 
 ```
-2026-06-14-a91c2m-set-log-undo-is-one-tap.md
+2026-06-14-a91c2m-undo-action-is-one-tap.md
 2026-06-14-7b30dx-remove-dead-runtime-config-public-app.md
 2026-06-21-9c4f1q-export-csv-chart-data.md
 ```

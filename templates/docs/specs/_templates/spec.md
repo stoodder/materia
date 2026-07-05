@@ -17,7 +17,7 @@
 
 ## Users & context
 
-<!-- Who uses it, where (single-user gym app — on a phone, mid-workout). -->
+<!-- Who uses it, where (the app's universal usage context — MATERIA.md § Identity). -->
 
 ## User stories & acceptance criteria
 

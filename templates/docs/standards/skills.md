@@ -35,10 +35,10 @@
 
 Skills _are_ the harness's behavior. An undocumented or mis-registered skill is
 invisible to the next agent (bad `description` → never routed to) or actively
-misleading (the README diagram/tables disagree with what the skills do). The
-frontmatter `description` is how the harness routes; the README graph and tables
-are how a human or agent discovers how the pieces fit. Both must track reality
-or the pipeline silently rots.
+misleading (the roster tables disagree with what the skills do). The
+frontmatter `description` is how the harness routes; the pipeline README's
+graph and tables are how a human or agent discovers how the pieces fit. Both
+must track reality or the pipeline silently rots.
 
 ## How
 
@@ -250,7 +250,7 @@ touch-X→update-Y map:
 
 | Surface | Update when… |
 |---|---|
-| [`README.md`](../../README.md) § Shipping changes — the unified mermaid graph + the skills tables | any skill is added / renamed / retired, or its model or role changes |
+| The repo's skill-roster surface — `CLAUDE.md`'s pipeline paragraph and, when the repo keeps one, a README flow graph/tables | any skill is added / renamed / retired, or its model or role changes |
 | [`CLAUDE.md`](../../CLAUDE.md) — the spec-to-ship pipeline paragraph | the pipeline's shape or the producer count changes |
 | [`docs/specs/README.md`](../specs/README.md) — pipeline / closing-loop / producers tables | a stage, sibling, or producer skill changes |
 | The **target queue's** producers table + `source` key (e.g. [`docs/specs/_proposed/README.md`](../specs/_proposed/README.md) for spec proposals, [`docs/bugs/_reports/README.md`](../bugs/_reports/README.md) for bug reports); the epic family additionally keeps [`docs/epics/README.md`](../epics/README.md) true | a **producer** skill is added or its source key changes |
