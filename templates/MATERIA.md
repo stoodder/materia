@@ -1,6 +1,6 @@
 # MATERIA.md — the stack adaptation surface
 
-<!-- init: this file is written once by /init from the survey answers and
+<!-- init: this file is written once by /materia-init from the survey answers and
      maintained thereafter like any other doc (librarian sweeps it; docs-sync
      updates it when the stack changes). Replace every {{slot}} and delete
      these comments. Every section heading below is a stable anchor that the
@@ -15,7 +15,7 @@ section owns.
 
 **The `none` convention.** A section marked `none` means this repo has no
 such capability. A skill or pipeline stage whose procedure depends on a
-`none` section is inapplicable here: `/init` prunes it at materialization
+`none` section is inapplicable here: `/materia-init` prunes it at materialization
 time, and any surviving reference degrades gracefully (skip + record the
 skip, never block).
 
@@ -52,7 +52,7 @@ the skip).
 | `test:e2e` | {{browser/e2e suite command, or none}} | |
 | `check:docs` | {{e.g. node scripts/check-docs.mjs}} | ships with materia; portable |
 
-**The full gate** (what `finalize` and CI run): every non-`none` row above,
+**The full gate** (what `materia-finalize` and CI run): every non-`none` row above,
 in table order, all green.
 
 ## Environment preflight
@@ -90,8 +90,8 @@ utilities — or `none` for a repo with no persistence layer}}
 ## Eyes
 
 How an agent **sees** the running app to design against, review, and verify
-UI work — the toolchain behind `design`, `ui-test-plan`, `ui-review`,
-`ui-inspection`, and behavioral verification. `none` if § Surface gates
+UI work — the toolchain behind `materia-design`, `materia-ui-test-plan`, `materia-ui-review`,
+`materia-ui-inspection`, and behavioral verification. `none` if § Surface gates
 § UI-affecting is `none`.
 
 - **Toolchain:** {{e.g. Playwright (Chromium) · a TUI snapshot harness ·
@@ -175,7 +175,7 @@ Never block the run for a bad tier value.
 
 ## Review angles
 
-The standard review fan-out is defined in `ship-spec/SKILL.md` § Review
+The standard review fan-out is defined in `materia-ship-spec/SKILL.md` § Review
 (correctness · security · spec-adherence · behavior · ui when UI-affecting ·
 data-safety when data-affecting). Rows below are **additional repo-specific
 angles** the orchestrator appends to the fan-out; `none` if there are none.
@@ -186,10 +186,10 @@ angles** the orchestrator appends to the fan-out; `none` if there are none.
 
 ## Pruned skills
 
-What `/init` left out of `.claude/skills/` for this repo and why, so a later
+What `/materia-init` left out of `.claude/skills/` for this repo and why, so a later
 reader (or the librarian) knows the absence is deliberate. Re-materialize a
 pruned skill from the materia template if the capability arrives later.
 
 | Skill | Reason pruned |
 |---|---|
-| {{e.g. ui-inspection}} | {{e.g. no user-facing UI (§ Eyes: none)}} |
+| {{e.g. materia-ui-inspection}} | {{e.g. no user-facing UI (§ Eyes: none)}} |

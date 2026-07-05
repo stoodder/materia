@@ -1,4 +1,4 @@
-<!-- Filled by `/report-bug` or by hand. This is the body only — frontmatter
+<!-- Filled by `/materia-report-bug` or by hand. This is the body only — frontmatter
      lives in the queue contract at docs/bugs/_reports/README.md. Do not embed
      frontmatter here; strip the YAML block before passing this body to any
      consumer. -->

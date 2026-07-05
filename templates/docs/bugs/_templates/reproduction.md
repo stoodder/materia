@@ -1,10 +1,10 @@
-<!-- This is the bug reproduction record. Filled by `reproduce-bug`. -->
+<!-- This is the bug reproduction record. Filled by `materia-reproduce-bug`. -->
 
 # <Bug title>
 
 ## Failing test(s)
 
-Repo-root-relative path(s) to the `.spec.ts` or integration test file(s) written by `reproduce-bug`, with the `it(...)` name(s):
+Repo-root-relative path(s) to the `.spec.ts` or integration test file(s) written by `materia-reproduce-bug`, with the `it(...)` name(s):
 
 - `path/to/file.spec.ts` — `it("should <expected behavior>")`
 
@@ -30,4 +30,4 @@ Repo-root-relative path(s) to the `.spec.ts` or integration test file(s) written
 
 ## Notes
 
-_Anything `bug-analysis` or `plan-tasks` need to know (e.g. preconditions, data setup, intermittency patterns)._
+_Anything `materia-bug-analysis` or `materia-plan-tasks` need to know (e.g. preconditions, data setup, intermittency patterns)._

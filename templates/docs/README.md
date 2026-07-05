@@ -48,7 +48,7 @@ page fast? [surface-map.md](surface-map.md).
 
 Each maps to a persistence model (or a derived read path) and documents its
 model, contracts, routes, client API, UI, rules, and canonical files. This
-table starts empty and grows as the app grows — `docs-sync` and
+table starts empty and grows as the app grows — `materia-docs-sync` and
 `contributing.md` § Adding a new doc keep it registered.
 
 | Doc | Entity |
@@ -62,8 +62,8 @@ table starts empty and grows as the app grows — `docs-sync` and
 | [surface-map.md](surface-map.md) | every HTTP route + every page, in one table |
 | [contributing.md](contributing.md) | **read before calling a change done** — Definition of Done, doc-update map, how to add a doc |
 | [specs/README.md](specs/README.md) | the spec-to-ship pipeline (`.claude/skills/`) + per-feature spec/design/architecture/task artifacts |
-| [epics/README.md](epics/README.md) | epics — multi-spec initiatives: the `epic.md`/`research.md` contract, epic↔member linkage, and the `propose-epic`/`reconcile-epic` lifecycle |
-| [bugs/README.md](bugs/README.md) | the bug-report queue — producers, consumer (`/fix-bug`), and per-run folder schema |
+| [epics/README.md](epics/README.md) | epics — multi-spec initiatives: the `epic.md`/`research.md` contract, epic↔member linkage, and the `materia-propose-epic`/`materia-reconcile-epic` lifecycle |
+| [bugs/README.md](bugs/README.md) | the bug-report queue — producers, consumer (`/materia-fix-bug`), and per-run folder schema |
 | [research/README.md](research/README.md) | durable research notes (external practice + agent research) that inform product and pipeline decisions; cited by proposals via `source_refs` |
 | [../MATERIA.md](../MATERIA.md) | the stack adaptation surface — gate commands, run recipe, preflight, surface gates, eyes |
 

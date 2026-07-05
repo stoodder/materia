@@ -1,7 +1,7 @@
 <!-- This is the bug analysis record — the `architecture.md` analogue for the bug loop.
-     Filled by `bug-analysis`. This is the single document `plan-tasks` decomposes.
+     Filled by `materia-bug-analysis`. This is the single document `materia-plan-tasks` decomposes.
      The `## Affected files` section is the "Affected existing resources" analogue
-     that `plan-tasks` reconciles against. -->
+     that `materia-plan-tasks` reconciles against. -->
 
 # <Bug title>
 
@@ -11,7 +11,7 @@ _One short paragraph: why the bug happens (the mechanism, not the symptom)._
 
 ## Affected files
 
-<!-- This section is load-bearing: `plan-tasks` reads it to reconcile against the tasks it generates.
+<!-- This section is load-bearing: `materia-plan-tasks` reads it to reconcile against the tasks it generates.
      It is the "Affected existing resources" analogue. -->
 
 | Path | What's wrong / what changes |
@@ -30,7 +30,7 @@ _A thin sketch of the fix (NOT a design): the change shape (e.g. "add a validati
 ## Test impact
 
 **Reproduction tests to flip RED→GREEN:**
-- `path/to/file.spec.ts` — the tests written by `reproduce-bug`
+- `path/to/file.spec.ts` — the tests written by `materia-reproduce-bug`
 
 **Additional regression tests:**
 - _Any additional test(s) the fix warrants to prevent future regressions._

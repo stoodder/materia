@@ -1,4 +1,4 @@
-<!-- Filled by the `architecture` skill (or by hand). MUST be grounded in the
+<!-- Filled by the `materia-architecture` skill (or by hand). MUST be grounded in the
      docs: read ../../README.md and the relevant resource/standard docs first,
      and prefer REUSING existing resources over adding new ones. -->
 # <Feature> — architecture

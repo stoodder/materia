@@ -1,6 +1,6 @@
-<!-- Filled by the `triage-retros` skill (or by hand). Produced alongside
+<!-- Filled by the `materia-triage-retros` skill (or by hand). Produced alongside
      `pipeline-improvements.md` during synthesis. Consumed by
-     `suggestions-to-specs` to convert each suggestion into a proposed spec.
+     `materia-suggestions-to-specs` to convert each suggestion into a proposed spec.
      Conditional emit: this file is written iff `suggestions.length > 0`; an
      empty suggestion bucket produces no file, not an empty file. -->
 ---
@@ -15,7 +15,7 @@ suggestion_count: <suggestion_count>
 
 These are non-pipeline suggestions captured during the same synthesis pass that
 produced → pipeline-improvements.md. They concern the product or work being built
-rather than the `ship-spec` flow itself, and are intended for a downstream skill
+rather than the `materia-ship-spec` flow itself, and are intended for a downstream skill
 to convert each into a proposed feature spec.
 
 ## S1 — <title>
@@ -27,4 +27,4 @@ to convert each into a proposed feature spec.
 
 ---
 
-_Captured by `triage-retros` run `<slug>` on `<generated_at>`._
+_Captured by `materia-triage-retros` run `<slug>` on `<generated_at>`._

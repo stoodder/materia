@@ -1,4 +1,4 @@
-<!-- Filled by the `ui-test-plan` skill (or by hand). Consumed by `plan-tasks`
+<!-- Filled by the `materia-ui-test-plan` skill (or by hand). Consumed by `materia-plan-tasks`
      to derive the e2e-authoring task. -->
 # <Feature> — UI test plan
 

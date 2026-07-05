@@ -1,4 +1,4 @@
-<!-- Filled by the `intake-spec` skill (or by hand). Keep it tight. -->
+<!-- Filled by the `materia-intake-spec` skill (or by hand). Keep it tight. -->
 # <Feature> — spec
 
 > One sentence: what this delivers and for whom.

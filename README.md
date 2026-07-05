@@ -5,24 +5,24 @@
 > your equipment to gain skills, and that levels up as you use it.
 
 Materia is a **self-improving Claude Code development harness**. You start
-with a blank repo, run one `/init` survey, and Materia materializes a full
+with a blank repo, run one `/materia-init` survey, and Materia materializes a full
 spec-to-ship pipeline tailored to your tech stack:
 
 - **Two queues** — a proposed-specs queue and a bug-reports queue, each a
   transient intake surface with a strict frontmatter/filename contract.
-- **Two orchestrators** — `/ship-spec` drives a proposal through intake →
+- **Two orchestrators** — `/materia-ship-spec` drives a proposal through intake →
   design → architecture → tasks → implementation → multi-angle review → docs →
-  one PR; `/fix-bug` drives a bug report through a RED-first TDD loop that
+  one PR; `/materia-fix-bug` drives a bug report through a RED-first TDD loop that
   reuses the same mid-stages.
 - **Producers** — skills that fill the queues from every signal source you
-  have: your ideas (`/propose-spec`, `/propose-epic`), your own eyes
-  (`/report-bug`), the app's UI (`/ui-inspection`), and the pipeline's own
-  retrospectives (`/suggestions-to-specs`, `/bugs-to-reports`).
-- **Maintainers** — `/janitor` sweeps the code against your standards docs;
-  `/librarian` sweeps the docs against the code. Both fix drift directly.
+  have: your ideas (`/materia-propose-spec`, `/materia-propose-epic`), your own eyes
+  (`/materia-report-bug`), the app's UI (`/materia-ui-inspection`), and the pipeline's own
+  retrospectives (`/materia-suggestions-to-specs`, `/materia-bugs-to-reports`).
+- **Maintainers** — `/materia-janitor` sweeps the code against your standards docs;
+  `/materia-librarian` sweeps the docs against the code. Both fix drift directly.
 - **A self-improvement loop** — every pipeline run writes a `retro.md`;
-  `/triage-retros` triages the accumulated signal three ways (pipeline
-  improvements / product suggestions / bugs) and `/apply-pipeline-improvements`
+  `/materia-triage-retros` triages the accumulated signal three ways (pipeline
+  improvements / product suggestions / bugs) and `/materia-apply-pipeline-improvements`
   edits the pipeline skills themselves. The harness levels up with use.
 - **A docs system built for agent context** — a progressive-disclosure read
   order (`CLAUDE.md` → `docs/README.md` → standards + resources → code),
@@ -39,22 +39,22 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
 
 1. Create a new repo from this template (or clone it) and open it in Claude
    Code.
-2. Run **`/init`**. It interviews you about what you're building, helps you
+2. Run **`/materia-init`**. It interviews you about what you're building, helps you
    pick a stack, then writes `MATERIA.md`, `CLAUDE.md`, the `docs/` skeleton,
    and the pipeline skills into place — pruning anything your stack can't
    use (no UI → no eyes-dependent skills).
-3. `/init` finishes by seeding `docs/specs/_proposed/` with a **bootstrap
+3. `/materia-init` finishes by seeding `docs/specs/_proposed/` with a **bootstrap
    epic**: the scaffolding of your app skeleton, CI, and gates as the
-   pipeline's own first specs. Run `/ship-spec` and the harness builds your
+   pipeline's own first specs. Run `/materia-ship-spec` and the harness builds your
    app from commit one — dogfooding itself.
 
 ## Repo layout
 
 ```
-.claude/skills/init/    the only live skill in the template — the /init survey
+.claude/skills/materia-init/    the only live skill in the template — the /materia-init survey
 templates/
-  MATERIA.md            the companion-doc template /init fills in
-  CLAUDE.md             the always-loaded guide template /init fills in
+  MATERIA.md            the companion-doc template /materia-init fills in
+  CLAUDE.md             the always-loaded guide template /materia-init fills in
   skills/               the canonical pipeline skills (stack-agnostic)
   docs/                 the docs-system skeleton (contracts, templates, standards)
   scripts/check-docs.mjs  the deterministic docs checker (portable, no deps)
@@ -64,14 +64,14 @@ templates/
 
 - **Contracts are sacred.** The queue frontmatter contracts, the producer
   lifecycle, the RED-before-fix gate, the sole-writer retro rule — these were
-  hardened over many runs and ship verbatim. `/init` fills slots; it does not
+  hardened over many runs and ship verbatim. `/materia-init` fills slots; it does not
   redraft contracts.
 - **One home per fact.** Stack specifics live in `MATERIA.md` and the
   generated `docs/standards/*`; skills point at them instead of restating.
 - **The PR is the review gate.** Every skill ends at exactly one PR; nothing
   auto-merges except the librarian's mechanically docs-only diff and an
   explicit `--auto` autopilot run.
-- **Repos diverge by design.** `/apply-pipeline-improvements` edits your
+- **Repos diverge by design.** `/materia-apply-pipeline-improvements` edits your
   repo's skills in place. Upstream syncing back to this template is a
   non-goal — your materia levels up with *your* usage.
 

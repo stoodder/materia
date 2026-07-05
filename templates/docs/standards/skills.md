@@ -9,6 +9,15 @@
 - **One folder per skill:** `.claude/skills/<name>/SKILL.md`. The frontmatter
   `name:` MUST equal the folder name (mirrors the repo's one-export-per-file,
   filename = export ethos — see [architecture.md](architecture.md)).
+- **Namespace prefix.** Every harness skill is named `materia-<role>`
+  (folder + frontmatter + invocation), so generic roles (`design`,
+  `architecture`, `init`, `finalize`) can't collide with user skills, plugin
+  skills, or Claude Code built-ins. New skills follow the prefix. In prose,
+  a bare unbackticked name (`ship-spec`, `design`) refers to the *pipeline or
+  stage concept*; the routable skill identity always carries the prefix —
+  stage ids, retro `Stage:` values, STATUS note strings, commit-message
+  prefixes, queue `source:` keys, and branch names stay bare (they are run
+  artifacts, not routing).
 - **`description:` is the routing surface.** It is what the harness reads to
   decide relevance, so write it for a cold agent: what the skill does, what it
   consumes/produces, and when to reach for it. Lead with the trigger.
@@ -59,8 +68,8 @@ The common spine across this repo's skills — match it so skills read alike:
 **Progressive disclosure for long skills:** when a SKILL.md outgrows a single
 comfortable read, keep an always-read core (the spine above) and move
 phase-scoped detail into `resources/*.md` files that the procedure names at
-the phase that needs them (precedent: `ship-spec/resources/spawn-contract.md`,
-`triage-retros/resources/`). Contract text that other skills parse remains a
+the phase that needs them (precedent: `materia-ship-spec/resources/spawn-contract.md`,
+`materia-triage-retros/resources/`). Contract text that other skills parse remains a
 protected contract wherever it lives — moving it between files means updating
 every consumer's pointer in the same change.
 
@@ -95,11 +104,11 @@ characters, in any repetition or mixture, with exactly two hyphen-minus
 characters — then compare against the literal `--auto`. Any near-miss the
 normalization does not cover (wrong case, single dash, typo) is treated as
 NOT PRESENT; posture stays `off` — every ambiguity resolves toward *not*
-granting autonomy. Its semantics live entirely in `ship-spec`: posture `on`
+granting autonomy. Its semantics live entirely in `materia-ship-spec`: posture `on`
 auto-accepts the run's operator checkpoints (intake defaults, non-blocking
 judgement calls), and after finalize opens the PR the orchestrator watches
 CI, fixes failures, resolves merge conflicts, and **merges once green** — see
-`ship-spec/SKILL.md` § Autopilot and § Merge watch. Every other skill accepts
+`materia-ship-spec/SKILL.md` § Autopilot and § Merge watch. Every other skill accepts
 the flag syntactically as a documented no-op.
 
 The posture persists in `STATUS.md` § Autopilot posture so a resumed run
@@ -117,16 +126,16 @@ human comments and no `Blocker`.
 
 | Kind | Runs in | Tier | Examples |
 |---|---|---|---|
-| **Orchestrator** | operator session | none (dispatches others) | `ship-spec`, `triage-retros`, `apply-pipeline-improvements` |
-| **Sub-skill** | a fresh-context subagent the orchestrator spawns | `## Recommended tier` | `intake-spec`, `design`, `architecture`, `plan-tasks`, `implement-task`, `finalize`, `docs-sync`, `docs-audit` |
-| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `suggestions-to-specs`, `report-bug`, `bugs-to-reports`, `ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
-| **Maintainer** | operator session (or scheduled) | none | `librarian` (sweeps the living docs) and `janitor` (sweeps the code against `docs/standards/`) — each fixes drift directly and opens one PR instead of filing queue entries. Only the librarian **auto-merges its own PR**: a standing exception to the "no auto-merge" invariant, valid only behind a mechanical diff envelope + green CI (its § The docs-only envelope); the janitor's diff is product code, so it stops for human review. Per-run exception: `--auto` (§ The `--auto` argument). |
+| **Orchestrator** | operator session | none (dispatches others) | `materia-ship-spec`, `materia-triage-retros`, `materia-apply-pipeline-improvements` |
+| **Sub-skill** | a fresh-context subagent the orchestrator spawns | `## Recommended tier` | `materia-intake-spec`, `materia-design`, `materia-architecture`, `materia-plan-tasks`, `materia-implement-task`, `materia-finalize`, `materia-docs-sync`, `materia-docs-audit` |
+| **Producer** | operator session | none | `materia-propose-spec`, `materia-propose-epic`, `materia-suggestions-to-specs`, `materia-report-bug`, `materia-bugs-to-reports`, `materia-ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
+| **Maintainer** | operator session (or scheduled) | none | `materia-librarian` (sweeps the living docs) and `materia-janitor` (sweeps the code against `docs/standards/`) — each fixes drift directly and opens one PR instead of filing queue entries. Only the librarian **auto-merges its own PR**: a standing exception to the "no auto-merge" invariant, valid only behind a mechanical diff envelope + green CI (its § The docs-only envelope); the janitor's diff is product code, so it stops for human review. Per-run exception: `--auto` (§ The `--auto` argument). |
 
 A producer additionally MUST conform to the queue's frontmatter/filename
 contract and register its `source` key — see § Registration surfaces.
 
-**Dual-mode exception:** `reconcile-epic` is a producer-lifecycle skill when
-run standalone but a tier-carrying sub-skill when `ship-spec`'s epic gate
+**Dual-mode exception:** `materia-reconcile-epic` is a producer-lifecycle skill when
+run standalone but a tier-carrying sub-skill when `materia-ship-spec`'s epic gate
 spawns it in pipeline mode (see its SKILL.md § Pipeline mode) — it declares a
 `## Recommended tier` for that mode only.
 
@@ -139,9 +148,9 @@ skill.
 
 **Checkpoint mode** — one of:
 
-- **Interactive** (`report-bug`, `propose-spec`, `propose-epic`,
-  `reconcile-epic` standalone, `suggestions-to-specs`,
-  `bugs-to-reports`): draft everything
+- **Interactive** (`materia-report-bug`, `materia-propose-spec`, `materia-propose-epic`,
+  `materia-reconcile-epic` standalone, `materia-suggestions-to-specs`,
+  `materia-bugs-to-reports`): draft everything
   in-memory, present one confirmation block, then pause. Reply verbs, with
   exactly these semantics: `approve` (write + ship), `edit: <feedback>`
   (adjust all drafts, re-present), `edit <id>: <feedback>` (adjust one),
@@ -150,18 +159,18 @@ skill.
   it). Fold-and-re-present loops until `approve`; usually one round — on
   round 5+ prefer a fresh re-draft over incremental edits. Silence is fine;
   nothing lands until `approve`.
-- **Autonomous** (`ui-inspection`): no mid-run checkpoint —
+- **Autonomous** (`materia-ui-inspection`): no mid-run checkpoint —
   the PR is the operator's review gate, so triage MUST be conservative (when
   in doubt, drop and list it; a false entry costs more than a missed one).
 
 **Branch timing** — one of:
 
-- **Branch-at-discovery** (queue consumers — `suggestions-to-specs`,
-  `bugs-to-reports`): once work is found,
+- **Branch-at-discovery** (queue consumers — `materia-suggestions-to-specs`,
+  `materia-bugs-to-reports`): once work is found,
   `git checkout main && git pull` then branch; the branch holds **zero
   diffs** until approve.
-- **Branch-at-approve** (Q&A producers — `report-bug`, `propose-spec`,
-  `propose-epic`, `reconcile-epic` standalone): the
+- **Branch-at-approve** (Q&A producers — `materia-report-bug`, `materia-propose-spec`,
+  `materia-propose-epic`, `materia-reconcile-epic` standalone): the
   whole Q&A is in-memory; the branch is created only on `approve`, so an
   abandoned conversation leaves no trace.
 
@@ -257,7 +266,7 @@ Example of the fenced-block shape a subagent emits:
 
 The normative algorithm (extraction rules, edge-case table, parallel-batch
 ordering) lives in
-[`ship-spec/SKILL.md` § Retrospective capture](../../.claude/skills/ship-spec/SKILL.md#retrospective-capture-per-run-retromd).
+[`materia-ship-spec/SKILL.md` § Retrospective capture](../../.claude/skills/materia-ship-spec/SKILL.md#retrospective-capture-per-run-retromd).
 This section states the invariant; that file carries the implementation detail.
 
 ## Where it lives

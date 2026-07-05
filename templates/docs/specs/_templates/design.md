@@ -1,4 +1,4 @@
-<!-- Filled by the `design` skill (or by hand). Mobile-first; see
+<!-- Filled by the `materia-design` skill (or by hand). Mobile-first; see
      ../../standards/ui-components.md for UI conventions. -->
 # <Feature> — design
 

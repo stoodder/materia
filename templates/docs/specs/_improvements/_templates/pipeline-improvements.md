@@ -1,7 +1,7 @@
-<!-- Fill-in stub for the `triage-retros` skill's plan artifact
+<!-- Fill-in stub for the `materia-triage-retros` skill's plan artifact
      (`docs/specs/_improvements/<dated-slug>/pipeline-improvements.md`).
-     Producer: `triage-retros` (resources/rendering.md § pipeline-improvements.md).
-     Consumer: `apply-pipeline-improvements` (§ Plan parsing) — it globs
+     Producer: `materia-triage-retros` (resources/rendering.md § pipeline-improvements.md).
+     Consumer: `materia-apply-pipeline-improvements` (§ Plan parsing) — it globs
      `docs/specs/_improvements/**/pipeline-improvements.md`, parses the
      `## Actions` section via a section-regex over the raw markdown, and
      renames the consumed plan to `pipeline-improvements.processed.md` on
