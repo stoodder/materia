@@ -67,7 +67,8 @@ standalone runs apply it on first use.
 
 4. **Components.** Identify what's **reused** from `components/` vs **new**. New
    reusable patterns → `components/`; derived strings/classes/tones → a
-   `composables/ui/` hook (never inline UI logic in models/contracts).
+   presentation hook per the repo's UI standard (never inline UI logic in
+   models/contracts).
 
 5. **Interaction notes.** Target sizes, reach/ergonomics at the canonical
    viewport (`MATERIA.md` § Eyes), optimistic feedback
@@ -80,7 +81,7 @@ standalone runs apply it on first use.
    screen must match — surface-tone ladder rungs, spacing/typography scale,
    header/nav idiom, card/list/sheet components, empty/error treatments. This
    section is **binding downstream**: implementers reuse the anchors'
-   components and `composables/ui/` hooks instead of inventing near-duplicate
+   components and presentation hooks instead of inventing near-duplicate
    patterns, and `materia-ui-review` captures the anchor screens for a side-by-side
    cohesion comparison. The failure mode this closes: a screen that satisfies
    every token rule *in isolation* but still reads as foreign next to its

@@ -56,7 +56,8 @@ same rule that exempts them from `check:docs` style checks.
 ## Outputs
 
 - One squash-merged PR (branch `librarian/sweep-<YYYY-MM-DD>`) containing only
-  docs edits, with the PR body listing every fix, every **skipped** ambiguous
+  docs edits — or an **unmerged** green PR when the scale guard or MATERIA.md
+  forfeit applies (§ The docs-only envelope) — with the PR body listing every fix, every **skipped** ambiguous
   finding with a one-line rationale, and any **needs-human** notes (suspected
   code bugs surfaced by normative doc statements — surfaced, not acted on).
 - Zero-drift run: a short "nothing to fix" report; no branch, no PR.
@@ -159,11 +160,12 @@ the GitHub MCP `create_pull_request` tool with the same title/body.
 Repeat until merged, **bounded at 3 rounds**:
 
 1. **Conflicts?** If GitHub reports the branch un-mergeable:
-   `git fetch origin main && git rebase origin/main`. Resolve conflicts by
+   `git fetch origin main && git merge origin/main` — **merge, never rebase,
+   never force-push** (the same rule as ship-spec's merge watch; the shipped
+   permission rules deny force spellings). Resolve conflicts by
    taking `main`'s content as the new base and re-deriving the fix against it
    — re-verify the underlying claim against the code before re-applying; if
-   `main`'s change made the fix moot, drop it. Then
-   `git push --force-with-lease`.
+   `main`'s change made the fix moot, drop it. Then push normally.
 2. **Wait for CI:** `gh pr checks <num> --watch` (poll `gh pr checks <num>`
    if `--watch` is unavailable).
 3. **CI failed?** Read the failing job log (`gh run view <id> --log-failed`).
@@ -215,9 +217,11 @@ auto-merge privilege exists only inside this envelope.
 
 **Scale guard (mechanical, same assertion points).** The envelope constrains
 file *kind*; this constrains *magnitude*. Compute
-`git diff main...HEAD --numstat`. If the diff **deletes any file**, or any
-single file's net line loss exceeds **50**, or the whole diff's net loss
-exceeds **150**, the run keeps its PR but **forfeits auto-merge** — report
+`git diff main...HEAD --numstat` and use the **deleted-lines column**
+(insertions never offset deletions — a balanced rewrite is still a rewrite).
+If the diff **deletes any file**, shows a **binary entry** (`-`), deletes
+more than **50 lines from any single file**, or deletes more than **150
+lines in total**, the run keeps its PR but **forfeits auto-merge** — report
 the PR URL and stop, exactly as a `--no-merge` run would. Whole-doc removals
 and large rewrites are human decisions; a drift sweep that big is a signal,
 not a chore.

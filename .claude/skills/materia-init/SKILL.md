@@ -165,8 +165,10 @@ On approve, in this order:
    `.claude/skills/` **minus the pruned skills**. Pruning a **producer**
    additionally deletes its row from the target queue's producers table
    (`docs/specs/_proposed/README.md` / `docs/bugs/_reports/README.md`) and
-   any other registration surface that links it — a pruned skill must never
-   stay advertised (and its dangling link would fail the self-check).
+   scrubs it from every other registration surface — linked or prose
+   (`docs/standards/skills.md`'s kind/lifecycle rosters name producers in
+   backticks) — a pruned skill must never stay advertised (a dangling link
+   fails the self-check; a prose mention survives it, so sweep deliberately).
 2. **Prune the doc skeleton to the stack:** adapt `docs/surface-map.md`'s
    tables to the surface vocabulary, and prune/rename
    `docs/_templates/resource.md`'s layer sections to the layers this stack
@@ -199,12 +201,17 @@ On approve, in this order:
    contradictory.
 7. **Fill the remaining doc slots:** `docs/README.md`, `docs/contributing.md`
    (DoD + touch-map rows), `docs/glossary.md` (seed the Phase 1 entities +
-   the § Voice & tone vocabulary), and `docs/surface-map.md` (adapt its
-   tables to the surface vocabulary; delete its init comment). Extend `.claude/settings.json`
+   the § Voice & tone vocabulary), and delete `docs/surface-map.md`'s init
+   comment (its tables were already adapted in step 2). Extend `.claude/settings.json`
    `permissions.allow` (shipped with the template — routine git/gh/docs-check
    commands) with this stack's own routine commands: the § Gate rows, the
    § Run it recipe, the package manager, and the § Eyes provisioning script.
-   Never add merge, delete, or deploy commands — those stay prompted.
+   Rules: **keep the shipped `deny` block intact**; never add merge, delete,
+   or deploy commands (those stay prompted); prefer allowlisting the literal
+   gate commands over a bare script path (a script's contents are mutable
+   trust — any later PR can change what an allowlisted path executes); and
+   add stack-specific `deny` rules for destructive stack commands the survey
+   surfaced (database drop/reset, `compose down -v`-style teardowns).
 8. **Rewrite `README.md`** for the app: name, one-liner, run-it, a short
    "how changes ship here" section pointing at `docs/specs/README.md` and
    the skill roster.
@@ -216,7 +223,11 @@ On approve, in this order:
    the end of Phase 7, after the bootstrap epic exists, so the green-gate
    guarantee covers everything init writes.
 11. **Commit** in logical chunks (skeleton · MATERIA/CLAUDE · product brief ·
-    standards · README/cleanup) directly to `main`, and push if a remote exists.
+    standards · README/cleanup) directly to `main`, and push if a remote
+    exists — **as bare `git push`** (or `git push -u origin HEAD` on first
+    push). The shipped deny rules block explicit `git push origin main`
+    spellings for the pipeline's sake; init's direct-to-main bootstrap is
+    sanctioned, and the bare form is how it's expressed.
 
 ### Phase 7 — Seed the bootstrap epic
 
@@ -224,11 +235,14 @@ Write the app's first epic per the `docs/epics/README.md` contract —
 `epic.md` (+ a brief `research.md` when Phase 3 involved real trade-off
 research; **if you skip `research.md`, also remove `epic.md`'s templated
 link to it**) — and 2–N member proposals into `docs/specs/_proposed/` with
-`source: epic`, `epic: <epic-id>`, and a `depends_on` graph. **Link hygiene
-in epic/proposal bodies:** write any reference to another repo file in
+`source: epic`, `epic: <epic-id>`, and a `depends_on` graph. **Link hygiene:**
+in **member-proposal bodies**, write any reference to another repo file in
 backtick/arrow form (`` text → path ``), never as a live markdown link —
-these bodies are copied into differently-nested folders later, and a live
-relative link is wrong in at least one location. Mint every member's `id`
+proposal bodies are copied into differently-nested spec folders later, and a
+live relative link is wrong in at least one location. (Same-folder sibling
+links inside the epic folder — `epic.md → research.md` per the epic
+contract's own template — are fine; epic folders are permanent and never
+re-nested.) Mint every member's `id`
 **first**, then **patch the `MATERIA.md` § Gate Bootstrap-grace marker with
 S1's real proposal id** (Phase 6 wrote the marker with the id pending — a
 marker still reading `<S1 proposal id>` after this step is a defect the
@@ -249,10 +263,13 @@ single-shippable units; the typical decomposition:
 
 **Final self-check (binding):** re-run `node scripts/check-docs.mjs` over
 the full tree — now including the epic + proposals — and fix every failure;
-then grep for any surviving `{{` slot marker, `<!-- init:` comment, or
-angle-bracket placeholder (`<S1 proposal id>`, `<epic-id>`-style tokens
-outside code fences). Zero on all three is the exit criterion; init never
-hands over a repo that fails its own docs gate.
+then grep for any surviving `{{` slot marker, `<!-- init:` / `<!-- template:`
+comment, or **unfilled init-obligation placeholder** (`<S1 proposal id>`,
+`<epic-id>` — the specific tokens init was meant to substitute). Notation in
+code fences or inline backticks (`<model>/<effort>`, `<row>`, `<dated-slug>`)
+is retained documentation, not a placeholder — never "fix" it. Zero on all
+three is the exit criterion; init never hands over a repo that fails its own
+docs gate.
 
 Commit the epic + members to `main` (still bootstrap), then hand off: tell
 the engineer to run `/materia-ship-spec` (or `/materia-ship-spec --auto`) — from this point

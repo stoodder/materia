@@ -11,7 +11,7 @@
       "Bash(git commit:*)",
       "Bash(git checkout -b:*)",
       "Bash(git checkout main)",
-      "Bash(git switch:*)",
+      "Bash(git restore --staged:*)",
       "Bash(git branch --show-current)",
       "Bash(git mv:*)",
       "Bash(git rm:*)",

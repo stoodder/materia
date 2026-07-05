@@ -131,7 +131,8 @@ run) · `cancel`. End the turn; fold-and-re-present until `approve`.
 On `approve`:
 
 1. `git checkout main && git pull`, then
-   `git checkout -b epic/reconcile-<epic-id>` (dirty-pull + same-day
+   `git checkout -b epic/reconcile-<epic-id>` — validating `<epic-id>`
+   against `^[a-z0-9]{4,8}$` first, like every consumed id (dirty-pull + same-day
    collision handling per the lifecycle).
 2. Apply the epic edits and the cascade edits.
 3. Verify link integrity per the lifecycle invariant, then commit — epic

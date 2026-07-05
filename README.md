@@ -49,8 +49,10 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
    app from commit one — dogfooding itself.
 4. **Protect `main`** (Settings → Branches, or
    `gh api` — require a pull request before merging). The shipped allowlist
-   denies the force-push/push-to-main spellings it can express, but pattern
-   matching has limits; branch protection is the mechanical backstop that
+   denies the force-push/push-to-main spellings it can express, but prefix
+   matching has real limits (trailing flags, refspec forms like
+   `git push origin +main` or `HEAD:main` evade it); branch protection is
+   the mechanical backstop that
    makes "every change lands via PR" true regardless of what an agent types.
    With required approvals enabled, `--auto` autopilot merges wait for your
    approval instead of completing on green — both behaviors are correct.

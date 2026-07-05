@@ -577,7 +577,7 @@ machinery escalates visibility; **the merge gate is the human.**
 ## Format and gate
 
 This skill's edits become a PR that must pass CI
-(`eslint . && prettier --check .`, typecheck, tests, `check:docs`). Make the PR
+(`<the repo lint/format gate — MATERIA.md § Gate>`, typecheck, tests, `check:docs`). Make the PR
 land **green**:
 
 1. **Format the touched files before committing.** Run the repo formatter
@@ -598,7 +598,8 @@ land **green**:
    <full gate — every non-`none` row of MATERIA.md § Gate, in table order>
    ```
 
-   Pipeline edits are markdown (`SKILL.md` files), so `prettier --check` and
+   Pipeline edits are markdown (`SKILL.md` files), so the formatter check
+   (MATERIA.md § Gate, lint row) and
    `check:docs` are the load-bearing checks; typecheck/tests should be
    unaffected but are run so the PR is verified end-to-end. Fix anything the
    gate flags (a formatting nit, a broken doc link introduced by an edit) in

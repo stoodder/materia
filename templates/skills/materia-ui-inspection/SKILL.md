@@ -118,7 +118,9 @@ report (phase-level) before returning control cleanly.
    degrade path: print "Eyes provisioning failed (known instability).
    Recording a note and stopping.", **write a stub report** (`source:
    ui-inspection`, `severity: low`, body noting the provisioning failure under
-   `## Steps to reproduce` / `## Evidence`), and stop. **Never crash the
+   `## Steps to reproduce` / `## Evidence`), **tear down anything Phase 0
+   autostarted** (same rule as Phase 4's teardown step — stop exactly what
+   this run started, nothing that pre-existed), and stop. **Never crash the
    operator's session.**
 
 ### Phase 2 — Inspect loop
@@ -187,7 +189,7 @@ report (phase-level) before returning control cleanly.
    commit, push `-u origin ui-inspection/<id>-<slug>`, and open a PR with
    `gh pr create` (title `ui-inspection: <title>`, body with the rendered report
    inline, a closing "Triage with `/materia-fix-bug <id>` once this PR lands",
-   and the Materia sigil last — `docs/standards/skills.md` § PR attribution). The
+   and the Materia sigil last — `docs/standards/skills.md` § PR attribution — the Materia sigil). The
    only terminal paths that do **not** open a PR are the clean exits defined
    earlier: the Phase 0 abort / unreachable-app exit, and the Phase 1
    instability degrade (which writes a stub report and stops).

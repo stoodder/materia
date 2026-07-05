@@ -98,5 +98,5 @@ context cost of a skill that previously needed a paginated read of itself.
 ## Scoped Prettier formatting is load-bearing
 
 A pre-split run shipped a generated artifact that failed the PR's own
-`prettier --check` gate. Formatting is scoped to the files the run wrote —
+`the repo formatter check (MATERIA.md § Gate, lint row)` gate. Formatting is scoped to the files the run wrote —
 never `--write .` — so unrelated files don't sweep into the diff.

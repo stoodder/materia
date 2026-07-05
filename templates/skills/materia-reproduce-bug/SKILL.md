@@ -69,7 +69,7 @@ artifact), and confirm the failure is genuine before gating the next stage.
    - Be named after the expected behavior, not the bug symptom — e.g.
      `it("returns 0 when no sets are logged")`, not
      `it("does not crash when sets is null")`.
-   - Follow all conventions in `docs/standards/testing.md`: co-location,
+   - Follow all conventions in `docs/standards/testing.md`: test placement,
      the repo's stubbing conventions and test-runner API, one test per
      distinct case.
    - Not import the fix (the fix does not exist yet — the test must fail on

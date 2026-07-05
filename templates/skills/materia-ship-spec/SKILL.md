@@ -236,7 +236,9 @@ fills the `## Provenance` block with `—`):
    `Proposed-source:` ← `frontmatter.source` · `Proposed-source-refs:` ←
    `frontmatter.source_refs[]` joined by `,` · `Proposed-id-selection:` ←
    `manual | named-arg | auto-deferred` · `Epic-id:` ← `frontmatter.epic`
-   when present, else `—` (this sets the § Epic gate). Additionally fill
+   when present — validated against `^[a-z0-9]{4,8}$` first, like every
+   consumed id (a non-conforming value halts the stake naming the offending
+   key) — else `—` (this sets the § Epic gate). Additionally fill
    `## Autopilot posture` at this same moment: `on` if the invocation carried
    `--auto` (post dash-normalization per `docs/standards/skills.md` § The
    `--auto` argument), else `off`.
@@ -816,9 +818,12 @@ the orchestrator continues in its own lane after finalize returns:
    the comments instead. **Never merge while `MATERIA.md` § Gate carries the
    Bootstrap-grace marker** — green CI under grace can mean only `check:docs`
    ran; write `Blocker: auto-merge — bootstrap grace active (gates not yet
-   real)` and surface to the human. Sole exception: the PR being merged is
-   itself the bootstrap gate spec whose own diff makes every § Gate row real
-   and deletes the marker. Autopilot's merge authority is exactly the
+   real)` and surface to the human. Sole exception — verified
+   **mechanically, both conditions**: this run's `STATUS.md` `Proposed-id`
+   equals the proposal id named in the marker line itself, AND the PR diff
+   deletes the marker while making every § Gate row real. A PR that merely
+   deletes the marker line without being the named gate spec does not
+   qualify. Autopilot's merge authority is exactly the
    operator's explicit `--auto` at invocation, nothing broader.
 
 ## Course corrections (mid-pipeline)

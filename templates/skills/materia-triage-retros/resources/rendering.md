@@ -92,7 +92,7 @@ a pure hand-off to `materia-suggestions-to-specs`); `bugs[]` is the defect bucke
 - **Formatting** — before staging any commit that touches generated
   artifacts, run the repo formatter (MATERIA.md § Gate, lint row) scoped to **only the files the
   run actually wrote** (never `--write .`). This is load-bearing: hand-written
-  markdown trips the CI `prettier --check` gate.
+  markdown trips the the CI format gate (MATERIA.md § Gate, lint row).
 
 ## `pipeline-improvements.md` — always emitted
 

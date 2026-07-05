@@ -213,9 +213,14 @@ spawn, resolve the tier first and pass it as the `model` override — see
    `tasks.md` is `[x]`. See § Review for the angles and the loop.
 
 6. **docs-sync** (`materia-docs-sync`) → doc edits committed. Spawned after the
-   review loop exits clean — same contract as the spec pipeline, with the
-   bug-run folder and `bug-analysis.md` standing in for `architecture.md` as
-   the intent source alongside `spec`-equivalent report body.
+   review loop exits clean. **The exact spawn-prompt substitution** (mirrors
+   § plan-tasks input substitution — a content override, not a fork):
+
+   > Your run folder is `docs/bugs/<dated-slug>/`. Wherever your procedure
+   > reads `docs/specs/<dated-slug>/spec.md`, read the bug report body
+   > (provided below) instead; wherever it reads `architecture.md`, read
+   > `docs/bugs/<dated-slug>/bug-analysis.md`. All other inputs (the branch
+   > diff, `docs/contributing.md`'s touch-map, the named docs) are unchanged.
 
 7. **docs-audit** (`materia-docs-audit`) → verify pass. **Orchestrator-managed
    loop identical to `materia-ship-spec/SKILL.md` § Pipeline step 9:** on

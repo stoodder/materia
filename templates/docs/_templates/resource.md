@@ -1,4 +1,4 @@
-<!--
+<!-- template:
   Copy this to docs/resources/<entity>.md and fill it in, following
   docs/standards/docs.md (present-state only, short cells, one home per fact).
   The layer sections below are the typical full-stack set — KEEP ONLY the

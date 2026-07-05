@@ -41,8 +41,8 @@ _Medium._ Mirrors the frontmatter `severity` field; both must agree.
 
 ## Affected surface / route / module
 
-_Inferred from description. See docs/surface-map.md for the route/page
-inventory. If unresolvable from the description, this field is left as an
+_Inferred from description. See docs/surface-map.md for the surface
+inventory (routes/pages, commands, or public API)._
 open question below._
 
 ## Preconditions / data setup

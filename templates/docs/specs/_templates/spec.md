@@ -28,7 +28,7 @@
 
 ## Constraints
 
-<!-- Tech/UX constraints (mobile-first, offline-ish, existing stack/standards). -->
+<!-- Tech/UX constraints (the standing constraints from docs/product.md, existing stack/standards). -->
 
 ## Open questions
 

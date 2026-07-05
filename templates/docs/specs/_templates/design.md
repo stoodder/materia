@@ -1,4 +1,5 @@
-<!-- Filled by the `materia-design` skill (or by hand). Mobile-first; see
+<!-- Filled by the `materia-design` skill (or by hand). Ground every choice
+     in docs/product.md § Design feel & taste; see
      ../../standards/ui-components.md for UI conventions. -->
 # <Feature> — design
 
@@ -24,7 +25,7 @@
          no-work / in-progress / blocked / done messages the operator sees
        - "Components"  →  "Reused vs new" (which skills/artifacts/sections are
          reused vs newly authored)
-       - "Interaction & mobile notes"  →  "Invocation & resume notes"
+       - "Interaction & ergonomics notes"  →  "Invocation & resume notes"
          (how it's invoked, what's interactive, how it resumes)
 
      ## Phases & operator output
@@ -72,8 +73,9 @@
 
 ## Components
 
-<!-- Reused (from components/) vs new. New reusable patterns → components/;
-     derived strings/classes → composables/ui hooks. -->
+<!-- Reused (from the repo's component library) vs new. New reusable
+     patterns → the component layer; derived strings/classes → the repo's
+     presentation-hook convention (its UI standard names it). -->
 
 ## Cohesion anchors
 
@@ -87,7 +89,7 @@
 |---|---|---|
 |  |  |  |
 
-## Interaction & mobile notes
+## Interaction & ergonomics notes
 
 <!-- Target sizes, reach/ergonomics at the canonical viewport (MATERIA.md
      § Eyes), save/feedback affordances, debounce — per the repo's UI and

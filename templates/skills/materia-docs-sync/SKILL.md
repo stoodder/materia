@@ -136,9 +136,12 @@ standalone runs apply it on first use.
       *refactored* (a signature or behavior change, not just an added field),
       update the **code examples** that show it in the standards/resource docs —
       not only the field tables.
-   2. **`types/index.ts` barrel ↔ type-coverage tables.** Cross-check the
-      `types/index.ts` barrel against the type-coverage tables so a
-      `types/ui|api/` file the barrel re-exports isn't omitted from the tables.
+   2. **Type barrels ↔ type-coverage tables** — on repos whose types
+      standard keeps barrels/coverage tables. Cross-check each barrel
+      against its coverage table so a re-exported file isn't omitted. On a
+      repo with no barrel convention, record this check as
+      `not-applicable (no barrel convention)` — an absent barrel is not a
+      defect.
    3. **Advance the `docs/specs/README.md` index Stage column in round 1.** Tick
       the run's Index Stage column to `implement ✓ → docs-sync` in **round 1**,
       not as an afterthought a later round has to backfill.
@@ -185,10 +188,12 @@ standalone runs apply it on first use.
 5. **Apply the routine cross-cutting updates** that the touch-X→update-Y map
    demands and are NOT silent-oracle (i.e. the spec/architecture *does* name
    them):
-   - New schema model named in `architecture.md` → ensure
+   - New schema model / core entity named in `architecture.md` → ensure
      `docs/resources/<entity>.md` exists (copy from `docs/_templates/resource.md`
      if not) and is registered in the Resources index of `docs/README.md`.
-   - New route named in `architecture.md` → add a row to `docs/surface-map.md`.
+   - New externally reachable surface named in `architecture.md` — a route,
+     page, CLI command, or public export, whatever `docs/surface-map.md`'s
+     own table shape says this repo's surfaces are → add its row there.
    - New domain term defined in `spec.md` or `architecture.md` → add a
      **one-line** entry (one sentence + Detail link) at its **alphabetical**
      position in `docs/glossary.md` (`check:docs` enforces both).

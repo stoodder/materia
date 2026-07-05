@@ -292,8 +292,9 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
        `ui-proof: capture failed — <reason>` note, then re-invokes finalize.
 
    **Autopilot note (when instructed).** When the orchestrator's spawn prompt
-   marks the run as autopilot (`--auto`), append the one-line autopilot
-   notice it provides to the PR body so reviewers know the PR auto-merges on
+   marks the run as autopilot (`--auto`), insert the one-line autopilot
+   notice it provides into the PR body, above the closing Materia sigil
+   (which stays last), so reviewers know the PR auto-merges on
    green (see `materia-ship-spec/SKILL.md` § Autopilot). Finalize itself never
    merges; the merge belongs to the orchestrator's § Merge watch.
 

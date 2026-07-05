@@ -107,8 +107,7 @@ question to the cheapest pair that can do the job, using the vocabulary in
 - `haiku/low` — default: gather-and-summarize questions ("what are the
   standard approaches to X", "how do comparable apps present Y").
 - `sonnet/medium` — questions needing judgment or synthesis across
-  conflicting sources ("which of these models fits a single-user offline-ish
-  app, and why").
+  conflicting sources ("which of these approaches fits this product's constraints per docs/product.md").
 - Never above `sonnet/medium` — a question that seems to need `opus` is
   really the orchestrator's synthesis job (step 5), not a gathering job.
 

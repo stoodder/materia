@@ -1,4 +1,4 @@
-<!--
+<!-- template:
   Copy this to docs/standards/<topic>.md and fill it in. Read a finished
   example first: docs/standards/architecture.md (gold standard) — and follow
   docs/standards/docs.md (present-state only, short cells, one home per fact).
