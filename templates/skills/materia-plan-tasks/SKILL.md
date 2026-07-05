@@ -205,11 +205,13 @@ app-breaking gap that every gate still passes — unit tests assert the *old*
 path and integration tests hit handlers directly, so a client left calling a
 moved route 404s only in the real app. Three rules:
 
-- **A route/path move is a client+server pair.** Whenever a task moves a server
-  route or changes a fetch path, the **client call sites** that hit that path
-  (composables, pages, utils) must be updated in the **same task**, or in an
-  explicitly dependent task named in `depends-on`. Never let the server move
-  land without the paired client update planned. Add an AC that asserts the
+- **A surface move updates its consumers in the same task.** Whenever a task
+  moves an externally consumed surface (a server route, a CLI command name, a
+  public export), every **consumer call site** of that surface must be
+  updated in the **same task**, or in an explicitly dependent task named in
+  `depends-on` — on client/server stacks that means the client call sites of
+  a moved route; on other stacks, whatever consumes the surface. Never let
+  the move land without the paired consumer update planned. Add an AC that asserts the
   client calls the *live* route.
 - **Renames run a whole-repo grep before slicing.** For any rename (a model,
   type, field, wire key, route segment, util, or user-facing string), run a

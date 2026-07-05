@@ -15,7 +15,7 @@ section owns.
 
 **The `none` convention.** A section marked `none` means this repo has no
 such capability. A skill or pipeline stage whose procedure depends on a
-`none` section is inapplicable here: `/materia-init` prunes it at materialization
+`none` section is inapplicable here: it was pruned at materialization
 time, and any surviving reference degrades gracefully (skip + record the
 skip, never block).
 
@@ -200,9 +200,10 @@ angles** the orchestrator appends to the fan-out; `none` if there are none.
 
 ## Pruned skills
 
-What `/materia-init` left out of `.claude/skills/` for this repo and why, so a later
-reader (or the librarian) knows the absence is deliberate. Re-materialize a
-pruned skill from the materia template if the capability arrives later.
+What the init survey left out of `.claude/skills/` for this repo and why,
+so a later reader (or the librarian) knows the absence is deliberate.
+Re-materialize a pruned skill from the materia template (git history, or the
+upstream template repo) if the capability arrives later.
 
 | Skill | Reason pruned |
 |---|---|

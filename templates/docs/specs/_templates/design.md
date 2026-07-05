@@ -63,8 +63,8 @@
 ## Screens & states
 
 <!-- Per screen/route: purpose, key elements, and the loading / empty / error /
-     success states (every screen must define all four — see the ErrorState /
-     LoadingSkeleton / empty-state conventions). -->
+     success states (every screen must define all four — use the repo's
+     loading/empty/error component conventions from its UI standard). -->
 
 | Screen / route | Purpose | States covered |
 |---|---|---|
@@ -89,7 +89,9 @@
 
 ## Interaction & mobile notes
 
-<!-- Tap targets (.tap), thumb reach, optimistic feedback (Saved ✓), debounce. -->
+<!-- Target sizes, reach/ergonomics at the canonical viewport (MATERIA.md
+     § Eyes), save/feedback affordances, debounce — per the repo's UI and
+     API-layer standards. -->
 
 ## Open design questions
 

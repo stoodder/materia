@@ -89,8 +89,8 @@ Triage each cluster:
 
 | Cluster kind | Action |
 |---|---|
-| Bounded, behavior-preserving conformance drift (dead code, duplication with a mechanical extraction, kind-purity / one-export / naming violations, `interface`→`type` drift, missing sibling spec for a pure module) | **Fix directly.** |
-| Behavioral fault (missing `requireAuth`, wrong derivation, violated contract with runtime impact) or anything needing a product/design decision or a schema/wire change | **Needs-human note** — never fixed here; the fix path is `/materia-report-bug` → `/materia-fix-bug` (RED-first) or `/materia-propose-spec` → `/materia-ship-spec`. |
+| Bounded, behavior-preserving conformance drift (dead code, duplication with a mechanical extraction, placement/naming violations, declaration-style drift the standards prohibit, a missing test for a pure module) | **Fix directly.** |
+| Behavioral fault (a missing auth/permission guard, wrong derivation, violated contract with runtime impact) or anything needing a product/design decision or a schema/wire change | **Needs-human note** — never fixed here; the fix path is `/materia-report-bug` → `/materia-fix-bug` (RED-first) or `/materia-propose-spec` → `/materia-ship-spec`. |
 | Ambiguous, unverifiable, or already covered by a pending queue entry / recent merge | **Skip** with a one-line rationale (name the overlapping `id` or commit). |
 
 Cap the run at roughly **10 coherent fixes** (one root cause = one fix, even

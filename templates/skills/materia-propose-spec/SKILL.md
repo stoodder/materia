@@ -107,10 +107,10 @@ wherever the project context makes the answer obvious:
 | Tagline / one-liner | Inferred from the user's idea. |
 | `## Problem` | Often inferable from the idea alone; the user named the friction. Pad with context from CLAUDE.md / standards if relevant. |
 | `## Goals` | Inferable from the idea + the project's existing patterns. Default to one outcome per coherent feature. |
-| `## Non-goals` | Project-wide defaults: no multi-user, no analytics dashboards, no offline-first sync, no new auth model — unless the idea explicitly wants one. List the ones most likely to be scope creep for *this* idea. |
+| `## Non-goals` | Project-wide defaults: the `docs/product.md` § Audience & market "Not for" list, plus whatever the § Product principles exclude — unless the idea explicitly wants one. List the ones most likely to be scope creep for *this* idea. |
 | `## Users & context` | The app's universal usage context from `docs/product.md` § Audience & market (one-liner: `MATERIA.md` § Identity) |
 | `## User stories & acceptance criteria` | Infer ≥2 user stories from the idea and the relevant standards. Write **testable** ACs (the standards docs make this easier — they spell out what observable behavior to expect from each layer). |
-| `## Constraints` | Always include: mobile-first, follows existing standards (linked), dark UI per visual-language, optimistic-save / `Saving…/Saved ✓` per api-layer if relevant. |
+| `## Constraints` | Always include: follows existing standards (linked) plus the standing constraints from `docs/product.md` § Design feel & taste and § Product principles that bear on this idea. |
 | `## Open questions` | Use this section for the few things you genuinely can't infer. Aim for **≤3 bullets**; if you have more, you're probably under-using project context. |
 
 A complete draft is the goal here, not an outline. Don't write
@@ -164,8 +164,8 @@ Drafted <N> proposal(s) from your idea + project context.
      <full inline body block>
 
 Defaults I applied (you can override any of these):
-  - Users & context: single user, on a phone, mid-workout (project default).
-  - Constraints: mobile-first, dark UI per docs/standards/visual-language.md,
+  - Users & context: the project default from docs/product.md § Audience & market.
+  - Constraints: the repo's standards plus the standing product constraints,
     optimistic save per docs/standards/api-layer.md.
   - Split into <N> proposals because <one-line reason> (if >1).
   - <other notable assumptions in 1–3 more bullets>
@@ -336,7 +336,7 @@ re-drafting it from the template.
 
 ## Users & context
 
-<paragraph; project default: single user, on a phone, mid-workout>
+<paragraph; project default: docs/product.md § Audience & market's usage context>
 
 ## User stories & acceptance criteria
 
@@ -347,8 +347,8 @@ re-drafting it from the template.
 
 ## Constraints
 
-- Mobile-first; follows existing standards (`docs/standards/`).
-- <other constraints from context, e.g. dark UI, optimistic save>
+- Follows existing standards (`docs/standards/`).
+- <standing product constraints from docs/product.md that bear on this idea>
 
 ## Open questions
 

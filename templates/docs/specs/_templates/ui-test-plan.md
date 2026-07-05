@@ -16,7 +16,7 @@ spec folder.
 
 **Entry point:** <URL or navigation action that starts the flow>
 
-**Seed values:** <Any seeded data values (e.g. PIN `0000`, weights, etc.)>
+**Seed values:** <Any seeded fixture values the assertions rely on (dev credentials, known seed rows)>
 
 ### Loading state
 

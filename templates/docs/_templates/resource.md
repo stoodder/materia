@@ -1,11 +1,15 @@
 <!--
-  Copy this to docs/resources/<entity>.md and fill it in. Read a finished
-  example first: docs/resources/week.md (gold standard) — and follow
+  Copy this to docs/resources/<entity>.md and fill it in, following
   docs/standards/docs.md (present-state only, short cells, one home per fact).
+  The layer sections below are the typical full-stack set — KEEP ONLY the
+  layers this repo actually has (docs/standards/architecture.md names them)
+  and rename headings to the repo's own layer vocabulary; /materia-init
+  prunes this template to the stack at materialization time. Read the newest
+  existing doc under docs/resources/ as the local example, if one exists.
   Delete these comments. After writing: add the doc to the table in
   docs/README.md and run the checks (see docs/contributing.md).
 -->
-# <Entity> (`SchemaModel`)
+# <Entity> (`SchemaModel or core-type name`)
 
 > One sentence: what it is.
 
@@ -15,28 +19,34 @@
 
 ## Data model
 
-<!-- schema model(s), key fields, relations, unique indexes — note which upserts use them. -->
+<!-- Schema model(s)/persistent shape, key fields, relations, unique indexes.
+     Delete on repos with no persistence layer. -->
 
 ## Backend model(s)
 
-<!-- models/Xxx.ts purpose + data-only computed getters; payload type path(s). -->
+<!-- Server-side domain objects and their computed surface; wire-shape paths.
+     Delete/rename per the repo's layering. -->
 
 ## API surface
 
-<!-- Table: Method · Path · Contract(s) · server file · request/response payload.
-     If there is no route (server util / derived), say so and describe the entry points. -->
+<!-- Table: how this entity is reached from outside — HTTP routes, CLI
+     commands, public functions/exports, events — one row per surface.
+     If there is no external surface (internal util / derived), say so and
+     describe the entry points. -->
 
-| Method | Path | Contract | Server file | Payload |
-|---|---|---|---|---|
-|  |  |  |  |  |
+| Surface | Contract / signature | Source file | Payload / IO |
+|---|---|---|---|
+|  |  |  |  |
 
 ## Client API
 
-<!-- Query composable + cache key; mutation composable + optimistic/refresh behavior. -->
+<!-- How client-side code consumes it (queries, caching, mutations).
+     Delete on repos with no client layer. -->
 
 ## UI
 
-<!-- Pages, components, presentation composables, derived strings. -->
+<!-- Pages/screens, components, presentation helpers, derived strings.
+     Delete on repos with no UI. -->
 
 ## Business rules & invariants
 
@@ -48,7 +58,7 @@
 
 ## Canonical files
 
-<!-- Exhaustive path list, grouped (model / types / contract / route / client / UI / enums). -->
+<!-- Exhaustive path list, grouped by the repo's layers. -->
 
 ## Related
 

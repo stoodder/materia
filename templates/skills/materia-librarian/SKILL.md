@@ -79,13 +79,14 @@ Every finding must name its oracle (the code path, index, or standard rule
 that proves the doc wrong).
 
 1. **Reference integrity.** Every repo path named in the living docs
-   (Canonical files lists, table cells, prose backticks like
-   `composables/api/useWeeksQuery.ts`) exists in `git ls-files`. A missing
+   (Canonical files lists, table cells, prose backticks naming source files)
+   exists in `git ls-files`. A missing
    path is drift: find where the thing lives now (rename) or remove the
    claim (deletion).
 2. **Inventory coverage, both directions.**
-   - `docs/surface-map.md` routes ⇄ the server route handlers; pages table ⇄
-     the page sources.
+   - `docs/surface-map.md` surfaces ⇄ their sources (routes ⇄ handlers and
+     pages ⇄ page files on a web stack; commands ⇄ command modules, exports ⇄
+     public modules on others — the map's own table shape says which).
    - `docs/README.md` Resources/Standards index tables ⇄ the files in
      `docs/resources/` / `docs/standards/`.
    - schema models ⇄ resource docs (a model with no doc is a
@@ -93,10 +94,11 @@ that proves the doc wrong).
      model is drift to fix).
    - README.md § Shipping changes skill tables ⇄ `.claude/skills/*/SKILL.md`
      frontmatter (fix the docs side to match the skills, never the skills).
-3. **Claim accuracy (sampled).** Verify the cheaply-checkable claims: enum
-   member lists vs `enums/*.ts`, constants values vs `constants/*.ts`, cache
-   keys vs `composables/api/*`, route methods/paths vs handler filenames,
-   auth-exempt route lists vs `requireAuth` call sites. Sample broadly across
+3. **Claim accuracy (sampled).** Verify the cheaply-checkable claims —
+   closed-set member lists vs their source enums/constants, surface
+   names/paths vs their source files, exemption/allowlist claims vs the call
+   sites that enforce them (derive the concrete pairs from this repo's
+   standards docs). Sample broadly across
    docs rather than exhaustively within one.
 4. **Authoring-standard conformance.** The `docs/standards/docs.md` rules the
    mechanical checker can't express: delta-appended prose ("now also

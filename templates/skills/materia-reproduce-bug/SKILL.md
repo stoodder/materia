@@ -1,6 +1,6 @@
 ---
 name: materia-reproduce-bug
-description: Write the failing test(s) that reproduce a reported bug and fill reproduction.md — consumes the bug report body (frontmatter stripped) and STATUS.md, produces sibling .spec.ts or integration test file(s) plus docs/bugs/<dated-slug>/reproduction.md, and ticks STATUS.md stage 1 only after a real RED test run confirms the failure. Stage 1 of the fix-bug pipeline; usable standalone given a report body + folder.
+description: Write the failing test(s) that reproduce a reported bug and fill reproduction.md — consumes the bug report body (frontmatter stripped) and STATUS.md, produces test file(s) placed per the repo testing standard plus docs/bugs/<dated-slug>/reproduction.md, and ticks STATUS.md stage 1 only after a real RED test run confirms the failure. Stage 1 of the fix-bug pipeline; usable standalone given a report body + folder.
 ---
 
 # materia-reproduce-bug — confirm the bug is RED before anyone touches the fix
@@ -22,8 +22,9 @@ those are subsequent stages (`materia-bug-analysis`, then `materia-plan-tasks` +
   report file in `docs/bugs/_reports/`.
 - `docs/bugs/<dated-slug>/STATUS.md` — the bug run's live state; this skill
   ticks stage 1 here on success (or sets `Blocker:`).
-- `docs/standards/testing.md` — the repo's testing standard: co-location
-  rules, stubbing conventions, test-file naming, and the test runner's API.
+- `docs/standards/testing.md` — the repo's testing standard: test placement
+  (co-located or a separate test tree — whatever the standard says), naming,
+  stubbing conventions, and the test runner's API.
 - The resource/standards docs for the affected surface — resolved by reading
   the report's "Affected surface / route / module" section and cross-referencing
   `docs/surface-map.md` to find the matching `docs/resources/` and
@@ -31,9 +32,8 @@ those are subsequent stages (`materia-bug-analysis`, then `materia-plan-tasks` +
 
 ## Outputs
 
-- One or more sibling `.spec.ts` (or integration) test file(s) that encode
-  the bug's expected-vs-actual contract, placed per `docs/standards/testing.md`
-  (co-located with the module under test).
+- One or more test file(s) that encode
+  the bug's expected-vs-actual contract, placed per `docs/standards/testing.md`.
 - `docs/bugs/<dated-slug>/reproduction.md` filled per
   `docs/bugs/_templates/reproduction.md`: the linked test path(s) + `it(...)`
   name(s), the restated repro steps, expected vs actual, the verbatim RED
@@ -58,8 +58,8 @@ artifact), and confirm the failure is genuine before gating the next stage.
    docs read order in `CLAUDE.md`). Read `docs/standards/testing.md`.
 
 2. **Identify the test surface.** Determine the exact module(s) whose behavior
-   the bug violates. This is the file(s) a sibling `.spec.ts` should sit next
-   to. If the bug spans multiple layers (e.g. a server route + a model), write
+   the bug violates. This is the module the failing test(s) must target
+   (placed per `docs/standards/testing.md`).
    one test file per layer or one integration test — whichever is the
    lowest-level surface that will catch the regression.
 
@@ -171,7 +171,7 @@ Given a bug report body and a pre-created `docs/bugs/<dated-slug>/` folder
 2. The skill resolves the affected surface, writes the failing test(s),
    confirms RED, fills `reproduction.md`, and ticks stage 1 (or sets
    `Blocker:`).
-3. Output: one or more `.spec.ts` files + `reproduction.md` — ready for
+3. Output: one or more test files + `reproduction.md` — ready for
    `materia-bug-analysis` to consume.
 
 The next stage is `materia-bug-analysis`.

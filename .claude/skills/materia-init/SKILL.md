@@ -60,6 +60,10 @@ a short paragraph for `CLAUDE.md` § What this is. Resolve at minimum:
   cadence — the analogue of "on a phone, mid-workout").
 - The 3–5 core domain entities the engineer already knows about (these seed
   the glossary and the first resource docs when the bootstrap epic ships).
+- The **surface vocabulary** — how the outside world reaches the app: HTTP
+  routes + pages, CLI commands, a public API/exports, events. This drives
+  `docs/surface-map.md`'s table shape, the resource-doc template's layer
+  sections, and which docs-router phrasings apply.
 - Deploy intent (local-only, a PaaS, containers, serverless) — shapes the
   workflow standard and CI spec.
 
@@ -163,12 +167,17 @@ On approve, in this order:
    (`docs/specs/_proposed/README.md` / `docs/bugs/_reports/README.md`) and
    any other registration surface that links it — a pruned skill must never
    stay advertised (and its dangling link would fail the self-check).
-2. **Write `MATERIA.md`** from `templates/MATERIA.md`: fill every slot,
+2. **Prune the doc skeleton to the stack:** adapt `docs/surface-map.md`'s
+   tables to the surface vocabulary, and prune/rename
+   `docs/_templates/resource.md`'s layer sections to the layers this stack
+   actually has (delete Data model on persistence-less repos, Client API /
+   UI on repos without them) — per that template's own init comment.
+3. **Write `MATERIA.md`** from `templates/MATERIA.md`: fill every slot,
    mark absent capabilities `none`, fill `## Pruned skills`, delete the
    `<!-- init: … -->` comments.
-3. **Write `CLAUDE.md`** from `templates/CLAUDE.md`: same treatment. The
+4. **Write `CLAUDE.md`** from `templates/CLAUDE.md`: same treatment. The
    folder map documents the *intended* layout the bootstrap epic will create.
-4. **Generate the stack-specific standards** under `docs/standards/`, using
+5. **Generate the stack-specific standards** under `docs/standards/`, using
    `docs/_templates/standard.md`'s spine (Rule / Why / How / Where it lives /
    Related):
    - **Always:** `architecture.md` (folder rules, layering, naming — the
@@ -183,12 +192,12 @@ On approve, in this order:
      init (the design language barely exists yet); they grow via `materia-docs-sync`.
    - Register every generated standard as a row in `docs/README.md`
      § Standards and in `docs/contributing.md`'s touch-map slot.
-5. **Write `docs/product.md`** from `templates/docs/product.md`: every
+6. **Write `docs/product.md`** from `templates/docs/product.md`: every
    section filled from Phase 2, opinionated, `{{slots}}` gone. When the repo
    ships UI, derive the `visual-language.md` seed from its § Design feel &
    taste (palette direction, density, motion stance) so the two never start
    contradictory.
-6. **Fill the remaining doc slots:** `docs/README.md`, `docs/contributing.md`
+7. **Fill the remaining doc slots:** `docs/README.md`, `docs/contributing.md`
    (DoD + touch-map rows), `docs/glossary.md` (seed the Phase 1 entities +
    the § Voice & tone vocabulary), and `docs/surface-map.md` (adapt its
    tables to the surface vocabulary; delete its init comment). Extend `.claude/settings.json`
@@ -196,17 +205,17 @@ On approve, in this order:
    commands) with this stack's own routine commands: the § Gate rows, the
    § Run it recipe, the package manager, and the § Eyes provisioning script.
    Never add merge, delete, or deploy commands — those stay prompted.
-7. **Rewrite `README.md`** for the app: name, one-liner, run-it, a short
+8. **Rewrite `README.md`** for the app: name, one-liner, run-it, a short
    "how changes ship here" section pointing at `docs/specs/README.md` and
    the skill roster.
-8. **Remove `templates/` and `.claude/skills/materia-init/`** — everything now lives
+9. **Remove `templates/` and `.claude/skills/materia-init/`** — everything now lives
    in its materialized location; git history keeps the originals. (Skip this
    step if the engineer asked to keep them at the checkpoint.)
-9. **Interim check:** run `node scripts/check-docs.mjs` and fix every failure
+10. **Interim check:** run `node scripts/check-docs.mjs` and fix every failure
    it reports. This is the *interim* pass — the **binding** self-check runs at
    the end of Phase 7, after the bootstrap epic exists, so the green-gate
    guarantee covers everything init writes.
-10. **Commit** in logical chunks (skeleton · MATERIA/CLAUDE · product brief ·
+11. **Commit** in logical chunks (skeleton · MATERIA/CLAUDE · product brief ·
     standards · README/cleanup) directly to `main`, and push if a remote exists.
 
 ### Phase 7 — Seed the bootstrap epic

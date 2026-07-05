@@ -61,15 +61,17 @@ standalone runs apply it on first use.
 
 3. **Screens & states.** For every screen/route, define purpose, key elements,
    and **all four states**: loading, empty, error, ready — matching the existing
-   `LoadingSkeleton` / empty-state / `ErrorState` conventions. Don't leave a
+   repo's loading/empty/error component conventions (its UI standard names
+   them). Don't leave a
    state undefined.
 
 4. **Components.** Identify what's **reused** from `components/` vs **new**. New
    reusable patterns → `components/`; derived strings/classes/tones → a
    `composables/ui/` hook (never inline UI logic in models/contracts).
 
-5. **Interaction notes.** Tap targets (`.tap`), thumb reach, optimistic feedback
-   (`Saved ✓`), debounce — per `ui-components.md` / `api-layer.md`.
+5. **Interaction notes.** Target sizes, reach/ergonomics at the canonical
+   viewport (`MATERIA.md` § Eyes), optimistic feedback
+   save feedback, debounce — per the repo's UI and API-layer standards.
 
 6. **Cohesion anchors.** For each new or changed screen, pick the **1–3
    existing screens most similar in role** (list page, detail page,
@@ -91,7 +93,7 @@ standalone runs apply it on first use.
    **Auto Mode allowance for non-blocking judgement calls.** Small design
    judgement calls — choices that don't affect architecture and that the
    operator could reasonably flip later (e.g. delete a legacy palette key
-   vs alias it; adopt an existing component like `<ErrorState />` on a
+   vs alias it; adopt the repo's existing error-state component on a
    page that previously had an ad-hoc error block; remove a subline
    alongside a wordmark rebrand) — are **made here**, with a one-bullet
    "Open design questions — non-blocking" entry in `design.md` naming

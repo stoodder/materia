@@ -35,7 +35,9 @@
 ## Client state
 
 <!-- New queries + mutations and their caching strategy. See the repo's
-     API-layer standard under ../../standards/. -->
+     API-layer standard under ../../standards/. Delete this section on
+     repos with no client layer (a server-only API still fills Data model +
+     API surface). -->
 
 ## Standards in play
 

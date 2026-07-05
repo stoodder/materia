@@ -30,7 +30,7 @@ _A thin sketch of the fix (NOT a design): the change shape (e.g. "add a validati
 ## Test impact
 
 **Reproduction tests to flip RED→GREEN:**
-- `path/to/file.spec.ts` — the tests written by `materia-reproduce-bug`
+- `path/to/test-file.ext` — the tests written by `materia-reproduce-bug`
 
 **Additional regression tests:**
 - _Any additional test(s) the fix warrants to prevent future regressions._

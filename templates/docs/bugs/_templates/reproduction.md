@@ -4,9 +4,10 @@
 
 ## Failing test(s)
 
-Repo-root-relative path(s) to the `.spec.ts` or integration test file(s) written by `materia-reproduce-bug`, with the `it(...)` name(s):
+Repo-root-relative path(s) to the test file(s), placed per the repo's
+testing standard:
 
-- `path/to/file.spec.ts` — `it("should <expected behavior>")`
+- `path/to/test-file.ext` — `test name: "should <expected behavior>"`
 
 ## Repro steps
 

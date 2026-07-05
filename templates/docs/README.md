@@ -25,8 +25,8 @@ instead of reinventing it.
 **Read only what your change touches** — the resource doc(s) for the entities
 involved plus the standards those docs link, not the whole tree. Each resource
 doc's **Canonical files** and **Related** sections bound your reading. New to the
-domain? Skim [glossary.md](glossary.md). Need a route or
-page fast? [surface-map.md](surface-map.md).
+domain? Skim [glossary.md](glossary.md). Need a surface (route, page,
+command, export) fast? [surface-map.md](surface-map.md).
 
 > Keep these docs true. If you change code in a way that changes what a doc
 > says, update the doc in the same change — docs describe the code as it is, not
@@ -46,9 +46,10 @@ page fast? [surface-map.md](surface-map.md).
 
 ## Resources (one per domain entity)
 
-Each maps to a persistence model (or a derived read path) and documents its
-model, contracts, routes, client API, UI, rules, and canonical files. This
-table starts empty and grows as the app grows — `materia-docs-sync` and
+Each maps to one of the repo's core entities — a persistence model, a
+domain object, a command family, whatever this stack's shape is — and
+documents its layers (per the pruned `_templates/resource.md`), rules, and
+canonical files. This table starts empty and grows as the app grows — `materia-docs-sync` and
 `contributing.md` § Adding a new doc keep it registered.
 
 | Doc | Entity |
@@ -60,7 +61,7 @@ table starts empty and grows as the app grows — `materia-docs-sync` and
 |---|---|
 | [product.md](product.md) | the product brief — name, audience & market, design feel & taste, voice, product principles; the taste oracle intake/design read |
 | [glossary.md](glossary.md) | domain + codebase terms, one line each |
-| [surface-map.md](surface-map.md) | every HTTP route + every page, in one table |
+| [surface-map.md](surface-map.md) | every externally reachable surface (routes/pages, commands, or public API — per the repo's surface vocabulary), in one table |
 | [contributing.md](contributing.md) | **read before calling a change done** — Definition of Done, doc-update map, how to add a doc |
 | [specs/README.md](specs/README.md) | the spec-to-ship pipeline (`.claude/skills/`) + per-feature spec/design/architecture/task artifacts |
 | [epics/README.md](epics/README.md) | epics — multi-spec initiatives: the `epic.md`/`research.md` contract, epic↔member linkage, and the `materia-propose-epic`/`materia-reconcile-epic` lifecycle |
