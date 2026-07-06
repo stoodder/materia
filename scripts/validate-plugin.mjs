@@ -349,11 +349,19 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
   }
   const section = start === -1 ? '' : lines.slice(start, end).join('\n')
   if (start === -1) fail('review-angle registry: MATERIA.md has no `## Review angles` section')
-  // Registry data rows: | `angle` | `file` | ... | (header/separator have no backticks)
+  // Registry data rows: | `angle` | `file` | ... | (header/separator have no
+  // backticks). Fail CLOSED: any table row in the slice that is not the header
+  // or separator MUST have backticked Angle+File cells — a bare row (e.g. a
+  // hand-appended `| a11y | a11y.md | … |`) would otherwise be silently skipped,
+  // escaping every check below (the exact drift this guard exists to catch).
   const rows = []
   for (const ln of section.split('\n')) {
+    if (!/^\|/.test(ln)) continue // not a table row
+    if (/^\|\s*-+\s*\|/.test(ln)) continue // separator |---|---|
+    if (/^\|\s*Angle\s*\|/.test(ln)) continue // header
     const m = /^\|\s*`([^`]+)`\s*\|\s*`([^`]+)`\s*\|/.exec(ln)
-    if (m) rows.push({ angle: m[1].trim(), file: m[2].trim() })
+    if (!m) { fail(`review-angle registry: malformed row "${ln.trim()}" — the Angle and File cells must be backticked (\`slug\` | \`slug.md\`)`); continue }
+    rows.push({ angle: m[1].trim(), file: m[2].trim() })
   }
   const angleFiles = readdirSync(ANGLE_DIR).filter((f) => f.endsWith('.md') && f !== 'README.md')
   const rowsByFile = new Map()
@@ -384,6 +392,7 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
     const keys = new Map()
     for (const ln of fm[1].split('\n')) {
       if (!ln.trim()) continue
+      if (/^\s/.test(ln)) continue // indented YAML continuation (folded/block scalar) — not a key
       const kv = /^([A-Za-z0-9_-]+)\s*:\s*(.*)$/.exec(ln)
       if (!kv) { fail(`review-angle front matter: ${ANGLE_DIR}/${f} has a non key:value front-matter line: "${ln.trim()}"`); continue }
       keys.set(kv[1], kv[2].trim())
@@ -408,8 +417,10 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
 // verbatim-shipped angle file went uncaught. Angle files ship byte-for-byte via
 // /materia:init, so hold them to the same hygiene: no unquoted {{slot}} markers,
 // no live markdown links to repo-relative paths (backtick prose only; http(s)/
-// mailto and ${CLAUDE_PLUGIN_ROOT} are exempt, mirroring §1c). Link/slot syntax
-// inside code fences or inline code is illustrative — blanked before scanning.
+// mailto and ${CLAUDE_PLUGIN_ROOT} are exempt, mirroring §1c). Live-link syntax
+// inside code fences or inline code is illustrative — blanked before the link
+// scan. The {{slot}} scan follows §3's rule instead (a bare {{ fails unless
+// backtick-adjacent; fences are NOT exempt), so it runs over the raw text.
 {
   const FENCE = /```[\s\S]*?```|~~~[\s\S]*?~~~/g
   const INLINE_CODE = /`[^`]*`/g
