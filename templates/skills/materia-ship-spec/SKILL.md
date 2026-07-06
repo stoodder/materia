@@ -431,7 +431,7 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
 4. **Spawn** `Agent(..., model: <model>)` with the effort sentence prepended
    to the prompt. Record the resolved tier per spawn for the retro.
 
-**Fallback:** a resolved model that is malformed / not-enabled / out-of-table /
+**Fallback:** a resolved model that is not-enabled / out-of-table /
 `Agent`-rejected coerces to the unit's own **Fallback Model** — the
 `Fallback Model` column of its row in `MATERIA.md` § Tiers § Skill routing
 (the **Default** row's fallback for a unit with no row of its own), run at the

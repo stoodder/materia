@@ -230,8 +230,8 @@ per-task-field cases) live in § Fallback.
 
 The single home for how a unit degrades when its assigned model can't be spawned.
 
-When a unit's **model** is unavailable — not-enabled (opt-in), out-of-table,
-malformed, or `Agent`-rejected — it degrades to the **Fallback Model** named in
+When a unit's **model** is unavailable — not-enabled (opt-in), out-of-table, or
+`Agent`-rejected — it degrades to the **Fallback Model** named in
 its § Skill routing row (a unit with no row, and a repo-specific § Review angle,
 use the **Default** row's **`opus`**), run at the unit's **own effort** (effort
 describes the work, not the model).

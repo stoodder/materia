@@ -90,13 +90,21 @@ const walk = (p) => {
 walk('templates'); walk('.claude')
 
 // ---- 2. § audit -------------------------------------------------------------
-// Every segment of a `MATERIA.md § A § B` chain must name a real heading — the
-// whole chain, not just the first segment (a mis-scoped subsection pointer is
-// exactly the drift this catches). References wrap across lines, so audit over
+// Every segment of a `MATERIA.md § A § B` chain must name a real heading AND,
+// past the first, be a subsection of its predecessor — so a mis-scoped pointer
+// like `§ Gate § Model set` (Model set is a child of Tiers, not Gate) fails,
+// not just an unknown segment. References wrap across lines, so audit over
 // whitespace-normalized text and match each segment against the known heading
 // set (longest first, at a word boundary) rather than guessing terminators —
 // which also stops the capture from swallowing trailing prose.
-const heads = [...readFileSync('templates/MATERIA.md', 'utf8').matchAll(/^#{2,3} (.+)$/gm)].map((m) => m[1].trim())
+const heads = []
+const parentOf = new Map() // h3 heading -> its parent h2, for the nesting check
+let curH2 = null
+for (const ln of readFileSync('templates/MATERIA.md', 'utf8').split('\n')) {
+  const m2 = /^## (.+)$/.exec(ln), m3 = /^### (.+)$/.exec(ln)
+  if (m2) { curH2 = m2[1].trim(); heads.push(curH2) }
+  else if (m3) { const h = m3[1].trim(); heads.push(h); if (curH2) parentOf.set(h, curH2) }
+}
 const headsByLen = [...heads].sort((a, b) => b.length - a.length)
 // the known heading that `text` begins with (word-boundary terminated), or null
 const leadingHead = (text) =>
@@ -106,6 +114,7 @@ for (const f of mdFiles) {
   const norm = readFileSync(f, 'utf8').replace(/\s+/g, ' ')
   for (const start of norm.matchAll(/MATERIA\.md[`"']?/g)) {
     let pos = start.index + start[0].length
+    let prev = null
     let sm
     while ((sm = /^\s*§\s*/.exec(norm.slice(pos)))) {
       const after = pos + sm[0].length
@@ -118,18 +127,23 @@ for (const f of mdFiles) {
         fail(`${f}: MATERIA.md § "${bad}…" has no matching heading in templates/MATERIA.md`)
         break // chain integrity is lost past an unknown segment
       }
+      if (prev && parentOf.get(h) !== prev) {
+        fail(`${f}: MATERIA.md § "${prev} § ${h}" — "${h}" is not a subsection of "${prev}"`)
+        break
+      }
+      prev = h
       pos += h.length
     }
   }
 }
-console.log(`  ✓ § audit: ${refs} MATERIA.md § references (all chain segments) checked against ${heads.length} headings`)
+console.log(`  ✓ § audit: ${refs} MATERIA.md § references (nested, all chain segments) checked against ${heads.length} headings`)
 
 // ---- 2b. mirror pins --------------------------------------------------------
 // Rows in § Skill routing that intentionally duplicate another row's tier are
 // pinned equal here so an edit to one that misses the other fails CI.
 const routingRow = (label) => {
   const src = readFileSync('templates/MATERIA.md', 'utf8')
-  const re = new RegExp(`^\\|\\s*\`${label.replace(/[/]/g, '\\/')}\`\\s*\\|(.+)$`, 'm')
+  const re = new RegExp(`^\\|\\s*\`${label.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}\`\\s*\\|(.+)$`, 'm')
   const m = src.match(re)
   if (!m) return null
   return m[1].split('|').slice(0, 3).map((c) => c.trim()) // [Model, Effort, Fallback Model]
