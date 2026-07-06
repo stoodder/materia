@@ -63,6 +63,15 @@ report (phase-level) before returning control cleanly.
 
 ### Phase 0 — Preflight
 
+**UI self-gate (first action — before the liveness probe).** Check `MATERIA.md`
+§ Surface gates § UI-affecting. If it is `none` — this repo ships no user-facing
+surface (`MATERIA.md` § Eyes is `none` too, and `docs/surface-map.md` § Pages is
+empty) — there is nothing to inspect: print one line —
+`materia-ui-inspection: skipped (no UI surface — § UI-affecting is none)` — and
+end cleanly, writing nothing. This runs **before** step 1 so a no-UI repo never
+autostarts the dev stack. (This is a user-invoked producer, so the gate is its
+outermost guard — nothing upstream has already filtered by UI.)
+
 1. Probe the running app for liveness (TCP probe of the dev URL from
    `MATERIA.md` § Run it). If it is already reachable, continue to step 3.
 2. **Autostart when not reachable — interactive runs only.** Starting

@@ -36,6 +36,15 @@ acting on them wastes context.
 
 ## Procedure
 
+**0. UI self-gate (no-op in the orchestrated lane).** Before any provisioning or
+reads, check `MATERIA.md` § Surface gates § UI-affecting. If it is `none` — this
+repo ships no user-facing surface (`MATERIA.md` § Eyes is `none` too) — there are
+no flows to guard: print one line —
+`materia-ui-test-plan: skipped (no UI surface — § UI-affecting is none)` — and end
+cleanly, writing nothing. This gate is a no-op in the orchestrated lane:
+`materia-ship-spec` only spawns this stage on a UI-affecting diff, so the check
+passes and the procedure below runs.
+
 **Pure non-behavioral change → zero-flow waiver (short-circuit).** If the change
 is purely non-behavioral — a palette/token-only swap, a presentation-only tweak
 with no new or changed user-interactable flow — there is nothing to guard. Don't

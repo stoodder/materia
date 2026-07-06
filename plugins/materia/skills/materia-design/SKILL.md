@@ -44,6 +44,15 @@ standalone runs apply it on first use.
 
 ## Procedure
 
+0. **UI self-gate (no-op in the orchestrated lane).** Before anything else, read
+   `MATERIA.md` § Surface gates § UI-affecting. If it is `none` — this repo ships
+   no user-facing surface (`MATERIA.md` § Eyes is `none` too) — there is nothing
+   here to design: print one line —
+   `materia-design: skipped (no UI surface — § UI-affecting is none)` — and end
+   cleanly, writing nothing. This gate is a no-op in the orchestrated lane:
+   `materia-ship-spec` only spawns this stage on a UI-affecting diff, so the check
+   passes and the procedure below runs.
+
 1. **Read** `docs/specs/<dated-slug>/spec.md`, `docs/specs/_templates/design.md`,
    `docs/product.md` (§ Design feel & taste, § Voice & tone, § Product
    principles — the judgement baseline), `docs/standards/ui-components.md`
@@ -122,5 +131,6 @@ This skill does **not**:
 - **Run for non-UI features.** A Claude Code skill, a CLI helper, a refactor —
   the orchestrator's UI gate skips this stage, and `materia-architecture` § Non-product
   features carries the operator-facing phase/output enumeration instead. A
-  standalone caller should apply the same judgement: no screens, no design
-  stage.
+  standalone invocation **enforces** the same outcome: the § Procedure step 0 UI
+  self-gate exits on a repo whose `MATERIA.md` § Surface gates § UI-affecting is
+  `none` (no screens, no design stage) — it does not merely advise.

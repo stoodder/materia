@@ -54,6 +54,15 @@ acting on them wastes context.
 
 ## Procedure
 
+0. **UI self-gate (no-op in the orchestrated lane).** Before provisioning
+   anything, check `MATERIA.md` § Surface gates § UI-affecting. If it is `none` —
+   this repo ships no user-facing surface (`MATERIA.md` § Eyes is `none` too) —
+   there is nothing to review: print one line —
+   `materia-ui-review: skipped (no UI surface — § UI-affecting is none)` — and end
+   cleanly, writing nothing (no Eyes provisioning, no findings). This gate is a
+   no-op in the orchestrated lane: `materia-ship-spec` only spawns this angle on a
+   UI-affecting diff, so the check passes and the procedure below runs.
+
 1. **Provision the Eyes environment** — run the provisioning recipe from
    `MATERIA.md` § Eyes as the first step. This is an explicit, on-demand call;
    it must be idempotent (safe to call when already provisioned), but it is

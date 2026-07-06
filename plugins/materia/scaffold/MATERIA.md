@@ -8,16 +8,17 @@
      updating every skill that cites it (grep for "MATERIA.md §"). -->
 
 The companion document to `CLAUDE.md`. Everything **stack-specific** the
-pipeline needs lives here, in named sections; the pipeline skills under
-`.claude/skills/` are stack-agnostic and reference this file by section
-(e.g. `MATERIA.md § Gate`). One home per fact: skills never restate what a
-section owns.
+pipeline needs lives here, in named sections; the pipeline skills (installed
+globally with the `materia` plugin) are stack-agnostic and reference this file
+by section (e.g. `MATERIA.md § Gate`). One home per fact: skills never restate
+what a section owns.
 
 **The `none` convention.** A section marked `none` means this repo has no
 such capability. A skill or pipeline stage whose procedure depends on a
-`none` section is inapplicable here: it was pruned at materialization
-time, and any surviving reference degrades gracefully (skip + record the
-skip, never block).
+`none` section is inapplicable here: the skill **self-gates** at runtime (it
+prints one line and ends cleanly) or the orchestrator **skips and records** the
+stage — never blocks. Skills install globally with the `materia` plugin, so an
+inapplicable one is present-but-inert, not absent.
 
 ## Identity
 
@@ -293,14 +294,3 @@ the § Skill routing **Default** row (`opus`), per § Coercion.
 | Angle | What it checks | Gate (when it runs) | Tier |
 |---|---|---|---|
 | {{none}} | | | |
-
-## Pruned skills
-
-What the init survey left out of `.claude/skills/` for this repo and why,
-so a later reader (or the librarian) knows the absence is deliberate.
-Re-materialize a pruned skill from the materia template (git history, or the
-upstream template repo) if the capability arrives later.
-
-| Skill | Reason pruned |
-|---|---|
-| {{e.g. materia-ui-inspection}} | {{e.g. no user-facing UI (§ Eyes: none)}} |

@@ -239,6 +239,23 @@ for (const [a, b] of MIRRORS) {
 }
 console.log(`  ✓ mirror pins: ${MIRRORS.length} routing-row mirror(s) hold`)
 
+// ---- 2c. UI self-gate registry ----------------------------------------------
+// init no longer prunes skills — the four UI skills install in EVERY repo,
+// including no-UI ones. Each MUST carry a runtime self-gate that exits cleanly
+// when MATERIA.md § Surface gates § UI-affecting is `none`. This registry (the
+// former UI_PRUNE set) plus a pinned, greppable gate phrase makes a dropped
+// gate fail CI, closing the "one skill missed" gap.
+const UI_SELF_GATE = ['materia-design', 'materia-ui-test-plan', 'materia-ui-review', 'materia-ui-inspection']
+const GATE_PHRASE = 'UI self-gate'
+const gateBefore = failures
+for (const skill of UI_SELF_GATE) {
+  const f = `plugins/materia/skills/${skill}/SKILL.md`
+  if (!readFileSync(f, 'utf8').includes(GATE_PHRASE))
+    fail(`UI self-gate: ${skill}/SKILL.md is missing the "${GATE_PHRASE}" clause — it installs in every repo and must exit cleanly when MATERIA.md § UI-affecting is none`)
+}
+if (failures === gateBefore)
+  console.log(`  ✓ UI self-gate: ${UI_SELF_GATE.length} UI skills carry the "${GATE_PHRASE}" clause`)
+
 // ---- 3. slot hygiene ---------------------------------------------------------
 // Skills ship slot-free (slots live in MATERIA.md/CLAUDE.md/docs). Rule is
 // pattern-scoped, not file-scoped: flag a `{{` only when it is NOT immediately
