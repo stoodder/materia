@@ -7,7 +7,7 @@
 schema_version: 1
 slug: <slug>
 generated_at: <generated_at>
-source_plan: docs/specs/_improvements/<slug>/pipeline-health.md
+source_rollup: docs/specs/_improvements/<slug>/pipeline-health.md
 suggestion_count: <suggestion_count>
 ---
 

@@ -16,7 +16,9 @@ triage_conversion: <triage_conversion>
 
 # <Slug-as-Title-Case> — pipeline health
 
-<summary paragraph describing the batch's health signals>
+<summary paragraph — the batch headline in the synthesizer's voice: its health
+signals plus what was captured (N suggestions / M bugs). This is the on-disk
+seed the triage PR's title and body are re-derived from at PR-open.>
 
 ## Outcome counts by stage
 

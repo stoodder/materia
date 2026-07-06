@@ -45,22 +45,25 @@ front-load):
 | --- | --- |
 | `## Resumability gate` | Detect run/phase from disk, print recap, resume |
 | `## Discovery` | Glob + filter unprocessed retros; identity tuple |
-| `## Branch + folder bootstrap` | Branch, `<dated-slug>`, plan folder, README seed |
+| `## Branch + folder bootstrap` | Branch, `<dated-slug>`, triage folder, README seed |
 | `## Parser` | The `RetroParse` envelope + degradation rules |
 | `## Envelope collection` | Sub-agent fan-out (3+) or inline parse (≤2) |
 | `## Synthesis` | Cluster prompt, two-way triage, skeptic pass |
-| `## Artifacts + plan commit` | What gets written and committed (see resources/rendering.md) |
+| `## Artifacts + triage commit` | What gets written and committed (see resources/rendering.md) |
 | `## Checkpoint` | Pause-by-ending-turn, approve tokens, fold-feedback |
 | `## Mark-processed` → `## PR-URL backfill` | Renames, scope guard, PR, backfill |
 
 ## Resumability gate
 
 Run this **first on every invocation**. It is pure: inspect the branch, the
-plan folder, and the commit graph; derive the first incomplete phase; print a
-recap; hand off. There is no `RUN.md`/`STATUS.md` — state is file-derived
-(see design-notes). The lifecycle is linear — **artifacts written → retros
-renamed → PR opened → PR-URL backfilled** — and each phase is one atomic
-commit, so the first incomplete phase is unambiguous.
+**committed tree**, and the commit graph; derive the first incomplete phase;
+print a recap; hand off. There is no `RUN.md`/`STATUS.md` — state is
+file-derived (see design-notes). **All folder/artifact existence below is
+judged on the committed tree (`git ls-files`), never on-disk `test -d`** — so
+a leftover *uncommitted* empty folder from a crash before the triage commit
+never false-corrupts a retry. The lifecycle is linear — **artifacts written →
+retros renamed → PR opened → PR-URL backfilled** — and each phase is one
+atomic commit, so the first incomplete phase is unambiguous.
 
 ### Step 1 — detect the run
 
@@ -70,17 +73,24 @@ invocation** — go directly to **Discovery**.
 
 ### Step 2 — detect the phase (first match wins)
 
-- **2a.** `docs/specs/_improvements/<dated-slug>/` does not exist →
-  **resume at Synthesis.**
-- **2b.** Folder exists but `pipeline-health.md` is missing → **corrupt
-  state** (the triage commit deliberately never lands an empty folder, and
-  `pipeline-health.md` is emitted **unconditionally** — it is the sentinel).
-  Halt, naming the directory and expected file; the operator deletes the
-  orphan and re-invokes, or hand-restores the run. The two bucket files
-  (`product-suggestions.md`, `bug-reports.md`) are **conditional**, so their
-  absence is never corrupt — only a missing `pipeline-health.md` is (a
-  health-only run, with both buckets empty, is a valid complete run).
-- **2c.** Folder exists (sentinel present) AND `git log --format=%s` has zero commits matching
+- **2a.** The triage commit has not landed —
+  `git ls-files docs/specs/_improvements/<dated-slug>/pipeline-health.md`
+  returns nothing (the folder is absent, **or** is a leftover *uncommitted*
+  empty folder from a crash before the triage commit) → **resume at
+  Synthesis.** Existence is judged on the committed tree, so a leftover
+  uncommitted folder routes to a clean Synthesis re-run (it is re-used /
+  overwritten safely), **never** to 2b.
+- **2b.** The folder is **committed** (`git ls-files
+  docs/specs/_improvements/<dated-slug>/` lists tracked files) but
+  `pipeline-health.md` is **not** among them → **corrupt state.** The triage
+  commit is atomic and always includes `pipeline-health.md` (the
+  unconditionally-emitted sentinel), so a committed folder missing it can only
+  be hand-corruption. Halt, naming the directory and expected file; the
+  operator deletes the orphan and re-invokes, or hand-restores the run. The
+  two bucket files (`product-suggestions.md`, `bug-reports.md`) are
+  **conditional**, so their absence is never corrupt — a health-only run (both
+  buckets empty) is a valid complete run.
+- **2c.** The folder is committed (sentinel tracked) AND `git log --format=%s` has zero commits matching
   `^triage-retros\(retros\):` → **resume at Checkpoint.** The message that
   re-invoked the skill is the checkpoint reply — classify it per
   `## Checkpoint`.
@@ -96,13 +106,14 @@ invocation** — go directly to **Discovery**.
 
 ### Step 3 — recap, then continue
 
-Before the resumed phase, print a short recap naming the branch, the plan
-path, retros pending rename, bug-reports presence, whether a PR is open, and
-the phase being resumed. A Checkpoint resume (2c) re-emits the full
-checkpoint prompt with the unchanged plan summary immediately after.
+Before the resumed phase, print a short recap naming the branch, the run
+folder path, retros pending rename, bug-reports presence, whether a PR is
+open, and the phase being resumed. A Checkpoint resume (2c) re-emits the full
+checkpoint prompt with the unchanged triage summary immediately after.
 
 **Crash-mid-phase safety:** a phase that died before its commit left no
-commit, so the next resume re-runs it from on-disk state. Re-entry is always
+commit, so the gate (judging existence on the committed tree) re-runs it —
+any leftover uncommitted files are re-used or overwritten. Re-entry is always
 safe.
 
 ## Discovery
@@ -157,13 +168,16 @@ checkpoint; the skill never auto-renames):
 | 2 clustering around one theme | `<theme>-roundup` (else fall through) |
 | ≥3 (or 2 that don't cluster) | `weekly-roundup` |
 
-**Plan folder:** create `docs/specs/_improvements/<dated-slug>/` but do
-**not** commit it empty — the first content commit is the plan commit.
+**Triage folder:** create `docs/specs/_improvements/<dated-slug>/` but do
+**not** commit it empty — the first content commit is the triage commit.
 
 **README seed:** if `docs/specs/_improvements/README.md` is untracked, seed
-the index in the plan commit; otherwise append this run's row (one row per
-run: dated-slug · plan path · PR cell carrying `<filled by PR open>` until
-backfill · outcome `planned | no-op | blocked`).
+the index in the triage commit; otherwise append this run's row (one row per
+run: dated-slug · run folder path · PR cell carrying `<filled by PR open>`
+until backfill · outcome). The **outcome** maps to what the run produced:
+`captured` when ≥1 suggestion or bug was emitted, `health-only` when neither
+bucket was (only `pipeline-health.md` — the PR still opens; it is **not** a
+no-op).
 
 ## Parser
 
@@ -284,9 +298,11 @@ and the parent never appends a sub-agent return to any `retro.md`. The only
   synthesizing from the rest. Degraded retros still appear in the run's
   "Retros consumed" row and in `pipeline-health.md`.
 - **Only if ALL envelopes are unusable** does the run halt — before the
-  triage commit, so nothing is on disk: "Synthesis failed: 0 usable
-  envelopes. No artifacts written. Branch not committed. Re-invoke
-  /materia-triage-retros to retry."
+  triage commit, so **nothing is committed** (the branch and an empty plan
+  folder may exist on disk, but no commit landed): "Synthesis failed: 0 usable
+  envelopes. No artifacts committed. Re-invoke /materia-triage-retros to
+  retry." Re-invocation's gate finds no committed `pipeline-health.md` (2a) and
+  re-runs Discovery-derived collection → Synthesis fresh over the same branch.
 
 ## Synthesis
 
@@ -397,8 +413,9 @@ Proceed through the **full lifecycle** (checkpoint → mark-processed → PR →
 backfill): the retros are still consumed (else they would be re-harvested
 forever) and the health snapshot still accrues as corpus. The only difference
 is there are no bucket files and no downstream producer hand-off; the README
-index row's outcome is `no-op`. (A run that opens *no* PR at all is the
-distinct **zero-retros** Discovery case, not this one.)
+index row's outcome is `health-only` (it opened a PR — **not** a no-op). (A run
+that opens *no* PR at all is the distinct **zero-retros** Discovery case, not
+this one.)
 
 Format the written files (the formatter from MATERIA.md § Gate's lint row, scoped to exactly the
 files written — see rendering.md § Common rules), then stage everything plus
@@ -413,14 +430,20 @@ re-invocation starts fresh.
 
 ## Checkpoint
 
-The only interactive seam after invocation. After the plan commit is pushed,
+The only interactive seam after invocation. After the triage commit is pushed,
 print the checkpoint prompt below, then **end the turn** — no further tool
 calls. The operator's next message re-invokes the skill; gate Step 2c routes
 it back here, and the message is classified as approve or feedback. There is
 no timeout and no reminder — the run sits on the pushed branch indefinitely
 and resumes cleanly in any future session.
 
-### Checkpoint prompt (verbatim, values filled from the synthesis result)
+### Checkpoint prompt (verbatim)
+
+Values fill from the in-memory synthesis result on the **first** emission. On
+a **2c resume** (a later turn — the in-memory result is gone), re-derive them
+from the committed artifacts instead: counts and titles from
+`product-suggestions.md` / `bug-reports.md` (absent → 0), and
+`retros_consumed` / `blocker_rate` from `pipeline-health.md`'s frontmatter.
 
 ```
 ─────────────────────────────────────────────────────────────────────
@@ -536,16 +559,21 @@ merges after review. **Tooling:** `gh pr create` locally; in the remote
 environment (no `gh` CLI) use the GitHub MCP `create_pull_request` with the
 same base/head/title/body. Everything else is tool-agnostic.
 
-- **Body:** built from `summary_paragraph` (the batch in the orchestrator's
-  voice) + a short list of what landed — suggestions captured (→
-  `product-suggestions.md`, run `/materia-suggestions-to-specs`), bugs
-  gathered (→ `bug-reports.md`, run `/materia-bugs-to-reports`), and the
-  `pipeline-health.md` rollup. A health-only run says so plainly. Close with
-  the repo's standard `🤖 Generated with [Claude
-  Code](https://claude.com/claude-code)` footer.
-- **Title:** `triage-retros: ` + the first clause of `summary_paragraph`
-  (before the first period), truncated at a word boundary to <70 chars total
-  with a trailing `…` if truncated.
+Because the checkpoint ended the turn, PR-open runs on a later resume turn
+(gate 2d) where the in-memory synthesis result is gone. **Source the title and
+body only from committed on-disk files**, never from an in-memory value:
+
+- **Body:** built from the committed `pipeline-health.md` — its summary
+  paragraph (the batch in the orchestrator's voice) and frontmatter counts —
+  plus what landed on disk: suggestions captured (→ `product-suggestions.md`
+  when present, run `/materia-suggestions-to-specs`), bugs gathered (→
+  `bug-reports.md` when present, run `/materia-bugs-to-reports`), and the
+  `pipeline-health.md` rollup itself. A health-only run (neither bucket file
+  present) says so plainly. Close with the repo's standard `🤖 Generated with
+  [Claude Code](https://claude.com/claude-code)` footer.
+- **Title:** `triage-retros: ` + the first clause of `pipeline-health.md`'s
+  summary paragraph (before the first period), truncated at a word boundary to
+  <70 chars total with a trailing `…` if truncated.
 
 On failure (auth, protections, network): halt with the error — branch and
 commits are intact and pushed; the next invocation resumes at gate 2d and

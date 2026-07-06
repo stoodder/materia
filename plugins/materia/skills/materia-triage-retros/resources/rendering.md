@@ -15,9 +15,13 @@ so they survive independent of any one artifact).
 ## The in-memory working shape
 
 The cluster pass reasons in this structured shape, then writes it straight
-into the markdown artifacts. It is **never persisted** — no `synthesis.json`,
-no intermediate file; the markdown is the only durable output. The shape
-exists so the artifacts render consistently every run:
+into the markdown artifacts. The shape itself is **never persisted as JSON** —
+no `synthesis.json`, no intermediate file; every field lands in the markdown,
+which is the only durable output. In particular `summary_paragraph` is written
+into `pipeline-health.md` (below), so it survives the checkpoint turn-break —
+the PR-open step re-derives the PR title/body from it **on disk**, never from
+the in-memory shape. The shape exists so the artifacts render consistently
+every run:
 
 ```jsonc
 {
@@ -50,7 +54,7 @@ exists so the artifacts render consistently every run:
     // aggregated per-retro `health` tallies (outcome/subagent-return counts,
     // by-stage rows) → pipeline-health.md; see § pipeline-health.md below
   },
-  "summary_paragraph": "<one paragraph in the orchestrator's voice — seeds the PR body>"
+  "summary_paragraph": "<one paragraph in the orchestrator's voice — written into pipeline-health.md; the PR title/body are re-derived from it on disk at PR-open>"
 }
 ```
 
@@ -66,21 +70,23 @@ feed the project's backlog, not the pipeline skills.
 - **Title case** — strip the leading `<yyyy-mm-dd-hhmmss>-<rand>-` prefix
   from `slug`, split the remainder on `-`, and title-case it joined with
   spaces (`2026-06-21-134501-9c2a3-weekly-roundup` → `Weekly Roundup`).
-- **Traceback format** — per § Findings traceback format below, identical
-  across all artifacts.
+- **Traceback format** — per § Findings traceback format below. Note the
+  **per-artifact variance**: `product-suggestions.md` carries the verbatim
+  quote; `bug-reports.md` is **quote-less** (`` `<retro_path>` § `<anchor>` ``).
 - **Formatting** — before staging any commit that touches generated
   artifacts, run the repo formatter (MATERIA.md § Gate, lint row) scoped to **only the files the
   run actually wrote** (never `--write .`). This is load-bearing: hand-written
-  markdown trips the the CI format gate (MATERIA.md § Gate, lint row).
+  markdown trips the CI format gate (MATERIA.md § Gate, lint row).
 
 ## `product-suggestions.md` — emitted iff `suggestions.length > 0`
 
-Five sections per the stub: frontmatter (`source_plan` points at the sibling
+Five sections per the stub: frontmatter (`source_rollup` points at the sibling
 `pipeline-health.md`; `suggestion_count` matches the body) · H1
 (`# <Title> — product suggestions`) · intro paragraph (per the stub) · one H2 per suggestion
 (`## S<n> — <title>` with `**Kind:**`, `**Description:**`, `**Source:**`
-bullets — every `supporting[]` entry as its own source bullet) · footer
-(`_Captured by \`triage-retros\` run \`<slug>\` on \`<generated_at>\`._`).
+bullets — every `supporting[]` entry as its own source bullet, **with** the
+verbatim quote) · footer
+(`_Captured by \`materia-triage-retros\` run \`<slug>\` on \`<generated_at>\`._`).
 
 Never emit an empty file — the file's presence is the downstream "anything to
 do?" signal. Downstream, `materia-suggestions-to-specs` renames it
@@ -88,12 +94,14 @@ do?" signal. Downstream, `materia-suggestions-to-specs` renames it
 
 ## `bug-reports.md` — emitted iff `bugs.length > 0`
 
-Per the stub: frontmatter (`bug_count`) · H1 (`# <Title> — bug reports`) ·
-intro paragraph (gathered, not yet filed — run `/materia-bugs-to-reports`) ·
-`## Filed reports` table, one row per bug in `bugs[]` order. The
-"Report file" cell is **always `—`** — this skill mints no ids and writes no
-report files; `materia-bugs-to-reports` mints both. Source-retro cell uses the
-traceback shape (`` `<retro_path>` § `<anchor>` ``). Footer as above.
+Per the stub: frontmatter (`source_rollup` → the sibling `pipeline-health.md`;
+`bug_count`) · H1 (`# <Title> — bug reports`) · intro paragraph (gathered, not
+yet filed — run `/materia-bugs-to-reports`) · `## Filed reports` table, one row
+per bug in `bugs[]` order. The "Report file" cell is **always `—`** — this
+skill mints no ids and writes no report files; `materia-bugs-to-reports` mints
+both. The "Source retro" cell uses the **quote-less** variant
+(`` `<retro_path>` § `<anchor>` `` — no quote; see § Findings traceback
+format). Footer as above (`_Captured by \`materia-triage-retros\` …_`).
 Downstream rename: `bug-reports.processed.md` by `materia-bugs-to-reports`.
 
 ## `pipeline-health.md` — always emitted, **never renamed**
@@ -105,8 +113,11 @@ No consumer dequeues it — it accumulates as a historical corpus (a
   `"<pct>% (<blocked+failed> of <total_entries> entries)"`;
   `triage_conversion` is
   `"<product_count> product suggestions + <bug_count> bugs from <total_entries> entries"`.
-- **Summary paragraph** — the synthesizer's voice: what the batch's health
-  signals, which stage dominates, whether the signal is clean or noisy.
+- **Summary paragraph** — the synthesizer's voice (`summary_paragraph` from
+  the working shape): what the batch signals — its health (which stage
+  dominates, whether the signal is clean or noisy) and what was captured
+  (suggestion/bug counts). This paragraph is the **on-disk seed** the PR-open
+  step re-derives the PR title/body from, so lead with the batch headline.
 - **`## Outcome counts by stage`** — one row per distinct stage across all
   envelopes, **sorted by descending `blocked + failed`**, with a bold
   `**Total**` row. The `subagent_return issues` column counts non-`ok`
@@ -121,18 +132,34 @@ No consumer dequeues it — it accumulates as a historical corpus (a
 
 ## Findings traceback format
 
-Every supporting reference in the hand-off artifacts uses **literally** this
-shape (backticked path, ` § `, backticked verbatim `Entry N — <stage>`
-anchor, em-dash, double-quoted verbatim quote):
+Every supporting reference uses a backticked path, ` § `, and a backticked
+verbatim `Entry N — <stage>` anchor. There are **two variants — per artifact,
+not identical**:
 
-```markdown
-`<retro_path>` § `<anchor>` — "<quote>"
-```
+- **`product-suggestions.md`** (`**Source:**` bullets) carries the verbatim
+  quote:
 
-Grep'ing the quoted phrase in the linked file must find the source.
-`materia-suggestions-to-specs` and `materia-bugs-to-reports` parse each
-`supporting[]` entry back into `{ retro_path, anchor, quote }`, so the shape
-is a contract — reproduce it character-for-character.
+  ```markdown
+  `<retro_path>` § `<anchor>` — "<quote>"
+  ```
+
+  `materia-suggestions-to-specs` parses each entry back into
+  `{ retro_path, anchor, quote }`.
+
+- **`bug-reports.md`** (the "Source retro" table cell) is **quote-less** —
+  path + anchor only:
+
+  ```markdown
+  `<retro_path>` § `<anchor>`
+  ```
+
+  `materia-bugs-to-reports` parses `{ retro_path, anchor }` (no quote — see its
+  SKILL.md § Parse each source).
+
+Grep'ing the anchor (and, for suggestions, the quoted phrase) in the linked
+file must find the source. Both shapes are contracts — reproduce them
+character-for-character, and **do not add a quote to the bug-reports cell** (it
+breaks the quote-less parser).
 
 ## Placeholder convention
 
