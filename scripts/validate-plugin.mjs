@@ -220,8 +220,14 @@ for (const f of mdFiles) {
 console.log(`  ✓ § audit: ${refs} MATERIA.md § references (nested, all chain segments) checked against ${heads.length} headings`)
 
 // ---- 2b. mirror pins --------------------------------------------------------
-// Rows in § Skill routing that intentionally duplicate another row's tier are
-// pinned equal here so an edit to one that misses the other fails CI.
+// A cross-table pin: the § Skill routing `ui-review` row governs standalone
+// invocation of the skill, while the ship-spec UI review angle spawns at the
+// `ui` Tier in § Review angles. The two must stay in sync, so the skill row's
+// model/effort is pinned equal to the registry row's Tier here — an edit to one
+// that misses the other fails CI. The registry Tier is a single `<model>/<effort>`
+// pair with NO Fallback token, so this compares model+effort only (per-token
+// backticks stripped on both sides so `fable` and `` `fable` `` can't mismatch).
+const stripTicks = (s) => s.replace(/`/g, '').trim()
 const routingRow = (label) => {
   const src = readFileSync('plugins/materia/scaffold/MATERIA.md', 'utf8')
   const re = new RegExp(`^\\|\\s*\`${label.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}\`\\s*\\|(.+)$`, 'm')
@@ -229,15 +235,28 @@ const routingRow = (label) => {
   if (!m) return null
   return m[1].split('|').slice(0, 3).map((c) => c.trim()) // [Model, Effort, Fallback Model]
 }
-const MIRRORS = [['ui-review', 'ship-spec: review/ui']]
-for (const [a, b] of MIRRORS) {
-  const ra = routingRow(a), rb = routingRow(b)
-  if (!ra) fail(`mirror pin: § Skill routing row \`${a}\` not found`)
-  else if (!rb) fail(`mirror pin: § Skill routing row \`${b}\` not found`)
-  else if (ra.join('/') !== rb.join('/'))
-    fail(`mirror pin: \`${a}\` (${ra.join('/')}) and \`${b}\` (${rb.join('/')}) must carry the same tier`)
+// Parse a § Review angles registry row (columns Angle | File | Gate | Tier) and
+// return its Tier as a 2-token [model, effort] (backticks stripped). The
+// registry Tier carries no Fallback token — hence the 2-token shape.
+const registryRow = (angle) => {
+  const src = readFileSync('plugins/materia/scaffold/MATERIA.md', 'utf8')
+  const re = new RegExp(`^\\|\\s*\`${angle.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}\`\\s*\\|[^|]*\\|[^|]*\\|([^|]*)\\|`, 'm')
+  const m = src.match(re)
+  if (!m) return null
+  return stripTicks(m[1]).split('/').map((t) => t.trim()) // Tier -> [model, effort]
 }
-console.log(`  ✓ mirror pins: ${MIRRORS.length} routing-row mirror(s) hold`)
+const MIRRORS = [['ui-review', 'ui']]
+for (const [skill, angle] of MIRRORS) {
+  const rs = routingRow(skill), rg = registryRow(angle)
+  if (!rs) fail(`mirror pin: § Skill routing row \`${skill}\` not found`)
+  else if (!rg) fail(`mirror pin: § Review angles registry row \`${angle}\` not found`)
+  else {
+    const skillTier = rs.slice(0, 2).map(stripTicks) // [model, effort], backticks off
+    if (skillTier.join('/') !== rg.join('/'))
+      fail(`mirror pin: § Skill routing \`${skill}\` (${skillTier.join('/')}) and § Review angles \`${angle}\` Tier (${rg.join('/')}) must carry the same model/effort`)
+  }
+}
+console.log(`  ✓ mirror pins: ${MIRRORS.length} cross-table mirror(s) hold`)
 
 // ---- 2c. UI self-gate registry + placement ----------------------------------
 // init no longer prunes skills — the four UI skills install in EVERY repo,

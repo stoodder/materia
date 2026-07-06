@@ -140,19 +140,20 @@ two tables:
   `Model/effort` field `plan-tasks` writes into `tasks.md`, the
   per-question research tiers `propose-epic` picks) choose from this
   menu per unit.
-- **§ Skill routing** — the per-unit assignment. Every spawned sub-skill,
-  every **canonical** `ship-spec` review angle, and every internal
-  sub-agent role has a row (`Model`, `Effort`, `Fallback Model`); a unit with
-  no row uses the **Default** row. Two dynamic assigners are the exception to a
-  fixed row: `propose-epic: research` has a row marked as picking from § Model
-  set rather than a fixed pair, and the per-task spawns `plan-tasks`
-  emits carry their tier in a `tasks.md` field rather than a row (see § Skill
-  routing).
+- **§ Skill routing** — the per-unit assignment. Every spawned sub-skill and
+  every internal sub-agent role has a row (`Model`, `Effort`, `Fallback
+  Model`); a unit with no row uses the **Default** row. Review angles are the
+  exception — they carry their tier in the § Review angles registry, not here.
+  Two further dynamic assigners are also exceptions to a fixed row:
+  `propose-epic: research` has a row marked as picking from § Model set rather
+  than a fixed pair, and the per-task spawns `plan-tasks` emits carry their
+  tier in a `tasks.md` field rather than a row (see § Skill routing).
 
-**A documented exception to central routing:** repo-specific review angles in
-§ Review angles carry their own `Tier` column and are *not* routed through
-§ Skill routing — they are authored per stack at init time, so they cannot live
-in a table that ships verbatim.
+**A documented exception to central routing:** every review angle — canonical
+and repo-specific alike — carries its `Tier` in the § Review angles registry,
+not § Skill routing. The canonical set ships pre-filled there and repo-specific
+angles are appended, so the whole set lives beside its file library in one
+registry.
 
 One representation everywhere: the token pair **`<model>/<effort>`**
 (e.g. `sonnet/medium`), where `<model>` is a § Model set name and `<effort>` a
@@ -189,9 +190,9 @@ what each is for. This is the menu a dynamic assigner picks from.
 The model/effort assignment for the units the pipeline spawns. This table
 **ships verbatim** (it is not stack-specific — only § Model set availability
 is). Resolution reads the unit's row; a spawned unit with no row uses the
-**Default** row — **except** a repo-specific review angle, which is not routed
-here at all (it carries its own `Tier` column in § Review angles; see the
-§ Tiers intro). One row (`propose-epic: research`) describes a
+**Default** row — **except** a review angle (canonical or repo-specific), which
+is not routed here at all (it carries its own `Tier` column in § Review angles;
+see the § Tiers intro). One row (`propose-epic: research`) describes a
 *dynamic-assigner role*, model `per-question (§ Model set)` rather than a fixed
 pair. A second dynamic-assigner role — the per-task spawns `plan-tasks`
 emits — has **no row**: each carries its own `Model/effort` field in `tasks.md`,
@@ -215,13 +216,7 @@ per-task-field cases) live in § Fallback.
 | `finalize` | `sonnet` | `high` | `opus` | orchestrates gate + PR; a clean handoff |
 | `reconcile-epic` | `sonnet` | `high` | `opus` | **pipeline mode only** — standalone mode runs in the operator session (no spawn); cascade edits feed a future `ship-spec` run, so reason carefully |
 | `ui-test-plan` | `sonnet` | `medium` | `opus` | enumerate flows worth guarding from a resolved design |
-| `ui-review` | `fable` | `high` | `opus` | qualitative cross-screen cohesion judgement; UI-gated. Governs standalone invocation of the skill; the ship-spec angle-5 spawn resolves via `ship-spec: review/ui` instead — the validator pins the two rows equal, so keep them in sync |
-| `ship-spec: review/correctness` | `fable` | `high` | `opus` | correctness + simplicity + test-coverage angle |
-| `ship-spec: review/security` | `sonnet` | `high` | `opus` | security angle |
-| `ship-spec: review/spec-adherence` | `sonnet` | `medium` | `opus` | markdown-only exemption path spawns this angle at `haiku/low` (binding rule stated in `ship-spec` § Review) |
-| `ship-spec: review/behavior` | `sonnet` | `medium` | `opus` | the `verify` skill over the merged branch |
-| `ship-spec: review/ui` | `fable` | `high` | `opus` | UI-gated cohesion review — mirrors the `ui-review` row |
-| `ship-spec: review/data-safety` | `sonnet` | `high` | `opus` | data-gated migration / seed / index review |
+| `ui-review` | `fable` | `high` | `opus` | qualitative cross-screen cohesion judgement; UI-gated. Governs standalone invocation of the skill; the ship-spec ui-angle spawn resolves via the **`ui` row in § Review angles** instead — the validator pins this row's model/effort equal to that registry Tier, so keep them in sync |
 | `ship-spec: review/tiebreaker` | `fable` | `high` | `opus` | resolves conflicting review recommendations |
 | `triage-retros: sub-agent` | `sonnet` | `low` | `opus` | mechanical bucketing / quoting over one retro |
 | `propose-epic: research` | per-question (§ Model set) | per-question | `opus` | one subagent per question; model+effort picked together per § Model set (default / ceiling defined in the skill body) |
@@ -232,12 +227,12 @@ The single home for how a unit degrades when its assigned model can't be spawned
 
 When a unit's **model** is unavailable — not-enabled (opt-in), out-of-table, or
 `Agent`-rejected — it degrades to the **Fallback Model** named in
-its § Skill routing row (a unit with no row, and a repo-specific § Review angle,
-use the **Default** row's **`opus`**), run at the unit's **own effort** (effort
+its § Skill routing row (a unit with no row, and a § Review angle, use the
+**Default** row's **`opus`**), run at the unit's **own effort** (effort
 describes the work, not the model).
 
 **Absent or malformed tier values.** A per-task `Model/effort` field in
-`tasks.md`, or a repo-specific § Review angle `Tier` cell, that is absent or
+`tasks.md`, or a § Review angle `Tier` cell, that is absent or
 malformed in *either* token takes the **Default** row (`opus/high`) — **not**
 the `implement-task` row. A malformed value is treated exactly like an
 absent one, so a botched value never runs at lower effort than an omitted one.
@@ -272,7 +267,7 @@ tier-fallback: <unit> … → <fallback> (<reason>)
 ```
 
 An **absent or malformed** tier *value* (a per-task `Model/effort` field, or a
-repo-specific § Review angle `Tier` cell) is not a coercion — it takes the
+§ Review angle `Tier` cell) is not a coercion — it takes the
 **Default** row (`opus/high`) directly, per § Fallback.
 
 Coercion **terminates**: it applies once to reach the Fallback Model, and if
@@ -281,16 +276,38 @@ it never re-coerces in a loop. Never block the run for a bad tier value.
 
 ## Review angles
 
-The standard review fan-out is defined in `ship-spec/SKILL.md` § Review
-(correctness · security · spec-adherence · behavior · ui when UI-affecting ·
-data-safety when data-affecting). Rows below are **additional repo-specific
-angles** the orchestrator appends to the fan-out; `none` if there are none.
+The single registry of every review angle the `ship-spec` § Review fan-out
+runs. Each angle's **definition** — what it checks and how to run it — lives in
+its file at `.materia/review-angles/<File>` (materialized by /materia:init; see
+that directory's `README.md` for the file schema and how to add an angle). This
+table owns the File → Gate → Tier mapping; the angle file itself carries only
+`name`, `description`, and body.
 
-Each row's `Tier` column is a `<model>/<effort>` pair resolved like any other
-(availability per § Model set; § Effort set for the guidance sentence). These
-angles carry no `Fallback Model` of their own — a `Tier` that coerces falls to
-the § Skill routing **Default** row (`opus`), per § Coercion.
+The six canonical rows ship **pre-filled** and are **not** stack-specific —
+they ship verbatim, like § Skill routing. Repo-specific angles (a11y, perf
+budgets, compliance) are appended as additional rows by /materia:init or the
+operator; by default there are none beyond the canonical six.
 
-| Angle | What it checks | Gate (when it runs) | Tier |
+**Gate** is when the angle runs: `always` (unconditional), `ui-affecting`,
+`data-affecting`, or a repo-specific predicate phrase. `ui-affecting` and
+`data-affecting` are evaluated exactly as ship-spec's UI/Data-surface gates —
+over the cumulative diff, per `MATERIA.md § Surface gates`.
+
+**Tier** is a `<model>/<effort>` pair resolved like any other (availability per
+§ Model set; § Effort set for the guidance sentence). These angles carry no
+`Fallback Model` of their own — a `Tier` that coerces falls to the § Skill
+routing **Default** row (`opus`), per § Coercion.
+
+| Angle | File | Gate | Tier |
 |---|---|---|---|
-| {{none}} | | | |
+| `correctness` | `correctness.md` | `always` | `fable/high` |
+| `security` | `security.md` | `always` | `sonnet/high` |
+| `spec-adherence` | `spec-adherence.md` | `always` | `sonnet/medium` |
+| `behavior` | `behavior.md` | `always` | `sonnet/medium` |
+| `ui` | `ui.md` | `ui-affecting` | `fable/high` |
+| `data-safety` | `data-safety.md` | `data-affecting` | `sonnet/high` |
+
+Repo-specific angles go in additional rows below the canonical six.
+
+The `spec-adherence` angle drops to `haiku/low` on ship-spec's markdown-only
+exemption path (binding rule stated in `ship-spec` § Review).
