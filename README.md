@@ -60,7 +60,8 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
    the pipeline's own first specs. Run `/materia:ship-spec` and the harness
    builds your app from commit one.
 4. **Protect `main`** (Settings → Branches, or
-   `gh api` — require a pull request before merging). The shipped allowlist
+   `gh api` — require a pull request before merging). The allowlist
+   `/materia:init` seeds into `.claude/settings.json`
    denies the force-push/push-to-main spellings it can express, but prefix
    matching has real limits (trailing flags, refspec forms like
    `git push origin +main` or `HEAD:main` evade it); branch protection is

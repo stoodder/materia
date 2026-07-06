@@ -139,7 +139,7 @@ human comments and no `Blocker`.
 
 | Kind | Runs in | Tier | Examples |
 |---|---|---|---|
-| **Orchestrator** | operator session | none (dispatches others) | `ship-spec`, `triage-retros` |
+| **Orchestrator** | operator session | none (dispatches others) | `ship-spec`, `fix-bug`, `triage-retros` |
 | **Sub-skill** | a fresh-context subagent the orchestrator spawns | its row in `MATERIA.md` § Skill routing | `intake-spec`, `design`, `ui-test-plan`, `architecture`, `plan-tasks`, `implement-task`, `finalize`, `docs-sync`, `docs-audit`, `reproduce-bug`, `bug-analysis`, `ui-review` |
 | **Producer** | operator session | none | `propose-spec`, `propose-epic`, `suggestions-to-specs`, `report-bug`, `bugs-to-reports`, `ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
 | **Maintainer** | operator session (or scheduled) | none | `librarian` (sweeps the living docs) and `janitor` (sweeps the code against `docs/standards/`) — each fixes drift directly and opens one PR instead of filing queue entries. Only the librarian **auto-merges its own PR**: a standing exception to the "no auto-merge" invariant, valid only behind a mechanical diff envelope + green CI (its § The docs-only envelope); the janitor's diff is product code, so it stops for human review. Per-run exception: `--auto` (§ The `--auto` argument). |
