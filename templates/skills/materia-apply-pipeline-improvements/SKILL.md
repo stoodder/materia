@@ -614,8 +614,8 @@ Before opening the PR, **spawn a fresh-context subagent** to review the
 implemented diff against the plan — this skill is orchestrator-invoked, so it
 may spawn a reviewer (per `materia-ship-spec` § Fresh-context reviewer spawning, a
 directly-invoked skill is an orchestrator and can spawn; subagents cannot).
-Spawn it at **`opus/high`** (row `apply-pipeline-improvements: reviewer`,
-`MATERIA.md` § Tiers § Skill routing), and include this line
+Spawn it at the tier in its `apply-pipeline-improvements: reviewer` row
+(`MATERIA.md` § Tiers § Skill routing), and include this line
 verbatim in its brief — reviewer subagents attempting nested spawns have
 stalled or returned malformed in past runs:
 

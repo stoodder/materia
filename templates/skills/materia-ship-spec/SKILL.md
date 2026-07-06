@@ -409,9 +409,13 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
 
 1. **Read** the unit's tier — stage/sub-skill → its row in `MATERIA.md`
    § Tiers § Skill routing (the **Default** row if unlisted); task → its
-   `Model/effort` field in `tasks.md` (dynamic; drawn from § Model set);
-   reviewer → its `ship-spec: review/<angle>` row in § Skill routing. An
-   explicit operator override wins; record
+   `Model/effort` field in `tasks.md` (dynamic; drawn from § Model set; an
+   **absent** field takes the § Skill routing **Default** row, `opus/high`, not
+   the `materia-implement-task` row); a **canonical** review angle → its
+   `ship-spec: review/<angle>` row in § Skill routing; a **repo-specific**
+   review angle (appended from `MATERIA.md` § Review angles) → its own `Tier`
+   column in that table, the one class of spawned unit not routed through
+   § Skill routing. An explicit operator override wins; record
    `tier-override: <unit> <artifact-value> → <operator-value>`.
 2. **Resolve availability** against `MATERIA.md` § Tiers § Model set: a
    `default` model resolves as declared; an `opt-in` model resolves only when
@@ -425,15 +429,17 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
 4. **Spawn** `Agent(..., model: <model>)` with the effort sentence prepended
    to the prompt. Record the resolved tier per spawn for the retro.
 
-**Fallback:** absent / malformed / not-enabled / out-of-table /
-`Agent`-rejected tiers coerce to the unit's own **Fallback Model** — the
+**Fallback:** a resolved model that is malformed / not-enabled / out-of-table /
+`Agent`-rejected coerces to the unit's own **Fallback Model** — the
 `Fallback Model` column of its row in `MATERIA.md` § Tiers § Skill routing
 (the **Default** row's fallback for a unit with no row of its own), run at the
 unit's own effort — per `MATERIA.md` § Tiers § Fallback, with the standard
-one-line note. An `Agent` call that rejects or
-errors on an available model coerces that spawn the same way (reason
+one-line note. (A wholly **absent** per-task `Model/effort` field is not a
+coercion — it takes the Default row directly, per step 1.) An `Agent` call that
+rejects or errors on an available model coerces that spawn the same way (reason
 `<model> unreachable`) — never block or pause the run waiting for a model to
-come back. The fallback never blocks the run.
+come back. The fallback never blocks the run, and never loops (§ Tiers
+§ Coercion terminates at the harness default).
 
 ## Session-start environment preflight
 
@@ -555,9 +561,9 @@ Spawn these as a single message, one `Agent` call per angle, each at its tier
 resolved through § Tier routing with `spawn-contract.md` Blocks 1 + 3. Each
 angle's tier is the matching `ship-spec: review/<angle>` row in `MATERIA.md`
 § Tiers § Skill routing (angle slugs `correctness`, `security`,
-`spec-adherence`, `behavior`, `ui`, `data-safety`). The
-`ship-spec: review/spec-adherence` row drops to `haiku/low` on the
-markdown-only exemption path.
+`spec-adherence`, `behavior`, `ui`, `data-safety`). One conditional override:
+the spec-adherence angle drops to `haiku/low` on the markdown-only exemption
+path — see § Markdown-only exemption below for the binding rule.
 
 | # | Angle | How |
 |---|---|---|
@@ -595,8 +601,10 @@ orchestrator records the lane decision and the fresh-context deviation in
 **Markdown-only exemption.** If the cumulative diff contains no source-code
 changes (no changed file outside markdown/docs) and no test additions, skip
 the correctness / security / behavior reviewers — the spec-adherence reviewer
-runs alone. (The data-safety angle still runs when its own gate is positive —
-a seed-data-only diff can be markdown-exempt but data-affecting.)
+runs alone, **spawned at `haiku/low`** (this path's binding tier; the
+`ship-spec: review/spec-adherence` row in `MATERIA.md` § Tiers § Skill routing
+records the drop). (The data-safety angle still runs when its own gate is
+positive — a seed-data-only diff can be markdown-exempt but data-affecting.)
 
 **Trivial-diff threshold.** When the diff *does* touch source but is trivially
 small — roughly **≤ 10 changed lines**, pure presentation/mechanical (copy
