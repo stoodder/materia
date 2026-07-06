@@ -1,6 +1,5 @@
 ---
 name: intake-spec
-disable-model-invocation: true
 description: Turn a raw product spec or feature request into a structured spec.md under docs/specs/<dated-slug>/, asking clarifying questions to resolve gaps. First stage of the ship-spec pipeline; also usable standalone before any design/build work.
 ---
 

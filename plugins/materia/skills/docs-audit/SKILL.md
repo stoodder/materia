@@ -1,6 +1,5 @@
 ---
 name: docs-audit
-disable-model-invocation: true
 description: Verify docs against the branch's code diff after `docs-sync` edits — audit coverage, accuracy, consistency, authoring-standard conformance (docs/standards/docs.md), and the mechanical `node scripts/check-docs.mjs` gate (links + style); return HIGH/MEDIUM/LOW findings or a clean verdict. Spawned by `ship-spec` as a sibling stage after `docs-sync` (never by a subagent). Stage 9 of the ship-spec pipeline.
 ---
 

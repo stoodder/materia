@@ -1,6 +1,5 @@
 ---
 name: reproduce-bug
-disable-model-invocation: true
 description: Write the failing test(s) that reproduce a reported bug and fill reproduction.md — consumes the bug report body (frontmatter stripped) and STATUS.md, produces test file(s) placed per the repo testing standard plus docs/bugs/<dated-slug>/reproduction.md, and ticks STATUS.md stage 1 only after a real RED test run confirms the failure. Stage 1 of the fix-bug pipeline; usable standalone given a report body + folder.
 ---
 

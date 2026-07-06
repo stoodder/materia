@@ -1,6 +1,5 @@
 ---
 name: implement-task
-disable-model-invocation: true
 description: Implement one task from a tasks.md — read context, build to the standards, write tests, then run the local gate and commit. Stage 6 of the ship-spec pipeline; called once per task. Adversarial review happens after all implementation tasks complete (see ship-spec/SKILL.md § Review).
 ---
 

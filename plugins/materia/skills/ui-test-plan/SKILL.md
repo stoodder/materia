@@ -1,6 +1,5 @@
 ---
 name: ui-test-plan
-disable-model-invocation: true
 description: From a feature spec and UX design, enumerate the UI flows worth guarding and produce a standalone ui-test-plan.md artifact at docs/specs/<dated-slug>/ui-test-plan.md. UI-gated pipeline stage inserted after design and before architecture; usable standalone after design returns. Stage 3 of the ship-spec pipeline (UI-gated — skipped and recorded on non-UI runs, sharing one predictive-form gate decision with the design stage).
 ---
 

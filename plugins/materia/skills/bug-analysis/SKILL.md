@@ -1,6 +1,5 @@
 ---
 name: bug-analysis
-disable-model-invocation: true
 description: Synthesise reproduction.md and the bug report into bug-analysis.md — the architecture.md analogue for the bug loop that plan-tasks decomposes. Consumes docs/bugs/<dated-slug>/reproduction.md plus the bug report body (frontmatter stripped), produces docs/bugs/<dated-slug>/bug-analysis.md, and ticks STATUS.md stage 2. Stage 2 of the fix-bug pipeline; usable standalone given a reproduction.md + report.
 ---
 

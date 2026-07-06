@@ -1,6 +1,5 @@
 ---
 name: ui-review
-disable-model-invocation: true
 description: Fifth review angle in the ship-spec Review fan-out (UI-gated). Provisions the Eyes environment on-demand per MATERIA.md § Eyes, drives the app at the canonical viewport, captures screenshots and DOM snapshots per ui-test-plan.md flows, and returns structured "ui"-category findings into the remediation loop. Degrades gracefully on known Eyes-toolchain instability (records a STATUS note, returns empty findings, never blocks). Only spawned when the diff is UI-affecting; the gate is defined in ship-spec/SKILL.md § Review — § UI-surface gate.
 ---
 

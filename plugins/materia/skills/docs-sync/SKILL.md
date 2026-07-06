@@ -1,6 +1,5 @@
 ---
 name: docs-sync
-disable-model-invocation: true
 description: Reconcile docs with the branch's aggregate code changes before the PR — apply docs/contributing.md touch-X→update-Y to the whole diff, edit stale resource/standards docs (intent-oracle rules), update cross-cutting docs (CLAUDE.md, README index, surface-map, glossary), with every edit written to docs/standards/docs.md (present-state, one home per fact) and gated by `node scripts/check-docs.mjs` before commit, then hand off to the sibling `docs-audit` stage. Invoked by `ship-spec` as its own pipeline stage (after review, paired with the sibling `docs-audit` stage, before finalize); usable standalone after a hotfix.
 ---
 

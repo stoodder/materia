@@ -1,6 +1,5 @@
 ---
 name: architecture
-disable-model-invocation: true
 description: From a spec (and, on UI runs, a design), produce a technical architecture document grounded in the repo docs — reusing existing resources wherever possible — at docs/specs/<dated-slug>/architecture.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export). Stage 4 of the ship-spec pipeline.
 ---
 

@@ -1,6 +1,5 @@
 ---
 name: design
-disable-model-invocation: true
 description: From a feature spec, produce a UX design doc (user flows, screens, and their loading/empty/error/ready states) at docs/specs/<dated-slug>/design.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export). Stage 2 of the ship-spec pipeline (UI-gated — spawned only when the feature ships UI; skipped and recorded on non-UI runs); usable standalone after a spec exists.
 ---
 

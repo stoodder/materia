@@ -1,6 +1,5 @@
 ---
 name: plan-tasks
-disable-model-invocation: true
 description: Decompose an architecture document into a dependency-ordered list of small, independently shippable tasks with testable acceptance criteria at docs/specs/<dated-slug>/tasks.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export). Stage 5 of the ship-spec pipeline.
 ---
 
