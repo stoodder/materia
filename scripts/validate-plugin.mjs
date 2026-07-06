@@ -163,16 +163,22 @@ for (const [a, b] of MIRRORS) {
 console.log(`  ✓ mirror pins: ${MIRRORS.length} routing-row mirror(s) hold`)
 
 // ---- 3. slot hygiene ---------------------------------------------------------
-// materia-init is exempt: it's the skill that documents the slot-filling
-// mechanism itself, so its prose legitimately backtick-quotes `{{slots}}` when
-// describing the process (never as a literal unfilled marker it ships). This
-// mirrors its pre-migration exemption, when it lived outside templates/skills/.
-for (const f of mdFiles.filter((f) => f.includes('plugins/materia/skills/') && !f.includes('plugins/materia/skills/materia-init/'))) {
+// Skills ship slot-free (slots live in MATERIA.md/CLAUDE.md/docs). Rule is
+// pattern-scoped, not file-scoped: flag a `{{` only when it is NOT immediately
+// preceded by a backtick. A backtick-quoted `{{slot}}` is documentation of the
+// slot-filling mechanism (materia-init describes it), never a shipped unfilled
+// marker — so it's allowed, while a bare pasted `{{...}}` still fails, in every
+// skill including materia-init.
+for (const f of mdFiles.filter((f) => f.includes('plugins/materia/skills/'))) {
   const s = readFileSync(f, 'utf8')
-  const idx = s.indexOf('{{')
-  if (idx !== -1) fail(`${f} carries a {{slot}} marker — skills ship slot-free (slots live in MATERIA.md/CLAUDE.md/docs)`)
+  for (let i = s.indexOf('{{'); i !== -1; i = s.indexOf('{{', i + 2)) {
+    if (i === 0 || s[i - 1] !== '`') {
+      fail(`${f} carries an unquoted {{slot}} marker at offset ${i} — skills ship slot-free (a backtick-quoted \`{{slot}}\` documentation mention is allowed)`)
+      break
+    }
+  }
 }
-console.log('  ✓ slot hygiene: no {{slot}} markers in skills')
+console.log('  ✓ slot hygiene: no unquoted {{slot}} markers in skills')
 
 if (failures) {
   console.error(`\n${failures} validation failure(s).`)
