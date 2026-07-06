@@ -210,7 +210,11 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
 3. **Write `MATERIA.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/MATERIA.md`: fill
    every slot, mark absent capabilities `none` (§ Surface gates § UI-affecting /
    § Data-affecting, § Eyes, § Data layer, per the Phase-4 probes), delete the
-   `<!-- init: … -->` comments.
+   `<!-- init: … -->` comments. When Phase 4 surfaced a **repo-specific review
+   angle**, author it now as a pair: write `.materia/review-angles/<slug>.md`
+   (two-key `name`+`description` front matter + body, per that directory's
+   `README.md`) **and** append its row to § Review angles (File / Gate / Tier).
+   The canonical six copied in step 1 stay verbatim.
 4. **Write `CLAUDE.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/CLAUDE.md`: same
    treatment. The folder map documents the *intended* layout the bootstrap epic
    will create.
