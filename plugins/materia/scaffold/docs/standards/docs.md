@@ -49,7 +49,7 @@ Agents load these docs into a bounded context window before every change.
 History narration, restated standards, and paragraph-length table cells burn
 that budget without adding decision power — and each duplicated fact is a
 future contradiction, since only one copy gets updated. Docs written by the
-pipeline (`materia-docs-sync` runs after every feature) accrete naturally in
+pipeline (`docs-sync` runs after every feature) accrete naturally in
 change-shaped increments; this standard plus the mechanical checks are the
 counter-pressure that keeps them state-shaped.
 
@@ -63,7 +63,7 @@ counter-pressure that keeps them state-shaped.
 | Glossary: one sentence + Detail link | a five-sentence glossary mini-doc |
 | State the invariant: "the algorithm is fixed; change it only via a spec" | `LOCKED per spec 2026-06-27-eb9kr3 § TDEE calculation` |
 
-When editing an existing doc (including a `materia-docs-sync` pass): fold the change
+When editing an existing doc (including a `docs-sync` pass): fold the change
 into the current-state description — never append a "now it also…" delta on
 top of the old text. If the edit makes a section read like a change log,
 rewrite the section.
@@ -80,4 +80,4 @@ rewrite the section.
 - [../README.md](../README.md) — read order + doc index
 - [../contributing.md](../contributing.md) — Definition of Done, touch-X→update-Y map
 - [architecture.md](architecture.md) — the same one-home discipline, applied to code
-- [skills.md](skills.md) — the pipeline stages (`materia-docs-sync`, `materia-docs-audit`) that write these docs must follow this standard
+- [skills.md](skills.md) — the pipeline stages (`docs-sync`, `docs-audit`) that write these docs must follow this standard

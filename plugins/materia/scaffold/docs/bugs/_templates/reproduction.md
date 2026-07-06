@@ -1,4 +1,4 @@
-<!-- This is the bug reproduction record. Filled by `materia-reproduce-bug`. -->
+<!-- This is the bug reproduction record. Filled by `reproduce-bug`. -->
 
 # <Bug title>
 
@@ -31,4 +31,4 @@ testing standard:
 
 ## Notes
 
-_Anything `materia-bug-analysis` or `materia-plan-tasks` need to know (e.g. preconditions, data setup, intermittency patterns)._
+_Anything `bug-analysis` or `plan-tasks` need to know (e.g. preconditions, data setup, intermittency patterns)._

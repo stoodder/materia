@@ -66,12 +66,12 @@ docs/          ← the context map; start at docs/README.md}}
   does.
 - **Docs** — docs are agent context: present-state only (no change narration),
   one home per fact, short table cells; `check:docs` enforces the checkable
-  subset; `/materia-librarian` sweeps and fixes accumulated drift on demand or on a
+  subset; `/materia:librarian` sweeps and fixes accumulated drift on demand or on a
   schedule. → [docs](docs/standards/docs.md)
 
 ## Resources (one doc per entity — read the one you're touching)
 
-{{list the resource docs as they come to exist — /materia-init seeds this empty;
+{{list the resource docs as they come to exist — /materia:init seeds this empty;
 docs-sync adds entries as the app grows}} — all under
 [docs/resources/](docs/resources/).
 
@@ -83,22 +83,22 @@ producer/consumer tables, flow graphs) lives at
 [docs/specs/README.md](docs/specs/README.md); read that, not this paragraph,
 for the details.
 
-- `/materia-ship-spec` builds a feature end-to-end from the proposed-specs queue
-  ([docs/specs/_proposed/](docs/specs/_proposed/README.md)); `/materia-fix-bug`
+- `/materia:ship-spec` builds a feature end-to-end from the proposed-specs queue
+  ([docs/specs/_proposed/](docs/specs/_proposed/README.md)); `/materia:fix-bug`
   drives a bug report from the bug queue
   ([docs/bugs/_reports/](docs/bugs/_reports/README.md)) to a RED→GREEN TDD
   fix. Both are resumable and open exactly one PR. With `--auto` (autopilot),
-  `/materia-ship-spec` also rides that PR to green — fixing CI, resolving merge
+  `/materia:ship-spec` also rides that PR to green — fixing CI, resolving merge
   conflicts — and merges it.
-- **Producers** fill the queues; **maintainers** (`/materia-janitor`, `/materia-librarian`)
+- **Producers** fill the queues; **maintainers** (`/materia:janitor`, `/materia:librarian`)
   fix drift directly instead of filing queue entries — the roster and shared
   lifecycle live in [skills](docs/standards/skills.md).
 - **Epics** ([docs/epics/](docs/epics/README.md)) group multiple specs under
   one researched initiative with a dependency graph.
-- Every run leaves a `retro.md`; `/materia-triage-retros` triages retros two ways
+- Every run leaves a `retro.md`; `/materia:triage-retros` triages retros two ways
   (product suggestions / bug reports) into the project's backlog —
-  `/materia-suggestions-to-specs` turns suggestions into proposed specs and
-  `/materia-bugs-to-reports` files the bugs. Authoring or changing any skill →
+  `/materia:suggestions-to-specs` turns suggestions into proposed specs and
+  `/materia:bugs-to-reports` files the bugs. Authoring or changing any skill →
   [skills](docs/standards/skills.md).
 
 ## Before you finish

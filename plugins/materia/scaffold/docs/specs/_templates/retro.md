@@ -7,7 +7,7 @@ finalized_at: <ISO timestamp when run ends — left blank until then>
 status: running
 ---
 
-<!-- Per-run retrospective captured by the `materia-ship-spec` orchestrator. Entries are
+<!-- Per-run retrospective captured by the `ship-spec` orchestrator. Entries are
      appended after each first-level stage completes, and the orchestrator's own
      self-review is the final entry. A separate, scheduled aggregation skill
      (out of scope for ship-spec) consumes multiple retro.md files to propose
@@ -26,12 +26,12 @@ status: running
 
 <!-- The orchestrator extracts each entry from the subagent's returned ` ```retro `
      fenced block and appends it to the file. Sub-subagents (the reviewer subagents
-     inside `materia-implement-task`) are summarized in their parent's entry. Each
-     first-level subagent (`intake`, `materia-design`, `materia-architecture`, `materia-plan-tasks`, each
-     `materia-implement-task`, `materia-docs-sync` (per round), `materia-docs-audit` (per round), `materia-finalize`)
+     inside `implement-task`) are summarized in their parent's entry. Each
+     first-level subagent (`intake`, `design`, `architecture`, `plan-tasks`, each
+     `implement-task`, `docs-sync` (per round), `docs-audit` (per round), `finalize`)
      returns one entry in their report.
 
-     Schema per entry (`materia-ship-spec` passes this verbatim in each spawn prompt):
+     Schema per entry (`ship-spec` passes this verbatim in each spawn prompt):
 
      ## Entry <N> — <stage-id> — <ISO timestamp>
 

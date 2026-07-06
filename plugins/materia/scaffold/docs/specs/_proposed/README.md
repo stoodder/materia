@@ -12,9 +12,9 @@ follow it; any consumer that reads from here MAY rely on it.
 
 One file per proposed spec, with a YAML frontmatter block carrying
 source-agnostic metadata followed by the spec body in the exact format
-[`materia-intake-spec`](../_templates/spec.md) produces (and that `materia-ship-spec` accepts as
+[`intake-spec`](../_templates/spec.md) produces (and that `ship-spec` accepts as
 input). The body is the **product spec itself**, not a summary; a reviewer
-should be able to read a file end-to-end and either run it through `materia-ship-spec`
+should be able to read a file end-to-end and either run it through `ship-spec`
 or delete it without consulting any other artifact.
 
 ```
@@ -81,7 +81,7 @@ status: proposed                         # always literally `proposed` while in 
 - **`status`** — always literally `proposed` while the file lives here. The
   field exists for forward-compat with possible workflow states (`triaged`,
   `accepted`, `rejected`) but in v1 the only terminal states are
-  **acted-upon** (file removed by `materia-ship-spec` consumption) and **rejected**
+  **acted-upon** (file removed by `ship-spec` consumption) and **rejected**
   (file deleted manually). The directory holds only `status: proposed`.
 
 ## Filename pattern
@@ -157,7 +157,7 @@ consequences:
 ## Body format
 
 After the closing `---` of the frontmatter, the file body is a complete spec
-in the format `materia-intake-spec` produces — see
+in the format `intake-spec` produces — see
 [`../_templates/spec.md`](../_templates/spec.md) for the shape. Required
 sections, in order:
 
@@ -187,7 +187,7 @@ sections, in order:
 Producers SHOULD fill every section with at least a placeholder line; an
 empty section is a signal to the reviewer that more thought is needed.
 **Genuinely deferred** items belong under "Open questions" — that's the
-section `materia-intake-spec` re-reads when the operator runs the proposal forward.
+section `intake-spec` re-reads when the operator runs the proposal forward.
 
 The body **MUST NOT** repeat metadata that already lives in the frontmatter
 (no second `id:` line, no separate `Source:` heading). Frontmatter and body
@@ -200,11 +200,11 @@ The directory is a **transient queue**:
 
 1. A producer writes a new proposal file with `status: proposed`.
 2. An operator reviews the file in place. They either:
-   - **Accept** — run the proposal through `materia-ship-spec`. `materia-ship-spec` reads
+   - **Accept** — run the proposal through `ship-spec`. `ship-spec` reads
      the selected file (resolved by frontmatter `id`, not filename),
      strips the leading YAML frontmatter block, mints a `<dated-slug>`,
      and feeds the body into its existing intake → design → architecture
-     → tasks → implement → finalize pipeline. `materia-finalize` includes the
+     → tasks → implement → finalize pipeline. `finalize` includes the
      proposal's `git rm` in the same PR it opens, so an accepted proposal
      exits the queue when the PR merges.
    - **Reject** — delete the file manually (e.g. `rm` or via a follow-up
@@ -213,9 +213,9 @@ The directory is a **transient queue**:
 3. Either terminal state removes the file from this directory. The
    directory trends toward empty.
 
-If `materia-ship-spec` halts mid-run (Blocker, session crash, abort), the proposal
-file stays in `_proposed/` — the `git rm` only lands at `materia-finalize` time.
-The next `materia-ship-spec` invocation detects the in-flight pick via the spec
+If `ship-spec` halts mid-run (Blocker, session crash, abort), the proposal
+file stays in `_proposed/` — the `git rm` only lands at `finalize` time.
+The next `ship-spec` invocation detects the in-flight pick via the spec
 folder's `STATUS.md` `## Provenance` block and resumes that run rather
 than re-presenting the proposal in the menu.
 
@@ -247,7 +247,7 @@ A producer MUST NOT:
 
 ## Consumer responsibilities
 
-A consumer (the operator triaging via the menu; `materia-ship-spec` reading the
+A consumer (the operator triaging via the menu; `ship-spec` reading the
 folder directly) MUST:
 
 - Read frontmatter to discover identity, source, and provenance. Filename
@@ -258,7 +258,7 @@ folder directly) MUST:
   line. A body that contains literal `---` is safe because the parser only
   matches line-anchored delimiters.
 - Resolve a selection by frontmatter `id`, never by filename. If multiple
-  proposals share a derived spec-folder slug, `materia-ship-spec`'s resume gate
+  proposals share a derived spec-folder slug, `ship-spec`'s resume gate
   breaks the tie by matching `Proposed-id:` from `STATUS.md` — id match
   wins, slug match alone never does.
 - Remove the file from the directory at the terminal state. Leaving an
@@ -269,11 +269,11 @@ folder directly) MUST:
 
 | Source key | Skill | Input(s) it consumes |
 |---|---|---|
-| `retro-suggestions` | `materia-suggestions-to-specs` | `docs/specs/_improvements/**/product-suggestions.md` files emitted by `materia-triage-retros` |
-| `user-proposed` | `materia-propose-spec` | The user's raw idea, refined via in-conversation Q&A; Q&A is in-memory, then on approve it branches, commits, and opens a PR |
-| `janitor` | `materia-janitor` | Legacy key — carried only by entries still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
-| `ui-inspection` | `materia-ui-inspection` | Operator-requested variant of a ui-inspection run: judgment-based UX-improvement recommendations that exceed the bug-report rubric become spec proposals; `source_refs` points at the run's report folder in `docs/bugs/_reports/` (the standards-violation findings stay in that bug report) |
-| `epic` | `materia-propose-epic` | The operator's large multi-spec idea, developed via iterative brainstorm + web research into an epic under [`docs/epics/`](../../epics/README.md); each member proposal carries extra `epic:` + `depends_on:` frontmatter keys and a closing `## Epic context` body section per that contract. While a member is queued, `materia-reconcile-epic` (the same producer family; sanctioned in `docs/epics/README.md` § Who writes what) may revise its body + `depends_on` to track shipped siblings — the one exception to § Producer responsibilities' no-touch rule |
+| `retro-suggestions` | `suggestions-to-specs` | `docs/specs/_improvements/**/product-suggestions.md` files emitted by `triage-retros` |
+| `user-proposed` | `propose-spec` | The user's raw idea, refined via in-conversation Q&A; Q&A is in-memory, then on approve it branches, commits, and opens a PR |
+| `janitor` | `janitor` | Legacy key — carried only by entries still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
+| `ui-inspection` | `ui-inspection` | Operator-requested variant of a ui-inspection run: judgment-based UX-improvement recommendations that exceed the bug-report rubric become spec proposals; `source_refs` points at the run's report folder in `docs/bugs/_reports/` (the standards-violation findings stay in that bug report) |
+| `epic` | `propose-epic` | The operator's large multi-spec idea, developed via iterative brainstorm + web research into an epic under [`docs/epics/`](../../epics/README.md); each member proposal carries extra `epic:` + `depends_on:` frontmatter keys and a closing `## Epic context` body section per that contract. While a member is queued, `reconcile-epic` (the same producer family; sanctioned in `docs/epics/README.md` § Who writes what) may revise its body + `depends_on` to track shipped siblings — the one exception to § Producer responsibilities' no-touch rule |
 
 When a new producer is added, it MUST update this table with one row.
 **Adding a producer row is NOT a contract change** — it is a registration
@@ -286,4 +286,4 @@ The frontmatter contract and the filename pattern are **shared across all
 producers and consumers**. Any change here forces every producer to update
 in lockstep. Flag PRs that modify this file for extra scrutiny: review them
 with the same care as a change to any shared artifact contract (e.g. the
-retro/hand-off contracts `materia-triage-retros` and its consumers parse).
+retro/hand-off contracts `triage-retros` and its consumers parse).

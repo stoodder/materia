@@ -1,5 +1,5 @@
-<!-- Filled by the `materia-triage-retros` skill (run-folder health rollup).
-     Producer: materia-triage-retros
+<!-- Filled by the `triage-retros` skill (run-folder health rollup).
+     Producer: triage-retros
      Consumer: none — accumulates as historical corpus
      Renamed: never (unlike product-suggestions.md and bug-reports.md, which are consumed by rename) -->
 ---
@@ -49,4 +49,4 @@ seed the triage PR's title and body are re-derived from at PR-open.>
 
 ---
 
-_Pipeline health rollup by `materia-triage-retros` run `<slug>` on `<generated_at>`. Not consumed by any downstream skill — accumulates as historical corpus._
+_Pipeline health rollup by `triage-retros` run `<slug>` on `<generated_at>`. Not consumed by any downstream skill — accumulates as historical corpus._

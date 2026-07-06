@@ -12,7 +12,7 @@ follow it; any consumer that reads from here MAY rely on it.
 
 One **folder** per bug report, with a YAML frontmatter block carrying
 source-agnostic metadata followed by the report body in the exact format
-`/materia-report-bug` produces (and that the fill-in stub at
+`/materia:report-bug` produces (and that the fill-in stub at
 [`../_templates/bug-report.md`](../_templates/bug-report.md) describes). The
 body is the **bug report itself**, not a summary; a reviewer should be able to
 read the report end-to-end and either triage it or discard it without consulting
@@ -38,7 +38,7 @@ hard-fail on them.
 ---
 id: <6-char base36 token>                   # LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6; SOURCE OF TRUTH for identity
 schema_version: 1                           # informational; bump on shape change
-source: bug-report                          # the producer key for /materia-report-bug
+source: bug-report                          # the producer key for /materia:report-bug
 severity: low | medium | high | critical    # closed enum — see Field roles below
 title: <one-line title>                     # one line; matches the body H1
 date: <YYYY-MM-DD>                          # the date the report was drafted
@@ -63,10 +63,10 @@ status: reported                            # always literally `reported` while 
   Bump when the contract changes. Consumers SHOULD record an unrecognised
   `schema_version` and degrade rather than halt.
 - **`source`** — short kebab-case identifier of the producing loop. The only
-  value `/materia-report-bug` writes is `bug-report`. New sources are added by
+  value `/materia:report-bug` writes is `bug-report`. New sources are added by
   convention; no enum is enforced.
 - **`severity`** — a **required** closed enum: `low | medium | high | critical`.
-  Gives the downstream `/materia-fix-bug` consumer a stable field to filter and
+  Gives the downstream `/materia:fix-bug` consumer a stable field to filter and
   prioritize on (a closed set, deliberately — never free text). The
   `severity` field mirrors the "Severity & impact" H2 section in the report
   body; both must agree.
@@ -119,7 +119,7 @@ MUST read the frontmatter `id`, never the folder name.** Two consequences:
 ## Body format
 
 After the closing `---` of the frontmatter, the file body is a complete bug
-report in the format `/materia-report-bug` produces — see
+report in the format `/materia:report-bug` produces — see
 [`../_templates/bug-report.md`](../_templates/bug-report.md) for the shape.
 
 Required sections, in order:
@@ -169,7 +169,7 @@ The directory is a **transient queue**:
 1. A producer writes a new report folder (`<dated-slug>/report.md`, plus any
    co-located evidence files) with `status: reported`.
 2. An operator reviews the report in place. They either:
-   - **Fix** — run the report through `/materia-fix-bug`. `/materia-fix-bug` reads the selected
+   - **Fix** — run the report through `/materia:fix-bug`. `/materia:fix-bug` reads the selected
      report (resolved by frontmatter `id`, not folder name), strips the leading
      YAML frontmatter block, mints a `<dated-slug>`, and creates a
      `docs/bugs/<dated-slug>/` run folder on a `fix/<slug>` branch. At the
@@ -186,11 +186,11 @@ The directory is a **transient queue**:
 
 | Status | Who sets it | When |
 |---|---|---|
-| `reported` | producer (`/materia-report-bug`) | Folder is written into `_reports/` |
-| _(removed by `/materia-fix-bug`)_ | `/materia-fix-bug` orchestrator at finalize | `/materia-fix-bug` stages `git rm -r <report-folder>`, re-runs `node scripts/check-docs.mjs` against the staged removal, and commits the dequeue as part of the finalize PR (commit message pattern: `fix-bug(stake): dequeue report <id> from _reports/`) |
+| `reported` | producer (`/materia:report-bug`) | Folder is written into `_reports/` |
+| _(removed by `/materia:fix-bug`)_ | `/materia:fix-bug` orchestrator at finalize | `/materia:fix-bug` stages `git rm -r <report-folder>`, re-runs `node scripts/check-docs.mjs` against the staged removal, and commits the dequeue as part of the finalize PR (commit message pattern: `fix-bug(stake): dequeue report <id> from _reports/`) |
 | _(closed manually)_ | operator | Folder deleted without a fix run; no trace except git history |
 
-If `/materia-fix-bug` halts mid-run (Blocker, session crash, abort), the report folder
+If `/materia:fix-bug` halts mid-run (Blocker, session crash, abort), the report folder
 stays in `_reports/` — the `git rm -r` only lands at the terminal state.
 
 Because the directory is transient, **it is NOT an archive** and consumers
@@ -218,7 +218,7 @@ A producer MUST NOT:
 
 ## Consumer responsibilities
 
-A consumer (the operator triaging in place; `/materia-fix-bug` reading the folder)
+A consumer (the operator triaging in place; `/materia:fix-bug` reading the folder)
 MUST:
 
 - Read frontmatter to discover identity, source, severity, and provenance.
@@ -235,10 +235,10 @@ MUST:
 
 | Source key | Skill | Input(s) it consumes |
 |---|---|---|
-| `bug-report` | `/materia-report-bug` | The operator's raw bug description, refined via in-memory Q&A; on approve it branches, writes the report, and opens a PR |
-| `bugs-to-reports` | `/materia-bugs-to-reports` | Gathered `bug-reports.md` hand-offs from `docs/specs/_improvements/**/`; drafts conformant reports and files them into `docs/bugs/_reports/`; `materia-triage-retros` gathers the items but no longer writes queue files directly |
-| `janitor` | `/materia-janitor` | Legacy key — carried only by reports still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
-| `ui-inspection` | `/materia-ui-inspection` | The running app, driven across `docs/surface-map.md § Pages` at the canonical viewport (MATERIA.md § Eyes); judged against the repo's visual standards docs. Writes one consolidated checklist report; captures co-located in the report folder as `<surface-slug>.{png,html}`. |
+| `bug-report` | `/materia:report-bug` | The operator's raw bug description, refined via in-memory Q&A; on approve it branches, writes the report, and opens a PR |
+| `bugs-to-reports` | `/materia:bugs-to-reports` | Gathered `bug-reports.md` hand-offs from `docs/specs/_improvements/**/`; drafts conformant reports and files them into `docs/bugs/_reports/`; `triage-retros` gathers the items but no longer writes queue files directly |
+| `janitor` | `/materia:janitor` | Legacy key — carried only by reports still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
+| `ui-inspection` | `/materia:ui-inspection` | The running app, driven across `docs/surface-map.md § Pages` at the canonical viewport (MATERIA.md § Eyes); judged against the repo's visual standards docs. Writes one consolidated checklist report; captures co-located in the report folder as `<surface-slug>.{png,html}`. |
 
 When a new producer is added, it MUST update this table with one row.
 **Adding a producer row is NOT a contract change** — it is a registration
@@ -249,9 +249,9 @@ the PR that introduces the new producer skill.
 
 Consumers read from this queue and remove folders at terminal state.
 
-### /materia-fix-bug
+### /materia:fix-bug
 
-`/materia-fix-bug` is the orchestrator that drives a selected report through the full
+`/materia:fix-bug` is the orchestrator that drives a selected report through the full
 TDD fix pipeline.
 
 **Discovery:** scans report files via the glob `docs/bugs/_reports/*/report.md`.
@@ -260,7 +260,7 @@ Resolves a selection **by frontmatter `id` only, never by folder name**.
 **Branch created:** `fix/<slug>` (one branch per run, where `<slug>` is the
 kebab rendering of the report's `title`).
 
-**Terminal-state dequeue lifecycle:** at finalize, `/materia-fix-bug` stages
+**Terminal-state dequeue lifecycle:** at finalize, `/materia:fix-bug` stages
 `git rm -r docs/bugs/_reports/<dated-slug>/`, re-runs `node scripts/check-docs.mjs`
 against the staged removal, and commits the removal as part of the finalize PR.
 The dequeue commit message pattern is:

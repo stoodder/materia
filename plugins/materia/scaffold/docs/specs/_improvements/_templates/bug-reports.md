@@ -1,4 +1,4 @@
-<!-- Produced by `materia-triage-retros` and consumed by `materia-bugs-to-reports`.
+<!-- Produced by `triage-retros` and consumed by `bugs-to-reports`.
      Written iff `bugs.length > 0`; empty batch → no file.
 -->
 
@@ -13,7 +13,7 @@ bug_count: <bug_count>
 # <Slug-as-Title-Case> — bug reports
 
 These are defect items gathered by the same triage pass recorded in
-→ pipeline-health.md. They are not yet filed — run `/materia-bugs-to-reports` to file each item as a conformant report in the bug queue.
+→ pipeline-health.md. They are not yet filed — run `/materia:bugs-to-reports` to file each item as a conformant report in the bug queue.
 
 ## Filed reports
 
@@ -23,4 +23,4 @@ These are defect items gathered by the same triage pass recorded in
 
 ---
 
-_Captured by `materia-triage-retros` run `<slug>` on `<generated_at>`._
+_Captured by `triage-retros` run `<slug>` on `<generated_at>`._

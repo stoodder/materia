@@ -3,7 +3,7 @@
   docs/standards/docs.md (present-state only, short cells, one home per fact).
   The layer sections below are the typical full-stack set — KEEP ONLY the
   layers this repo actually has (docs/standards/architecture.md names them)
-  and rename headings to the repo's own layer vocabulary; /materia-init
+  and rename headings to the repo's own layer vocabulary; /materia:init
   prunes this template to the stack at materialization time. Read the newest
   existing doc under docs/resources/ as the local example, if one exists.
   Delete these comments. After writing: add the doc to the table in

@@ -1,4 +1,4 @@
-<!-- Filled by the `materia-design` skill (or by hand). Ground every choice
+<!-- Filled by the `design` skill (or by hand). Ground every choice
      in docs/product.md § Design feel & taste; see
      ../../standards/ui-components.md for UI conventions. -->
 # <Feature> — design

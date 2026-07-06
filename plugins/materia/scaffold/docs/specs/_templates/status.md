@@ -1,4 +1,4 @@
-<!-- The pipeline's resumable state for this feature. `materia-ship-spec` reads this to
+<!-- The pipeline's resumable state for this feature. `ship-spec` reads this to
      resume across sessions. Every stage updates it, then commits + pushes. -->
 # <Feature> — status
 
@@ -8,10 +8,10 @@
 
 ## Provenance
 
-<!-- Filled by `materia-ship-spec` at proposal selection (the run's entry point).
-     `materia-finalize` reads this block to decide whether to dequeue the proposal
+<!-- Filled by `ship-spec` at proposal selection (the run's entry point).
+     `finalize` reads this block to decide whether to dequeue the proposal
      from `docs/specs/_proposed/` in the same PR. For ad-hoc runs (no
-     proposal), every field is `—` and `materia-finalize` skips the dequeue silently.
+     proposal), every field is `—` and `finalize` skips the dequeue silently.
      Older STATUS.mds that predate this block are also treated as ad-hoc. -->
 
 - **Proposed-id:** <id from the proposal frontmatter, or `—` for ad-hoc>
@@ -20,7 +20,7 @@
 - **Proposed-source-refs:** <comma-separated `source_refs[]` values, or `—`>
 - **Proposed-id-selection:** <`manual` | `named-arg` | `auto-deferred` | `autopilot` | `—`>
   <!-- manual = operator picked at the menu; named-arg = operator typed
-       `/materia-ship-spec <id>`; auto-deferred = Auto Mode active and the
+       `/materia:ship-spec <id>`; auto-deferred = Auto Mode active and the
        orchestrator surfaced the menu and ended the turn rather than
        silently pick (the next operator reply re-resumes with the chosen
        id, which then writes `manual`); autopilot = `--auto` run with
@@ -28,8 +28,8 @@
 - **Epic-id:** <`epic` from the proposal frontmatter, or `—` when the
   proposal is not an epic member (or the run is ad-hoc)>
   <!-- Non-`—` ⇒ the epic gate is positive: the orchestrator spawns the
-       `materia-reconcile-epic` stage (pipeline mode) between docs-audit and
-       finalize — see materia-ship-spec/SKILL.md § Pipeline. -->
+       `reconcile-epic` stage (pipeline mode) between docs-audit and
+       finalize — see ship-spec/SKILL.md § Pipeline. -->
 
 ## Autopilot posture
 
@@ -39,7 +39,7 @@
      implicitly). `on` ⇒ operator checkpoints auto-accept grounded defaults
      and, after finalize, the run continues into ship-spec's § Merge watch
      (CI fixes, conflict resolution, merge on green). See
-     materia-ship-spec/SKILL.md § Autopilot. -->
+     ship-spec/SKILL.md § Autopilot. -->
 
 - **auto:** off (no `--auto` at invocation)
   <!-- or: on (`--auto` passed at invocation) -->
@@ -53,7 +53,7 @@
      § Stages") rather than re-explaining the duality each time.
 
        - STATUS-checkbox scale (used by these checkboxes): the
-         post-implementation `review` pass and the epic-gated `materia-reconcile-epic`
+         post-implementation `review` pass and the epic-gated `reconcile-epic`
          stage are gates that produce no artifact in this folder, so neither
          has a checkbox here — docs-sync/docs-audit/finalize are rows 7/8/9.
          The scale has 9 rows (1 through 9); both no-checkbox stages record
@@ -63,7 +63,7 @@
          skipped, each checkbox is ticked as "skipped (non-UI)" and the gate
          decision is recorded in § Notes — never left perpetually blank.
        - Logical-stage scale (used by SKILL.md "Stage N of the pipeline" prose):
-         counts `review` as a stage but not `materia-reconcile-epic` (a gated
+         counts `review` as a stage but not `reconcile-epic` (a gated
          interstitial, "stage 9½" informally), so finalize is "Stage 10" there.
 
      Both are correct in their own frame; a finding that flags their coexistence
@@ -89,7 +89,7 @@
 ## Behavior-deferred
 
 <!-- Task IDs whose `verify` reviewer was skipped because they ran inside a
-     parallel worktree-isolated slot (port + DB schema contention). `materia-finalize`
+     parallel worktree-isolated slot (port + DB schema contention). `finalize`
      re-runs `verify` over the merged branch for the union of their
      user-visible acceptance criteria, retrying up to 2x to absorb flake. -->
 
@@ -112,7 +112,7 @@
 
 <!-- Gate-decision convention — the orchestrator writes one of these lines
      here after evaluating the UI-surface gate (defined canonically in
-     materia-ship-spec/SKILL.md § Review — § UI-surface gate; the design/ui-test-plan
+     ship-spec/SKILL.md § Review — § UI-surface gate; the design/ui-test-plan
      decision uses its predictive form, evaluated once after intake):
 
      For design:
@@ -124,13 +124,13 @@
      For ui-review:
        ui-review: skipped (non-UI — <reason>) | skipped (eyes-instability — degrade path) | ran
 
-     For the data-safety review angle (materia-ship-spec/SKILL.md § Data-surface gate):
+     For the data-safety review angle (ship-spec/SKILL.md § Data-surface gate):
        data-safety-review: skipped (non-data — <reason>) | ran
 
      On a non-UI run, the design and ui-test-plan checkboxes (rows 2–3) are
      ticked as "skipped (non-UI)" and the gate-decision lines recorded here. -->
 
-<!-- Screenshot-presence convention (UI runs — materia-ship-spec/SKILL.md § Review —
+<!-- Screenshot-presence convention (UI runs — ship-spec/SKILL.md § Review —
      § Screenshot-presence check):
        ui-proof: <n> screenshots committed
        ui-proof: capture failed — <reason>   (only after a failed
@@ -138,13 +138,13 @@
                  ui-proof/ with no such note and no degrade/waiver line) -->
 
 <!-- Autopilot merge-watch convention — on an --auto run the orchestrator
-     records merge-watch progress here (pre-merge; see materia-ship-spec/SKILL.md
+     records merge-watch progress here (pre-merge; see ship-spec/SKILL.md
      § Merge watch):
        auto-merge: watching PR #<n>
        auto-merge: CI fix round <n> — <summary>
        auto-merge: conflict resolved (origin/main merged) -->
 
-<!-- Epic-gate-decision convention — like `review`, the `materia-reconcile-epic`
+<!-- Epic-gate-decision convention — like `review`, the `reconcile-epic`
      stage has no checkbox row (it edits artifacts outside this spec folder);
      the orchestrator records one of these lines here after evaluating the
      epic gate (Provenance `Epic-id:` non-`—`):
@@ -167,10 +167,10 @@
        review counts (pre-post-implementation-review template) → ignored;
        review runs once over the cumulative diff and its baseline is
        `git merge-base HEAD origin/main`
-     - missing `behavior-deferred:` → `materia-finalize` re-runs `verify` on all
+     - missing `behavior-deferred:` → `finalize` re-runs `verify` on all
        user-visible ACs (safer default)
      - missing `docs-sync:` row → the docs-sync stage creates it
-     - missing `## Provenance` block → `materia-finalize` treats as ad-hoc (no
+     - missing `## Provenance` block → `finalize` treats as ad-hoc (no
        proposal dequeue)
      - missing `## Autopilot posture` block → resumes as `off` — never
        assume autopilot when the block is silent

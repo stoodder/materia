@@ -11,8 +11,8 @@ unlike the transient queue at
 removed; they carry the initiative's vision, research, decomposition, and
 change history for the life of the repo.
 
-This document defines the contract. `materia-propose-epic`
-creates epic folders; `materia-reconcile-epic`
+This document defines the contract. `propose-epic`
+creates epic folders; `reconcile-epic`
 maintains them as member specs ship. Anything else reads but does not write.
 
 ## What lives here
@@ -125,8 +125,8 @@ rather than deleting it.>
   cascaded, one line per run>
 ````
 
-Every H2 above is required, in that order — `materia-propose-epic` emits them all and
-`materia-reconcile-epic` relies on `## Member specs`, `## Decisions`, and
+Every H2 above is required, in that order — `propose-epic` emits them all and
+`reconcile-epic` relies on `## Member specs`, `## Decisions`, and
 `## Change log` being present to parse and append.
 
 ## Epic ↔ member linkage (bi-directional)
@@ -150,7 +150,7 @@ the other:
 - **Member → epic + siblings, forever (body):** each member proposal ends
   with an `## Epic context` body section naming the epic folder path, what
   the member builds on, and which siblings depend on it. Because
-  `materia-intake-spec` adopts a structured proposal body **verbatim** (and the
+  `intake-spec` adopts a structured proposal body **verbatim** (and the
   frontmatter is stripped at intake), this section is what survives into the
   shipped `docs/specs/<dated-slug>/spec.md` — the durable spec-side backlink.
 
@@ -159,38 +159,38 @@ Sibling-to-sibling relationships are derivable from either side: two members'
 
 ## Lifecycle
 
-1. `/materia-propose-epic` runs brainstorm + research with the operator, then lands
+1. `/materia:propose-epic` runs brainstorm + research with the operator, then lands
    the epic folder **and** its member proposals (in `docs/specs/_proposed/`, with
    `source: epic`) in one PR.
-2. The operator ships members with `/materia-ship-spec <member-id>`, respecting the
+2. The operator ships members with `/materia:ship-spec <member-id>`, respecting the
    epic's ship order (nothing enforces it — the graph is the guide).
-3. `materia-ship-spec` reconciles automatically: the member proposal's `epic:` key
-   sets the **epic gate** (`materia-ship-spec/SKILL.md` § Epic gate), which spawns
-   `materia-reconcile-epic` in pipeline mode between docs-audit and finalize — the
+3. `ship-spec` reconciles automatically: the member proposal's `epic:` key
+   sets the **epic gate** (`ship-spec/SKILL.md` § Epic gate), which spawns
+   `reconcile-epic` in pipeline mode between docs-audit and finalize — the
    epic sync (statuses, decisions, change log) and the cascade edits into
    the **pending** member proposals still in the queue ride the member's own
    PR, so merging the member and syncing the epic are one atomic event.
-4. Standalone `/materia-reconcile-epic <epic-id>` is the **backstop and status
+4. Standalone `/materia:reconcile-epic <epic-id>` is the **backstop and status
    board**: run it when drift arrived outside the pipeline (manual changes,
-   a `materia-fix-bug` run on epic ground, a run whose epic gate failed and
+   a `fix-bug` run on epic ground, a run whose epic gate failed and
    degraded), to retire members or the epic, or just to see what's
    unblocked.
-5. When the last member reaches a terminal state, `materia-reconcile-epic` flips the
+5. When the last member reaches a terminal state, `reconcile-epic` flips the
    epic's `status` to `shipped`. The folder stays put — this tree is an
    archive, not a queue.
 
-Steps 2–3 repeat per member; `materia-reconcile-epic` is idempotent and exits clean
+Steps 2–3 repeat per member; `reconcile-epic` is idempotent and exits clean
 when nothing shipped since the last run, so running it "too often" is safe.
 
 ## Who writes what
 
 | Writer | May write |
 |---|---|
-| `materia-propose-epic` | New epic folders; new member proposals in `docs/specs/_proposed/` (`source: epic`) |
-| `materia-reconcile-epic` | Existing `epic.md` files; **pending** member proposals of its own epic (body + `depends_on` only — never `id`, `date`, or the filename) |
+| `propose-epic` | New epic folders; new member proposals in `docs/specs/_proposed/` (`source: epic`) |
+| `reconcile-epic` | Existing `epic.md` files; **pending** member proposals of its own epic (body + `depends_on` only — never `id`, `date`, or the filename) |
 | everything else | nothing — read-only |
 
-`materia-reconcile-epic` editing queued proposals is the sanctioned exception to the
+`reconcile-epic` editing queued proposals is the sanctioned exception to the
 `docs/specs/_proposed/` rule that producers don't touch other producers' files: the two
 skills are one producer family and the epic's `## Member specs` table is the
 shared ownership record. It never touches proposals whose `epic:` key names a

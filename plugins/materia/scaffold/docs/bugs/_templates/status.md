@@ -1,4 +1,4 @@
-<!-- The pipeline's resumable state for this bug run. `/materia-fix-bug` reads this to
+<!-- The pipeline's resumable state for this bug run. `/materia:fix-bug` reads this to
      resume across sessions. Every stage updates it, then commits + pushes. -->
 # <Bug title> — status
 
@@ -8,9 +8,9 @@
 
 ## Bug-report provenance
 
-<!-- Filled by `/materia-fix-bug` at report selection (the run's entry point).
-     `/materia-fix-bug` reads `Bug-report:` to build the `materia-finalize` spawn prompt, which
-     instructs `materia-finalize` to `git rm -r` the report folder from `docs/bugs/_reports/` in
+<!-- Filled by `/materia:fix-bug` at report selection (the run's entry point).
+     `/materia:fix-bug` reads `Bug-report:` to build the `finalize` spawn prompt, which
+     instructs `finalize` to `git rm -r` the report folder from `docs/bugs/_reports/` in
      the same PR (finalize's own step 4' only recognizes the spec-pipeline
      `## Provenance` block, so the bug-run dequeue is orchestrator-driven).
      Omitting this block or setting any field to `—` means "no report to
@@ -44,7 +44,7 @@
 ## Behavior-deferred
 
 <!-- Task IDs whose `verify` reviewer was skipped because they ran inside a
-     parallel worktree-isolated slot (port + DB schema contention). `materia-finalize`
+     parallel worktree-isolated slot (port + DB schema contention). `finalize`
      re-runs `verify` over the merged branch for the union of their
      user-visible acceptance criteria, retrying up to 2x to absorb flake. -->
 
@@ -72,9 +72,9 @@
        review counts (pre-post-implementation-review template) → ignored;
        review runs once over the cumulative diff and its baseline is
        `git merge-base HEAD origin/main`
-     - missing `behavior-deferred:` → `materia-finalize` re-runs `verify` on all
+     - missing `behavior-deferred:` → `finalize` re-runs `verify` on all
        user-visible ACs (safer default)
      - missing `docs-sync:` row → the docs-sync stage creates it
-     - missing `## Bug-report provenance` block → `materia-finalize` treats as ad-hoc
+     - missing `## Bug-report provenance` block → `finalize` treats as ad-hoc
        (no report dequeue)
      New runs should always fill these in. -->

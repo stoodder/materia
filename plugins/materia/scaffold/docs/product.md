@@ -1,6 +1,6 @@
 # Product brief
 
-<!-- init: written once by /materia-init from the product-identity survey and
+<!-- init: written once by /materia:init from the product-identity survey and
      maintained thereafter like any other doc (docs-sync updates it when the
      product pivots; the librarian sweeps it). Replace every {{slot}} and
      delete these comments. This is the pipeline's taste and audience oracle:

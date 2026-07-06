@@ -49,7 +49,7 @@ command, export) fast? [surface-map.md](surface-map.md).
 Each maps to one of the repo's core entities — a persistence model, a
 domain object, a command family, whatever this stack's shape is — and
 documents its layers (per the pruned `_templates/resource.md`), rules, and
-canonical files. This table starts empty and grows as the app grows — `materia-docs-sync` and
+canonical files. This table starts empty and grows as the app grows — `docs-sync` and
 `contributing.md` § Adding a new doc keep it registered.
 
 | Doc | Entity |
@@ -64,8 +64,8 @@ canonical files. This table starts empty and grows as the app grows — `materia
 | [surface-map.md](surface-map.md) | every externally reachable surface (routes/pages, commands, or public API — per the repo's surface vocabulary), in one table |
 | [contributing.md](contributing.md) | **read before calling a change done** — Definition of Done, doc-update map, how to add a doc |
 | [specs/README.md](specs/README.md) | the spec-to-ship pipeline + per-feature spec/design/architecture/task artifacts |
-| [epics/README.md](epics/README.md) | epics — multi-spec initiatives: the `epic.md`/`research.md` contract, epic↔member linkage, and the `materia-propose-epic`/`materia-reconcile-epic` lifecycle |
-| [bugs/README.md](bugs/README.md) | the bug-report queue — producers, consumer (`/materia-fix-bug`), and per-run folder schema |
+| [epics/README.md](epics/README.md) | epics — multi-spec initiatives: the `epic.md`/`research.md` contract, epic↔member linkage, and the `propose-epic`/`reconcile-epic` lifecycle |
+| [bugs/README.md](bugs/README.md) | the bug-report queue — producers, consumer (`/materia:fix-bug`), and per-run folder schema |
 | [research/README.md](research/README.md) | durable research notes (external practice + agent research) that inform product and pipeline decisions; cited by proposals via `source_refs` |
 | [../MATERIA.md](../MATERIA.md) | the stack adaptation surface — gate commands, run recipe, preflight, surface gates, eyes |
 

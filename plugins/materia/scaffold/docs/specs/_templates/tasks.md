@@ -1,6 +1,6 @@
-<!-- Filled by the `materia-plan-tasks` skill (or by hand). Tasks are dependency-ordered
+<!-- Filled by the `plan-tasks` skill (or by hand). Tasks are dependency-ordered
      and independently shippable where possible. Each is implemented by the
-     `materia-implement-task` skill. -->
+     `implement-task` skill. -->
 # <Feature> — tasks
 
 > Ordered, dependency-aware. Independent tasks may run in parallel.
@@ -8,7 +8,7 @@
 ## Legend
 
 - **Depends on** — task ids that must land first.
-- **Model/effort** — the tier this task's own `materia-implement-task` subagent should run at, drawn from the catalog at `MATERIA.md` § Tiers § Model set (a `<model>` from that menu + a § Effort set level); omitted → the § Skill routing **Default** row (`opus/high`).
+- **Model/effort** — the tier this task's own `implement-task` subagent should run at, drawn from the catalog at `MATERIA.md` § Tiers § Model set (a `<model>` from that menu + a § Effort set level); omitted → the § Skill routing **Default** row (`opus/high`).
 - **Standards/docs** — what to read before coding (per ../../README.md read order).
 - Status: `[ ]` todo · `[~]` in progress · `[x]` done.
 
