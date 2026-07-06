@@ -1,6 +1,6 @@
 ---
 name: ui-review
-description: Fifth review angle in the ship-spec Review fan-out (UI-gated). Provisions the Eyes environment on-demand per MATERIA.md § Eyes, drives the app at the canonical viewport, captures screenshots and DOM snapshots per ui-test-plan.md flows, and returns structured "ui"-category findings into the remediation loop. Degrades gracefully on known Eyes-toolchain instability (records a STATUS note, returns empty findings, never blocks). Only spawned when the diff is UI-affecting; the gate is defined in ship-spec/SKILL.md § Review — § UI-surface gate.
+description: The ui review angle in the ship-spec Review fan-out (UI-gated). Provisions the Eyes environment on-demand per MATERIA.md § Eyes, drives the app at the canonical viewport, captures screenshots and DOM snapshots per ui-test-plan.md flows, and returns structured "ui"-category findings into the remediation loop. Degrades gracefully on known Eyes-toolchain instability (records a STATUS note, returns empty findings, never blocks). Only spawned when the diff is UI-affecting; the gate is defined in ship-spec/SKILL.md § Review — § UI-surface gate.
 ---
 
 # ui-review — Eyes-driven UI review angle
@@ -9,7 +9,7 @@ Drive the running app at the canonical viewport (`MATERIA.md` § Eyes), capture
 screenshots and DOM snapshots per the feature's `ui-test-plan.md` flows, and
 judge the rendered output against the repo's visual standards docs. Returns
 structured findings under the `"ui"` category into `ship-spec`'s remediation
-loop. Runs as a subagent in `ship-spec` § Review (the fifth angle, UI-gated —
+loop. Runs as a subagent in `ship-spec` § Review (the `ui` angle, UI-gated —
 only spawned when the diff is UI-affecting; the gate is defined in
 `ship-spec/SKILL.md` § Review — § UI-surface gate); usable standalone after
 implement-task has committed the feature.
@@ -194,7 +194,7 @@ This skill does **not**:
 - Author or modify e2e spec files — those are written by the per-feature
   e2e-authoring task derived from `ui-test-plan.md`.
 - Perform correctness, security, spec-adherence, or data-safety review — those
-  are the other five angles in `ship-spec` § Review fan-out.
+  are other angles in the `ship-spec` § Review fan-out.
 - Automate visual baseline diffing — judgment is qualitative, Claude reviewing
   rendered output against the repo's visual standards rubric.
 - Run a subset of the suite — the full `test:e2e` run is the default;

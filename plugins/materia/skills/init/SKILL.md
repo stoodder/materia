@@ -1,6 +1,6 @@
 ---
 name: init
-description: Materialize the Materia harness into this repo. Interviews the engineer about what they're building (brainstorm survey → product identity & taste → tech-stack selection → capability probes), then writes MATERIA.md + CLAUDE.md + the docs/product.md product brief, generates the stack-specific standards docs, materializes the docs skeleton and check-docs.mjs, and seeds docs/specs/_proposed/ with a bootstrap epic so the pipeline's own first /materia:ship-spec run scaffolds the app. Reads its sources from the plugin's bundled scaffold at ${CLAUDE_PLUGIN_ROOT}/scaffold; copies no skills into the repo (they run from the installed materia plugin) and prunes nothing. Run once on a fresh repo after installing the materia plugin; idempotent to re-run before the first bootstrap spec ships.
+description: Materialize the Materia harness into this repo. Interviews the engineer about what they're building (brainstorm survey → product identity & taste → tech-stack selection → capability probes), then writes MATERIA.md + CLAUDE.md + the docs/product.md product brief, generates the stack-specific standards docs, materializes the docs skeleton, check-docs.mjs, and the .materia/review-angles/ review-angle library, and seeds docs/specs/_proposed/ with a bootstrap epic so the pipeline's own first /materia:ship-spec run scaffolds the app. Reads its sources from the plugin's bundled scaffold at ${CLAUDE_PLUGIN_ROOT}/scaffold; copies no skills into the repo (they run from the installed materia plugin) and prunes nothing. Run once on a fresh repo after installing the materia plugin; idempotent to re-run before the first bootstrap spec ships.
 ---
 
 # init — materialize Materia into this repo
@@ -20,9 +20,12 @@ contracts, producer lifecycle, RED gate, sole-writer retro rule, and the tier
 machinery ship verbatim. The tier machinery includes `MATERIA.md` § Skill
 routing — the per-skill / per-role model/effort assignments (including their
 `opus` fallbacks), which are not stack-specific and ship exactly as written,
-like the § Effort set and § Coercion. Only the `{{slots}}` (among them § Model
-set availability) and the stack-specific standards docs are authored fresh, from
-the survey.
+like the § Effort set and § Coercion. The **review-angle library** ships
+verbatim the same way: the six canonical `.materia/review-angles/` files and
+their `MATERIA.md` § Review angles registry rows are not stack-specific — the
+survey only *appends* any repo-specific angles (Phase 4). Only the `{{slots}}`
+(among them § Model set availability) and the stack-specific standards docs are
+authored fresh, from the survey.
 
 ## Inputs
 
@@ -38,6 +41,10 @@ Read tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path) — e.g.
   `_templates/`, canonical standards, stubs), including the
   `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/product.md` brief template.
 - `${CLAUDE_PLUGIN_ROOT}/scaffold/scripts/check-docs.mjs` — the portable docs checker.
+- `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/review-angles/**` — the review-angle
+  library (the six canonical angle definitions + the directory `README.md`),
+  materialized so projects can fork or extend it; the `MATERIA.md` § Review
+  angles registry maps each to its File / Gate / Tier.
 - The engineer, interactively — this is the most interactive skill in the
   harness; everything downstream runs autonomously *because* this survey
   resolved the ambiguity up front.
@@ -53,6 +60,9 @@ discipline — there is nothing to diff against yet):
 - `docs/**` — the skeleton, the filled `docs/product.md` product brief, plus
   the generated stack-specific standards.
 - `scripts/check-docs.mjs`.
+- `.materia/review-angles/**` — the review-angle library (six canonical angle
+  files + `README.md`), materialized verbatim; repo-specific angles append as
+  new files + `MATERIA.md` § Review angles rows.
 - `.claude/settings.json` — seeded with this repo's dev permissions (Phase 6).
 - `docs/epics/<dated-slug>/` + 2–N member proposals in
   `docs/specs/_proposed/` — the **bootstrap epic** (see Phase 7).
@@ -156,7 +166,7 @@ rest). No skill is removed from the repo.
 | Does it have a user-facing UI? | § Surface gates § UI-affecting, § Eyes | both `none`; `design` / `ui-test-plan` / `ui-review` / `ui-inspection` self-gate at runtime (print one line + exit) |
 | How will agents *see* it? (browser automation — Playwright is the default for web — TUI capture, screenshot tooling) | § Eyes | — |
 | Does it persist data? | § Surface gates § Data-affecting, § Data layer | both `none`; the ship-spec data-safety review angle never runs (the orchestrator's per-run data gate) |
-| Any extra review angles the domain demands (a11y, perf budgets, compliance)? | § Review angles | — |
+| Any extra review angles the domain demands (a11y, perf budgets, compliance)? | § Review angles registry + a `.materia/review-angles/<slug>.md` file | absent → just the canonical six; a positive answer **appends** an angle file + a registry row (File / Gate / Tier) |
 | Anything unusual about cold-start (runtime versions, codegen, services)? | § Environment preflight | — |
 | Which models are available for spawn routing, and is any premium tier opt-in? (Sensible default: haiku/sonnet/opus as `default`, the premium tier as `opt-in`.) This fills § Model set availability only — the per-skill § Skill routing assignments and their fixed `opus` fallbacks are **not** surveyed; they ship verbatim. | § Model set | — (a declared model outside the set coerces to the fallback) |
 
@@ -167,7 +177,8 @@ sentence, the product brief's spine (name/positioning · audience · the five
 feel adjectives · taste references · principles), the stack, the § Gate
 table, the surface-gate patterns, the Eyes choice, the § Model set availability
 (the § Skill routing assignments and their fallbacks ship verbatim — not
-surveyed),
+surveyed), the review-angle library (the canonical six ship verbatim; note any
+repo-specific angle to be appended from Phase 4),
 the sections that will be marked `none` (and which UI/data-gated skills that
 makes inert), and the bootstrap
 epic's proposed member specs (titles + one-liners). Reply verbs, with producer-lifecycle semantics
@@ -183,11 +194,14 @@ active read or copy (`cp "$CLAUDE_PLUGIN_ROOT/scaffold/..." ...`) — the Read
 tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
 
 1. **Copy the skeleton:** `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/**` → `docs/`;
-   `${CLAUDE_PLUGIN_ROOT}/scaffold/scripts/check-docs.mjs` → `scripts/`. **No
-   skills are copied** — the pipeline skills run from the installed `materia`
-   plugin, so the user repo has no `.claude/skills/` of its own and there is
-   nothing to prune or deregister. Every producer stays advertised in the queue
-   tables and skill rosters exactly as the scaffold ships them.
+   `${CLAUDE_PLUGIN_ROOT}/scaffold/scripts/check-docs.mjs` → `scripts/`; and
+   `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/**` → `.materia/` (the review-angle
+   library — angle definitions are **config**, read at runtime from the repo
+   like `docs/`, not skills). **No skills are copied** — the pipeline skills run
+   from the installed `materia` plugin, so the user repo has no `.claude/skills/`
+   of its own and there is nothing to prune or deregister. Every producer stays
+   advertised in the queue tables and skill rosters exactly as the scaffold
+   ships them.
 2. **Adapt the doc skeleton to the stack:** adapt `docs/surface-map.md`'s
    tables to the surface vocabulary, and prune/rename
    `docs/_templates/resource.md`'s layer sections to the layers this stack
@@ -196,7 +210,11 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
 3. **Write `MATERIA.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/MATERIA.md`: fill
    every slot, mark absent capabilities `none` (§ Surface gates § UI-affecting /
    § Data-affecting, § Eyes, § Data layer, per the Phase-4 probes), delete the
-   `<!-- init: … -->` comments.
+   `<!-- init: … -->` comments. When Phase 4 surfaced a **repo-specific review
+   angle**, author it now as a pair: write `.materia/review-angles/<slug>.md`
+   (two-key `name`+`description` front matter + body, per that directory's
+   `README.md`) **and** append its row to § Review angles (File / Gate / Tier).
+   The canonical six copied in step 1 stay verbatim.
 4. **Write `CLAUDE.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/CLAUDE.md`: same
    treatment. The folder map documents the *intended* layout the bootstrap epic
    will create.
@@ -298,7 +316,8 @@ every change flows through the pipeline and lands via PR.
 ### Phase 8 — Report
 
 Close with: what was materialized (standards generated, the product brief, the
-docs skeleton + `check-docs.mjs`), the MATERIA.md sections marked `none` (and
+docs skeleton + `check-docs.mjs`, the `.materia/review-angles/` library),
+the MATERIA.md sections marked `none` (and
 which UI/data-gated skills that leaves inert), the bootstrap
 epic's member list with the recommended shipping order, and the one-line
 next step (`/materia:ship-spec`).
@@ -310,8 +329,8 @@ restore: the pipeline skills live in the installed `materia` plugin (nothing was
 moved out of the repo) and init does not remove itself, so there is nothing to
 restore and nothing self-removed. It re-enters the survey with the previous
 `MATERIA.md` answers as defaults and rewrites the materialized files (MATERIA.md,
-CLAUDE.md, `docs/**`, `scripts/check-docs.mjs`) wholesale from the bundled
-scaffold at `${CLAUDE_PLUGIN_ROOT}/scaffold/`.
+CLAUDE.md, `docs/**`, `scripts/check-docs.mjs`, `.materia/review-angles/**`)
+wholesale from the bundled scaffold at `${CLAUDE_PLUGIN_ROOT}/scaffold/`.
 
 After the pipeline has started shipping, init refuses to run wholesale (the repo
 is now the pipeline's to evolve) and instead points at the right tool:
