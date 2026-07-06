@@ -134,7 +134,7 @@ the operator saying up front "don't wait for me."
 
 Every fresh invocation begins here (after the Resume gate has ruled out an
 in-flight run). The shared intake surface at
-[`docs/specs/_proposed/`](../../../docs/specs/_proposed/README.md) is the
+`docs/specs/_proposed/` (`docs/specs/_proposed/README.md`) is the
 default source; the freeform-spec path is the **ad-hoc fallback**.
 
 ### Inputs to dispatch on
@@ -217,7 +217,7 @@ mis-parsed).
 ### Derive the feature slug
 
 Apply the `## Kebab-slug derivation` algorithm from
-[`docs/specs/_proposed/README.md`](../../../docs/specs/_proposed/README.md) to
+`docs/specs/_proposed/README.md` to
 `frontmatter.title` — it is **normative**; producers and this consumer must
 agree on filenames.
 
@@ -286,7 +286,7 @@ broken `check:docs` from inside `docs/specs/**`.
 The numbered list below uses the **logical-stage scale** (review is stage 7,
 finalize is stage 10); `STATUS.md` checkboxes use the **STATUS-checkbox scale**
 (review has no checkbox, finalize is row 9) — see
-[`docs/specs/_templates/status.md` § Stages](../../../docs/specs/_templates/status.md).
+`docs/specs/_templates/status.md` § Stages.
 `materia-design` (logical stage 2) and `materia-ui-test-plan` (logical stage 3) are
 **UI-gated**: spawned only when the run is UI-affecting (§ Review —
 § UI-surface gate, **predictive form** — evaluated once after intake, one
@@ -578,10 +578,11 @@ value.
 | 5 | UI (UI-gated) | invoke the `materia-ui-review` skill — an Eyes pass (`MATERIA.md` § Eyes: toolchain + canonical viewport) judged against the repo's visual standards docs **plus the cross-screen cohesion comparison** against the sibling screens named in `design.md` § Cohesion anchors. **Spawned only when the diff is UI-affecting** per § UI-surface gate; its committed `ui-proof/` screenshots are a mandatory deliverable checked by § Screenshot-presence check |
 | 6 | Data-safety (data-gated) | Agent: reviews the data-layer diff for **destructive migration operations** against existing data (dropped/narrowed columns, table drops), **seed idempotency** (re-seeding preserves user-entered values), **unique indexes backing every upsert**, and the repo-specific invariants in `MATERIA.md` § Data layer. **Spawned only when the diff is data-affecting** per § Data-surface gate |
 
-**Skill availability.** Only `materia-ui-review` ships under `.claude/skills/`;
-`code-review` and `security-review` are harness-provided and may be absent
-from a given session. When a named skill is unavailable, running that angle
-inline is the documented procedure — not a deviation to record.
+**Skill availability.** `materia-ui-review` ships with the Materia plugin, so
+it is always available; `code-review` and `security-review` are harness-provided
+and may be absent from a given session. When a named skill is unavailable,
+running that angle inline is the documented procedure — not a deviation to
+record.
 
 **Repo-specific angles (`MATERIA.md` § Review angles).** After the standard
 rows, append **one reviewer per row** of `MATERIA.md` § Review angles (none

@@ -39,7 +39,7 @@ yourself.
 If a gate step fails because a required service (database, container) is
 unreachable, **restart the service before treating it as a task failure** — a
 dead service mid-task is the most common silent-stall cause (recipe:
-`.claude/skills/materia-ship-spec/resources/env-preflight.md` § Standing rules +
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` § Standing rules +
 `MATERIA.md` § Environment preflight). If it can't be revived, write the
 blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
 

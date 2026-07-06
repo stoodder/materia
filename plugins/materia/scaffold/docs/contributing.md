@@ -67,11 +67,11 @@ it per **Adding a new doc** below as part of the same change.
 A committed, deterministic script (`scripts/check-docs.mjs` — pure Node, no
 network, no AI) enforces three layers:
 
-1. **Links** (`CLAUDE.md` + all of `docs/**` + `.claude/skills/**`): every
+1. **Links** (`CLAUDE.md` + all of `docs/**`): every
    relative Markdown link resolves to a real file. External (`http(s)://`,
    `mailto:`) links are skipped, as is link syntax inside code fences or
    inline code (backtick a `[text](path)` example to exempt it).
-2. **Anchors** (the agent-context docs + `.claude/skills/**`): every
+2. **Anchors** (the agent-context docs): every
    `#fragment` in a relative link resolves to a real heading in the target
    file (GitHub-style slugs, dash-run-normalized).
 3. **Style** (`CLAUDE.md` + `docs/` root + `resources/` + `standards/` +

@@ -60,7 +60,7 @@ acting on them wastes context.
 
    **Gate preflight (deps + runtime).** Before the first gate run, ensure the
    environment is provisioned per
-   `.claude/skills/materia-ship-spec/resources/env-preflight.md` (runtime → deps →
+   `${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` (runtime → deps →
    codegen → services; the concrete recipes and any documented fallback gates
    live in `MATERIA.md` § Environment preflight — when a fallback gate is
    used, record it in the PR).

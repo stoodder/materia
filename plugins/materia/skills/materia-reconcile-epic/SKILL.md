@@ -32,10 +32,10 @@ The skill is **dual-mode**:
   until `approve`. Idempotent: a run that finds no drift and no status
   change is a zero-work exit, so running it "too often" is safe.
 
-Read [`docs/epics/README.md`](../../../docs/epics/README.md) (the epic
+Read `docs/epics/README.md` (the epic
 contract — especially § Who writes what, which sanctions this skill's edits
 to queued proposals) and
-[`docs/specs/_proposed/README.md`](../../../docs/specs/_proposed/README.md)
+`docs/specs/_proposed/README.md`
 before changing this skill.
 
 ## Inputs / Outputs

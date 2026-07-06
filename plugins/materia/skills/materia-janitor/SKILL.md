@@ -40,7 +40,7 @@ behavior-affecting fix is noted, never guessed at (§ Rules).
 
 - The in-scope `docs/standards/*.md` rules (all by default) and the source
   folders they govern (see § Scan strategy).
-- [`docs/contributing.md`](../../../docs/contributing.md) — the
+- `docs/contributing.md` — the
   touch-X→update-Y map, so each fix carries its doc updates.
 - **Both live queues**, read for dedup (a finding already queued belongs to
   the pipeline run that will consume it):
@@ -66,7 +66,7 @@ behavior-affecting fix is noted, never guessed at (§ Rules).
 `git checkout main && git pull` (halt and surface if blocked by local
 changes). Verify `gh auth status` and the Node toolchain — the full local gate
 must be runnable (apply
-`.claude/skills/materia-ship-spec/resources/env-preflight.md` recipes if not). Read
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` recipes if not). Read
 the in-scope standards and both live queues into context.
 
 ### 2. Scan — subagent fan-out
@@ -174,7 +174,8 @@ package manifest and CI config.
   proposal/report filing; the operator escalates with `/materia-report-bug` or
   `/materia-propose-spec` when a note warrants it.
 - **NEVER edits** the historical trees (`docs/specs/**`, `docs/bugs/**`,
-  `docs/epics/**`, `docs/research/**`) or the skills (`.claude/skills/**`).
+  `docs/epics/**`, `docs/research/**`) or the Materia plugin skills (installed
+  read-only under `${CLAUDE_PLUGIN_ROOT}/skills/`).
 - **Not a linter replacement** — it targets cross-file drift, duplication,
   dead code, and standards conformance the `lint` gate cannot express.
 

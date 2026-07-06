@@ -9,7 +9,7 @@ A single-shot **producer** skill. It drives the live local app across every
 surface in `docs/surface-map.md` § Pages at the canonical viewport
 (`MATERIA.md` § Eyes), judges each page against the repo's visual standards
 docs, and files **one** consolidated, checklist-style bug report into the bug
-queue at [`docs/bugs/_reports/`](../../../docs/bugs/_reports/README.md). It
+queue at `docs/bugs/_reports/` (`docs/bugs/_reports/README.md`). It
 runs in the operator's session — it is **not** a `materia-ship-spec` stage, and it is
 distinct from [`materia-ui-review`](../materia-ui-review/SKILL.md): `materia-ui-review` is the
 in-pipeline fifth review angle scoped to a single feature diff and feeds the
@@ -33,12 +33,12 @@ exits below (Phase 0 abort, instability degrade) are its zero-work paths.
   it is **not** already running, Phase 0 **starts it** (per the § Run it
   recipe, falling back to the § Eyes provisioning recipe) rather than
   aborting; the operator no longer has to bring it up by hand first.
-- **[`docs/surface-map.md`](../../../docs/surface-map.md) § Pages** — the
+- **`docs/surface-map.md` § Pages** — the
   inventory of routes to visit, in the order listed there.
 - **The repo's visual standards docs** (the visual-language / UI-components
   standards under `docs/standards/`) — the judgment basis for findings.
 - **The queue contract:
-  [`docs/bugs/_reports/README.md`](../../../docs/bugs/_reports/README.md)** — the
+  `docs/bugs/_reports/README.md`** — the
   frontmatter shape, filename pattern, body sections, and bookkeeping convention
   the written report MUST conform to.
 

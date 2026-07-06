@@ -83,10 +83,8 @@ decoupled (and so the executor runs disjoint from `materia-suggestions-to-specs`
 
 The improvements tree (`docs/specs/_improvements/`) is a sibling to feature
 spec folders and `_templates/`; its `README.md` is seeded by the first run of
-the planner (no infrastructure pre-commit). See
-[../../.claude/skills/materia-triage-retros/SKILL.md](../../.claude/skills/materia-triage-retros/SKILL.md)
-(planner) and
-[../../.claude/skills/materia-apply-pipeline-improvements/SKILL.md](../../.claude/skills/materia-apply-pipeline-improvements/SKILL.md)
+the planner (no infrastructure pre-commit). See `materia-triage-retros`
+(planner) and `materia-apply-pipeline-improvements`
 (executor) for the full procedures.
 
 ## Bug reports — sibling queue
@@ -123,9 +121,8 @@ there MUST conform; any consumer that reads from there MAY rely on it.
 | `materia-propose-spec` | `user-proposed` | Drafts proposed specs from the user's raw idea via in-conversation Q&A; splits sprawling ideas into separate single-shippable-unit proposals. Q&A is in-memory; on approve it branches, writes the file(s), commits, and opens a PR. |
 | `materia-propose-epic` | `epic` | Develops the operator's large multi-spec idea into an epic under [`docs/epics/`](../epics/README.md) (iterative brainstorm Q&A + a parallel low-tier web-research fan-out), then decomposes it into 2–N member proposals wired by a `depends_on` dependency graph — epic folder + members land in one PR. When a member is later shipped, `materia-ship-spec`'s epic gate spawns the sibling `materia-reconcile-epic` skill (pipeline mode) to sync the epic from as-built reality and cascade changes into the remaining pending members inside the member's own PR; standalone `/materia-reconcile-epic` is the backstop. |
 
-See [../../.claude/skills/materia-suggestions-to-specs/SKILL.md](../../.claude/skills/materia-suggestions-to-specs/SKILL.md),
-[../../.claude/skills/materia-propose-spec/SKILL.md](../../.claude/skills/materia-propose-spec/SKILL.md),
-and [../../.claude/skills/materia-propose-epic/SKILL.md](../../.claude/skills/materia-propose-epic/SKILL.md)
+See `materia-suggestions-to-specs`, `materia-propose-spec`,
+and `materia-propose-epic`
 for the full procedures. Epics themselves (the parent initiative documents,
 their member-linkage contract, and the `materia-reconcile-epic` cascade lifecycle)
 live in the sibling tree at [`docs/epics/`](../epics/README.md). New producers (market-research, user-feedback, etc.)

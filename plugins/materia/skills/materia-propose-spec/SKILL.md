@@ -7,7 +7,7 @@ description: Take a user's raw idea and produce a well-formed proposed-spec file
 
 A simple, single-shot skill that turns a raw idea into a proposed-spec file
 in the shared queue at
-[`docs/specs/_proposed/`](../../../docs/specs/_proposed/README.md). Conforms
+`docs/specs/_proposed/` (`docs/specs/_proposed/README.md`). Conforms
 to the queue's shared contract (frontmatter shape, filename pattern, body
 shape).
 
@@ -27,8 +27,8 @@ trace; on `approve` the skill branches, writes, commits, pushes, and opens the
 PR.
 
 Read
-[`docs/specs/_proposed/README.md`](../../../docs/specs/_proposed/README.md)
-(the shared contract) and `.claude/skills/materia-intake-spec/SKILL.md` § Detect
+`docs/specs/_proposed/README.md`
+(the shared contract) and `${CLAUDE_PLUGIN_ROOT}/skills/materia-intake-spec/SKILL.md` § Detect
 the input shape (the structured-body shape the proposal must hit so
 `materia-intake-spec` adopts it verbatim) before changing this skill.
 
@@ -387,7 +387,7 @@ filename.
 
 `<slug>` is derived from the title via the **normative kebab-slug
 algorithm** in
-[`docs/specs/_proposed/README.md`](../../../docs/specs/_proposed/README.md)
+`docs/specs/_proposed/README.md`
 § Kebab-slug derivation — the same algorithm `materia-ship-spec` uses to re-derive
 the spec-folder slug. Do NOT invent a different algorithm.
 

@@ -37,7 +37,7 @@ acting on them wastes context.
 
 If a gate command fails oddly (wrong runtime version, missing dependencies,
 stale codegen, an unreachable service), apply the recipes in
-`.claude/skills/materia-ship-spec/resources/env-preflight.md` (concrete recipes:
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` (concrete recipes:
 `MATERIA.md` § Environment preflight) before treating it as a
 real failure. In the orchestrator lane the session preflight has already run;
 standalone runs apply it on first use.

@@ -61,8 +61,8 @@ present-state description.
 `node scripts/check-docs.mjs` mechanically enforces the checkable subset (narration
 phrases, >600-char lines, duplicated long lines, glossary order, links,
 `#anchor` fragments) over CLAUDE.md + docs root + `resources/` +
-`standards/` + `_templates/` (links also across `docs/**` +
-`.claude/skills/**`) — run it before committing (Procedure step 6). The rules
+`standards/` + `_templates/` (links also across `docs/**`) — run it before
+committing (Procedure step 6). The rules
 above are broader than the checker; passing it is necessary, not sufficient.
 
 ## Harness noise
@@ -84,7 +84,7 @@ acting on them wastes context.
 
 If a gate command fails oddly (wrong runtime version, missing dependencies,
 stale codegen, an unreachable service), apply the recipes in
-`.claude/skills/materia-ship-spec/resources/env-preflight.md` (concrete recipes:
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` (concrete recipes:
 `MATERIA.md` § Environment preflight) before treating it as a
 real failure. In the orchestrator lane the session preflight has already run;
 standalone runs apply it on first use.
@@ -206,7 +206,7 @@ standalone runs apply it on first use.
    orchestrator spawns the sibling `materia-docs-audit` stage next. The audit checks
    (coverage, accuracy, consistency, authoring-standard conformance, the
    mechanical gate) are performed by `materia-docs-audit` — see
-   `.claude/skills/materia-docs-audit/SKILL.md`.
+   `${CLAUDE_PLUGIN_ROOT}/skills/materia-docs-audit/SKILL.md`.
 
 7. **Address audit findings.** The orchestrator (`materia-ship-spec`) hands the
    `materia-docs-audit` findings back when re-invoking `materia-docs-sync` for round 2;

@@ -302,8 +302,7 @@ Example of the fenced-block shape a subagent emits:
 ````
 
 The normative algorithm (extraction rules, edge-case table, parallel-batch
-ordering) lives in
-[`materia-ship-spec/SKILL.md` § Retrospective capture](../../.claude/skills/materia-ship-spec/SKILL.md#retrospective-capture-per-run-retromd).
+ordering) lives in `materia-ship-spec/SKILL.md` § Retrospective capture.
 This section states the invariant; that file carries the implementation detail.
 
 ## Where it lives

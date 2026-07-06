@@ -7,7 +7,7 @@ description: Take a raw bug description and produce a reproducible bug-report fi
 
 A simple, single-shot skill that turns a raw bug description into a bug-report
 file in the queue at
-[`docs/bugs/_reports/`](../../../docs/bugs/_reports/README.md). Conforms to the
+`docs/bugs/_reports/` (`docs/bugs/_reports/README.md`). Conforms to the
 queue's contract (frontmatter shape, filename pattern, body shape).
 
 **Philosophy: defaults beat questions.** The operator's job is to describe the
@@ -24,8 +24,8 @@ session survival). The Q&A is in-memory — an abandoned conversation leaves no
 trace; on `approve` the skill branches, writes, commits, pushes, and opens the
 PR.
 
-Read [`docs/bugs/_reports/README.md`](../../../docs/bugs/_reports/README.md)
-(the queue contract) and [`docs/bugs/README.md`](../../../docs/bugs/README.md)
+Read `docs/bugs/_reports/README.md`
+(the queue contract) and `docs/bugs/README.md`
 before changing this skill.
 
 ## Procedure
@@ -345,7 +345,7 @@ docs/bugs/_reports/<YYYY-MM-DD-HHMMSS>-<id>-<slug>/report.md
 ```
 
 `<slug>` is derived from the title via the **normative kebab-slug algorithm** in
-[`docs/specs/_proposed/README.md`](../../../docs/specs/_proposed/README.md)
+`docs/specs/_proposed/README.md`
 § Kebab-slug derivation — the same algorithm `materia-ship-spec` uses. Do NOT invent a
 different algorithm.
 

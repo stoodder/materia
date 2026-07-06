@@ -33,12 +33,14 @@ is only the human-readable suffix.
 
 See `materia-ship-spec/SKILL.md` § "Each stage runs as a subagent" — the rule is
 identical: spawn every stage with the Agent tool, pass only its inputs (prior
-artifacts + the stage skill) plus the standing rules from
-`.claude/skills/materia-ship-spec/resources/spawn-contract.md` (Block 1 always; Block
+artifacts + the stage skill) plus the standing rules from ship-spec's spawn
+contract — read them with
+`cat "$CLAUDE_PLUGIN_ROOT/skills/materia-ship-spec/resources/spawn-contract.md"`
+(Block 1 always; Block
 2 for stages/tasks; Block 3 for reviewers), verify the artifact + commit on
 return, and run independent implement tasks as parallel worktree-isolated
 subagents (`isolation: "worktree"`). The one-time session preflight from
-`.claude/skills/materia-ship-spec/resources/env-preflight.md` applies before the
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` applies before the
 first code-touching spawn, exactly as in ship-spec.
 
 ## Resume (run first, every time)
@@ -151,7 +153,7 @@ queue contract at `docs/bugs/_reports/README.md` § Consumer responsibilities
 mandates the same `^---\r?\n` strip).
 
 For slug derivation, apply the `## Kebab-slug derivation` algorithm from
-[`docs/specs/_proposed/README.md`](../../../docs/specs/_proposed/README.md)
+`docs/specs/_proposed/README.md`
 to `frontmatter.title` — it is **normative** and shared; cite, don't re-state.
 
 ## Stake-and-mint

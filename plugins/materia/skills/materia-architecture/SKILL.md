@@ -31,7 +31,7 @@ acting on them wastes context.
 
 If a gate command fails oddly (wrong runtime version, missing dependencies,
 stale codegen, an unreachable service), apply the recipes in
-`.claude/skills/materia-ship-spec/resources/env-preflight.md` (concrete recipes:
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` (concrete recipes:
 `MATERIA.md` § Environment preflight) before treating it as a
 real failure. In the orchestrator lane the session preflight has already run;
 standalone runs apply it on first use.
@@ -185,7 +185,7 @@ matters more than the section labels**.
   enforcement`, `Resumability gate` instead of `Data model` / `API surface`
   / `Contracts & models` / `Client state` / `UI`.
 - **Map "existing resources" (step 2)** to whatever the equivalent is —
-  sibling skills under `.claude/skills/`, related templates under
+  sibling skills under `${CLAUDE_PLUGIN_ROOT}/skills/`, related templates under
   `docs/specs/_templates/`, prior decisions captured in
   `docs/specs/_improvements/` plans.
 - **Enumerate the operator surface.** The design stage is UI-gated and does

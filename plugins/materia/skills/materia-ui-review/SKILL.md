@@ -60,7 +60,7 @@ acting on them wastes context.
    NOT assumed to be ambient. Export any service environment variables the
    recipe names **in the same command** as the runner invocation (shell state
    does not persist between tool calls — see
-   `.claude/skills/materia-ship-spec/resources/env-preflight.md` § Gate invocation
+   `${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` § Gate invocation
    notes).
 
 2. **Run the e2e suite** at the canonical viewport (`MATERIA.md` § Eyes).

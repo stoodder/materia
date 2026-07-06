@@ -4,18 +4,26 @@
 // The plugin lives at plugins/materia/: skills/ (all pipeline skills, at the
 // plugin root per the Claude Code plugin spec) and scaffold/ (the MATERIA.md +
 // CLAUDE.md + docs/ + check-docs.mjs bundle that /materia-init writes into a
-// user repo). Three layers:
+// user repo). Layers:
 //  1. Materialization sim: copy plugins/materia/scaffold/ into the post-init
-//     layout, stub the five standards /materia-init always generates, run
-//     check-docs.mjs (links + anchors + style) over the result.
+//     user-repo layout (docs/ + root CLAUDE.md/MATERIA.md + the standards stubs
+//     /materia-init generates) and run check-docs.mjs over it. Skills are NOT
+//     copied — installed plugins run from the read-only cache, not from
+//     .claude/skills/ in the user repo — so a scaffold doc that still LINKS into
+//     a skill file now fails here honestly (nothing masks it).
+//  1c. Direct skills link/anchor check: resolves every relative link + #anchor
+//     in plugins/materia/skills/** as the files sit in the repo (the coverage
+//     the skill-free sim gives up), skipping ${CLAUDE_PLUGIN_ROOT} runtime paths
+//     and http(s)/mailto links (not repo-relative). A link that escapes the
+//     skills subtree fails — such refs must be repo-relative backtick prose.
 //  2. § audit: every segment of every `MATERIA.md § A § B` reference chain
 //     across plugins/materia/ names a real heading in MATERIA.md, plus mirror
 //     pins (§ Skill routing rows that must carry an equal tier).
 //  3. Slot hygiene: {{slot}} markers may exist only in the slotted templates
 //     (MATERIA.md, CLAUDE.md, docs skeleton) — never in skills.
 // Exits non-zero with the failures listed. Run: node scripts/validate-plugin.mjs
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
+import { join, resolve, dirname, relative, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import { spawnSync } from 'node:child_process'
 
@@ -24,24 +32,19 @@ let failures = 0
 const fail = (msg) => { console.error(`  ✗ ${msg}`); failures++ }
 
 // ---- 1. materialization sims + check-docs ----------------------------------
-// Two profiles: a full UI repo, and a pruned non-UI repo (materia-init's
-// § Phase 4 prune set removed, no UI standards generated). Both must pass.
-const UI_PRUNE = ['materia-design', 'materia-ui-test-plan', 'materia-ui-review', 'materia-ui-inspection']
-const runSim = (label, { prune = [], standards }) => {
+// Model the REAL /materia-init output: copy plugins/materia/scaffold/ into a
+// user-repo layout (docs/ + check-docs.mjs + root CLAUDE.md/MATERIA.md, plus the
+// standards stubs init always generates), then run check-docs over it. Skills
+// are NOT copied and init no longer prunes — installed plugins run from the
+// read-only cache, so the user repo has no .claude/skills/ at all. That makes
+// the green signal HONEST: a scaffold doc that still links into a skill file
+// dangles here (Part B mask removed). The two profiles differ only in which
+// standards stubs get written (a UI repo adds visual-language + ui-components).
+const runSim = (label, { standards }) => {
   const sim = mkdtempSync(join(tmpdir(), 'materia-sim-'))
   try {
-    mkdirSync(join(sim, '.claude'), { recursive: true })
     mkdirSync(join(sim, 'scripts'), { recursive: true })
     cpSync('plugins/materia/scaffold/docs', join(sim, 'docs'), { recursive: true })
-    cpSync('plugins/materia/skills', join(sim, '.claude/skills'), { recursive: true })
-    for (const p of prune) {
-      rmSync(join(sim, '.claude/skills', p), { recursive: true, force: true })
-      // mimic init: a pruned producer is deregistered from the queue tables
-      for (const q of ['docs/specs/_proposed/README.md', 'docs/bugs/_reports/README.md']) {
-        const qp = join(sim, q)
-        writeFileSync(qp, readFileSync(qp, 'utf8').split('\n').filter((l) => !l.includes(p)).join('\n'))
-      }
-    }
     cpSync('plugins/materia/scaffold/scripts/check-docs.mjs', join(sim, 'scripts/check-docs.mjs'))
     cpSync('plugins/materia/scaffold/CLAUDE.md', join(sim, 'CLAUDE.md'))
     cpSync('plugins/materia/scaffold/MATERIA.md', join(sim, 'MATERIA.md'))
@@ -59,7 +62,81 @@ const runSim = (label, { prune = [], standards }) => {
   }
 }
 runSim('UI repo', { standards: ['architecture', 'testing', 'workflow', 'visual-language', 'ui-components'] })
-runSim('non-UI repo, UI skills pruned', { prune: UI_PRUNE, standards: ['architecture', 'testing', 'workflow'] })
+runSim('non-UI repo', { standards: ['architecture', 'testing', 'workflow'] })
+
+// ---- 1c. direct skills link/anchor check ------------------------------------
+// The skill-free sim (above) no longer covers skill-internal markdown links or
+// anchors. Restore that coverage HONESTLY: resolve every relative link + #anchor
+// in plugins/materia/skills/** exactly as the files sit in the repo — no temp
+// reconstruction. Valid skill links stay inside the skills subtree: sibling
+// ../<skill>/SKILL.md and intra-skill resources/... paths. ${CLAUDE_PLUGIN_ROOT}
+// runtime paths (Part A's rerouted cache reads) and http(s)/mailto links are
+// skipped — not repo-relative — and link syntax inside code fences / inline code
+// is illustrative, not a real link. A link that ESCAPES plugins/materia/skills/**
+// (e.g. a stale ../../../docs/... pointer into the user repo) FAILS: an installed
+// skill runs from a read-only cache that can't reach the user repo, so such
+// references must be repo-relative backtick prose, not live links.
+{
+  const FENCE = /```[\s\S]*?```|~~~[\s\S]*?~~~/g
+  const INLINE_CODE = /`[^`]*`/g
+  const LINK = /\[(?:[^[\]]|\[[^\]]*\])*\]\(([^)]+)\)/g
+  const blankOut = (t, re) => t.replace(re, (m) => m.replace(/[^\n]/g, ' '))
+  const slugify = (h) =>
+    h.toLowerCase().replace(/`/g, '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/[^\w\s-]/g, '').trim().replace(/[\s-]+/g, '-')
+  const slugCache = new Map()
+  const slugsFor = (file) => {
+    if (!slugCache.has(file)) {
+      const set = new Set()
+      for (const m of blankOut(readFileSync(file, 'utf8'), FENCE).matchAll(/^#{1,6}\s+(.+)$/gm)) {
+        const base = slugify(m[1])
+        set.add(set.has(base) ? `${base}-${[...set].filter((s) => s.startsWith(base)).length}` : base)
+        set.add(base)
+      }
+      slugCache.set(file, set)
+    }
+    return slugCache.get(file)
+  }
+  const skillsRoot = resolve('plugins/materia/skills')
+  const skillDocs = []
+  const walkSkills = (p) => {
+    for (const e of readdirSync(p)) {
+      const fp = join(p, e)
+      if (statSync(fp).isDirectory()) walkSkills(fp)
+      else if (fp.endsWith('.md')) skillDocs.push(fp)
+    }
+  }
+  walkSkills(skillsRoot)
+  const before = failures
+  let checked = 0
+  for (const f of skillDocs.sort()) {
+    const text = blankOut(blankOut(readFileSync(f, 'utf8'), FENCE), INLINE_CODE)
+    for (const m of text.matchAll(LINK)) {
+      const [target, fragment] = m[1].split('#')
+      const path = target.trim()
+      if (/^(https?:|mailto:)/.test(path)) continue
+      if (path.includes('CLAUDE_PLUGIN_ROOT')) continue // runtime cache token, not repo-relative
+      const resolved = path ? resolve(dirname(f), path) : resolve(f)
+      if (resolved !== skillsRoot && !resolved.startsWith(skillsRoot + sep)) {
+        fail(`skills link escapes plugins/materia/skills/**: ${relative(skillsRoot, f)} -> ${m[1]} — make it repo-relative backtick prose`)
+        continue
+      }
+      if (path && !existsSync(resolved)) {
+        fail(`skills link: ${relative(skillsRoot, f)} -> ${m[1]}`)
+        continue
+      }
+      checked++
+      if (fragment !== undefined && resolved.endsWith('.md')) {
+        const want = fragment.trim().toLowerCase().replace(/[\s-]+/g, '-')
+        const slugs = slugsFor(resolved)
+        if (!slugs.has(want) && !slugs.has(want.replace(/-\d+$/, '')))
+          fail(`skills anchor: ${relative(skillsRoot, f)} -> ${m[1]} (no heading matches #${fragment})`)
+      }
+    }
+  }
+  if (failures === before)
+    console.log(`  ✓ direct skills link/anchor check: ${checked} links/anchors across ${skillDocs.length} skill docs resolve (natural repo layout)`)
+}
 
 // ---- 1b. stage-numbering canon ----------------------------------------------
 // The status templates are the source of truth; skills that hard-code a row

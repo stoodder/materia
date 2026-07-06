@@ -8,9 +8,9 @@ description: "Take a user's raw idea for a large, multi-spec feature-set and dev
 The big sibling of [`materia-propose-spec`](../materia-propose-spec/SKILL.md). Where that
 skill turns an idea into **one** proposal in a single drafting turn, this one
 turns an idea into an **epic**: a researched, operator-refined initiative
-document under [`docs/epics/`](../../../docs/epics/README.md)
+document under `docs/epics/` (`docs/epics/README.md`)
 plus a set of member spec proposals in the shared queue at
-[`docs/specs/_proposed/`](../../../docs/specs/_proposed/README.md), each
+`docs/specs/_proposed/` (`docs/specs/_proposed/README.md`), each
 scoped to one shippable PR and wired together by a dependency graph.
 
 **Philosophy: converge, then decompose.** `materia-propose-spec`'s "defaults beat
@@ -27,11 +27,11 @@ verbs, cancel semantics, id minting, link integrity, one PR + tooling, no
 session survival). Brainstorming, research syntheses, and drafts are all
 in-memory; nothing touches the repo until `approve`.
 
-Read [`docs/epics/README.md`](../../../docs/epics/README.md)
+Read `docs/epics/README.md`
 (the epic contract — folder shape, `epic.md` format, linkage keys),
-[`docs/specs/_proposed/README.md`](../../../docs/specs/_proposed/README.md)
+`docs/specs/_proposed/README.md`
 (the queue contract every member proposal must hit), and
-`.claude/skills/materia-intake-spec/SKILL.md` § Detect the input shape (the
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-intake-spec/SKILL.md` § Detect the input shape (the
 structured-body shape) before changing this skill.
 
 ## Inputs / Outputs
@@ -175,7 +175,7 @@ reasonable PR). Then wire the graph:
 
 Mint ids (one for the epic, one per member — lifecycle minting command +
 collision rules), then draft everything in-memory: `epic.md` and
-`research.md` per the [epic contract](../../../docs/epics/README.md)
+`research.md` per the epic contract (`docs/epics/README.md`)
 formats (`research.md` cites primary sources as bare URLs per that
 contract's citation conventions), and each member proposal per § File
 format below. Member bodies

@@ -235,10 +235,10 @@ MUST:
 
 | Source key | Skill | Input(s) it consumes |
 |---|---|---|
-| `bug-report` | [`/materia-report-bug`](../../../.claude/skills/materia-report-bug/SKILL.md) | The operator's raw bug description, refined via in-memory Q&A; on approve it branches, writes the report, and opens a PR |
-| `bugs-to-reports` | [`/materia-bugs-to-reports`](../../../.claude/skills/materia-bugs-to-reports/SKILL.md) | Gathered `bug-reports.md` hand-offs from `docs/specs/_improvements/**/`; drafts conformant reports and files them into `docs/bugs/_reports/`; `materia-triage-retros` gathers the items but no longer writes queue files directly |
-| `janitor` | [`/materia-janitor`](../../../.claude/skills/materia-janitor/SKILL.md) | Legacy key — carried only by reports still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
-| `ui-inspection` | [`/materia-ui-inspection`](../../../.claude/skills/materia-ui-inspection/SKILL.md) | The running app, driven across `docs/surface-map.md § Pages` at the canonical viewport (MATERIA.md § Eyes); judged against the repo's visual standards docs. Writes one consolidated checklist report; captures co-located in the report folder as `<surface-slug>.{png,html}`. |
+| `bug-report` | `/materia-report-bug` | The operator's raw bug description, refined via in-memory Q&A; on approve it branches, writes the report, and opens a PR |
+| `bugs-to-reports` | `/materia-bugs-to-reports` | Gathered `bug-reports.md` hand-offs from `docs/specs/_improvements/**/`; drafts conformant reports and files them into `docs/bugs/_reports/`; `materia-triage-retros` gathers the items but no longer writes queue files directly |
+| `janitor` | `/materia-janitor` | Legacy key — carried only by reports still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
+| `ui-inspection` | `/materia-ui-inspection` | The running app, driven across `docs/surface-map.md § Pages` at the canonical viewport (MATERIA.md § Eyes); judged against the repo's visual standards docs. Writes one consolidated checklist report; captures co-located in the report folder as `<surface-slug>.{png,html}`. |
 
 When a new producer is added, it MUST update this table with one row.
 **Adding a producer row is NOT a contract change** — it is a registration

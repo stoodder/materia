@@ -69,7 +69,7 @@ Runs as a **fresh-context subagent** spawned by `materia-ship-spec` — never by
    `docs/surface-map.md`, `docs/glossary.md` reflect new resources / routes /
    terms that the matrix produced.
 4. **Mechanical gate** — run `node scripts/check-docs.mjs` (read-only; it verifies
-   links across `CLAUDE.md` + `docs/**` + `.claude/skills/**`, `#anchor`
+   links across `CLAUDE.md` + `docs/**`, `#anchor`
    fragments, and style over the agent-context docs: change-narration
    phrases, >600-char lines, duplicated long lines, glossary alphabetical
    order). `materia-docs-sync` runs it before committing, so a failure

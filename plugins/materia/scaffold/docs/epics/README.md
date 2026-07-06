@@ -11,8 +11,8 @@ unlike the transient queue at
 removed; they carry the initiative's vision, research, decomposition, and
 change history for the life of the repo.
 
-This document defines the contract. [`materia-propose-epic`](../../.claude/skills/materia-propose-epic/SKILL.md)
-creates epic folders; [`materia-reconcile-epic`](../../.claude/skills/materia-reconcile-epic/SKILL.md)
+This document defines the contract. `materia-propose-epic`
+creates epic folders; `materia-reconcile-epic`
 maintains them as member specs ship. Anything else reads but does not write.
 
 ## What lives here

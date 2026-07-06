@@ -7,7 +7,7 @@ description: "Drafts proposed-spec file(s) in docs/specs/_proposed/ from unproce
 
 A simple, single-shot skill that turns the unprocessed `product-suggestions.md` files
 under `docs/specs/_improvements/**/` into proposed-spec files in the shared
-queue at [`docs/specs/_proposed/`](../../../docs/specs/_proposed/README.md).
+queue at `docs/specs/_proposed/` (`docs/specs/_proposed/README.md`).
 Conforms to the queue's shared contract (frontmatter shape, filename pattern,
 body shape).
 
@@ -20,11 +20,11 @@ consumed sources; the git diff is the audit — no per-run audit folder, no
 envelope JSON.
 
 Read
-[`docs/specs/_proposed/README.md`](../../../docs/specs/_proposed/README.md)
-(the shared contract), `.claude/skills/materia-triage-retros/resources/rendering.md` §
+`docs/specs/_proposed/README.md`
+(the shared contract), `${CLAUDE_PLUGIN_ROOT}/skills/materia-triage-retros/resources/rendering.md` §
 `product-suggestions.md` (the input shape; shape truth in
 `docs/specs/_improvements/_templates/product-suggestions.md`), and
-`.claude/skills/materia-intake-spec/SKILL.md` (the spec body format proposals must
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-intake-spec/SKILL.md` (the spec body format proposals must
 conform to) before changing this skill.
 
 ## Procedure
@@ -282,14 +282,14 @@ suggestion anchor so a reviewer can trace evidence back to the originating
 ### Body
 
 Same structure as `materia-propose-spec` and `materia-intake-spec` — see
-`.claude/skills/materia-propose-spec/SKILL.md` § Body for the template. Always
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-propose-spec/SKILL.md` § Body for the template. Always
 emit every required H2 verbatim and in order, even when a section is
 thin. `materia-intake-spec`'s detector matches on the H1 plus `## Problem`,
 `## Goals`, `## User stories & acceptance criteria`, and
 `## Open questions`.
 
 **Link paths follow the same absolute-from-repo-root convention** as
-`materia-propose-spec` — see `.claude/skills/materia-propose-spec/SKILL.md` § File
+`materia-propose-spec` — see `${CLAUDE_PLUGIN_ROOT}/skills/materia-propose-spec/SKILL.md` § File
 format → Link paths. The reason is identical: `materia-intake-spec` adopts the
 body verbatim into `docs/specs/<dated-slug>/spec.md` at a different
 folder depth, so relative paths that resolve from `_proposed/` will
@@ -304,7 +304,7 @@ downstream.
 
 `<slug>` is derived from `title` via the normative kebab-slug algorithm
 in
-[`docs/specs/_proposed/README.md`](../../../docs/specs/_proposed/README.md)
+`docs/specs/_proposed/README.md`
 § Kebab-slug derivation. Do NOT invent a different algorithm.
 
 ## Scope (what this skill does NOT do)

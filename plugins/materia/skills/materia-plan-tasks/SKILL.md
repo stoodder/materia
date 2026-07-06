@@ -28,7 +28,7 @@ acting on them wastes context.
 
 If a gate command fails oddly (wrong runtime version, missing dependencies,
 stale codegen, an unreachable service), apply the recipes in
-`.claude/skills/materia-ship-spec/resources/env-preflight.md` (concrete recipes:
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` (concrete recipes:
 `MATERIA.md` § Environment preflight) before treating it as a
 real failure. In the orchestrator lane the session preflight has already run;
 standalone runs apply it on first use.
@@ -250,7 +250,7 @@ the layer stratification in step 2 (the repo's dependency layering) does not
 apply. Defaults:
 
 - **Single-file decomposition.** Tasks are typically section-by-section
-  edits of one markdown file (e.g. `.claude/skills/<name>/SKILL.md`); serial
+  edits of one markdown file (e.g. `plugins/materia/skills/<name>/SKILL.md`); serial
   order is the natural default.
 - **Docs-scope floor is usually `[]`.** Cross-cutting docs (`CLAUDE.md`,
   `docs/README.md`, `surface-map.md`, `glossary.md`) are still deferred to

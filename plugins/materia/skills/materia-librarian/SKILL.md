@@ -7,7 +7,7 @@ description: "Periodic maintenance sweep of the living docs (docs root + resourc
 
 A single-shot, operator-run (or scheduled) maintenance skill that sweeps the
 **living docs** for drift against the code and against
-[`docs/standards/docs.md`](../../../docs/standards/docs.md), applies the fixes
+`docs/standards/docs.md`, applies the fixes
 directly, and drives one docs-only PR all the way to merge. It is the docs
 counterpart to `/materia-janitor` — the janitor sweeps the code, the librarian sweeps
 the docs; both fix drift in place, but the librarian's docs-only diff is
@@ -42,8 +42,9 @@ ambiguous fix is skipped and noted, never guessed at (§ Rules).
   (swept for drift like any living doc — but any diff touching it downgrades
   the run to no-auto-merge; see § The docs-only envelope).
 - The codebase as the oracle: `git ls-files`, the source folders the
-  standards docs name (routes, pages, schema, shared modules), and
-  `.claude/skills/*/SKILL.md` frontmatter.
+  standards docs name (routes, pages, schema, shared modules). The Materia
+  skills themselves are cache-resident plugin files, not tracked in this repo,
+  so they are outside the sweep.
 - `docs/standards/docs.md` (the authoring standard) and
   `docs/contributing.md` (the touch-X→update-Y map, read in reverse: which
   code would have demanded which doc).
@@ -69,7 +70,7 @@ same rule that exempts them from `check:docs` style checks.
 
 `git checkout main && git pull` (halt and surface if blocked by local
 changes). Verify `gh auth status` and that `node scripts/check-docs.mjs` is runnable —
-apply `.claude/skills/materia-ship-spec/resources/env-preflight.md` (and `MATERIA.md`
+apply `${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` (and `MATERIA.md`
 § Environment preflight) recipes if not.
 Read `docs/standards/docs.md` and the doc indexes into context.
 
@@ -93,8 +94,6 @@ that proves the doc wrong).
    - schema models ⇄ resource docs (a model with no doc is a
      needs-human note, not a doc the librarian invents; a doc for a dropped
      model is drift to fix).
-   - README.md § Shipping changes skill tables ⇄ `.claude/skills/*/SKILL.md`
-     frontmatter (fix the docs side to match the skills, never the skills).
 3. **Claim accuracy (sampled).** Verify the cheaply-checkable claims —
    closed-set member lists vs their source enums/constants, surface
    names/paths vs their source files, exemption/allowlist claims vs the call

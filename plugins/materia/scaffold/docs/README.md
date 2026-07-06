@@ -41,7 +41,7 @@ command, export) fast? [surface-map.md](surface-map.md).
 | [standards/testing.md](standards/testing.md) *(canonical)* | writing any test — the test kinds, their locations, and conventions |
 | [standards/workflow.md](standards/workflow.md) *(canonical)* | building a change end-to-end, branching, deploy/CI, commands |
 | {{one row per additional generated standard — request-lifecycle, layer standards (data, server routes, API layer, contracts), UI standards (ui-components, visual-language), types/enums, …}} | {{…}} |
-| [standards/skills.md](standards/skills.md) *(canonical)* | authoring or changing a Claude Code skill (`.claude/skills/**`) — SKILL.md anatomy, tiers, registration surfaces |
+| [standards/skills.md](standards/skills.md) *(canonical)* | authoring or changing a Claude Code skill — SKILL.md anatomy, tiers, registration surfaces |
 | [standards/docs.md](standards/docs.md) *(canonical)* | writing or editing any doc here — present-state only, one home per fact, cell/size budgets, what `check:docs` enforces |
 
 ## Resources (one per domain entity)
@@ -63,7 +63,7 @@ canonical files. This table starts empty and grows as the app grows — `materia
 | [glossary.md](glossary.md) | domain + codebase terms, one line each |
 | [surface-map.md](surface-map.md) | every externally reachable surface (routes/pages, commands, or public API — per the repo's surface vocabulary), in one table |
 | [contributing.md](contributing.md) | **read before calling a change done** — Definition of Done, doc-update map, how to add a doc |
-| [specs/README.md](specs/README.md) | the spec-to-ship pipeline (`.claude/skills/`) + per-feature spec/design/architecture/task artifacts |
+| [specs/README.md](specs/README.md) | the spec-to-ship pipeline + per-feature spec/design/architecture/task artifacts |
 | [epics/README.md](epics/README.md) | epics — multi-spec initiatives: the `epic.md`/`research.md` contract, epic↔member linkage, and the `materia-propose-epic`/`materia-reconcile-epic` lifecycle |
 | [bugs/README.md](bugs/README.md) | the bug-report queue — producers, consumer (`/materia-fix-bug`), and per-run folder schema |
 | [research/README.md](research/README.md) | durable research notes (external practice + agent research) that inform product and pipeline decisions; cited by proposals via `source_refs` |

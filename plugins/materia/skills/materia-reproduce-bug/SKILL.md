@@ -82,7 +82,7 @@ those are subsequent stages (`materia-bug-analysis`, then `materia-plan-tasks` +
    If the test suite can't run at all (infrastructure failure unrelated to
    the bug), diagnose a Node-version mismatch or a stopped database before
    treating it as a blocker — recipes in
-   `.claude/skills/materia-ship-spec/resources/env-preflight.md` (Node major via hard
+   `${CLAUDE_PLUGIN_ROOT}/skills/materia-ship-spec/resources/env-preflight.md` (Node major via hard
    runtime selection; dead-service restart).
 
 5. **On RED confirmed — fill `reproduction.md` and tick stage 1.** Write

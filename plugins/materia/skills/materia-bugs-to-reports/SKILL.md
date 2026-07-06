@@ -7,7 +7,7 @@ description: "Drafts conformant bug reports in docs/bugs/_reports/ from unproces
 
 A simple, single-shot skill that turns the unprocessed `bug-reports.md` files
 under `docs/specs/_improvements/**/` into queued bug-report files in
-[`docs/bugs/_reports/`](../../../docs/bugs/_reports/README.md). Conforms to the
+`docs/bugs/_reports/` (`docs/bugs/_reports/README.md`). Conforms to the
 queue's shared contract (frontmatter shape, filename pattern, body shape).
 
 **Lifecycle:** interactive checkpoint · branch-at-discovery — per the shared
@@ -18,11 +18,11 @@ presents candidates for approval, then writes reports and renames the consumed
 sources; the git diff is the audit — no per-run audit folder, no envelope
 JSON.
 
-Read [`docs/bugs/_reports/README.md`](../../../docs/bugs/_reports/README.md)
-(the shared queue contract), `.claude/skills/materia-triage-retros/resources/rendering.md` §
+Read `docs/bugs/_reports/README.md`
+(the shared queue contract), `${CLAUDE_PLUGIN_ROOT}/skills/materia-triage-retros/resources/rendering.md` §
 `bug-reports.md` (the input shape; shape truth in
 `docs/specs/_improvements/_templates/bug-reports.md`), and
-[`docs/bugs/_templates/bug-report.md`](../../../docs/bugs/_templates/bug-report.md)
+`docs/bugs/_templates/bug-report.md`
 (the 13-section body format) before changing this skill.
 
 ## Procedure
@@ -97,12 +97,12 @@ Per item:
    log.
 
 2. **Derive the slug** from `title` via the normative kebab-slug algorithm at
-   [`docs/specs/_proposed/README.md` § Kebab-slug
-   derivation](../../../docs/specs/_proposed/README.md). Do NOT invent a
+   `docs/specs/_proposed/README.md` § Kebab-slug
+   derivation. Do NOT invent a
    different algorithm.
 
 3. **Compose the full 13-section body** in the format
-   [`docs/bugs/_templates/bug-report.md`](../../../docs/bugs/_templates/bug-report.md)
+   `docs/bugs/_templates/bug-report.md`
    defines:
 
    ```
@@ -276,7 +276,7 @@ impact` section. Both must agree per the queue contract.
 ### Body
 
 Same structure as the fill-in stub at
-[`docs/bugs/_templates/bug-report.md`](../../../docs/bugs/_templates/bug-report.md).
+`docs/bugs/_templates/bug-report.md`.
 Always emit every required H2 verbatim and in order. No H2 may be left empty —
 use a placeholder line if the item's available data doesn't populate the field.
 The body **MUST NOT** repeat metadata already in the frontmatter (no second
@@ -289,8 +289,8 @@ The report lives at `docs/bugs/_reports/<dated-slug>/report.md`, where
 `<dated-slug>` is `<YYYY-MM-DD-HHMMSS>-<id>-<slug>`.
 
 `<slug>` is derived from `title` via the normative kebab-slug algorithm at
-[`docs/specs/_proposed/README.md` § Kebab-slug
-derivation](../../../docs/specs/_proposed/README.md). Do NOT invent a different
+`docs/specs/_proposed/README.md` § Kebab-slug
+derivation. Do NOT invent a different
 algorithm.
 
 ## Scope

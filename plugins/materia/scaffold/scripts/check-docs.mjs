@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Deterministic docs checker — no network, no AI. Three layers:
-//  1. Link check (CLAUDE.md + docs/** + .claude/skills/**): every relative
+//  1. Link check (CLAUDE.md + docs/**): every relative
 //     Markdown link resolves to a real file on disk.
-//  2. Anchor check (agent-context docs + skills only): every `#fragment` in a
+//  2. Anchor check (agent-context docs only): every `#fragment` in a
 //     relative link resolves to a real heading in the target file.
 //  3. Style checks (CLAUDE.md + docs root + resources/ + standards/ +
 //     _templates/ only — the agent-context docs governed by
@@ -14,7 +14,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, dirname, resolve, relative, sep } from 'node:path'
 
-const ROOTS = ['CLAUDE.md', 'docs', '.claude/skills']
+const ROOTS = ['CLAUDE.md', 'docs']
 
 const files = []
 function walk(p) {
@@ -54,7 +54,7 @@ const isStyleChecked = (f) =>
   f === 'CLAUDE.md' ||
   STYLE_DIRS.some((d) => f.startsWith(d + sep)) ||
   (f.startsWith('docs' + sep) && !f.slice(5).includes(sep)) // docs/ root files
-const isAnchorChecked = (f) => isStyleChecked(f) || f.startsWith('.claude' + sep)
+const isAnchorChecked = (f) => isStyleChecked(f)
 
 // GitHub-style heading slugs, normalized (runs of hyphens collapsed) so both
 // dash-variant renderings of the same heading compare equal.
