@@ -324,9 +324,9 @@ poll-don't-block and stall-as-resumable-failure rules are identical.
 
 ## Review (post-implementation)
 
-See `ship-spec/SKILL.md` § "Review (post-implementation)" — the six angles
-(ui UI-gated, data-safety data-gated), the repo-specific angles appended
-from `MATERIA.md` § Review angles,
+See `ship-spec/SKILL.md` § "Review (post-implementation)" — the angles in the
+`MATERIA.md` § Review angles registry (each defined in `.materia/review-angles/`;
+ui UI-gated, data-safety data-gated),
 tiers, fresh-context exclusions, structured finding schema, severity rubric,
 loop-on-findings, session-limit fallback, simultaneous-N crash handling, and
 tiebreaker are all identical.

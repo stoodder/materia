@@ -12,7 +12,7 @@ docs, and files **one** consolidated, checklist-style bug report into the bug
 queue at `docs/bugs/_reports/` (`docs/bugs/_reports/README.md`). It
 runs in the operator's session — it is **not** a `ship-spec` stage, and it is
 distinct from [`ui-review`](../ui-review/SKILL.md): `ui-review` is the
-in-pipeline fifth review angle scoped to a single feature diff and feeds the
+in-pipeline `ui` review angle scoped to a single feature diff and feeds the
 remediation loop, whereas `ui-inspection` sweeps the **whole running app**
 breadth-first and feeds the bug queue. It reuses `ui-review`'s Eyes machinery
 (the provisioning recipe, service env block, canonical viewport, and the
