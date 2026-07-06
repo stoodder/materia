@@ -8,7 +8,7 @@
 ## Legend
 
 - **Depends on** — task ids that must land first.
-- **Model/effort** — the tier this task's own `materia-implement-task` subagent should run at, drawn from the catalog at `MATERIA.md` § Model set (a `<model>` from that menu + a § Effort set level); omitted → the § Skill routing **Default** row (`opus/high`).
+- **Model/effort** — the tier this task's own `materia-implement-task` subagent should run at, drawn from the catalog at `MATERIA.md` § Tiers § Model set (a `<model>` from that menu + a § Effort set level); omitted → the § Skill routing **Default** row (`opus/high`).
 - **Standards/docs** — what to read before coding (per ../../README.md read order).
 - Status: `[ ]` todo · `[~]` in progress · `[x]` done.
 
@@ -18,7 +18,7 @@
 
 - **Status:** [ ]
 - **Depends on:** —
-- **Model/effort:** `<model>/<effort>` — a `<model>` from `MATERIA.md` § Model set
+- **Model/effort:** `<model>/<effort>` — a `<model>` from `MATERIA.md` § Tiers § Model set
 - **Area / files:** <models/contracts/server/composables/pages …>
 - **Scope:** <what this task does, concretely>
 - **Acceptance criteria:**
@@ -30,5 +30,5 @@
 
 - **Status:** [ ]
 - **Depends on:** T1
-- **Model/effort:** `<model>/<effort>` — a `<model>` from `MATERIA.md` § Model set
+- **Model/effort:** `<model>/<effort>` — a `<model>` from `MATERIA.md` § Tiers § Model set
 - …

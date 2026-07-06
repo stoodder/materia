@@ -311,7 +311,7 @@ This section states the invariant; that file carries the implementation detail.
 - `.claude/skills/<name>/SKILL.md` — every skill.
 - `MATERIA.md` § Tiers — the single source of truth for `<model>/<effort>`:
   its § Model set catalog (the models this repo can spawn + availability) and
-  its § Skill routing table (the fixed per-skill assignment).
+  its § Skill routing table (the per-skill / per-role assignment).
 - The registration surfaces listed above — how skills are advertised.
 
 ## Related

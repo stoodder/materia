@@ -142,16 +142,17 @@ two tables:
 - **§ Skill routing** — the per-unit assignment. Every spawned sub-skill,
   every **canonical** `materia-ship-spec` review angle, and every internal
   sub-agent spawn has a row (`Model`, `Effort`, `Fallback Model`); a unit with
-  no row uses the **Default** row. Two dynamic-assigner *roles*
-  (`propose-epic: research`, and the per-task spawns `materia-plan-tasks`
-  emits) also appear, marked as picking from § Model set rather than as a
-  fixed pair.
+  no row uses the **Default** row. One row (`propose-epic: research`) is a
+  dynamic-assigner *role*, marked as picking from § Model set rather than as a
+  fixed pair; a second dynamic-assigner role — the per-task spawns
+  `materia-plan-tasks` emits — has **no row at all** (resolved per-task from
+  `tasks.md`, see § Skill routing).
 
 **One documented exception:** repo-specific review angles in § Review angles
 carry their own `Tier` column and are *not* routed through § Skill routing —
 they are authored per stack at init time, so they cannot live in a table that
-ships verbatim. They are the only spawned units resolved outside § Skill
-routing.
+ships verbatim. They are the only spawned units routed from a separate table
+(§ Review angles) rather than from § Skill routing or § Model set.
 
 One representation everywhere: the token pair **`<model>/<effort>`**
 (e.g. `sonnet/medium`), where `<model>` is a § Model set name and `<effort>` a
@@ -185,19 +186,23 @@ what each is for. This is the menu a dynamic assigner picks from.
 
 ### Skill routing
 
-The model/effort assignment for every unit the pipeline spawns. This table
+The model/effort assignment for the units the pipeline spawns. This table
 **ships verbatim** (it is not stack-specific — only § Model set availability
-is). Resolution reads the unit's row; a unit with no row uses the **Default**
-row. Two rows describe *dynamic-assigner roles* rather than a fixed pair
-(`propose-epic: research`, model `per-question (§ Model set)`); the per-task
-spawns `materia-plan-tasks` emits have **no separate row** — each carries its
-own `Model/effort` field in `tasks.md` (an absent field → the **Default** row,
-`opus/high`, not the `materia-implement-task` row), and the executing
-`materia-implement-task` runs at that field, not at its own row. The **Fallback
-Model** column names what the unit degrades to when its `Model` is not-enabled
-/ out-of-table / malformed / `Agent`-rejected — run at the unit's **own
-effort** (effort describes the work, not the model; if the effort token itself
-is the malformed part, use the row's declared effort).
+is). Resolution reads the unit's row; a spawned unit with no row uses the
+**Default** row — **except** a repo-specific review angle, which is not routed
+here at all (it carries its own `Tier` column in § Review angles; see the
+§ Tiers intro). One row (`propose-epic: research`) describes a
+*dynamic-assigner role*, model `per-question (§ Model set)` rather than a fixed
+pair. A second dynamic-assigner role — the per-task spawns `materia-plan-tasks`
+emits — has **no row**: each carries its own `Model/effort` field in `tasks.md`
+(an absent field → the **Default** row, `opus/high`, not the
+`materia-implement-task` row), and the executing `materia-implement-task` runs
+at that field, not at its own row. The **Fallback Model** column names what a
+unit degrades to when its `Model` is not-enabled / out-of-table / malformed /
+`Agent`-rejected — run at the unit's **own effort** (effort describes the work,
+not the model). If the effort token itself is malformed, use the declared
+effort of the row it fell back to: the `materia-implement-task` row's `medium`
+for a per-task spawn, otherwise the **Default** row's `high`.
 
 | Skill / role | Model | Effort | Fallback Model | Notes |
 |---|---|---|---|---|
@@ -273,6 +278,11 @@ The standard review fan-out is defined in `materia-ship-spec/SKILL.md` § Review
 (correctness · security · spec-adherence · behavior · ui when UI-affecting ·
 data-safety when data-affecting). Rows below are **additional repo-specific
 angles** the orchestrator appends to the fan-out; `none` if there are none.
+
+Each row's `Tier` column is a `<model>/<effort>` pair resolved like any other
+(availability per § Model set; § Effort set for the guidance sentence). These
+angles carry no `Fallback Model` of their own — a `Tier` that coerces falls to
+the § Skill routing **Default** row (`opus`), per § Coercion.
 
 | Angle | What it checks | Gate (when it runs) | Tier |
 |---|---|---|---|

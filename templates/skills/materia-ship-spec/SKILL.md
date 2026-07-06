@@ -415,7 +415,8 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
    `ship-spec: review/<angle>` row in § Skill routing; a **repo-specific**
    review angle (appended from `MATERIA.md` § Review angles) → its own `Tier`
    column in that table, the one class of spawned unit not routed through
-   § Skill routing. An explicit operator override wins; record
+   § Skill routing; the review-loop tiebreaker → its `ship-spec:
+   review/tiebreaker` row. An explicit operator override wins; record
    `tier-override: <unit> <artifact-value> → <operator-value>`.
 2. **Resolve availability** against `MATERIA.md` § Tiers § Model set: a
    `default` model resolves as declared; an `opt-in` model resolves only when
@@ -562,8 +563,9 @@ resolved through § Tier routing with `spawn-contract.md` Blocks 1 + 3. Each
 angle's tier is the matching `ship-spec: review/<angle>` row in `MATERIA.md`
 § Tiers § Skill routing (angle slugs `correctness`, `security`,
 `spec-adherence`, `behavior`, `ui`, `data-safety`). One conditional override:
-the spec-adherence angle drops to `haiku/low` on the markdown-only exemption
-path — see § Markdown-only exemption below for the binding rule.
+on the markdown-only exemption path the spec-adherence angle drops to a reduced
+tier — the **Markdown-only exemption** paragraph below carries the binding
+value.
 
 | # | Angle | How |
 |---|---|---|
@@ -800,7 +802,7 @@ choice in the review-loop commit message
 
 **Tier:** its `ship-spec: review/tiebreaker` row in `MATERIA.md` § Tiers
 § Skill routing — resolve it through § Tier routing (availability per
-`MATERIA.md` § Tiers).
+`MATERIA.md` § Tiers § Model set).
 
 ## Merge watch (autopilot runs only)
 
