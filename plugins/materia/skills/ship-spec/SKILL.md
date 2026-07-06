@@ -412,11 +412,9 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
    `Model/effort` field in `tasks.md` (dynamic; drawn from § Model set; an
    **absent or malformed** field takes the § Skill routing **Default** row,
    `opus/high`, not the `implement-task` row — see § Tiers § Fallback);
-   a **canonical** review angle → its
-   `ship-spec: review/<angle>` row in § Skill routing; a **repo-specific**
-   review angle (appended from `MATERIA.md` § Review angles) → its own `Tier`
-   column in that table, the one class of spawned unit with no representation in
-   § Skill routing at all; the review-loop tiebreaker → its `ship-spec:
+   a review angle (canonical or repo-specific) → the `Tier`
+   column of its row in `MATERIA.md` § Review angles — no review angle has a
+   § Skill routing row; the review-loop tiebreaker → its `ship-spec:
    review/tiebreaker` row. An explicit operator override wins; record
    `tier-override: <unit> <artifact-value> → <operator-value>`.
 2. **Resolve availability** against `MATERIA.md` § Tiers § Model set: a
@@ -560,23 +558,34 @@ yields a phantom diff):
 
 ### Reviewer fan-out
 
-Spawn these as a single message, one `Agent` call per angle, each at its tier
-resolved through § Tier routing with `spawn-contract.md` Blocks 1 + 3. Each
-angle's tier is the matching `ship-spec: review/<angle>` row in `MATERIA.md`
-§ Tiers § Skill routing (angle slugs `correctness`, `security`,
-`spec-adherence`, `behavior`, `ui`, `data-safety`). One conditional override:
-on the markdown-only exemption path the spec-adherence angle drops to a reduced
-tier — the **Markdown-only exemption** paragraph below carries the binding
-value.
+Spawn reviewers as a **single message**, one `Agent` call per **applicable**
+angle. **Iterate the `MATERIA.md` § Review angles registry** — the canonical
+six ship pre-filled and any repo-specific rows append below, iterated the same
+way (one reviewer per applicable row; there is no separate "repo-specific
+angles" step). For each row:
 
-| # | Angle | How |
-|---|---|---|
-| 1 | Correctness + simplicity + test-coverage | invoke the `code-review` skill if the session provides it; otherwise run the same angle inline (covers test coverage in practice). Explicit sub-mandates: **test quality** (a test that asserts nothing, or mocks the unit under test, is a finding), plus the repo-specific correctness invariants named in `MATERIA.md` § Review angles and the standards docs the tasks cite |
-| 2 | Security | invoke the `security-review` skill if the session provides it; otherwise run the same angle inline |
-| 3 | Spec-adherence + regression/blast-radius | Agent: verifies each AC literally across `tasks.md`, flags AC bullets that under-cover `spec.md`, identifies callers/dependents of changed exports, and checks regression by reading the pre-branch state via `git show <baseline>:<path>` |
-| 4 | Behavior | invoke the `verify` skill over the merged branch — covers every task in `behavior-deferred:` and any user-visible AC across the diff |
-| 5 | UI (UI-gated) | invoke the `ui-review` skill — an Eyes pass (`MATERIA.md` § Eyes: toolchain + canonical viewport) judged against the repo's visual standards docs **plus the cross-screen cohesion comparison** against the sibling screens named in `design.md` § Cohesion anchors. **Spawned only when the diff is UI-affecting** per § UI-surface gate; its committed `ui-proof/` screenshots are a mandatory deliverable checked by § Screenshot-presence check |
-| 6 | Data-safety (data-gated) | Agent: reviews the data-layer diff for **destructive migration operations** against existing data (dropped/narrowed columns, table drops), **seed idempotency** (re-seeding preserves user-entered values), **unique indexes backing every upsert**, and the repo-specific invariants in `MATERIA.md` § Data layer. **Spawned only when the diff is data-affecting** per § Data-surface gate |
+1. **Evaluate its Gate over the cumulative diff.** `always` → unconditional;
+   `ui-affecting` → per § UI-surface gate; `data-affecting` → per § Data-surface
+   gate; a repo-specific predicate → as the row states. Record every negative
+   decision in `STATUS.md` (`<angle>-review: skipped (<reason>)`), exactly as
+   the UI/data gates already do.
+
+2. **For each positive angle**, load its definition from the row's `File` at
+   `.materia/review-angles/<File>`, and spawn a reviewer at the row's **Tier**
+   (resolved through § Tier routing; availability per `MATERIA.md` § Tiers
+   § Model set), passing `spawn-contract.md` Blocks 1 + 3 **plus the angle
+   file's body** as the review brief. The body states what to check and which
+   skill to invoke (`code-review` / `security-review` / `verify` / `ui-review`)
+   or the inline procedure. Findings use `category: "<angle-name>"` (the row's
+   kebab `name`) and flow through the same remediation loop, severity rubric,
+   convergence check, and session-limit fallback as every other angle. The
+   § Markdown-only exemption and § Trivial-diff threshold collapses apply to
+   every row — repo-specific rows included — dropping an angle unless its own
+   gate independently keeps it (as `data-safety`'s can).
+
+On the markdown-only exemption path the `spec-adherence` angle spawns at
+`haiku/low` — the § Markdown-only exemption paragraph below carries that binding
+value.
 
 **Skill availability.** `ui-review` ships with the Materia plugin, so
 it is always available; `code-review` and `security-review` are harness-provided
@@ -584,19 +593,7 @@ and may be absent from a given session. When a named skill is unavailable,
 running that angle inline is the documented procedure — not a deviation to
 record.
 
-**Repo-specific angles (`MATERIA.md` § Review angles).** After the standard
-rows, append **one reviewer per row** of `MATERIA.md` § Review angles (none
-when that section is `none`). Evaluate each row's Gate column the way the
-UI/data gates are evaluated — over the cumulative diff, decision recorded in
-`STATUS.md` (`<angle>-review: skipped (<reason>)` on a negative). Spawn at
-the row's Tier (§ Tier routing) with spawn-contract Blocks 1 + 3, briefing
-the reviewer with the row's "What it checks" text plus the standards docs it
-names. Findings use `category: "<angle>"` (kebab-case row name) and flow
-through the same remediation loop, severity rubric, convergence check, and
-session-limit fallback as every standard angle. The markdown-only exemption
-and trivial-diff collapse apply to these angles too.
-
-**Orchestrator-lane review angles.** The behavior (#4) and ui-review (#5)
+**Orchestrator-lane review angles.** The `behavior` and `ui`
 angles MAY run inline in the orchestrator lane when they require a long-lived
 server stack (database + Eyes toolchain + dev server), mirroring § Orchestrator
 behavioral-verify lane — a standing contract, not a per-run deviation. The
@@ -605,11 +602,10 @@ orchestrator records the lane decision and the fresh-context deviation in
 
 **Markdown-only exemption.** If the cumulative diff contains no source-code
 changes (no changed file outside markdown/docs) and no test additions, skip
-the correctness / security / behavior reviewers — the spec-adherence reviewer
-runs alone, **spawned at `haiku/low`** (this path's binding tier; the
-`ship-spec: review/spec-adherence` row in `MATERIA.md` § Tiers § Skill routing
-records the drop). (The data-safety angle still runs when its own gate is
-positive — a seed-data-only diff can be markdown-exempt but data-affecting.)
+the `correctness` / `security` / `behavior` reviewers — the `spec-adherence`
+reviewer runs alone, **spawned at `haiku/low`** (this path's binding tier).
+(The `data-safety` angle still runs when its own gate is positive — a
+seed-data-only diff can be markdown-exempt but data-affecting.)
 
 **Trivial-diff threshold.** When the diff *does* touch source but is trivially
 small — roughly **≤ 10 changed lines**, pure presentation/mechanical (copy
@@ -617,6 +613,21 @@ tweak, class change, constant rename), no new control flow, no new
 exported surface, no test additions — collapse the fan-out to the
 **spec-adherence angle alone**. If in any doubt, run the full fan-out; record
 the collapse decision (and line count) in `STATUS.md`.
+
+### Missing or malformed angle file
+
+The materialized `.materia/review-angles/` library is forkable and `check:docs`
+does not scan it, so registry↔file drift in a user repo is caught only here at
+runtime. A positive registry row whose `File` is absent or unreadable in
+`.materia/review-angles/` must **never** silently drop the angle:
+
+- **Record it** in `STATUS.md` (e.g. `<angle>-review: file missing — <path>`).
+- **`always`-gate angle → self-verify inline** from the cumulative diff,
+  mirroring § Session-limit fallback for a crashed reviewer — a deviation from
+  the fresh-context guarantee, flagged explicitly in `STATUS.md`, the review
+  retro entry, and the PR description.
+- **Gated angle** (a non-`always` row — `ui`, `data-safety`, or a repo-specific
+  predicate) → may instead **skip and record** the drop.
 
 ### UI-surface gate
 
@@ -655,7 +666,7 @@ findings prescribes.
 
 ### Data-surface gate
 
-The positive predicate that gates the data-safety angle (#6). A diff is
+The positive predicate that gates the `data-safety` angle. A diff is
 **data-affecting** when `git diff <baseline>...HEAD --name-only` matches the
 data-affecting pattern list in `MATERIA.md` § Surface gates
 (§ Data-affecting). When that section is `none`, the angle never runs.
@@ -709,7 +720,7 @@ Every reviewer returns findings as a list of JSON-shaped records:
   "line_start": 42,
   "line_end": 47,
   "severity": "HIGH" | "MEDIUM" | "LOW",
-  "category": "correctness" | "security" | "spec-adherence" | "regression" | "behavior" | "coverage" | "simplicity" | "ui" | "data-safety" | "<repo-specific angle>",  // kebab-case row name from MATERIA.md § Review angles
+  "category": "correctness" | "security" | "spec-adherence" | "regression" | "behavior" | "coverage" | "simplicity" | "ui" | "data-safety" | "<repo-specific angle>",  // category ∈ the kebab angle `name` from the MATERIA.md § Review angles registry, OR a documented sub-category (`coverage`/`simplicity` under `correctness`, `regression` under `spec-adherence`)
   "recommendation": "revert" | "modify" | "keep_with_concern",
   "description": "<one-sentence reason>"
 }
