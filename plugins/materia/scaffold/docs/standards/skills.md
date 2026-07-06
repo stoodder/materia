@@ -6,9 +6,15 @@
 
 ## Rule
 
-- **One folder per skill:** `.claude/skills/<name>/SKILL.md`. The frontmatter
-  `name:` MUST equal the folder name (mirrors the repo's one-export-per-file,
-  filename = export ethos — see [architecture.md](architecture.md)).
+- **One folder per skill, inside the `materia` plugin:** `skills/<name>/SKILL.md`,
+  installed at `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md` — cache-resident,
+  not part of this repo. The frontmatter `name:` MUST equal the folder name
+  (mirrors the repo's one-export-per-file, filename = export ethos — see
+  [architecture.md](architecture.md)). This convention describes how the
+  pipeline's own skills are authored upstream in the plugin; a project-owned
+  Claude Code skill you add to this repo (unrelated to the materia pipeline)
+  lives at the ordinary `.claude/skills/<name>/SKILL.md` location and can
+  follow the same spine.
 - **Namespace prefix — supplied by the plugin.** Skill folders and their
   frontmatter `name:` are **bare** (`ship-spec`, `design`, `init`) — they
   carry no `materia-` prefix. The `materia` plugin auto-namespaces every skill
@@ -134,7 +140,7 @@ human comments and no `Blocker`.
 | Kind | Runs in | Tier | Examples |
 |---|---|---|---|
 | **Orchestrator** | operator session | none (dispatches others) | `ship-spec`, `triage-retros` |
-| **Sub-skill** | a fresh-context subagent the orchestrator spawns | its row in `MATERIA.md` § Skill routing | `intake-spec`, `design`, `architecture`, `plan-tasks`, `implement-task`, `finalize`, `docs-sync`, `docs-audit` |
+| **Sub-skill** | a fresh-context subagent the orchestrator spawns | its row in `MATERIA.md` § Skill routing | `intake-spec`, `design`, `ui-test-plan`, `architecture`, `plan-tasks`, `implement-task`, `finalize`, `docs-sync`, `docs-audit`, `reproduce-bug`, `bug-analysis`, `ui-review` |
 | **Producer** | operator session | none | `propose-spec`, `propose-epic`, `suggestions-to-specs`, `report-bug`, `bugs-to-reports`, `ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
 | **Maintainer** | operator session (or scheduled) | none | `librarian` (sweeps the living docs) and `janitor` (sweeps the code against `docs/standards/`) — each fixes drift directly and opens one PR instead of filing queue entries. Only the librarian **auto-merges its own PR**: a standing exception to the "no auto-merge" invariant, valid only behind a mechanical diff envelope + green CI (its § The docs-only envelope); the janitor's diff is product code, so it stops for human review. Per-run exception: `--auto` (§ The `--auto` argument). |
 
@@ -312,7 +318,10 @@ This section states the invariant; that file carries the implementation detail.
 
 ## Where it lives
 
-- `.claude/skills/<name>/SKILL.md` — every skill.
+- `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md` — every pipeline skill
+  (installed by the `materia` plugin; cache-resident, not part of this repo).
+  A project-owned skill of your own lives at `.claude/skills/<name>/SKILL.md`
+  instead.
 - `MATERIA.md` § Tiers — the single source of truth for `<model>/<effort>`:
   its § Model set catalog (the models this repo can spawn + availability) and
   its § Skill routing table (the per-skill / per-role assignment).

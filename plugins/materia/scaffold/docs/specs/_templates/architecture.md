@@ -66,7 +66,9 @@
      ## Affected skills / docs / templates
      | Path (skill/doc/template) | NEW or REFERENCE | Change |
      |---|---|---|
-     | `.claude/skills/<x>/SKILL.md` | REFERENCE | … |
+     | `.claude/skills/<x>/SKILL.md` (a project-owned skill; the materia
+       pipeline's own skills are installed via the plugin and versioned
+       upstream, out of this repo's scope) | REFERENCE | … |
 
      ## Reuse map
      <!-- Which existing skill section / template / artifact each new piece

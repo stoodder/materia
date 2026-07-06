@@ -26,7 +26,8 @@ docs/specs/<yyyy-mm-dd-hhmmss>-<rand>-<slug>/
 ```
 
 Templates live in [`_templates/`](_templates/). They're filled in by the
-pipeline skills (`.claude/skills/`), but you can write any of them by hand too.
+pipeline skills (installed via the `materia` plugin, invoked as
+`/materia:<skill>`), but you can write any of them by hand too.
 
 **Where a run starts.** `ship-spec`'s entry point is the proposed-specs
 queue at [`_proposed/`](_proposed/README.md) (see § Proposed specs below).
@@ -37,7 +38,7 @@ the queue → ship loop. An **ad-hoc** fallback path remains: the operator
 can paste a freeform spec instead of picking from the queue, in which case
 the `## Provenance` block is filled with `—` and no dequeue happens.
 
-## The pipeline (`.claude/skills/`)
+## The pipeline (the installed `materia` plugin's skills)
 
 Stage skills, chained by the `ship-spec` orchestrator. Configured to run **mostly
 autonomously**: clarifying questions are asked once during intake, then it runs

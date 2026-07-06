@@ -41,7 +41,7 @@ in scope.
   `surface-map.md`}} | {{…}} |
 | A convention / rule (how we build anything) | the relevant `standards/*.md` **and** `CLAUDE.md` (the always-loaded copy must agree) |
 | The stack itself (gate commands, run recipe, preflight, surface gates, eyes) | [MATERIA.md](../MATERIA.md) — the pipeline reads it by section |
-| A Claude Code skill (`.claude/skills/**/SKILL.md`) — added, renamed, retired, or its role/model/inputs changed | [standards/skills.md](standards/skills.md) **and** every registration surface it lists (`CLAUDE.md` pipeline paragraph, `docs/specs/README.md`, and — for a producer — the target queue's README) |
+| A Claude Code skill this repo owns (`.claude/skills/**/SKILL.md`, distinct from the `materia` plugin's own pipeline skills, which are installed and versioned upstream) — added, renamed, retired, or its role/model/inputs changed | [standards/skills.md](standards/skills.md) **and** every registration surface it lists (`CLAUDE.md` pipeline paragraph, `docs/specs/README.md`, and — for a producer — the target queue's README) |
 | A new domain term | `glossary.md` |
 | Any doc under `docs/` root, `resources/`, `standards/`, or `_templates/` | follow [standards/docs.md](standards/docs.md) — present-state only, one home per fact, cell/size budgets |
 
