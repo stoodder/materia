@@ -32,6 +32,7 @@
       "Bash(gh repo view:*)",
       "Bash(node scripts/check-docs.mjs:*)",
       "Bash(node scripts/validate-plugin.mjs:*)",
+      "Bash(claude plugin validate:*)",
       "Bash(ls:*)",
       "Bash(mkdir:*)",
       "Bash(cp:*)",
