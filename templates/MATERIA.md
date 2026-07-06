@@ -141,18 +141,17 @@ two tables:
   menu per unit.
 - **§ Skill routing** — the per-unit assignment. Every spawned sub-skill,
   every **canonical** `materia-ship-spec` review angle, and every internal
-  sub-agent spawn has a row (`Model`, `Effort`, `Fallback Model`); a unit with
-  no row uses the **Default** row. One row (`propose-epic: research`) is a
-  dynamic-assigner *role*, marked as picking from § Model set rather than as a
-  fixed pair; a second dynamic-assigner role — the per-task spawns
-  `materia-plan-tasks` emits — has **no row at all** (resolved per-task from
-  `tasks.md`, see § Skill routing).
+  sub-agent role has a row (`Model`, `Effort`, `Fallback Model`); a unit with
+  no row uses the **Default** row. Two dynamic assigners are the exception to a
+  fixed row: `propose-epic: research` has a row marked as picking from § Model
+  set rather than a fixed pair, and the per-task spawns `materia-plan-tasks`
+  emits carry their tier in a `tasks.md` field rather than a row (see § Skill
+  routing).
 
-**One documented exception:** repo-specific review angles in § Review angles
-carry their own `Tier` column and are *not* routed through § Skill routing —
-they are authored per stack at init time, so they cannot live in a table that
-ships verbatim. They are the only spawned units routed from a separate table
-(§ Review angles) rather than from § Skill routing or § Model set.
+**A documented exception to central routing:** repo-specific review angles in
+§ Review angles carry their own `Tier` column and are *not* routed through
+§ Skill routing — they are authored per stack at init time, so they cannot live
+in a table that ships verbatim.
 
 One representation everywhere: the token pair **`<model>/<effort>`**
 (e.g. `sonnet/medium`), where `<model>` is a § Model set name and `<effort>` a
@@ -177,9 +176,9 @@ what each is for. This is the menu a dynamic assigner picks from.
   coerces to its fallback with the standard one-line note. This is how a
   premium, per-token-billed model stays in the routing vocabulary without ever
   being spent silently.
-- A model **not in this table at all** coerces to the fallback (see
-  § Coercion) — the § Skill routing table names canonical models this repo may
-  not carry; that is expected, not an error.
+- A model **not in this table at all** coerces to the unit's Fallback Model
+  (see § Coercion) — the § Skill routing table names canonical models this repo
+  may not carry; that is expected, not an error.
 - **Default cost note.** With `fable` left `opt-in` (the shipped default),
   every `fable` row in § Skill routing coerces to `opus` on a fresh repo —
   enable `fable` (per above) to route those units to it instead.
@@ -194,15 +193,11 @@ here at all (it carries its own `Tier` column in § Review angles; see the
 § Tiers intro). One row (`propose-epic: research`) describes a
 *dynamic-assigner role*, model `per-question (§ Model set)` rather than a fixed
 pair. A second dynamic-assigner role — the per-task spawns `materia-plan-tasks`
-emits — has **no row**: each carries its own `Model/effort` field in `tasks.md`
-(an absent field → the **Default** row, `opus/high`, not the
-`materia-implement-task` row), and the executing `materia-implement-task` runs
-at that field, not at its own row. The **Fallback Model** column names what a
-unit degrades to when its `Model` is not-enabled / out-of-table / malformed /
-`Agent`-rejected — run at the unit's **own effort** (effort describes the work,
-not the model). If the effort token itself is malformed, use the declared
-effort of the row it fell back to: the `materia-implement-task` row's `medium`
-for a per-task spawn, otherwise the **Default** row's `high`.
+emits — has **no row**: each carries its own `Model/effort` field in `tasks.md`,
+and the executing `materia-implement-task` runs at that field, not at its own
+row. The **Fallback Model** column names what a unit degrades to when its
+`Model` is unavailable; the degradation rules (Fallback Model, effort, and the
+per-task-field cases) live in § Fallback.
 
 | Skill / role | Model | Effort | Fallback Model | Notes |
 |---|---|---|---|---|
@@ -219,7 +214,7 @@ for a per-task spawn, otherwise the **Default** row's `high`.
 | `materia-finalize` | `sonnet` | `high` | `opus` | orchestrates gate + PR; a clean handoff |
 | `materia-reconcile-epic` | `sonnet` | `high` | `opus` | **pipeline mode only** — standalone mode runs in the operator session (no spawn); cascade edits feed a future `materia-ship-spec` run, so reason carefully |
 | `materia-ui-test-plan` | `sonnet` | `medium` | `opus` | enumerate flows worth guarding from a resolved design |
-| `materia-ui-review` | `fable` | `high` | `opus` | qualitative cross-screen cohesion judgement; UI-gated. Mirrors `ship-spec: review/ui` (that row governs the ship-spec angle-5 spawn) — keep the two in sync |
+| `materia-ui-review` | `fable` | `high` | `opus` | qualitative cross-screen cohesion judgement; UI-gated. Governs standalone invocation of the skill; the ship-spec angle-5 spawn resolves via `ship-spec: review/ui` instead — the validator pins the two rows equal, so keep them in sync |
 | `ship-spec: review/correctness` | `fable` | `high` | `opus` | correctness + simplicity + test-coverage angle |
 | `ship-spec: review/security` | `sonnet` | `high` | `opus` | security angle |
 | `ship-spec: review/spec-adherence` | `sonnet` | `medium` | `opus` | markdown-only exemption path spawns this angle at `haiku/low` (binding rule stated in `materia-ship-spec` § Review) |
@@ -229,15 +224,23 @@ for a per-task spawn, otherwise the **Default** row's `high`.
 | `ship-spec: review/tiebreaker` | `fable` | `high` | `opus` | resolves conflicting review recommendations |
 | `triage-retros: sub-agent` | `sonnet` | `low` | `opus` | mechanical bucketing / quoting over one retro |
 | `apply-pipeline-improvements: reviewer` | `opus` | `high` | `opus` | fresh-context diff review before the PR |
-| `propose-epic: research` | per-question (§ Model set) | — | `opus` | one subagent per question; picks per § Model set (default / ceiling defined in the skill body) |
+| `propose-epic: research` | per-question (§ Model set) | per-question | `opus` | one subagent per question; model+effort picked together per § Model set (default / ceiling defined in the skill body) |
 
 ### Fallback
 
-Each § Skill routing row names its own **Fallback Model**; a unit with no row
-uses the **Default** row (fallback model **`opus`**). The fallback runs at the
-unit's own effort (if the effort token is the malformed part, at the row's
-declared effort) and applies to any not-enabled / out-of-table / malformed /
-`Agent`-rejected model.
+The single home for how a unit degrades when its assigned model can't be spawned.
+
+When a unit's **model** is unavailable — not-enabled (opt-in), out-of-table,
+malformed, or `Agent`-rejected — it degrades to the **Fallback Model** named in
+its § Skill routing row (a unit with no row, and a repo-specific § Review angle,
+use the **Default** row's **`opus`**), run at the unit's **own effort** (effort
+describes the work, not the model).
+
+**Per-task fields.** A per-task `Model/effort` field in `tasks.md` that is
+absent — or malformed in *either* token — takes the **Default** row
+(`opus/high`), **not** the `materia-implement-task` row. A malformed field is
+treated exactly like an absent one, so a botched field never runs at lower
+effort than an omitted one.
 
 **The anchor is protected.** The Default row's Fallback Model MUST stay a
 `default`-availability model — do not set it `opt-in` or remove its § Model set

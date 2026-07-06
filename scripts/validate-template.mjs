@@ -4,8 +4,9 @@
 //  1. Materialization sim: copy templates/ into the post-init layout, stub
 //     the five standards /materia-init always generates, run check-docs.mjs
 //     (links + anchors + style) over the result.
-//  2. § audit: every `MATERIA.md § X` reference across templates/ and
-//     .claude/ names a real heading in templates/MATERIA.md.
+//  2. § audit: every segment of every `MATERIA.md § A § B` reference chain
+//     across templates/ and .claude/ names a real heading in MATERIA.md,
+//     plus mirror pins (§ Skill routing rows that must carry an equal tier).
 //  3. Slot hygiene: {{slot}} markers may exist only in the slotted templates
 //     (MATERIA.md, CLAUDE.md, docs skeleton) — never in skills.
 // Exits non-zero with the failures listed. Run: node scripts/validate-template.mjs
@@ -89,23 +90,53 @@ const walk = (p) => {
 walk('templates'); walk('.claude')
 
 // ---- 2. § audit -------------------------------------------------------------
+// Every segment of a `MATERIA.md § A § B` chain must name a real heading —
+// the whole chain, not just the first segment (a mis-scoped subsection pointer
+// is exactly the drift this catches).
 const heads = new Set(
   [...readFileSync('templates/MATERIA.md', 'utf8').matchAll(/^#{2,3} (.+)$/gm)].map((m) => m[1].trim()),
 )
-const SECREF = /MATERIA\.md[`"']?\s*§\s*([A-Za-z][A-Za-z :&-]*?)(?=\s*[§.,;()`|<>\n—'"-]|'s)/g
+const okHead = (sec) => [...heads].some((h) => h === sec || sec.startsWith(h) || h.startsWith(sec))
+const CHAIN = /MATERIA\.md[`"']?/g
+const SEG = /^\s*§\s*([A-Za-z][A-Za-z :&-]*?)(?=\s*(?:§|[.,;()`|<>\n—'"-])|'s)/
 let refs = 0
 for (const f of mdFiles) {
   const lines = readFileSync(f, 'utf8').split('\n')
   lines.forEach((line, i) => {
-    for (const m of line.matchAll(SECREF)) {
-      refs++
-      const sec = m[1].trim()
-      if ([...heads].some((h) => h === sec || sec.startsWith(h) || h.startsWith(sec))) continue
-      fail(`${f}:${i + 1} MATERIA.md § "${sec}" has no matching heading in templates/MATERIA.md`)
+    for (const start of line.matchAll(CHAIN)) {
+      let pos = start.index + start[0].length
+      let seg
+      while ((seg = SEG.exec(line.slice(pos)))) {
+        refs++
+        const sec = seg[1].trim()
+        if (!okHead(sec))
+          fail(`${f}:${i + 1} MATERIA.md § "${sec}" has no matching heading in templates/MATERIA.md`)
+        pos += seg[0].length
+      }
     }
   })
 }
-console.log(`  ✓ § audit: ${refs} MATERIA.md § references checked against ${heads.size} headings`)
+console.log(`  ✓ § audit: ${refs} MATERIA.md § references (all chain segments) checked against ${heads.size} headings`)
+
+// ---- 2b. mirror pins --------------------------------------------------------
+// Rows in § Skill routing that intentionally duplicate another row's tier are
+// pinned equal here so an edit to one that misses the other fails CI.
+const routingRow = (label) => {
+  const src = readFileSync('templates/MATERIA.md', 'utf8')
+  const re = new RegExp(`^\\|\\s*\`${label.replace(/[/]/g, '\\/')}\`\\s*\\|(.+)$`, 'm')
+  const m = src.match(re)
+  if (!m) return null
+  return m[1].split('|').slice(0, 3).map((c) => c.trim()) // [Model, Effort, Fallback Model]
+}
+const MIRRORS = [['materia-ui-review', 'ship-spec: review/ui']]
+for (const [a, b] of MIRRORS) {
+  const ra = routingRow(a), rb = routingRow(b)
+  if (!ra) fail(`mirror pin: § Skill routing row \`${a}\` not found`)
+  else if (!rb) fail(`mirror pin: § Skill routing row \`${b}\` not found`)
+  else if (ra.join('/') !== rb.join('/'))
+    fail(`mirror pin: \`${a}\` (${ra.join('/')}) and \`${b}\` (${rb.join('/')}) must carry the same tier`)
+}
+console.log(`  ✓ mirror pins: ${MIRRORS.length} routing-row mirror(s) hold`)
 
 // ---- 3. slot hygiene ---------------------------------------------------------
 for (const f of mdFiles.filter((f) => f.includes('templates/skills/'))) {

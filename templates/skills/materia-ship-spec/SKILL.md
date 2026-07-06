@@ -410,8 +410,9 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
 1. **Read** the unit's tier — stage/sub-skill → its row in `MATERIA.md`
    § Tiers § Skill routing (the **Default** row if unlisted); task → its
    `Model/effort` field in `tasks.md` (dynamic; drawn from § Model set; an
-   **absent** field takes the § Skill routing **Default** row, `opus/high`, not
-   the `materia-implement-task` row); a **canonical** review angle → its
+   **absent or malformed** field takes the § Skill routing **Default** row,
+   `opus/high`, not the `materia-implement-task` row — see § Tiers § Fallback);
+   a **canonical** review angle → its
    `ship-spec: review/<angle>` row in § Skill routing; a **repo-specific**
    review angle (appended from `MATERIA.md` § Review angles) → its own `Tier`
    column in that table, the one class of spawned unit not routed through
@@ -435,8 +436,9 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
 `Fallback Model` column of its row in `MATERIA.md` § Tiers § Skill routing
 (the **Default** row's fallback for a unit with no row of its own), run at the
 unit's own effort — per `MATERIA.md` § Tiers § Fallback, with the standard
-one-line note. (A wholly **absent** per-task `Model/effort` field is not a
-coercion — it takes the Default row directly, per step 1.) An `Agent` call that
+one-line note. (An **absent or malformed** per-task `Model/effort` field is not
+a coercion — it takes the Default row directly, per step 1 and § Tiers
+§ Fallback.) An `Agent` call that
 rejects or errors on an available model coerces that spawn the same way (reason
 `<model> unreachable`) — never block or pause the run waiting for a model to
 come back. The fallback never blocks the run, and never loops (§ Tiers
