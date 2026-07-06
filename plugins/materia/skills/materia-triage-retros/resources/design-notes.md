@@ -46,14 +46,17 @@ parses and buckets small batches inline, producing the identical envelope
 shape in memory. The per-retro rule (never per-batch sub-agents) still holds
 whenever sub-agents are used at all.
 
-## Plan-time anchor validation (2026-07-01 amendment)
+## Retros feed the project, not the pipeline (2026-07 retarget)
 
-The original design kept skill bodies entirely unloaded at cluster time
-("paths only"), which meant `anchor_hint`s were guessed — and a guessed
-anchor is worse than the null sentinel, because the executor trusts it and
-halts on drift. The cluster pass still drafts from paths only; a scoped,
-read-only grep per drafted action then validates or repairs each anchor
-against the live file. This skill still never *edits* a pipeline skill.
+An earlier design triaged retros three ways — pipeline findings (→ a
+`pipeline-improvements.md` plan applied back into the skills by a companion
+executor), product suggestions, and bugs. The self-editing executor was
+removed; retros now feed **project-specific** backlog signal only. The
+pipeline bucket, its `## Actions`/`anchor_hint`/dimension apparatus, the
+protected-contract flagging, and the plan-time anchor validation all went with
+it. What remains is a two-bucket triage (`suggestions[]` / `bugs[]`) plus the
+always-emitted `pipeline-health.md` rollup, which absorbs the aggregate
+pipeline-friction signal as health stats rather than actionable edits.
 
 ## State is file-derived; no `RUN.md` / `STATUS.md`
 
@@ -91,10 +94,10 @@ invariant.
 The artifact shapes were once stated twice — in SKILL.md render sections and
 in the `docs/specs/_improvements/_templates/` stubs. The stubs are now the
 single source of shape; `resources/rendering.md` carries only the semantics a
-stub can't express, and `resources/actions-contract.md` carries the
-planner↔executor parse contract. The same restructure split this SKILL.md
-into a lean always-read core plus phase-scoped resources, cutting the per-run
-context cost of a skill that previously needed a paginated read of itself.
+stub can't express, plus the shared traceback + placeholder conventions the
+downstream consumers parse. The same restructure split this SKILL.md into a
+lean always-read core plus phase-scoped resources, cutting the per-run context
+cost of a skill that previously needed a paginated read of itself.
 
 ## Scoped formatting is load-bearing
 

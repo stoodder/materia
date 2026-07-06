@@ -1,7 +1,7 @@
 <!-- Filled by the `materia-triage-retros` skill (run-folder health rollup).
      Producer: materia-triage-retros
      Consumer: none — accumulates as historical corpus
-     Renamed: never (unlike pipeline-improvements.md, product-suggestions.md, bug-reports.md) -->
+     Renamed: never (unlike product-suggestions.md and bug-reports.md, which are consumed by rename) -->
 ---
 schema_version: 1
 slug: <slug>
@@ -28,7 +28,6 @@ triage_conversion: <triage_conversion>
 ## Triage conversion
 
 - **Entries processed:** <total_entries> across <N> retros
-- **Pipeline findings:** <findings_total> (<actionable> actionable, <out_of_scope> out-of-scope)
 - **Product suggestions:** <product_count> (product-suggestions.md emitted | none this run)
 - **Bugs gathered:** <bug_count> (bug-reports.md emitted | none this run)
 - **Blocker rate:** <blocker_rate>

@@ -285,4 +285,5 @@ in the PR that introduces the new producer skill.
 The frontmatter contract and the filename pattern are **shared across all
 producers and consumers**. Any change here forces every producer to update
 in lockstep. Flag PRs that modify this file for extra scrutiny: review them
-with the same care as the protected-contract changes in `materia-triage-retros`.
+with the same care as a change to any shared artifact contract (e.g. the
+retro/hand-off contracts `materia-triage-retros` and its consumers parse).

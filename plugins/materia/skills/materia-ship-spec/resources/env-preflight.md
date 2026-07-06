@@ -49,8 +49,8 @@ preflight failure; `check:docs` remains binding.
 - **Known failure signatures:** when a cold-start failure matches a signature
   listed in `MATERIA.md` § Environment preflight, apply its recorded fix
   instead of re-deriving it. When a *new* signature costs real time, the
-  run's retro entry should say so — `materia-apply-pipeline-improvements` folds
-  recurring ones back into `MATERIA.md`.
+  run's retro entry should say so, so a maintainer can fold recurring ones
+  into `MATERIA.md` § Environment preflight.
 
 ## Gate invocation notes
 

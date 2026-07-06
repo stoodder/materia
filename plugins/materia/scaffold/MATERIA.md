@@ -223,7 +223,6 @@ per-task-field cases) live in § Fallback.
 | `ship-spec: review/data-safety` | `sonnet` | `high` | `opus` | data-gated migration / seed / index review |
 | `ship-spec: review/tiebreaker` | `fable` | `high` | `opus` | resolves conflicting review recommendations |
 | `triage-retros: sub-agent` | `sonnet` | `low` | `opus` | mechanical bucketing / quoting over one retro |
-| `apply-pipeline-improvements: reviewer` | `opus` | `high` | `opus` | fresh-context diff review before the PR |
 | `propose-epic: research` | per-question (§ Model set) | per-question | `opus` | one subagent per question; model+effort picked together per § Model set (default / ceiling defined in the skill body) |
 
 ### Fallback

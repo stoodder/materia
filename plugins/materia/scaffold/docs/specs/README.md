@@ -67,25 +67,26 @@ implement stage follows the standards + Definition of Done
 ([../contributing.md](../contributing.md)), and finalize runs the same gates CI
 does.
 
-## Closing the loop — `materia-triage-retros` + `materia-apply-pipeline-improvements` (sibling skills)
+## Closing the loop — `materia-triage-retros` (retro triage)
 
-Two separate, manually-invoked skills consume the `retro.md` files that
-ship-spec captures and fold their signal back into the pipeline skills
-themselves. They are **not** pipeline stages — they run after a stretch of
-ship-spec runs. The loop is split in two so plan-drafting and plan-execution are
-decoupled (and so the executor runs disjoint from `materia-suggestions-to-specs`):
+A manually-invoked skill consumes the `retro.md` files that ship-spec and
+fix-bug capture and turns their signal into **project-specific** backlog
+items. It is **not** a pipeline stage — it runs after a stretch of ship-spec /
+fix-bug runs. Retros feed the project (product suggestions + bug reports), not
+the pipeline skills themselves:
 
 | Skill | Produces |
 |---|---|
-| `materia-triage-retros` (planner) | `docs/specs/_improvements/<dated-slug>/pipeline-improvements.md` (+ sibling `product-suggestions.md` for codebase/product improvements; + always-emitted `pipeline-health.md` rollup that accumulates as corpus and is never consumed; + `bug-reports.md` gather hand-off when bugs were found — `materia-bugs-to-reports` files them); renames each consumed `retro.md` → `retro.processed.md` across both `docs/specs/**/` and `docs/bugs/**/`; opens exactly one PR (no auto-merge). Performs three-way triage on retro signal (pipeline findings / product improvements / bugs). It **stops at the artifacts**. |
+| `materia-triage-retros` (retro triage) | `docs/specs/_improvements/<dated-slug>/pipeline-health.md` (always emitted — an accumulating health-rollup corpus that is never consumed, and the run's resumability sentinel) + a `product-suggestions.md` hand-off for product improvements (consumed by `materia-suggestions-to-specs`) + a `bug-reports.md` gather hand-off when bugs were found (consumed by `materia-bugs-to-reports`); renames each consumed `retro.md` → `retro.processed.md` across both `docs/specs/**/` and `docs/bugs/**/`; opens exactly one PR (no auto-merge). Performs two-way triage on retro signal (product improvements / bugs); a batch with neither is a valid health-only run. It **stops at the artifacts**. |
 | `materia-bugs-to-reports` (bug-queue producer) | Reads gathered `bug-reports.md` hand-offs from `docs/specs/_improvements/**/`; drafts conformant 13-section bug-report files; on approve writes them into `docs/bugs/_reports/` and renames each consumed `bug-reports.md` → `bug-reports.processed.md`; opens one PR per run (no auto-merge). |
-| `materia-apply-pipeline-improvements` (executor) | Globs unprocessed `pipeline-improvements.md` files, builds a dimension-tagged candidate set from each plan's `## Actions`, runs a keep–supersede–conflict Pareto selection pass (surfacing conflicts to the operator before any edits land), applies the selected deltas to the pipeline skills (fresh-context-reviewed), opens one PR per plan (no auto-merge), and renames the consumed plan → `pipeline-improvements.processed.md` in the same PR. Idempotent via the rename. |
+
+`materia-suggestions-to-specs` (a `_proposed/`-queue producer — see § Proposed
+specs) consumes the `product-suggestions.md` hand-off the same way.
 
 The improvements tree (`docs/specs/_improvements/`) is a sibling to feature
 spec folders and `_templates/`; its `README.md` is seeded by the first run of
-the planner (no infrastructure pre-commit). See `materia-triage-retros`
-(planner) and `materia-apply-pipeline-improvements`
-(executor) for the full procedures.
+`materia-triage-retros` (no infrastructure pre-commit). See
+`materia-triage-retros` for the full procedure.
 
 ## Bug reports — sibling queue
 

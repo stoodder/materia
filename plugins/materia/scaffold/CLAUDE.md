@@ -77,10 +77,11 @@ docs-sync adds entries as the app grows}} — all under
 
 Reference: [glossary](docs/glossary.md) · [surface-map](docs/surface-map.md).
 
-**Building or fixing via the pipelines?** Two orchestrators, two queues, one
-self-improvement loop — the full map (stage chains, producer/consumer tables,
-flow graphs) lives at [docs/specs/README.md](docs/specs/README.md); read
-that, not this paragraph, for the details.
+**Building or fixing via the pipelines?** Two orchestrators, two queues, and a
+retro-triage loop that feeds the backlog — the full map (stage chains,
+producer/consumer tables, flow graphs) lives at
+[docs/specs/README.md](docs/specs/README.md); read that, not this paragraph,
+for the details.
 
 - `/materia-ship-spec` builds a feature end-to-end from the proposed-specs queue
   ([docs/specs/_proposed/](docs/specs/_proposed/README.md)); `/materia-fix-bug`
@@ -94,10 +95,10 @@ that, not this paragraph, for the details.
   lifecycle live in [skills](docs/standards/skills.md).
 - **Epics** ([docs/epics/](docs/epics/README.md)) group multiple specs under
   one researched initiative with a dependency graph.
-- Every run leaves a `retro.md`; `/materia-triage-retros` triages retros three ways
-  (pipeline findings / product suggestions / bugs) and
-  `/materia-apply-pipeline-improvements` applies the plan back into the skills — the
-  pipeline improves itself. Authoring or changing any skill →
+- Every run leaves a `retro.md`; `/materia-triage-retros` triages retros two ways
+  (product suggestions / bug reports) into the project's backlog —
+  `/materia-suggestions-to-specs` turns suggestions into proposed specs and
+  `/materia-bugs-to-reports` files the bugs. Authoring or changing any skill →
   [skills](docs/standards/skills.md).
 
 ## Before you finish

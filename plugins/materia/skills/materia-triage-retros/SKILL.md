@@ -1,38 +1,38 @@
 ---
 name: materia-triage-retros
-description: "Run manually via `/materia-triage-retros` after a stretch of `materia-ship-spec` runs to harvest unprocessed retros (one sub-agent per retro at 3+, parsed inline by the parent at ≤2), aggregate the insight envelopes, and run a three-way triage into four artifacts under `docs/specs/_improvements/<dated-slug>/`: `pipeline-improvements.md` (always emitted, consumed by `materia-apply-pipeline-improvements`), `product-suggestions.md` (when product feedback is present, consumed by `materia-suggestions-to-specs`), `bug-reports.md` (when defects are gathered, consumed by `materia-bugs-to-reports`), and `pipeline-health.md` (always-emitted batch rollup, not consumed — accumulates as corpus). Pauses for the operator to nudge the artifacts, renames each consumed retro to `retro.processed.md`, and opens exactly one PR against `main` — no auto-merge. Resumable across sessions. Single PR per run."
+description: "Run manually via `/materia-triage-retros` after a stretch of `materia-ship-spec` / `materia-fix-bug` runs to harvest unprocessed retros (one sub-agent per retro at 3+, parsed inline by the parent at ≤2), aggregate the insight envelopes, and run a two-way triage of the project-specific signal into artifacts under `docs/specs/_improvements/<dated-slug>/`: `product-suggestions.md` (when product feedback is present, consumed by `materia-suggestions-to-specs`), `bug-reports.md` (when defects are gathered, consumed by `materia-bugs-to-reports`), and `pipeline-health.md` (always emitted, never consumed — an accumulating health corpus that also serves as the run's resumability sentinel). Pauses for the operator to nudge the artifacts, renames each consumed retro to `retro.processed.md`, and opens exactly one PR against `main` — no auto-merge. Resumable across sessions. Single PR per run."
 ---
 
-# materia-triage-retros — scan retros and draft the improvement plan
+# materia-triage-retros — scan retros and triage project signal
 
-The **scan-and-plan** half of the self-improvement loop opened by
-`materia-ship-spec`'s per-run `retro.md` capture. It globs unprocessed retros from
-both `docs/specs/**` and `docs/bugs/**`, collects one insight envelope per
-retro (via sub-agents at 3+ retros, inline at ≤2), then clusters and triages
-the aggregated signal into four artifacts written **directly to disk** — no
-intermediate JSON. After the plan commit it **pauses for operator review by
+The **scan-and-triage** step that harvests `materia-ship-spec`'s and
+`materia-fix-bug`'s per-run `retro.md` captures and turns them into
+**project-specific** backlog signal. It globs unprocessed retros from both
+`docs/specs/**` and `docs/bugs/**`, collects one insight envelope per retro
+(via sub-agents at 3+ retros, inline at ≤2), then clusters and triages the
+aggregated signal into artifacts written **directly to disk** — no
+intermediate JSON. After the triage commit it **pauses for operator review by
 ending the turn**, folds any feedback directly into the markdown, renames
 each consumed `retro.md` to `retro.processed.md`, and opens exactly one PR
-against `main`. It **never applies** the planned skill edits — that is
-`materia-apply-pipeline-improvements`' job — so this skill, `materia-suggestions-to-specs`,
-and `materia-bugs-to-reports` run independently off the artifacts it lands.
+against `main`. It only **captures** signal — the two hand-off buckets are
+consumed downstream by `materia-suggestions-to-specs` (product suggestions →
+proposed specs) and `materia-bugs-to-reports` (gathered bugs → the bug
+queue), which run independently off the artifacts it lands.
 
 The stack is markdown + `git` + `gh`/GitHub-MCP + the skill harness. Manual
-invocation only; single PR per run; no auto-merge. The retro template, the
-retro-generation contract in `materia-ship-spec/SKILL.md`, and the
-`retro.md`/`retro.processed.md` naming are **protected contracts** — the
-cluster pass flags any proposed action touching them so the plan, PR, and
-executor surface the change loudly.
+invocation only; single PR per run; no auto-merge. The retro template
+(`docs/specs/_templates/retro.md`) is the schema this skill's parser is built
+against; the `retro.md`/`retro.processed.md` naming is the
+idempotency-by-rename convention. This skill reads retros and writes hand-off
+artifacts — it **never edits pipeline skills or product source**.
 
 **Read before running the relevant phase** (progressive disclosure — don't
 front-load):
 
-- `resources/rendering.md` — the four artifact render specs; read at
-  Synthesis and on every fold-feedback round.
-- `resources/actions-contract.md` — the plan's parse contract (frontmatter,
-  `## Actions` fields, dimension vocabulary, traceback format,
-  protected-contract paths); read at Synthesis.
-- `docs/specs/_improvements/_templates/*.md` — **shape truth** for all four
+- `resources/rendering.md` — the artifact render specs plus the shared
+  traceback + placeholder conventions; read at Synthesis and on every
+  fold-feedback round.
+- `docs/specs/_improvements/_templates/*.md` — **shape truth** for the three
   artifacts (read-only stubs).
 - `docs/specs/_templates/retro.md` — the schema the parser is built against
   (read-only).
@@ -48,7 +48,7 @@ front-load):
 | `## Branch + folder bootstrap` | Branch, `<dated-slug>`, plan folder, README seed |
 | `## Parser` | The `RetroParse` envelope + degradation rules |
 | `## Envelope collection` | Sub-agent fan-out (3+) or inline parse (≤2) |
-| `## Synthesis` | Cluster prompt, three-way triage, skeptic pass, anchor validation |
+| `## Synthesis` | Cluster prompt, two-way triage, skeptic pass |
 | `## Artifacts + plan commit` | What gets written and committed (see resources/rendering.md) |
 | `## Checkpoint` | Pause-by-ending-turn, approve tokens, fold-feedback |
 | `## Mark-processed` → `## PR-URL backfill` | Renames, scope guard, PR, backfill |
@@ -72,12 +72,15 @@ invocation** — go directly to **Discovery**.
 
 - **2a.** `docs/specs/_improvements/<dated-slug>/` does not exist →
   **resume at Synthesis.**
-- **2b.** Folder exists but `pipeline-improvements.md` is missing → **corrupt
-  state** (the plan commit deliberately never lands an empty folder). Halt,
-  naming the directory and expected file; the operator deletes the orphan and
-  re-invokes, or hand-restores the plan. Note: `pipeline-improvements.md` is
-  the sentinel — **not** `pipeline-health.md`; health-only is still corrupt.
-- **2c.** Plan exists AND `git log --format=%s` has zero commits matching
+- **2b.** Folder exists but `pipeline-health.md` is missing → **corrupt
+  state** (the triage commit deliberately never lands an empty folder, and
+  `pipeline-health.md` is emitted **unconditionally** — it is the sentinel).
+  Halt, naming the directory and expected file; the operator deletes the
+  orphan and re-invokes, or hand-restores the run. The two bucket files
+  (`product-suggestions.md`, `bug-reports.md`) are **conditional**, so their
+  absence is never corrupt — only a missing `pipeline-health.md` is (a
+  health-only run, with both buckets empty, is a valid complete run).
+- **2c.** Folder exists (sentinel present) AND `git log --format=%s` has zero commits matching
   `^triage-retros\(retros\):` → **resume at Checkpoint.** The message that
   re-invoked the skill is the checkpoint reply — classify it per
   `## Checkpoint`.
@@ -227,7 +230,7 @@ How they're produced depends on batch size:
 **Sub-agent tier: `sonnet/low`** (row `triage-retros: sub-agent`,
 `MATERIA.md` § Tiers § Skill routing) — bucketing and quoting over
 one small retro is mechanical; the genuine reasoning (clustering, triage,
-prioritisation, protected-contract flagging) lives in the parent's Synthesis.
+prioritisation) lives in the parent's Synthesis.
 
 ### The four-step procedure (sub-agent or inline)
 
@@ -236,10 +239,12 @@ prioritisation, protected-contract flagging) lives in the parent's Synthesis.
 3. **Tally per-retro `health`**: `total_entries`, `outcome_counts`,
    `subagent_return_counts`, and a `by_stage[]` row per entry
    (`stage`/`outcome`/`subagent_return`).
-4. **Bucket** each piece of signal into `pipeline[]` / `product[]` / `bugs[]`
-   — each item carrying the verbatim `Entry N — <stage>` anchor, a verbatim
-   quote, and its source `section`. **Bucket and quote only — never classify
-   into findings/actions/suggestions; that is the parent's job.**
+4. **Bucket** each piece of project signal into `product[]` / `bugs[]` — each
+   item carrying the verbatim `Entry N — <stage>` anchor, a verbatim quote,
+   and its source `section`. Pipeline/harness-friction signal has no bucket
+   under the project retarget — it survives only in the `health` tally.
+   **Bucket and quote only — never classify into suggestions/reports; that is
+   the parent's job.**
 
 ### Insight envelope shape (the return)
 
@@ -255,7 +260,6 @@ prioritisation, protected-contract flagging) lives in the parent's Synthesis.
     "subagent_return_counts": { "ok": 5, "crashed": 0, "empty": 1, "malformed": 0 },
     "by_stage": [{ "stage": "intake", "outcome": "ok", "subagent_return": "ok" }]
   },
-  "pipeline": [{ "anchor": "Entry 1 — intake", "quote": "<verbatim>", "section": "what_could_be_improved" }],
   "product":  [{ "anchor": "Entry 3 — implement-task:T2", "quote": "<verbatim>", "section": "other_signals" }],
   "bugs":     [{ "anchor": "Entry 2 — implement-task", "quote": "<verbatim>", "section": "unexpected" }]
 }
@@ -277,85 +281,61 @@ and the parent never appends a sub-agent return to any `retro.md`. The only
   **re-dispatched once** (transient failures — e.g. a sub-agent attempting a
   nested spawn — usually clear on retry). If the retry also fails, mark that
   envelope `parse_status: 'degraded'` with a note, log it, and continue
-  synthesizing from the rest. Degraded retros still appear in the plan's
+  synthesizing from the rest. Degraded retros still appear in the run's
   "Retros consumed" row and in `pipeline-health.md`.
-- **Only if ALL envelopes are unusable** does the run halt — before the plan
-  commit, so nothing is on disk: "Synthesis failed: 0 usable envelopes. No
-  plan written. Branch not committed. Re-invoke /materia-triage-retros to retry."
+- **Only if ALL envelopes are unusable** does the run halt — before the
+  triage commit, so nothing is on disk: "Synthesis failed: 0 usable
+  envelopes. No artifacts written. Branch not committed. Re-invoke
+  /materia-triage-retros to retry."
 
 ## Synthesis
 
 Aggregate the N envelopes, run the cluster pass **inside the parent's own
 context** (no cluster sub-agent), and write the artifacts directly. Read
-`resources/rendering.md` and `resources/actions-contract.md` now.
+`resources/rendering.md` now.
 
 **Inputs in context:**
 
 1. The collected insight envelopes (pre-bucketed; each item carries
    `retro_path`, verbatim `anchor`, verbatim `quote`, `section`).
-2. The pipeline-skill paths — `git ls-files '.claude/skills/*/SKILL.md'`.
-   **Paths only at cluster time** — actions name a target file; anchors are
-   validated *after* drafting (below).
-3. The protected-contract path list from
-   `resources/actions-contract.md` § Protected-contract paths.
+2. The per-retro `health` tallies — the raw material for `pipeline-health.md`.
 
 ### Cluster prompt
 
-> You are clustering a batch of per-run retros into a small set of actionable
-> improvements for the pipeline skills.
+> You are clustering a batch of per-run retros into **project-specific**
+> backlog signal: product suggestions and bug reports. Pipeline/harness
+> friction is **not** in scope here — it is captured only in the batch's
+> `pipeline-health.md` rollup.
 >
-> **Read every envelope's `pipeline[]` items first** — they carry the highest
-> improvement signal. Read `product[]`, `bugs[]`, and
-> `other_signals`-sourced quotes as secondary context. For degraded
-> envelopes, lean on whatever quotes survived and note the degradation in the
-> plan's "Retros consumed" row.
+> **Read every envelope's `product[]` and `bugs[]` items first** — they carry
+> the actionable project signal. Read the `other_signals`-sourced quotes as
+> secondary context. For degraded envelopes, lean on whatever quotes survived
+> and note the degradation in the "Retros consumed" row.
 >
-> **Bucket each piece of feedback into one of three kinds before
-> clustering:**
+> **Bucket each piece of feedback into one of two kinds:**
 >
-> - **Pipeline-related** (`findings[]` / `actions[]`) — about **how the
->   pipeline operates**: a stage, skill, orchestration mechanic,
->   retro-capture, allowlist, resumability, or the pipeline docs. Criterion:
->   it touches `.claude/skills/**` or pipeline docs.
 > - **Improvement** (`suggestions[]`) — a **new or expanded product or
 >   codebase capability**: behaviour absent or merely sub-optimal, not
 >   broken. Flows to `materia-suggestions-to-specs`.
 > - **Bug** (`bugs[]`) — a **defect or regression in already-shipped
 >   behaviour**. Flows to the bug queue via `materia-bugs-to-reports`.
 >
-> **Tie-breaks (in order):** genuinely both pipeline and product →
-> `findings[]` if the friction is about the *flow*, else
-> `suggestions[]`/`bugs[]`; never double-file. Ambiguous improvement vs bug →
-> **bug wins when behaviour is broken**; suggestion only when absent or
-> sub-optimal.
+> Signal that is purely about **how the pipeline operates** (a stage, skill,
+> orchestration mechanic, retro-capture, allowlist, resumability, or the
+> pipeline docs) is **out of scope** for the buckets — drop it; it survives
+> only as a health signal in `pipeline-health.md`.
 >
-> **Hard invariants:** `product-suggestions.md` never contains a bug;
+> **Tie-break (ambiguous improvement vs bug):** **bug wins when behaviour is
+> broken**; suggestion only when a capability is absent or sub-optimal. Never
+> double-file.
+>
+> **Hard invariant:** `product-suggestions.md` never contains a bug;
 > `suggestions[*].kind: bug` is a classification error — re-classify to
 > `bugs[]`.
 >
-> **Cluster** by recurring theme (same friction, mechanism, or stage-impact):
-> ≥2 entries sharing a theme form a cluster; isolated signals still become
-> findings, typically at lower priority. Fold duplicate reports of the same
-> product item into one suggestion with multiple `supporting[]` references.
->
-> **Prioritize:** **HIGH** — recurring across ≥2 retros AND blocks/derails a
-> stage, OR single-occurrence with a downstream cost later stages worked
-> around. **MEDIUM** — recurring with friction but no derail, OR
-> single-occurrence with a clear pipeline-improving change. **LOW** —
-> one-off, nice-to-have, or unclear actionability.
->
-> **Propose actions:** per finding, name the skill(s), target file path(s), a
-> one-sentence change summary, and (when possible) an `anchor_hint`. Findings
-> with no viable in-reach action get **zero actions** and land in
-> `out_of_scope[]` with a one-line rationale.
->
-> **Dimension-tag each action** per
-> `resources/actions-contract.md` § Dimension vocabulary (one or more tags;
-> open-ended; prefer the most specific fit).
->
-> **Protected-contract flagging:** any action whose files intersect the
-> protected path list gets `protected_contract: true` plus a one-paragraph
-> justification.
+> **Cluster** by recurring theme: fold duplicate reports of the same product
+> item into one suggestion (or one bug) with multiple `supporting[]`
+> references; isolated signals still become their own entry.
 >
 > **Emit suggestions and bugs** per the working-shape fields in
 > `resources/rendering.md` (suggestions: title/kind/description/supporting;
@@ -366,61 +346,66 @@ context** (no cluster sub-agent), and write the artifacts directly. Read
 
 ### Skeptic pass (before rendering)
 
-Re-read each **HIGH and MEDIUM** finding against its own supporting quotes
-and ask: do the quotes actually support the claim, and is the priority earned
-under the rubric above? Demote what's overstated; drop what the quotes don't
-support (or move it to `out_of_scope[]` with the rationale). Every finding
-that survives costs a full executor cycle plus human review — kill overstated
-findings here, where it's cheapest.
+Re-read each suggestion and bug against its own supporting quotes and ask: do
+the quotes actually support the claim? Drop what the quotes don't support,
+and fold near-duplicates into a single entry with multiple `supporting[]`
+references. Every item that survives costs a downstream producer run plus
+human review — kill overstated items here, where it's cheapest.
 
-### Anchor validation (after drafting actions)
+### Health-only outcome (not a halt)
 
-For each drafted action with a non-null `anchor_hint`, **grep the target file
-at HEAD** (read-only — this skill still never edits pipeline skills):
+Zero suggestions **and** zero bugs is a legitimate terminal outcome, **not** a
+halt: the batch carried no project-actionable signal. The run still emits
+`pipeline-health.md` (the always-emitted rollup + sentinel), marks the
+consumed retros processed, and opens its single PR — there are simply no
+bucket files and no downstream producer hand-off (see `## Artifacts + triage
+commit` → health-only run). The only clean no-op-with-no-PR path is the
+**zero-retros** Discovery case (nothing to harvest at all).
 
-- Hint found **exactly once** → keep it.
-- Found more than once or not at all → repair it: pick a verbatim, unique
-  substring from the live file that the described change would anchor to; if
-  none fits, set the hint to the null sentinel
-  (`_none — executor recomputes from the file at apply time._`).
-
-A guessed anchor is worse than the sentinel — the executor trusts hints and
-halts on drift. Every emitted hint must be verbatim-from-file and unique.
-
-### Synthesis halt
-
-If the cluster pass yields nothing usable even from usable envelopes, halt
-with a one-line reason — nothing is committed yet, so re-invocation reruns
-Discovery → bootstrap → collection → Synthesis fresh. Partial degradation is
-**not** a halt.
+A run hard-halts *only* when **all envelopes are unusable** (see § Envelope
+collection) — before any commit, so re-invocation reruns Discovery →
+bootstrap → collection → Synthesis fresh. Partial degradation is **not** a
+halt.
 
 ### Fixture verification
 
 When verifying triage changes, run the classification rubric over
-`.claude/skills/materia-triage-retros/resources/fixture-retro.md` (a synthetic retro
-with one unmistakable signal per bucket, homed under `.claude/skills/**` so
-live globs never harvest it): its pipeline item must land in `findings[]`,
-its improvement item in `suggestions[]`, its bug item in `bugs[]` — and the
-bug must never appear in `product-suggestions.md`.
+`${CLAUDE_PLUGIN_ROOT}/skills/materia-triage-retros/resources/fixture-retro.md`
+(a synthetic retro with one unmistakable signal per bucket, homed under the
+skill's own `resources/` so live globs never harvest it): its improvement
+item must land in `suggestions[]`, its bug item in `bugs[]`, and its
+pipeline/harness-friction entry must produce **no** bucket item (out of scope
+under the project retarget) — and the bug must never appear in
+`product-suggestions.md`.
 
-## Artifacts + plan commit
+## Artifacts + triage commit
 
 Render per `resources/rendering.md` (shape truth:
-`docs/specs/_improvements/_templates/*.md`; `## Actions` per
-`resources/actions-contract.md`):
+`docs/specs/_improvements/_templates/*.md`):
 
-- `pipeline-improvements.md` — always
-- `pipeline-health.md` — always (never renamed downstream)
+- `pipeline-health.md` — **always** (never renamed downstream; the
+  resumability sentinel)
 - `product-suggestions.md` — iff `suggestions.length > 0`
 - `bug-reports.md` — iff `bugs.length > 0` (gather-only: no ids minted, no
   `docs/bugs/_reports/` writes — `materia-bugs-to-reports` files them later)
 
+**Health-only run.** When `suggestions.length === 0` **and**
+`bugs.length === 0`, the folder holds only `pipeline-health.md`. This is a
+valid, complete run — the sentinel is present, so the folder is never
+"corrupt" (gate 2b), and the two conditional buckets are simply absent.
+Proceed through the **full lifecycle** (checkpoint → mark-processed → PR →
+backfill): the retros are still consumed (else they would be re-harvested
+forever) and the health snapshot still accrues as corpus. The only difference
+is there are no bucket files and no downstream producer hand-off; the README
+index row's outcome is `no-op`. (A run that opens *no* PR at all is the
+distinct **zero-retros** Discovery case, not this one.)
+
 Format the written files (the formatter from MATERIA.md § Gate's lint row, scoped to exactly the
 files written — see rendering.md § Common rules), then stage everything plus
-the README seed/row in **one atomic plan commit**:
+the README seed/row in **one atomic triage commit**:
 
 ```
-triage-retros(plan): draft improvement plan from N retros
+triage-retros(plan): triage N retros into project signal
 ```
 
 A failed artifact write halts **before** this commit — nothing lands, and
@@ -439,29 +424,32 @@ and resumes cleanly in any future session.
 
 ```
 ─────────────────────────────────────────────────────────────────────
-Improvement plan ready for review.
+Retro triage ready for review.
 
-  Plan:        docs/specs/_improvements/<dated-slug>/pipeline-improvements.md
+  Folder:      docs/specs/_improvements/<dated-slug>/
   Branch:      chore/triage-retros-<dated-slug> (committed + pushed)
 
-Summary (<count HIGH>, <count MEDIUM>, <count LOW> across <retros_consumed.length> retros — <S> spec run, <B> bug run):
-  F1 [HIGH]   <skill> — <one-line finding title>
-  F2 [MEDIUM] <skill> — <one-line finding title>
-  …
-Out-of-scope this run: <out_of_scope.length> finding(s) (see § Out-of-scope in the plan).
-Product suggestions captured: <suggestions.length> (see product-suggestions.md, if non-zero).
-Bugs gathered: <bugs.length> (see bug-reports.md — run /materia-bugs-to-reports to file them, if non-zero).
-Pipeline health: pipeline-health.md emitted.
+Triaged <retros_consumed.length> retros (<S> spec run, <B> bug run):
+  Product suggestions: <suggestions.length>
+    S1  <suggestion title>
+    S2  <suggestion title>
+    …
+  Bugs gathered: <bugs.length>
+    B1 [<severity>]  <bug title>
+    …
+  Pipeline health: pipeline-health.md emitted (blocker rate <blocker_rate>).
 
-Reply 'proceed' to accept the plan, or paste any notes / changes you want
-folded into the plan, suggestions, or bug reports before the retros are marked
-processed and the PR is opened. (No timeout — the run pauses until you reply.)
+Files this run: product-suggestions.md (iff any suggestions) · bug-reports.md
+(iff any bugs — run /materia-bugs-to-reports to file them) · pipeline-health.md
+(always). Zero suggestions + zero bugs is a valid health-only run.
+
+Reply 'proceed' to accept, or paste any notes / changes you want folded into
+the suggestions or bug reports before the retros are marked processed and the
+PR is opened. (No timeout — the run pauses until you reply.)
 ─────────────────────────────────────────────────────────────────────
 ```
 
-Findings whose actions carry `protected_contract: true` get a trailing
-`← PROTECTED-CONTRACT` on their summary line. After the prompt, the final
-sentence of the turn is verbatim:
+After the prompt, the final sentence of the turn is verbatim:
 
 > Awaiting operator reply at the checkpoint. The next message in this thread will resume the run.
 
@@ -506,11 +494,12 @@ Append one footer line to each `retro.processed.md` (` · `-separated, one
 line):
 
 ```
-processed_on: <ISO date>  ·  processed_by: docs/specs/_improvements/<dated-slug>/pipeline-improvements.md  ·  pr: <filled by finalize>
+processed_on: <ISO date>  ·  processed_by: docs/specs/_improvements/<dated-slug>/pipeline-health.md  ·  pr: <filled by finalize>
 ```
 
-(`<filled by finalize>` is the inherited literal placeholder — part of the
-protected footer format; the backfill step rewrites it.)
+(`<filled by finalize>` is the literal placeholder in the footer format — see
+`resources/rendering.md` § Placeholder convention; the backfill step rewrites
+it. `processed_by` points at the run's always-present `pipeline-health.md`.)
 
 All renames + footers land in **one commit**: `triage-retros(retros): mark N
 retros processed`. Then push. If a `git mv` fails (target exists), halt
@@ -519,13 +508,13 @@ the Checkpoint, and a fresh `proceed` re-runs this phase.
 
 ## Scope guard
 
-This skill writes a small fixed set of paths and **never edits
-`.claude/skills/**` at runtime** — proposing edits is the plan's job,
-applying them the executor's. Before opening the PR, sweep
-`git diff --name-only main...HEAD`; every path must match one of:
+This skill writes a small fixed set of paths and **never edits pipeline
+skills or product source** — it only captures signal into hand-off
+artifacts. Before opening the PR, sweep `git diff --name-only main...HEAD`;
+every path must match one of:
 
 ```
-^docs/specs/_improvements/<DATED_SLUG>/.*$        # the run's plan folder
+^docs/specs/_improvements/<DATED_SLUG>/.*$        # the run's triage folder
 ^docs/specs/.*/retro\.(md|processed\.md)$         # spec-run retro renames + footers
 ^docs/specs/_improvements/README\.md$             # the improvements index
 ^docs/bugs/.*/retro\.(md|processed\.md)$          # bug-run retro renames + footers
@@ -547,8 +536,12 @@ merges after review. **Tooling:** `gh pr create` locally; in the remote
 environment (no `gh` CLI) use the GitHub MCP `create_pull_request` with the
 same base/head/title/body. Everything else is tool-agnostic.
 
-- **Body:** the `## PR description seed` block from the plan (placeholder
-  left as-is at this step) + the repo's standard `🤖 Generated with [Claude
+- **Body:** built from `summary_paragraph` (the batch in the orchestrator's
+  voice) + a short list of what landed — suggestions captured (→
+  `product-suggestions.md`, run `/materia-suggestions-to-specs`), bugs
+  gathered (→ `bug-reports.md`, run `/materia-bugs-to-reports`), and the
+  `pipeline-health.md` rollup. A health-only run says so plainly. Close with
+  the repo's standard `🤖 Generated with [Claude
   Code](https://claude.com/claude-code)` footer.
 - **Title:** `triage-retros: ` + the first clause of `summary_paragraph`
   (before the first period), truncated at a word boundary to <70 chars total
@@ -558,12 +551,13 @@ On failure (auth, protections, network): halt with the error — branch and
 commits are intact and pushed; the next invocation resumes at gate 2d and
 re-runs only this step.
 
-On success, print the final Done block — PR URL, plan path, retros consumed
-(spec/bug split), findings by priority, actions proposed, protected-contract
-flags, suggestions captured, bugs gathered, commit count — and remind: human
-review merges the PR; `materia-apply-pipeline-improvements` applies the plan after
-merge; gathered bugs await `/materia-bugs-to-reports`. Then continue to **PR-URL
-backfill** in the same turn.
+On success, print the final Done block — PR URL, run folder, retros consumed
+(spec/bug split), suggestions captured, bugs gathered, whether the run was
+health-only (`pipeline-health.md` the sole artifact), commit count — and
+remind: human review merges the PR; captured suggestions await
+`/materia-suggestions-to-specs`; gathered bugs await
+`/materia-bugs-to-reports`. Then continue to **PR-URL backfill** in the same
+turn.
 
 ## PR-URL backfill
 
@@ -571,14 +565,13 @@ Replace every placeholder with the literal PR URL:
 
 - `<filled by finalize>` — in every `retro.processed.md` footer on the branch
   (both `docs/specs/**` and `docs/bugs/**`).
-- `<filled by PR open>` — in the plan's PR description seed AND the current
-  run's row in `docs/specs/_improvements/README.md`.
+- `<filled by PR open>` — in the current run's row in
+  `docs/specs/_improvements/README.md`.
 
-Then **amend the Mark-processed commit** (message unchanged) and push:
+Then land the backfill and push:
 
 ```bash
 git add docs/specs/**/retro.processed.md docs/bugs/**/retro.processed.md \
-        docs/specs/_improvements/<dated-slug>/pipeline-improvements.md \
         docs/specs/_improvements/README.md
 git commit -m "triage-retros: backfill PR URL"
 git push
@@ -588,5 +581,5 @@ The backfill lands as a **follow-up commit — no amend, no force-push** (the
 shipped permission rules deny force spellings; see design-notes for why this
 is consistent
 with the repo's force-push rule). After backfill the branch history reads:
-plan commit → fold-feedback ×N → mark-processed (amended with the URL). Gate
+triage commit → fold-feedback ×N → mark-processed → backfill (PR URL). Gate
 2f matches on any later invocation.

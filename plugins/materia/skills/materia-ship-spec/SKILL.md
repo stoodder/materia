@@ -1031,8 +1031,8 @@ is always a valid record of however far the run got.
 ### Scope
 
 This skill only **writes** `retro.md`. It does not read or act on past retros
-— `materia-triage-retros` aggregates them and `materia-apply-pipeline-improvements` applies
-the resulting plan.
+— `materia-triage-retros` harvests them and triages their signal into the
+project's backlog (product suggestions + bug reports).
 
 ## Guardrails (don't spin forever)
 

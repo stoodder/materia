@@ -129,7 +129,7 @@ human comments and no `Blocker`.
 
 | Kind | Runs in | Tier | Examples |
 |---|---|---|---|
-| **Orchestrator** | operator session | none (dispatches others) | `materia-ship-spec`, `materia-triage-retros`, `materia-apply-pipeline-improvements` |
+| **Orchestrator** | operator session | none (dispatches others) | `materia-ship-spec`, `materia-triage-retros` |
 | **Sub-skill** | a fresh-context subagent the orchestrator spawns | its row in `MATERIA.md` § Skill routing | `materia-intake-spec`, `materia-design`, `materia-architecture`, `materia-plan-tasks`, `materia-implement-task`, `materia-finalize`, `materia-docs-sync`, `materia-docs-audit` |
 | **Producer** | operator session | none | `materia-propose-spec`, `materia-propose-epic`, `materia-suggestions-to-specs`, `materia-report-bug`, `materia-bugs-to-reports`, `materia-ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
 | **Maintainer** | operator session (or scheduled) | none | `materia-librarian` (sweeps the living docs) and `materia-janitor` (sweeps the code against `docs/standards/`) — each fixes drift directly and opens one PR instead of filing queue entries. Only the librarian **auto-merges its own PR**: a standing exception to the "no auto-merge" invariant, valid only behind a mechanical diff envelope + green CI (its § The docs-only envelope); the janitor's diff is product code, so it stops for human review. Per-run exception: `--auto` (§ The `--auto` argument). |
@@ -233,7 +233,7 @@ after a horizontal rule, with the casting skill's name substituted:
 ```markdown
 ---
 
-🔮 Forged with [Materia](https://github.com/stoodder/materia) · cast by `materia-<skill>` · *equipped skills level up with use*
+🔮 Forged with [Materia](https://github.com/stoodder/materia) · cast by `materia-<skill>` · *every run feeds the backlog*
 ```
 
 - `materia-<skill>` = the skill that opened the PR (`materia-finalize` names
@@ -244,9 +244,10 @@ after a horizontal rule, with the casting skill's name substituted:
 - The sigil is attribution, not content: skills never cite it, and reviewers
   can ignore it. Keep the line's shape stable so it stays greppable
   (`Forged with [Materia]`).
-- The "levels up" clause is literal: merged work feeds `retro.md` →
-  `materia-triage-retros` → `materia-apply-pipeline-improvements`, which
-  edits these skills in place.
+- The "feeds the backlog" clause is literal: each run leaves a `retro.md`, and
+  `materia-triage-retros` triages the batch into product suggestions and bug
+  reports that reach the project's backlog via `materia-suggestions-to-specs`
+  and `materia-bugs-to-reports`.
 
 ### Registration surfaces — update in the same change
 

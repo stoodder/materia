@@ -1,15 +1,16 @@
-# Rendering the four run artifacts
+# Rendering the run artifacts
 
 Read this at **synthesis time** (and again during fold-feedback rounds). It
 covers what the `_templates/` stubs can't express: field semantics, ordering,
-conditional-emit rules, and the fold-feedback edit rules.
+conditional-emit rules, the fold-feedback edit rules, and the shared
+traceback + placeholder conventions the downstream consumers rely on.
 
 **Shape truth lives in the stubs** at `docs/specs/_improvements/_templates/`
-(`pipeline-improvements.md`, `product-suggestions.md`, `bug-reports.md`,
-`pipeline-health.md`) — reproduce their section order and field labels
-character-for-character. The `## Actions` / frontmatter / traceback contract
-is specified in `resources/actions-contract.md`; this file re-states none of
-it.
+(`product-suggestions.md`, `bug-reports.md`, `pipeline-health.md`) —
+reproduce their section order and field labels character-for-character. The
+traceback and placeholder conventions those artifacts use are defined in
+§ Findings traceback format and § Placeholder convention below (relocated here
+so they survive independent of any one artifact).
 
 ## The in-memory working shape
 
@@ -26,40 +27,13 @@ exists so the artifacts render consistently every run:
   "retros_consumed": [
     { "path": "...", "slug": "...", "run_kind": "spec run", "entry_count": 6, "parse_status": "ok" }
   ],
-  "findings": [
-    {
-      "id": "F1",
-      "title": "<short title>",
-      "priority": "HIGH" | "MEDIUM" | "LOW",
-      "pattern": "<one-paragraph summary of the cluster>",
-      "supporting": [{ "retro_path": "...", "anchor": "Entry 1 — intake", "quote": "<verbatim>" }],
-      "skills_touched": ["intake-spec"],
-      "action_ids": ["A1"]
-    }
-  ],
-  "actions": [
-    {
-      "id": "A1",
-      "title": "<skill>: <what changes>",
-      "skill": "intake-spec",
-      "files": [".claude/skills/materia-intake-spec/SKILL.md"],
-      "dimension": ["resumability/robustness"],
-      "change_summary": "<one sentence>",
-      "anchor_hint": "<validated verbatim string from the target file, or null>",
-      "motivating_findings": ["F1"],
-      "protected_contract": false,
-      "protected_contract_justification": null
-    }
-  ],
-  "out_of_scope": [{ "finding_id": "F3", "rationale": "<one line>" }],
-  "protected_contract_flagged_actions": [], // ids of actions with protected_contract=true
   "suggestions": [
     {
       "id": "S1",
       "title": "<short title>",
       "kind": "feature" | "fix" | "tech-debt" | "other", // "bug" is a dead value — defects route to bugs[]
       "description": "<one paragraph>",
-      "supporting": [{ "retro_path": "...", "anchor": "...", "quote": "..." }]
+      "supporting": [{ "retro_path": "...", "anchor": "Entry 3 — implement-task", "quote": "<verbatim>" }]
     }
   ],
   "bugs": [
@@ -68,58 +42,42 @@ exists so the artifacts render consistently every run:
       "title": "<short title>",
       "severity": "low" | "medium" | "high" | "critical", // required; infer best-effort
       "description": "<one paragraph — the defect and its impact>",
-      "supporting": [{ "retro_path": "...", "anchor": "...", "quote": "..." }],
+      "supporting": [{ "retro_path": "...", "anchor": "Entry 2 — implement-task", "quote": "<verbatim>" }],
       "report_file": null // always null — bugs-to-reports mints the id + filename downstream
     }
   ],
-  "summary_paragraph": "<one paragraph in the orchestrator's voice — seeds plan summary AND PR body>"
+  "health": {
+    // aggregated per-retro `health` tallies (outcome/subagent-return counts,
+    // by-stage rows) → pipeline-health.md; see § pipeline-health.md below
+  },
+  "summary_paragraph": "<one paragraph in the orchestrator's voice — seeds the PR body>"
 }
 ```
 
-`suggestions[]` is the improvement bucket (never participates in any action —
-a pure hand-off to `materia-suggestions-to-specs`); `bugs[]` is the defect bucket
-(gathered into `bug-reports.md` for `materia-bugs-to-reports` to file). A
+`suggestions[]` is the improvement bucket (a pure hand-off to
+`materia-suggestions-to-specs`); `bugs[]` is the defect bucket (gathered into
+`bug-reports.md` for `materia-bugs-to-reports` to file). A
 `suggestions[*].kind: "bug"` is a classification error — move the item to
-`bugs[]`.
+`bugs[]`. There is **no** findings / actions / pipeline-plan bucket — retros
+feed the project's backlog, not the pipeline skills.
 
 ## Common rules
 
 - **Title case** — strip the leading `<yyyy-mm-dd-hhmmss>-<rand>-` prefix
   from `slug`, split the remainder on `-`, and title-case it joined with
   spaces (`2026-06-21-134501-9c2a3-weekly-roundup` → `Weekly Roundup`).
-- **Traceback format** — per `actions-contract.md` § Findings traceback
-  format, identical across all artifacts.
+- **Traceback format** — per § Findings traceback format below, identical
+  across all artifacts.
 - **Formatting** — before staging any commit that touches generated
   artifacts, run the repo formatter (MATERIA.md § Gate, lint row) scoped to **only the files the
   run actually wrote** (never `--write .`). This is load-bearing: hand-written
   markdown trips the the CI format gate (MATERIA.md § Gate, lint row).
 
-## `pipeline-improvements.md` — always emitted
-
-Nine sections in the stub's order: frontmatter · H1
-(`# <Title> — improvement plan`) · summary blockquote (the
-`summary_paragraph`, `> `-prefixed) · `## Retros consumed` table (one row per
-retro, `Run kind` = `spec`/`bug` from the identity tuple, `Parse status` =
-`ok` or `degraded — <first parse_note>`) · `## Findings` (one H3 per finding,
-`### F<n> — <title>  ·  <priority>`, in `findings[]` order) · `## Actions`
-(per `actions-contract.md`, in `actions[]` order) · `## Out-of-scope /
-deferred` (one bullet per entry: `**<finding_id> — <title>** — <rationale>`) ·
-`## Protected-contract flags` (`_None this run._` or one block per flagged
-action) · `## PR description seed` (fenced `markdown` block: a
-Changes → findings table, consumed-retro list as `retro.processed.md` paths, a
-link to the plan, a "Bugs gathered" section when `bugs.length > 0` with a
-pointer to run `/materia-bugs-to-reports`, and the `<filled by PR open>` placeholder).
-
-Frontmatter counts (`findings_total`, `findings_actionable`,
-`protected_contract_flagged`, `bugs_filed`) must match the body — re-derive
-them after every fold-feedback edit.
-
 ## `product-suggestions.md` — emitted iff `suggestions.length > 0`
 
 Five sections per the stub: frontmatter (`source_plan` points at the sibling
-plan; `suggestion_count` matches the body) · H1
-(`# <Title> — product suggestions`) · intro paragraph (with a relative link
-back to `./pipeline-improvements.md`) · one H2 per suggestion
+`pipeline-health.md`; `suggestion_count` matches the body) · H1
+(`# <Title> — product suggestions`) · intro paragraph (per the stub) · one H2 per suggestion
 (`## S<n> — <title>` with `**Kind:**`, `**Description:**`, `**Source:**`
 bullets — every `supporting[]` entry as its own source bullet) · footer
 (`_Captured by \`triage-retros\` run \`<slug>\` on \`<generated_at>\`._`).
@@ -146,14 +104,14 @@ No consumer dequeues it — it accumulates as a historical corpus (a
 - **Frontmatter** — all nine fields required. `blocker_rate` is
   `"<pct>% (<blocked+failed> of <total_entries> entries)"`;
   `triage_conversion` is
-  `"<actionable> pipeline findings + <product_count> product suggestions + <bug_count> bugs from <total_entries> entries"`.
+  `"<product_count> product suggestions + <bug_count> bugs from <total_entries> entries"`.
 - **Summary paragraph** — the synthesizer's voice: what the batch's health
   signals, which stage dominates, whether the signal is clean or noisy.
 - **`## Outcome counts by stage`** — one row per distinct stage across all
   envelopes, **sorted by descending `blocked + failed`**, with a bold
   `**Total**` row. The `subagent_return issues` column counts non-`ok`
   returns per stage (e.g. `1 crashed`), `0` when clean.
-- **`## Triage conversion`** — all six bullets, per the stub.
+- **`## Triage conversion`** — all five bullets, per the stub.
 - **`## What's working`** — 2–4 bullets of positives appearing across ≥2
   retros or worth preserving; **omit the section entirely** when none
   surface.
@@ -161,17 +119,46 @@ No consumer dequeues it — it accumulates as a historical corpus (a
   (`` `<retro_path>` — <first parse_note> ``); **omit when all clean**.
 - **Footer** — per the stub (names the run, notes it is not consumed).
 
+## Findings traceback format
+
+Every supporting reference in the hand-off artifacts uses **literally** this
+shape (backticked path, ` § `, backticked verbatim `Entry N — <stage>`
+anchor, em-dash, double-quoted verbatim quote):
+
+```markdown
+`<retro_path>` § `<anchor>` — "<quote>"
+```
+
+Grep'ing the quoted phrase in the linked file must find the source.
+`materia-suggestions-to-specs` and `materia-bugs-to-reports` parse each
+`supporting[]` entry back into `{ retro_path, anchor, quote }`, so the shape
+is a contract — reproduce it character-for-character.
+
+## Placeholder convention
+
+Two run-scoped artifacts carry a literal placeholder that the **PR-URL
+backfill** step rewrites once the real PR URL exists:
+
+- `<filled by finalize>` — in each `retro.processed.md` footer (both
+  `docs/specs/**` and `docs/bugs/**`).
+- `<filled by PR open>` — in the run's row in
+  `docs/specs/_improvements/README.md`.
+
+The resumability gate (SKILL § Resumability gate, 2e) treats either literal
+surviving anywhere on the branch as "PR-URL backfill still pending".
+
 ## Fold-feedback edit rules (checkpoint rounds)
 
 Operator nudges are applied **directly to the markdown files** — drop or add
-findings/actions, change priorities, edit change summaries or anchors, move a
-finding to out-of-scope, adjust a protected flag — keeping section order and
-field labels intact (the executor parses them) and re-deriving the
-frontmatter counts. Conditional-emit invariants are maintained on every
-round:
+suggestions/bugs, edit a description, adjust a bug's severity, re-bucket an
+item between suggestions and bugs — keeping section order and field labels
+intact (the downstream consumers parse them) and re-deriving the frontmatter
+counts. Conditional-emit invariants are maintained on every round:
 
 - All suggestions moved out → **delete `product-suggestions.md`**; a first
   suggestion added → create it per this file.
 - An item re-bucketed to bugs → add its row to `bug-reports.md` (creating the
   file if needed) and remove it from where it came; update both frontmatters.
 - Last bug removed → **delete `bug-reports.md`**.
+- `pipeline-health.md` is a fixed rollup — never created or deleted by
+  fold-feedback; it is always present.

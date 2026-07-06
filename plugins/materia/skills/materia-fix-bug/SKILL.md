@@ -409,7 +409,7 @@ the schema, touchpoints, flush discipline, and robustness rules are identical.
   `docs/standards/skills.md` § Namespace prefix.
 - `materia-triage-retros` harvests `docs/bugs/**/retro.md` alongside spec retros
   (its Discovery globs both trees), so this retro joins the same
-  self-improvement loop.
+  retro-triage loop that feeds the project's backlog.
 
 ## Guardrails
 
