@@ -579,13 +579,15 @@ angles" step). For each row:
    or the inline procedure. Findings use `category: "<angle-name>"` (the row's
    kebab `name`) and flow through the same remediation loop, severity rubric,
    convergence check, and session-limit fallback as every other angle. The
-   § Markdown-only exemption and § Trivial-diff threshold collapses apply to
-   every row — repo-specific rows included — dropping an angle unless its own
-   gate independently keeps it (as `data-safety`'s can).
+   **Markdown-only exemption** and **Trivial-diff threshold** collapses apply to
+   every row — repo-specific rows included — dropping an angle unless a surface
+   gate of its own (`ui-affecting` / `data-affecting` / a repo-specific
+   predicate) is independently positive (as `data-safety`'s can be on a
+   seed-data-only diff).
 
 On the markdown-only exemption path the `spec-adherence` angle spawns at
-`haiku/low` — the § Markdown-only exemption paragraph below carries that binding
-value.
+`haiku/low` — the **Markdown-only exemption** paragraph below carries that
+binding value.
 
 **Skill availability.** `ui-review` ships with the Materia plugin, so
 it is always available; `code-review` and `security-review` are harness-provided
@@ -627,7 +629,10 @@ runtime. A positive registry row whose `File` is absent or unreadable in
   the fresh-context guarantee, flagged explicitly in `STATUS.md`, the review
   retro entry, and the PR description.
 - **Gated angle** (a non-`always` row — `ui`, `data-safety`, or a repo-specific
-  predicate) → may instead **skip and record** the drop.
+  predicate) → may instead **skip and record** the drop. (This is why a missing
+  file is treated more leniently than § Session-limit fallback treats a *crashed*
+  gated reviewer: a crash means the angle is still configured to run, but a
+  missing file in a fork can mean the angle was deliberately removed there.)
 
 ### UI-surface gate
 
