@@ -109,7 +109,9 @@ Downstream rename: `bug-reports.processed.md` by `materia-bugs-to-reports`.
 No consumer dequeues it — it accumulates as a historical corpus (a
 `pipeline-health.processed.md` is a scope-guard violation). Per the stub:
 
-- **Frontmatter** — all nine fields required. `blocker_rate` is
+- **Frontmatter** — all nine fields required. `retros_consumed` carries the
+  run-kind split — `"<n> (<S> spec, <B> bug)"` — so a 2c checkpoint resume can
+  reprint the true spec/bug breakdown from disk. `blocker_rate` is
   `"<pct>% (<blocked+failed> of <total_entries> entries)"`;
   `triage_conversion` is
   `"<product_count> product suggestions + <bug_count> bugs from <total_entries> entries"`.
@@ -187,5 +189,21 @@ counts. Conditional-emit invariants are maintained on every round:
 - An item re-bucketed to bugs → add its row to `bug-reports.md` (creating the
   file if needed) and remove it from where it came; update both frontmatters.
 - Last bug removed → **delete `bug-reports.md`**.
-- `pipeline-health.md` is a fixed rollup — never created or deleted by
-  fold-feedback; it is always present.
+- A round that **flips the run between health-only and captured** (first
+  suggestion/bug added, or last one removed) → update the run's outcome cell in
+  `docs/specs/_improvements/README.md` (`health-only` ↔ `captured`) in the same
+  fold commit.
+- `pipeline-health.md` is **never created or deleted** by fold-feedback (it is
+  always present), but its **bucket-derived parts must be re-derived and
+  re-committed in the same fold commit** on any round that changes the
+  suggestion/bug counts or flips the run between health-only and captured —
+  otherwise PR-open (which re-reads it) ships a stale title/body (e.g. still
+  "health-only" after a suggestion is added). Precisely:
+  - **Re-derive** (they mirror the buckets): the `triage_conversion`
+    frontmatter field, the `## Triage conversion` **Product suggestions** and
+    **Bugs gathered** count bullets, and the `summary_paragraph`'s
+    captured-counts clause.
+  - **Leave fixed** (they derive purely from the retros, not the buckets):
+    `retros_consumed`, `total_entries`, `blocker_rate`, `ok_rate`,
+    `most_failing_stage`, `## Outcome counts by stage`, `## What's working`,
+    `## Degraded retros`.

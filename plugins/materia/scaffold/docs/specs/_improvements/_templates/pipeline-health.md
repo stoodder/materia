@@ -6,7 +6,7 @@
 schema_version: 1
 slug: <slug>
 generated_at: <generated_at>
-retros_consumed: <retros_consumed>
+retros_consumed: <n> (<S> spec, <B> bug)
 total_entries: <total_entries>
 blocker_rate: <blocker_rate>
 ok_rate: <ok_rate>

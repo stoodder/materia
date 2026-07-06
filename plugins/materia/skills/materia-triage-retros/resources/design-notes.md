@@ -61,7 +61,7 @@ pipeline-friction signal as health stats rather than actionable edits.
 ## State is file-derived; no `RUN.md` / `STATUS.md`
 
 The run's lifecycle is short and linear, and each phase is one atomic commit
-— so branch name + plan folder + commit graph always identify the first
+— so branch name + triage folder + commit graph always identify the first
 incomplete phase. A `RUN.md` would be a fourth source of truth and would
 drift.
 

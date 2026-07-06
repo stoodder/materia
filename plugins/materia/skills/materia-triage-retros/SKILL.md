@@ -298,7 +298,7 @@ and the parent never appends a sub-agent return to any `retro.md`. The only
   synthesizing from the rest. Degraded retros still appear in the run's
   "Retros consumed" row and in `pipeline-health.md`.
 - **Only if ALL envelopes are unusable** does the run halt — before the
-  triage commit, so **nothing is committed** (the branch and an empty plan
+  triage commit, so **nothing is committed** (the branch and an empty triage
   folder may exist on disk, but no commit landed): "Synthesis failed: 0 usable
   envelopes. No artifacts committed. Re-invoke /materia-triage-retros to
   retry." Re-invocation's gate finds no committed `pipeline-health.md` (2a) and
@@ -442,8 +442,9 @@ and resumes cleanly in any future session.
 Values fill from the in-memory synthesis result on the **first** emission. On
 a **2c resume** (a later turn — the in-memory result is gone), re-derive them
 from the committed artifacts instead: counts and titles from
-`product-suggestions.md` / `bug-reports.md` (absent → 0), and
-`retros_consumed` / `blocker_rate` from `pipeline-health.md`'s frontmatter.
+`product-suggestions.md` / `bug-reports.md` (absent → 0), and the
+`retros_consumed` split (`<n> (<S> spec, <B> bug)`) / `blocker_rate` from
+`pipeline-health.md`'s frontmatter.
 
 ```
 ─────────────────────────────────────────────────────────────────────
@@ -493,8 +494,18 @@ Non-approve replies are feedback, applied **directly to the markdown files**
 per `resources/rendering.md` § Fold-feedback edit rules (keep section order
 and field labels intact; re-derive frontmatter counts; maintain the
 conditional-emit invariants — create/delete `product-suggestions.md` /
-`bug-reports.md` as items move). Then: format the edited artifacts, commit as
-`triage-retros(plan): fold operator feedback (round N)` (count rounds via
+`bug-reports.md` as items move). **When a round changes the suggestion/bug
+counts (or flips the run between health-only and captured), also re-derive
+`pipeline-health.md`'s bucket-derived parts** — its `triage_conversion`
+frontmatter, its `## Triage conversion` count bullets, and its
+`summary_paragraph` — so the on-disk PR seed PR-open re-reads stays truthful
+(the retro-derived health stats stay fixed; see rendering.md § Fold-feedback
+edit rules for the exact fixed-vs-re-derived split). A round that flips the run
+between health-only and captured also updates the run's outcome cell in the
+`docs/specs/_improvements/README.md` index. Then: format the edited artifacts
+(**including `pipeline-health.md` when it was re-derived**) and
+commit them all in one `triage-retros(plan): fold operator feedback (round N)`
+commit (count rounds via
 `git log --format=%s | grep -c 'fold operator feedback'`), push, re-emit the
 checkpoint prompt, end the turn. No cap on rounds. An empty/whitespace-only
 reply → `git commit --allow-empty -m "triage-retros(plan): noted empty
