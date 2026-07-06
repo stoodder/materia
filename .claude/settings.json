@@ -31,7 +31,7 @@
       "Bash(gh run view:*)",
       "Bash(gh repo view:*)",
       "Bash(node scripts/check-docs.mjs:*)",
-      "Bash(node scripts/validate-template.mjs:*)",
+      "Bash(node scripts/validate-plugin.mjs:*)",
       "Bash(ls:*)",
       "Bash(mkdir:*)",
       "Bash(cp:*)",
