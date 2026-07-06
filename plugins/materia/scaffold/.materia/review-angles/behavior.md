@@ -13,6 +13,3 @@ That the merged branch behaves correctly end-to-end — every task listed under
 ## How to run it
 
 Invoke the `verify` skill over the merged branch.
-
-`verify` is harness-provided. When a named skill is unavailable, running that
-angle inline is the documented procedure, not a deviation.
