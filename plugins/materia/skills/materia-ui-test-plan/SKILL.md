@@ -36,7 +36,7 @@ acting on them wastes context.
 
 ## Procedure
 
-**0. UI self-gate (no-op in the orchestrated lane).** Before any provisioning or
+0. **UI self-gate (no-op in the orchestrated lane).** Before any provisioning or
 reads, check `MATERIA.md` § Surface gates § UI-affecting. If it is `none` — this
 repo ships no user-facing surface (`MATERIA.md` § Eyes is `none` too) — there are
 no flows to guard: print one line —

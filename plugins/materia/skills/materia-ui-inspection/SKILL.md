@@ -65,8 +65,8 @@ report (phase-level) before returning control cleanly.
 
 **UI self-gate (first action — before the liveness probe).** Check `MATERIA.md`
 § Surface gates § UI-affecting. If it is `none` — this repo ships no user-facing
-surface (`MATERIA.md` § Eyes is `none` too, and `docs/surface-map.md` § Pages is
-empty) — there is nothing to inspect: print one line —
+surface (`MATERIA.md` § Eyes is `none` too) — there is nothing to inspect: print
+one line —
 `materia-ui-inspection: skipped (no UI surface — § UI-affecting is none)` — and
 end cleanly, writing nothing. This runs **before** step 1 so a no-UI repo never
 autostarts the dev stack. (This is a user-invoked producer, so the gate is its

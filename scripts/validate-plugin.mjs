@@ -239,22 +239,43 @@ for (const [a, b] of MIRRORS) {
 }
 console.log(`  ✓ mirror pins: ${MIRRORS.length} routing-row mirror(s) hold`)
 
-// ---- 2c. UI self-gate registry ----------------------------------------------
+// ---- 2c. UI self-gate registry + placement ----------------------------------
 // init no longer prunes skills — the four UI skills install in EVERY repo,
 // including no-UI ones. Each MUST carry a runtime self-gate that exits cleanly
-// when MATERIA.md § Surface gates § UI-affecting is `none`. This registry (the
-// former UI_PRUNE set) plus a pinned, greppable gate phrase makes a dropped
-// gate fail CI, closing the "one skill missed" gap.
-const UI_SELF_GATE = ['materia-design', 'materia-ui-test-plan', 'materia-ui-review', 'materia-ui-inspection']
-const GATE_PHRASE = 'UI self-gate'
+// when MATERIA.md § Surface gates § UI-affecting is `none`, and — most safety-
+// critically for materia-ui-inspection — that gate must run BEFORE the liveness
+// probe / autostart so a no-UI repo never starts the dev stack. Presence alone
+// is too weak (a gutted or relocated gate that kept the heading would pass), so
+// this pins BOTH a distinctive marker AND placement:
+//  - Marker: the bold gate lead-in `**UI self-gate` — a prose mention of "UI
+//    self-gate" (e.g. materia-design's § Scope) is NOT bolded, so it can never
+//    satisfy the check (closes the accidental word-wrap false-green).
+//  - Placement: the marker's offset must precede the skill's first side-effect
+//    anchor. For materia-ui-inspection that anchor IS the liveness/autostart
+//    step, mechanically enforcing "gate before autostart"; for the other three
+//    it is the first provisioning/read/short-circuit, enforcing "gate first".
+// Repurposes the former UI_PRUNE set (skill → first-side-effect anchor).
+const GATE_MARKER = '**UI self-gate'
+const UI_SELF_GATE = {
+  'materia-design': 'docs/specs/_templates/design.md',            // step 1: first spec read
+  'materia-ui-test-plan': 'Pure non-behavioral change',           // the zero-flow waiver short-circuit (first write)
+  'materia-ui-review': 'Provision the Eyes environment',          // step 1: Eyes provisioning
+  'materia-ui-inspection': 'Probe the running app for liveness',  // Phase 0 step 1: liveness probe / autostart
+}
 const gateBefore = failures
-for (const skill of UI_SELF_GATE) {
-  const f = `plugins/materia/skills/${skill}/SKILL.md`
-  if (!readFileSync(f, 'utf8').includes(GATE_PHRASE))
-    fail(`UI self-gate: ${skill}/SKILL.md is missing the "${GATE_PHRASE}" clause — it installs in every repo and must exit cleanly when MATERIA.md § UI-affecting is none`)
+for (const [skill, anchor] of Object.entries(UI_SELF_GATE)) {
+  const s = readFileSync(`plugins/materia/skills/${skill}/SKILL.md`, 'utf8')
+  const mark = s.indexOf(GATE_MARKER)
+  const side = s.indexOf(anchor)
+  if (mark === -1)
+    fail(`UI self-gate: ${skill}/SKILL.md is missing the "${GATE_MARKER}" gate marker — it installs in every repo and must exit cleanly when MATERIA.md § UI-affecting is none`)
+  else if (side === -1)
+    fail(`UI self-gate: ${skill}/SKILL.md placement anchor "${anchor}" not found — cannot verify the gate runs before the first side-effect (did the anchor text change?)`)
+  else if (mark > side)
+    fail(`UI self-gate: ${skill}/SKILL.md gate marker is AFTER "${anchor}" — the gate must run before the first side-effect (for materia-ui-inspection, before the liveness probe / autostart) or a no-UI repo acts before it self-gates`)
 }
 if (failures === gateBefore)
-  console.log(`  ✓ UI self-gate: ${UI_SELF_GATE.length} UI skills carry the "${GATE_PHRASE}" clause`)
+  console.log(`  ✓ UI self-gate: ${Object.keys(UI_SELF_GATE).length} UI skills carry the "${GATE_MARKER}" gate before their first side-effect`)
 
 // ---- 3. slot hygiene ---------------------------------------------------------
 // Skills ship slot-free (slots live in MATERIA.md/CLAUDE.md/docs). Rule is
