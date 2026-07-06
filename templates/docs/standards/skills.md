@@ -24,14 +24,17 @@
 - **Follow the house spine** (see § SKILL.md anatomy). A reader should be able to
   find _what it does_, _inputs/outputs_, _the procedure_, _what it deliberately
   does NOT do_, and _the rules_ in the same places every time.
-- **Declare the tier where one applies.** A **sub-skill** (dispatched by an
-  orchestrator) carries a `## Recommended tier` line in `<model>/<effort>`
-  notation from the single source of truth, `MATERIA.md` § Tiers (the model
-  set, availability, fallback, and effort→guidance map all live there).
-  An **orchestrator/producer** runs in the operator's session and declares no
-  tier. A declared model that `MATERIA.md` § Tiers lists as `opt-in` (or does
-  not list at all) coerces to the fallback unless the operator has enabled
-  it — availability is durable repo config, not a per-run flag.
+- **Tiers are assigned centrally — skills carry none.** A **sub-skill**
+  (dispatched by an orchestrator) gets its `<model>/<effort>` tier from a row
+  keyed on its skill name in `MATERIA.md` § Skill routing — the single source
+  of truth. Skill bodies declare no tier of their own; the routing table (plus
+  its § Model set catalog, § Fallback backstop, and § Effort set map) is where
+  a unit's model and effort live. An **orchestrator/producer** runs in the
+  operator's session and is unrouted (no spawn tier). A model that
+  `MATERIA.md` § Model set lists as `opt-in` (or does not list at all) coerces
+  to the row's **Fallback Model** — the Default row's when the skill has no row
+  of its own — unless the operator has enabled it (§ Coercion); availability is
+  durable repo config, not a per-run flag.
 - **Keep state in the diff** where the skill's nature allows — prefer a
   reviewable PR/working-tree diff over a side audit folder; say so under Scope.
 - **A skill change is not done until its registration surfaces are updated**
@@ -59,7 +62,6 @@ The common spine across this repo's skills — match it so skills read alike:
 | `---` frontmatter (`name`, `description`) | every skill | identity + routing |
 | Intro paragraph | every skill | one-breath "what this is" + where it sits in the loop |
 | `## Inputs` / `## Outputs` (or an Inputs/Outputs table) | every skill | the contract — what it reads, what it leaves behind; if the skill produces a committed artifact (a file written to the branch), document it in `## Outputs`; a producing stage's `_templates/` stub is part of that artifact contract and must be kept in sync whenever the artifact's shape changes |
-| `## Recommended tier` | **sub-skills only** | `<model>/<effort>` per `MATERIA.md` § Tiers |
 | `## Procedure` (numbered steps) | every skill | the actual algorithm |
 | `## Scope` ("what this skill does NOT do") | every skill | the guardrails — prevents overreach |
 | `## Rules` | most skills | invariants the procedure must hold |
@@ -90,8 +92,9 @@ reuse it when reworking any skill):
 5. **Check environment parity** — every `gh` call needs its GitHub-MCP twin;
    every reviewer/implementer brief carries the inline-only/no-nested-spawn
    rule.
-6. **Keep tiers generic** — `<model>/<effort>` per `MATERIA.md` § Tiers;
-   never pin a dated model name in a skill body.
+6. **Keep tiers out of the body** — routing lives in `MATERIA.md`
+   § Skill routing (assignment) and § Model set (the catalog); a skill body
+   names no tier and never pins a dated model name.
 7. **Update registration surfaces in the same change**, flagging moved
    protected-contract text loudly.
 
@@ -127,7 +130,7 @@ human comments and no `Blocker`.
 | Kind | Runs in | Tier | Examples |
 |---|---|---|---|
 | **Orchestrator** | operator session | none (dispatches others) | `materia-ship-spec`, `materia-triage-retros`, `materia-apply-pipeline-improvements` |
-| **Sub-skill** | a fresh-context subagent the orchestrator spawns | `## Recommended tier` | `materia-intake-spec`, `materia-design`, `materia-architecture`, `materia-plan-tasks`, `materia-implement-task`, `materia-finalize`, `materia-docs-sync`, `materia-docs-audit` |
+| **Sub-skill** | a fresh-context subagent the orchestrator spawns | its row in `MATERIA.md` § Skill routing | `materia-intake-spec`, `materia-design`, `materia-architecture`, `materia-plan-tasks`, `materia-implement-task`, `materia-finalize`, `materia-docs-sync`, `materia-docs-audit` |
 | **Producer** | operator session | none | `materia-propose-spec`, `materia-propose-epic`, `materia-suggestions-to-specs`, `materia-report-bug`, `materia-bugs-to-reports`, `materia-ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
 | **Maintainer** | operator session (or scheduled) | none | `materia-librarian` (sweeps the living docs) and `materia-janitor` (sweeps the code against `docs/standards/`) — each fixes drift directly and opens one PR instead of filing queue entries. Only the librarian **auto-merges its own PR**: a standing exception to the "no auto-merge" invariant, valid only behind a mechanical diff envelope + green CI (its § The docs-only envelope); the janitor's diff is product code, so it stops for human review. Per-run exception: `--auto` (§ The `--auto` argument). |
 
@@ -135,9 +138,9 @@ A producer additionally MUST conform to the queue's frontmatter/filename
 contract and register its `source` key — see § Registration surfaces.
 
 **Dual-mode exception:** `materia-reconcile-epic` is a producer-lifecycle skill when
-run standalone but a tier-carrying sub-skill when `materia-ship-spec`'s epic gate
-spawns it in pipeline mode (see its SKILL.md § Pipeline mode) — it declares a
-`## Recommended tier` for that mode only.
+run standalone but a routed sub-skill when `materia-ship-spec`'s epic gate
+spawns it in pipeline mode (see its SKILL.md § Pipeline mode) — its pipeline-mode
+tier comes from its `MATERIA.md` § Skill routing row, applied only in that mode.
 
 ### Producer lifecycle — the shared contract
 
@@ -257,7 +260,7 @@ touch-X→update-Y map:
 | [`CLAUDE.md`](../../CLAUDE.md) — the spec-to-ship pipeline paragraph | the pipeline's shape or the producer count changes |
 | [`docs/specs/README.md`](../specs/README.md) — pipeline / closing-loop / producers tables | a stage, sibling, or producer skill changes |
 | The **target queue's** producers table + `source` key (e.g. [`docs/specs/_proposed/README.md`](../specs/_proposed/README.md) for spec proposals, [`docs/bugs/_reports/README.md`](../bugs/_reports/README.md) for bug reports); the epic family additionally keeps [`docs/epics/README.md`](../epics/README.md) true | a **producer** skill is added or its source key changes |
-| The skill's `## Recommended tier` + `MATERIA.md` § Tiers (when the model set or availability changes) | a sub-skill's model/effort changes |
+| The skill's row in `MATERIA.md` § Skill routing (and § Model set when the catalog or availability changes) | a sub-skill's model/effort changes |
 | This standard (including `### Retro touchpoint contract` below) | the authoring convention itself changes, **including** any change to the retro touchpoint sole-writer invariant or the ` ```retro ` fenced-block contract |
 
 ### Retro touchpoint contract
@@ -306,8 +309,9 @@ This section states the invariant; that file carries the implementation detail.
 ## Where it lives
 
 - `.claude/skills/<name>/SKILL.md` — every skill.
-- `MATERIA.md` § Tiers — the tier vocabulary (single
-  source of truth for `<model>/<effort>`).
+- `MATERIA.md` § Tiers — the single source of truth for `<model>/<effort>`:
+  its § Model set catalog (the models this repo can spawn + availability) and
+  its § Skill routing table (the fixed per-skill assignment).
 - The registration surfaces listed above — how skills are advertised.
 
 ## Related

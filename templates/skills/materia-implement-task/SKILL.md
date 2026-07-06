@@ -52,10 +52,6 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
   `Blocker` in `STATUS.md`.) The retro entry is **returned in the report**
   (see Step 6) — not written to `retro.md` directly.
 
-## Recommended tier
-
-`sonnet/medium` — see `MATERIA.md` § Tiers for the model and effort definitions. **Standalone backstop:** during a ship-spec run, the per-task `Model/effort` field in `tasks.md` overrides this line; a silent task field falls to the `opus/high` fallback (not to this recommendation).
-
 ## Procedure
 
 1. **Load context** in the docs read order: read the task in

@@ -37,10 +37,6 @@ acting on them wastes context.
   `_templates/`), the spec registered in `docs/specs/README.md` — committed and
   pushed.
 
-## Recommended tier
-
-`fable/high` — see `MATERIA.md` § Tiers for the model and effort definitions. This interactive intake checkpoint calls for high-effort synthesis to resolve spec ambiguities before later autonomous stages run.
-
 ## The `<dated-slug>` folder name
 
 Every spec folder is uniquely identified by a timestamped, kebab-case folder

@@ -100,9 +100,10 @@ art in comparable products, known algorithms/formulas, UX patterns, common
 pitfalls. Skip anything the repo's own docs answer — this step buys outside
 knowledge only.
 
-Spawn **one fresh-context subagent per question, in parallel**. Tier each
-question to the cheapest pair that can do the job, using the vocabulary in
-`MATERIA.md` § Tiers:
+Spawn **one fresh-context subagent per question, in parallel**. This is the
+dynamic `propose-epic: research` role (`MATERIA.md` § Tiers § Skill routing):
+tier each question to the cheapest pair that can do the job, picking from
+`MATERIA.md` § Tiers § Model set:
 
 - `haiku/low` — default: gather-and-summarize questions ("what are the
   standard approaches to X", "how do comparable apps present Y").
@@ -111,8 +112,8 @@ question to the cheapest pair that can do the job, using the vocabulary in
 - Never above `sonnet/medium` — a question that seems to need `opus` is
   really the orchestrator's synthesis job (step 5), not a gathering job.
 
-Inject the matching effort guidance sentence from `MATERIA.md` § Tiers verbatim into
-each spawn prompt. Each brief carries: the research question; 2–3 sentences
+Inject the matching effort guidance sentence from `MATERIA.md` § Tiers
+§ Effort set verbatim into each spawn prompt. Each brief carries: the research question; 2–3 sentences
 of epic context; the instruction to use web search/fetch; the required
 return shape — a `## Findings` list (each finding one bold claim + 1–3
 supporting sentences), a `## Recommendation` paragraph, and a `## Sources`
@@ -284,9 +285,10 @@ backlink required by the epic contract's bi-directional-linkage rule.
   operator says `proceed` — a beautifully decomposed wrong epic is worse
   than a third brainstorm round.
 - **Research is tiered down.** `haiku/low` default, `sonnet/medium` ceiling,
-  per § 4; tier notation and fallback per
-  `MATERIA.md` § Tiers. The orchestrator does the
-  thinking; subagents do the fetching.
+  per § 4 — the dynamic `propose-epic: research` role
+  (`MATERIA.md` § Tiers § Skill routing), picking from § Model set; fallback
+  per § Fallback. The orchestrator does the thinking; subagents do the
+  fetching.
 - **Every member is independently shippable** and its body self-contained;
   `depends_on` edges exist only for real build-on relationships.
 - **Bi-directional linkage always lands whole** — epic table + member

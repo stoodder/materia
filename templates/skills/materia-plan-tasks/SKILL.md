@@ -24,10 +24,6 @@ acting on them wastes context.
 - `docs/specs/<dated-slug>/tasks.md` (statuses initialized to `[ ]`) — `STATUS.md`
   updated, committed and pushed.
 
-## Recommended tier
-
-`sonnet/medium` — see `MATERIA.md` § Tiers for the model and effort definitions. Decomposing a well-specified architecture into task slices is systematic bookkeeping; the natural task order is set by layer dependencies.
-
 ## Environment
 
 If a gate command fails oddly (wrong runtime version, missing dependencies,
@@ -54,13 +50,19 @@ standalone runs apply it on first use.
    acceptance criteria**, the standards/resource docs to read first, which
    sibling specs to add/change, and a **docs-scope floor**.
 
-   **Model/effort.** Assign each task a tier from the vocabulary at
-   `MATERIA.md` § Tiers,
-   drawn from the three complexity buckets:
+   **Model/effort.** Assign each task a `<model>/<effort>` pair by matching the
+   task's complexity to a row's **Preferred usage** in `MATERIA.md` § Tiers
+   § Model set — that table is the menu, not this list:
 
-   - **markdown-only / bookkeeping / single-doc-edit** → `haiku/low`
-   - **standard vertical slices** → `sonnet/medium`
-   - **gnarly / cross-cutting / high-risk** → `opus/high`
+   - **markdown-only / bookkeeping / single-doc-edit** → the row whose
+     preferred usage names cheap/mechanical units, at `low` effort
+     (ordinarily `haiku/low`).
+   - **standard vertical slices** → the row whose preferred usage names
+     standard implementation/synthesis work, at `medium` effort (ordinarily
+     `sonnet/medium`).
+   - **gnarly / cross-cutting / high-risk** → the row whose preferred usage
+     names gnarly/cross-cutting/high-risk units, at `high` effort (ordinarily
+     `opus/high`).
 
    Rule of thumb: any task whose ACs require **character-for-character
    verbatim reproduction** (parse anchors, schema field labels, template
@@ -68,8 +70,8 @@ standalone runs apply it on first use.
    tasks — verbatim fidelity is exactly what the lowest tier fumbles.
 
    The tier governs which model (and effort guidance) the `materia-implement-task`
-   subagent runs under. An absent `Model/effort` field falls back to `opus/high`
-   (matching the `MATERIA.md` § Tiers vocabulary).
+   subagent runs under. An absent `Model/effort` field falls back to the
+   `MATERIA.md` § Tiers § Skill routing **Default** row (`opus/high`).
 
    The **docs-scope floor** is the minimum set of docs the task must update at
    commit time, derived from `docs/contributing.md`'s touch-X→update-Y rows

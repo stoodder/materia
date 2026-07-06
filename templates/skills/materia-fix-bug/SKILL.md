@@ -304,9 +304,10 @@ is lossless:
 
 See `materia-ship-spec/SKILL.md` § "Tier routing" and `MATERIA.md` § Tiers — the
 resolve→availability→map→spawn steps are identical. The new sub-skills'
-tiers: `materia-reproduce-bug` = `sonnet/high`; `materia-bug-analysis` = `fable/medium` (from
-their `## Recommended tier` lines; availability per `MATERIA.md` § Tiers
-§ Model set). The fallback from `MATERIA.md` § Tiers § Fallback applies
+tiers resolve from `MATERIA.md` § Tiers § Skill routing (rows
+`materia-reproduce-bug`, `materia-bug-analysis`) — currently `sonnet/high` and
+`fable/medium` respectively — with availability checked per `MATERIA.md`
+§ Tiers § Model set. The fallback from `MATERIA.md` § Tiers § Fallback applies
 unchanged.
 
 ## Fresh-context reviewer spawning

@@ -57,15 +57,6 @@ Runs as a **fresh-context subagent** spawned by `materia-ship-spec` — never by
   By default the orchestrator ticks the `materia-docs-audit` row after this subagent
   returns clean.
 
-## Recommended tier
-
-`sonnet/medium` — see `MATERIA.md` § Tiers for
-the model and effort definitions. Auditing docs for five well-defined properties
-(coverage, accuracy, consistency, authoring-standard conformance, the
-mechanical gate) from a bounded set of inputs is systematic but does not
-require high-effort deliberation; the checks are well-scoped and the inputs
-are fully determined by the preceding `materia-docs-sync` pass.
-
 ## Procedure
 
 1. **Coverage** — every cell of the required-updates matrix has a

@@ -130,39 +130,88 @@ SQL", transaction rules}}
 
 ## Tiers
 
-The single source of truth for model/effort routing — every skill that
-declares a `## Recommended tier`, every `tasks.md` `Model/effort` field, and
-every review-angle `Tier` column resolves against this section. One
-representation everywhere: the token pair **`<model>/<effort>`**
-(e.g. `sonnet/medium`).
+The single source of truth for model/effort routing. **Skills no longer carry
+their own tier** — every unit's assignment lives here, in one of two tables:
+
+- **§ Model set** — the catalog of models this repo can spawn, with their
+  availability and *preferred usage*. Dynamic assigners (the per-task
+  `Model/effort` field `materia-plan-tasks` writes into `tasks.md`, the
+  per-question research tiers `materia-propose-epic` picks) choose from this
+  menu per unit.
+- **§ Skill routing** — the fixed per-unit assignment. Every spawned
+  sub-skill, every `materia-ship-spec` review angle, and every internal
+  sub-agent spawn has a row (`Model`, `Effort`, `Fallback Model`); a unit with
+  no row uses the **Default** row.
+
+One representation everywhere: the token pair **`<model>/<effort>`**
+(e.g. `sonnet/medium`), where `<model>` is a § Model set name and `<effort>` a
+§ Effort set level.
 
 ### Model set
 
-The models available for spawn routing in this repo, and their availability:
+The models available for spawn routing in this repo, their availability, and
+what each is for. This is the menu a dynamic assigner picks from.
 
-| Model | Availability | Notes |
+| Model | Availability | Preferred usage |
 |---|---|---|
-| {{e.g. haiku}} | {{default}} | {{cheap/mechanical units}} |
-| {{e.g. sonnet}} | {{default}} | |
-| {{e.g. opus}} | {{default}} | {{the fallback tier}} |
-| {{e.g. a premium tier}} | {{opt-in — see below, or omit the row entirely}} | {{billed differently, reserved for the highest-judgement units}} |
+| `haiku` | {{default}} | cheap / mechanical units — markdown-only, bookkeeping, single-doc edits |
+| `sonnet` | {{default}} | standard vertical slices, systematic synthesis, most implementation and review |
+| `opus` | {{default}} | gnarly / cross-cutting / high-risk units; the default fallback model |
+| `fable` | {{opt-in — flip to `default`, or omit the row entirely}} | the highest-judgement units — architecture, interactive intake, qualitative visual review; billed per-token |
 
-- **`default`** — resolves whenever a unit declares it.
+- **`default`** — resolves whenever a unit assigns it.
 - **`opt-in`** — resolves **only** when the operator has explicitly enabled it
   (flip this cell to `default`, or give a per-run instruction that the
-  orchestrator records in `STATUS.md` § Notes). Otherwise a unit declaring it
-  coerces to the fallback with the standard one-line note. This is how a
-  premium, per-token-billed model stays available to the routing vocabulary
-  without ever being spent silently.
-- A model a skill declares that is **not in the table at all** coerces to the
-  fallback (see § Coercion) — canonical skills may name tiers this repo
-  doesn't carry; that is expected, not an error.
+  orchestrator records in `STATUS.md` § Notes). Otherwise a unit assigning it
+  coerces to its fallback with the standard one-line note. This is how a
+  premium, per-token-billed model stays in the routing vocabulary without ever
+  being spent silently.
+- A model **not in this table at all** coerces to the fallback (see
+  § Coercion) — the § Skill routing table names canonical models this repo may
+  not carry; that is expected, not an error.
+
+### Skill routing
+
+The fixed model/effort assignment for every unit the pipeline spawns. This
+table **ships verbatim** (it is not stack-specific — only § Model set
+availability is). Resolution reads the unit's row; a unit with no row uses the
+**Default** row. The **Fallback Model** column names what the unit degrades to
+when its `Model` is not-enabled / out-of-table / malformed / `Agent`-rejected —
+run at the unit's **own effort** (effort describes the work, not the model).
+
+| Skill / role | Model | Effort | Fallback Model | Notes |
+|---|---|---|---|---|
+| **Default** (any unlisted spawned unit) | `opus` | `high` | `opus` | the backstop when a unit has no row of its own |
+| `materia-intake-spec` | `fable` | `high` | `opus` | interactive intake; resolve spec ambiguities before the autonomous stages run |
+| `materia-architecture` | `fable` | `high` | `opus` | highest-stakes planning; grounds the plan in existing resources and reuse |
+| `materia-design` | `sonnet` | `high` | `opus` | UX flows + states across every screen surface |
+| `materia-plan-tasks` | `sonnet` | `medium` | `opus` | systematic decomposition; per-task tiers it emits are dynamic (§ Model set) |
+| `materia-implement-task` | `sonnet` | `medium` | `opus` | standalone backstop — a task's own `Model/effort` in `tasks.md` overrides this row |
+| `materia-reproduce-bug` | `sonnet` | `high` | `opus` | find the right test surface; land a genuine RED |
+| `materia-bug-analysis` | `fable` | `medium` | `opus` | synthesis of `reproduction.md` + the report into a thin output |
+| `materia-docs-sync` | `sonnet` | `medium` | `opus` | systematic doc↔intent synthesis, bounded scope |
+| `materia-docs-audit` | `sonnet` | `medium` | `opus` | five well-defined properties over bounded inputs |
+| `materia-finalize` | `sonnet` | `high` | `opus` | orchestrates gate + PR; a clean handoff |
+| `materia-reconcile-epic` | `sonnet` | `high` | `opus` | **pipeline mode only** — standalone mode runs in the operator session (no spawn) |
+| `materia-ui-test-plan` | `sonnet` | `medium` | `opus` | enumerate flows worth guarding from a resolved design |
+| `materia-ui-review` | `fable` | `high` | `opus` | qualitative cross-screen cohesion judgement; UI-gated |
+| `ship-spec: review/correctness` | `fable` | `high` | `opus` | correctness + simplicity + test-coverage angle |
+| `ship-spec: review/security` | `sonnet` | `high` | `opus` | security angle |
+| `ship-spec: review/spec-adherence` | `sonnet` | `medium` | `opus` | drops to `haiku/low` on the markdown-only exemption path |
+| `ship-spec: review/behavior` | `sonnet` | `medium` | `opus` | the `verify` skill over the merged branch |
+| `ship-spec: review/ui` | `fable` | `high` | `opus` | UI-gated cohesion review |
+| `ship-spec: review/data-safety` | `sonnet` | `high` | `opus` | data-gated migration / seed / index review |
+| `ship-spec: review/tiebreaker` | `fable` | `high` | `opus` | resolves conflicting review recommendations |
+| `triage-retros: sub-agent` | `sonnet` | `low` | `opus` | mechanical bucketing / quoting over one retro |
+| `apply-pipeline-improvements: reviewer` | `opus` | `high` | `opus` | fresh-context diff review before the PR |
+| `propose-epic: research` | per-question (§ Model set) | — | `opus` | one subagent per question; `haiku/low` default, `sonnet/medium` ceiling |
 
 ### Fallback
 
-The single fallback pair is **{{e.g. opus/high}}**. It applies to any absent
-/ malformed / out-of-table / not-enabled / `Agent`-rejected tier. The
-fallback never blocks a run.
+Each § Skill routing row names its own **Fallback Model**; a unit with no row
+uses the **Default** row (fallback model **`opus`**). The fallback runs at the
+unit's own effort and applies to any not-enabled / out-of-table / malformed /
+`Agent`-rejected model. The fallback never blocks a run.
 
 ### Effort set
 
@@ -178,8 +227,9 @@ The matching guidance sentence is injected into the spawn prompt verbatim:
 
 ### Coercion
 
-When a tier value is absent, syntactically malformed, not in the model set,
-or not enabled, coerce to the fallback and record a one-line note:
+When a unit's resolved model is absent, syntactically malformed, not in
+§ Model set, or not enabled, coerce to the unit's **Fallback Model** (its
+§ Skill routing row, or the Default row) and record a one-line note:
 
 ```
 tier-fallback: <unit> … → <fallback> (<reason>)

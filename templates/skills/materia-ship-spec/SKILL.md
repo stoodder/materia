@@ -353,8 +353,9 @@ epic record and the queue never drift from what actually merged.
   `materia-finalize`.
 - **Negative:** record `reconcile-epic: skipped (non-epic)` in `STATUS.md`
   § Notes and continue to finalize. No retro touchpoint for a skipped gate.
-- **Positive:** spawn `materia-reconcile-epic` in **pipeline mode** (its
-  `## Recommended tier`; spawn-contract Blocks 1 + 2), passing: the
+- **Positive:** spawn `materia-reconcile-epic` in **pipeline mode** (its row
+  in `MATERIA.md` § Tiers § Skill routing; spawn-contract Blocks 1 + 2),
+  passing: the
   `<dated-slug>`, the `Epic-id`, and the pipeline-mode input line from
   `materia-reconcile-epic/SKILL.md` § Pipeline mode. The stage edits the epic folder
   under `docs/epics/` and the epic's still-pending member proposals under
@@ -406,8 +407,10 @@ Every `Agent` spawn (stage, task, reviewer) is dispatched at a declared
 model + effort tier. Vocabulary, model availability, fallback, and coercion:
 `MATERIA.md` § Tiers. At each spawn point:
 
-1. **Read** the unit's tier — stage → its `## Recommended tier` line; task →
-   its `Model/effort` field; reviewer → the `Tier` column in § Review. An
+1. **Read** the unit's tier — stage/sub-skill → its row in `MATERIA.md`
+   § Tiers § Skill routing (the **Default** row if unlisted); task → its
+   `Model/effort` field in `tasks.md` (dynamic; drawn from § Model set);
+   reviewer → its `ship-spec: review/<angle>` row in § Skill routing. An
    explicit operator override wins; record
    `tier-override: <unit> <artifact-value> → <operator-value>`.
 2. **Resolve availability** against `MATERIA.md` § Tiers § Model set: a
@@ -423,8 +426,11 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
    to the prompt. Record the resolved tier per spawn for the retro.
 
 **Fallback:** absent / malformed / not-enabled / out-of-table /
-`Agent`-rejected tiers coerce to the fallback pair from `MATERIA.md` § Tiers
-§ Fallback, with the standard one-line note. An `Agent` call that rejects or
+`Agent`-rejected tiers coerce to the unit's own **Fallback Model** — the
+`Fallback Model` column of its row in `MATERIA.md` § Tiers § Skill routing
+(the **Default** row's fallback for a unit with no row of its own), run at the
+unit's own effort — per `MATERIA.md` § Tiers § Fallback, with the standard
+one-line note. An `Agent` call that rejects or
 errors on an available model coerces that spawn the same way (reason
 `<model> unreachable`) — never block or pause the run waiting for a model to
 come back. The fallback never blocks the run.
@@ -545,17 +551,22 @@ yields a phantom diff):
 
 ### Reviewer fan-out
 
-Spawn these as a single message, one `Agent` call per angle, each at the
-`Tier` below (§ Tier routing) with `spawn-contract.md` Blocks 1 + 3.
+Spawn these as a single message, one `Agent` call per angle, each at its tier
+resolved through § Tier routing with `spawn-contract.md` Blocks 1 + 3. Each
+angle's tier is the matching `ship-spec: review/<angle>` row in `MATERIA.md`
+§ Tiers § Skill routing (angle slugs `correctness`, `security`,
+`spec-adherence`, `behavior`, `ui`, `data-safety`). The
+`ship-spec: review/spec-adherence` row drops to `haiku/low` on the
+markdown-only exemption path.
 
-| # | Angle | How | Tier |
-|---|---|---|---|
-| 1 | Correctness + simplicity + test-coverage | invoke the `code-review` skill if the session provides it; otherwise run the same angle inline (covers test coverage in practice). Explicit sub-mandates: **test quality** (a test that asserts nothing, or mocks the unit under test, is a finding), plus the repo-specific correctness invariants named in `MATERIA.md` § Review angles and the standards docs the tasks cite | `fable/high` |
-| 2 | Security | invoke the `security-review` skill if the session provides it; otherwise run the same angle inline | `sonnet/high` |
-| 3 | Spec-adherence + regression/blast-radius | Agent: verifies each AC literally across `tasks.md`, flags AC bullets that under-cover `spec.md`, identifies callers/dependents of changed exports, and checks regression by reading the pre-branch state via `git show <baseline>:<path>` | `sonnet/medium` (`haiku/low` on the markdown-only exemption path) |
-| 4 | Behavior | invoke the `verify` skill over the merged branch — covers every task in `behavior-deferred:` and any user-visible AC across the diff | `sonnet/medium` |
-| 5 | UI (UI-gated) | invoke the `materia-ui-review` skill — an Eyes pass (`MATERIA.md` § Eyes: toolchain + canonical viewport) judged against the repo's visual standards docs **plus the cross-screen cohesion comparison** against the sibling screens named in `design.md` § Cohesion anchors. **Spawned only when the diff is UI-affecting** per § UI-surface gate; its committed `ui-proof/` screenshots are a mandatory deliverable checked by § Screenshot-presence check | `fable/high` |
-| 6 | Data-safety (data-gated) | Agent: reviews the data-layer diff for **destructive migration operations** against existing data (dropped/narrowed columns, table drops), **seed idempotency** (re-seeding preserves user-entered values), **unique indexes backing every upsert**, and the repo-specific invariants in `MATERIA.md` § Data layer. **Spawned only when the diff is data-affecting** per § Data-surface gate | `sonnet/high` |
+| # | Angle | How |
+|---|---|---|
+| 1 | Correctness + simplicity + test-coverage | invoke the `code-review` skill if the session provides it; otherwise run the same angle inline (covers test coverage in practice). Explicit sub-mandates: **test quality** (a test that asserts nothing, or mocks the unit under test, is a finding), plus the repo-specific correctness invariants named in `MATERIA.md` § Review angles and the standards docs the tasks cite |
+| 2 | Security | invoke the `security-review` skill if the session provides it; otherwise run the same angle inline |
+| 3 | Spec-adherence + regression/blast-radius | Agent: verifies each AC literally across `tasks.md`, flags AC bullets that under-cover `spec.md`, identifies callers/dependents of changed exports, and checks regression by reading the pre-branch state via `git show <baseline>:<path>` |
+| 4 | Behavior | invoke the `verify` skill over the merged branch — covers every task in `behavior-deferred:` and any user-visible AC across the diff |
+| 5 | UI (UI-gated) | invoke the `materia-ui-review` skill — an Eyes pass (`MATERIA.md` § Eyes: toolchain + canonical viewport) judged against the repo's visual standards docs **plus the cross-screen cohesion comparison** against the sibling screens named in `design.md` § Cohesion anchors. **Spawned only when the diff is UI-affecting** per § UI-surface gate; its committed `ui-proof/` screenshots are a mandatory deliverable checked by § Screenshot-presence check |
+| 6 | Data-safety (data-gated) | Agent: reviews the data-layer diff for **destructive migration operations** against existing data (dropped/narrowed columns, table drops), **seed idempotency** (re-seeding preserves user-entered values), **unique indexes backing every upsert**, and the repo-specific invariants in `MATERIA.md` § Data layer. **Spawned only when the diff is data-affecting** per § Data-surface gate |
 
 **Skill availability.** Only `materia-ui-review` ships under `.claude/skills/`;
 `code-review` and `security-review` are harness-provided and may be absent
@@ -779,8 +790,9 @@ the AC bullets, the diff lines in question, and the spec excerpt. Record its
 choice in the review-loop commit message
 (`tiebreaker: <file>:<line> — chose <recommendation> over <other>`).
 
-**Tier:** `fable/high` — resolve it through § Tier routing (availability per
-`MATERIA.md` § Tiers) exactly as for a declared `## Recommended tier`.
+**Tier:** its `ship-spec: review/tiebreaker` row in `MATERIA.md` § Tiers
+§ Skill routing — resolve it through § Tier routing (availability per
+`MATERIA.md` § Tiers).
 
 ## Merge watch (autopilot runs only)
 
