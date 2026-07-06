@@ -42,7 +42,7 @@ Every file path is backtick prose, never a live markdown link.
 
 ## Canonical angles are special-cased in ship-spec
 
-The `ship-spec` **markdown-only exemption** and **trivial-diff collapse**
+The `ship-spec` **markdown-only exemption** and **trivial-diff threshold**
 special-case the canonical angle slugs (`correctness`, `security`,
 `spec-adherence`, `behavior`). A project that renames or removes a canonical
 angle must update `ship-spec` § Review too.

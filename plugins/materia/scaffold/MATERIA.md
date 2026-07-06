@@ -288,7 +288,8 @@ they ship verbatim, like § Skill routing. Repo-specific angles (a11y, perf
 budgets, compliance) are appended as additional rows by /materia:init or the
 operator; by default there are none beyond the canonical six.
 
-**Gate** is when the angle runs: `always` (unconditional), `ui-affecting`,
+**Gate** is when the angle runs: `always` (every run, subject to ship-spec's
+markdown-only exemption and trivial-diff collapse), `ui-affecting`,
 `data-affecting`, or a repo-specific predicate phrase. `ui-affecting` and
 `data-affecting` are evaluated exactly as ship-spec's UI/Data-surface gates —
 over the cumulative diff, per `MATERIA.md § Surface gates`.
