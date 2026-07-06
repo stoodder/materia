@@ -415,8 +415,8 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
    a **canonical** review angle → its
    `ship-spec: review/<angle>` row in § Skill routing; a **repo-specific**
    review angle (appended from `MATERIA.md` § Review angles) → its own `Tier`
-   column in that table, the one class of spawned unit not routed through
-   § Skill routing; the review-loop tiebreaker → its `ship-spec:
+   column in that table, the one class of spawned unit with no representation in
+   § Skill routing at all; the review-loop tiebreaker → its `ship-spec:
    review/tiebreaker` row. An explicit operator override wins; record
    `tier-override: <unit> <artifact-value> → <operator-value>`.
 2. **Resolve availability** against `MATERIA.md` § Tiers § Model set: a

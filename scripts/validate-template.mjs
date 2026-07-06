@@ -90,33 +90,39 @@ const walk = (p) => {
 walk('templates'); walk('.claude')
 
 // ---- 2. § audit -------------------------------------------------------------
-// Every segment of a `MATERIA.md § A § B` chain must name a real heading —
-// the whole chain, not just the first segment (a mis-scoped subsection pointer
-// is exactly the drift this catches).
-const heads = new Set(
-  [...readFileSync('templates/MATERIA.md', 'utf8').matchAll(/^#{2,3} (.+)$/gm)].map((m) => m[1].trim()),
-)
-const okHead = (sec) => [...heads].some((h) => h === sec || sec.startsWith(h) || h.startsWith(sec))
-const CHAIN = /MATERIA\.md[`"']?/g
-const SEG = /^\s*§\s*([A-Za-z][A-Za-z :&-]*?)(?=\s*(?:§|[.,;()`|<>\n—'"-])|'s)/
+// Every segment of a `MATERIA.md § A § B` chain must name a real heading — the
+// whole chain, not just the first segment (a mis-scoped subsection pointer is
+// exactly the drift this catches). References wrap across lines, so audit over
+// whitespace-normalized text and match each segment against the known heading
+// set (longest first, at a word boundary) rather than guessing terminators —
+// which also stops the capture from swallowing trailing prose.
+const heads = [...readFileSync('templates/MATERIA.md', 'utf8').matchAll(/^#{2,3} (.+)$/gm)].map((m) => m[1].trim())
+const headsByLen = [...heads].sort((a, b) => b.length - a.length)
+// the known heading that `text` begins with (word-boundary terminated), or null
+const leadingHead = (text) =>
+  headsByLen.find((h) => text === h || (text.startsWith(h) && /[^A-Za-z0-9]/.test(text[h.length]))) ?? null
 let refs = 0
 for (const f of mdFiles) {
-  const lines = readFileSync(f, 'utf8').split('\n')
-  lines.forEach((line, i) => {
-    for (const start of line.matchAll(CHAIN)) {
-      let pos = start.index + start[0].length
-      let seg
-      while ((seg = SEG.exec(line.slice(pos)))) {
-        refs++
-        const sec = seg[1].trim()
-        if (!okHead(sec))
-          fail(`${f}:${i + 1} MATERIA.md § "${sec}" has no matching heading in templates/MATERIA.md`)
-        pos += seg[0].length
+  const norm = readFileSync(f, 'utf8').replace(/\s+/g, ' ')
+  for (const start of norm.matchAll(/MATERIA\.md[`"']?/g)) {
+    let pos = start.index + start[0].length
+    let sm
+    while ((sm = /^\s*§\s*/.exec(norm.slice(pos)))) {
+      const after = pos + sm[0].length
+      if (!/^[A-Za-z]/.test(norm.slice(after))) break // `§` not followed by a name → not a section ref
+      pos = after
+      refs++
+      const h = leadingHead(norm.slice(pos))
+      if (!h) {
+        const bad = norm.slice(pos, pos + 30).replace(/[.,;()`|<>—'"].*$/, '').trim()
+        fail(`${f}: MATERIA.md § "${bad}…" has no matching heading in templates/MATERIA.md`)
+        break // chain integrity is lost past an unknown segment
       }
+      pos += h.length
     }
-  })
+  }
 }
-console.log(`  ✓ § audit: ${refs} MATERIA.md § references (all chain segments) checked against ${heads.size} headings`)
+console.log(`  ✓ § audit: ${refs} MATERIA.md § references (all chain segments) checked against ${heads.length} headings`)
 
 // ---- 2b. mirror pins --------------------------------------------------------
 // Rows in § Skill routing that intentionally duplicate another row's tier are

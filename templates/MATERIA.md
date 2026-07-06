@@ -206,7 +206,7 @@ per-task-field cases) live in § Fallback.
 | `materia-architecture` | `fable` | `high` | `opus` | highest-stakes planning; grounds the plan in existing resources and reuse |
 | `materia-design` | `sonnet` | `high` | `opus` | UX flows + states across every screen surface |
 | `materia-plan-tasks` | `sonnet` | `medium` | `opus` | systematic decomposition; per-task tiers it emits are dynamic (§ Model set) |
-| `materia-implement-task` | `sonnet` | `medium` | `opus` | standalone backstop — a task's own `Model/effort` in `tasks.md` overrides this row; an *absent* field takes the **Default** row (`opus/high`), not this one |
+| `materia-implement-task` | `sonnet` | `medium` | `opus` | standalone backstop — a task's own `Model/effort` in `tasks.md` overrides this row; an *absent or malformed* field takes the **Default** row (`opus/high`), not this one |
 | `materia-reproduce-bug` | `sonnet` | `high` | `opus` | find the right test surface; land a genuine RED |
 | `materia-bug-analysis` | `fable` | `medium` | `opus` | synthesis of `reproduction.md` + the report into a thin output |
 | `materia-docs-sync` | `sonnet` | `medium` | `opus` | systematic doc↔intent synthesis, bounded scope |
@@ -236,11 +236,11 @@ its § Skill routing row (a unit with no row, and a repo-specific § Review angl
 use the **Default** row's **`opus`**), run at the unit's **own effort** (effort
 describes the work, not the model).
 
-**Per-task fields.** A per-task `Model/effort` field in `tasks.md` that is
-absent — or malformed in *either* token — takes the **Default** row
-(`opus/high`), **not** the `materia-implement-task` row. A malformed field is
-treated exactly like an absent one, so a botched field never runs at lower
-effort than an omitted one.
+**Absent or malformed tier values.** A per-task `Model/effort` field in
+`tasks.md`, or a repo-specific § Review angle `Tier` cell, that is absent or
+malformed in *either* token takes the **Default** row (`opus/high`) — **not**
+the `materia-implement-task` row. A malformed value is treated exactly like an
+absent one, so a botched value never runs at lower effort than an omitted one.
 
 **The anchor is protected.** The Default row's Fallback Model MUST stay a
 `default`-availability model — do not set it `opt-in` or remove its § Model set
@@ -263,13 +263,17 @@ The matching guidance sentence is injected into the spawn prompt verbatim:
 
 ### Coercion
 
-When a unit's resolved model is absent, syntactically malformed, not in
-§ Model set, or not enabled, coerce to the unit's **Fallback Model** (its
+When a unit's assigned model is **unavailable** — not-enabled (opt-in),
+out-of-table, or `Agent`-rejected — coerce to the unit's **Fallback Model** (its
 § Skill routing row, or the Default row) and record a one-line note:
 
 ```
 tier-fallback: <unit> … → <fallback> (<reason>)
 ```
+
+An **absent or malformed** tier *value* (a per-task `Model/effort` field, or a
+repo-specific § Review angle `Tier` cell) is not a coercion — it takes the
+**Default** row (`opus/high`) directly, per § Fallback.
 
 Coercion **terminates**: it applies once to reach the Fallback Model, and if
 even that model is unavailable it falls to the harness default per § Fallback —
