@@ -42,14 +42,6 @@ those are subsequent stages (`materia-bug-analysis`, then `materia-plan-tasks` +
 - `STATUS.md` stage-1 ticked **or** `Blocker:` set (see § Procedure step 5).
 - Committed + pushed.
 
-## Recommended tier
-
-`sonnet/high` — see `MATERIA.md` § Tiers for
-the model and effort definitions. Reproducing a bug requires careful reasoning
-to locate the right test surface (the module that actually owns the invariant),
-write a test that fails for the real reason (not a harness/timeout/setup
-artifact), and confirm the failure is genuine before gating the next stage.
-
 ## Procedure
 
 1. **Load context.** Read the bug report body in full. Note the "Affected

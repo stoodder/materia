@@ -38,12 +38,6 @@ to queued proposals) and
 [`docs/specs/_proposed/README.md`](../../../docs/specs/_proposed/README.md)
 before changing this skill.
 
-## Recommended tier
-
-`sonnet/high` (pipeline mode; standalone mode runs in the operator's session
-and declares no tier). Cascade edits silently become a future `materia-ship-spec`
-run's input — reason carefully before editing a pending proposal.
-
 ## Inputs / Outputs
 
 | | |

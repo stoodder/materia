@@ -46,15 +46,6 @@ does **not** re-derive the reproduction (that is `materia-reproduce-bug`'s role)
 - `STATUS.md` stage-2 ticked; `Next: plan-tasks` set.
 - Committed + pushed.
 
-## Recommended tier
-
-`fable/medium` — see `MATERIA.md` § Tiers for
-the model and effort definitions. This is a synthesis task: two structured
-artifacts (`reproduction.md` + the bug report) feed a thin, well-shaped
-output (`bug-analysis.md`). The structure is defined by the template; the
-judgment call is correctly naming the root cause mechanism and the affected
-files. Medium effort is appropriate — no novel design is required.
-
 ## Procedure
 
 1. **Load context.** Read `reproduction.md` in full. Read the bug report body.

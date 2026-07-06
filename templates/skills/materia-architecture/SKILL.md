@@ -27,10 +27,6 @@ acting on them wastes context.
 
 - `docs/specs/<dated-slug>/architecture.md` — `STATUS.md` updated, committed and pushed.
 
-## Recommended tier
-
-`fable/high` — see `MATERIA.md` § Tiers for the model and effort definitions. Grounding the technical plan in existing resources and surfacing reuse opportunities across the codebase is the highest-stakes planning task.
-
 ## Environment
 
 If a gate command fails oddly (wrong runtime version, missing dependencies,

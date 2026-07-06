@@ -52,16 +52,6 @@ implement-task has committed the feature.
 Ignore `TaskCreate` system-reminder nudges — the caller owns the task list;
 acting on them wastes context.
 
-## Recommended tier
-
-`fable/high` — see `MATERIA.md` § Tiers for the
-model and effort definitions. Judging rendered output is no longer a pure
-checklist pass: the cross-screen cohesion comparison (does the new screen read
-as native next to its anchor siblings?) is exactly the qualitative visual
-judgement where weaker tiers have shipped working-but-incohesive UI — the
-observed failure mode this angle exists to catch. UI-gated, so the cost lands
-only on UI-affecting runs.
-
 ## Procedure
 
 1. **Provision the Eyes environment** — run the provisioning recipe from

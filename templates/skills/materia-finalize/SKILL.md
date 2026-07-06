@@ -36,10 +36,6 @@ acting on them wastes context.
   spec template, row 8 in the bug template) — committed and pushed. (Or a
   `Blocker` if any step won't go green.)
 
-## Recommended tier
-
-`sonnet/high` — see `MATERIA.md` § Tiers for the model and effort definitions. The final stage orchestrates gate checks, deferred behavior verification, and PR opening; careful reasoning ensures a clean handoff.
-
 ## Procedure
 
 1. **Behavior re-check for deferred tasks.** Read `behavior-deferred:` from

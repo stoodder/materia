@@ -34,13 +34,6 @@ acting on them wastes context.
   set to `materia-architecture`.
 - Committed and pushed.
 
-## Recommended tier
-
-`sonnet/medium` — see `MATERIA.md` § Tiers for the
-model and effort definitions. Enumerating flows worth guarding from an
-already-resolved design artifact is systematic decomposition, not novel
-architecture reasoning.
-
 ## Procedure
 
 **Pure non-behavioral change → zero-flow waiver (short-circuit).** If the change

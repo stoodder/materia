@@ -33,10 +33,6 @@ acting on them wastes context.
 
 - `docs/specs/<dated-slug>/design.md` — `STATUS.md` updated, committed and pushed.
 
-## Recommended tier
-
-`sonnet/high` — see `MATERIA.md` § Tiers for the model and effort definitions. UX design from a spec calls for careful reasoning to define flows and states across all screen surfaces.
-
 ## Environment
 
 If a gate command fails oddly (wrong runtime version, missing dependencies,

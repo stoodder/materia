@@ -13,8 +13,12 @@ first epic, so the harness dogfoods from commit one.
 Everything init writes comes from `templates/` — the canonical, battle-tested
 sources. **Init fills slots; it does not redraft contracts.** The queue
 frontmatter contracts, producer lifecycle, RED gate, sole-writer retro rule,
-and tier vocabulary ship verbatim; only the `{{slots}}` and the stack-specific
-standards docs are authored fresh, from the survey.
+and the tier machinery ship verbatim. The tier machinery includes
+`MATERIA.md` § Skill routing — the per-skill / per-role model/effort
+assignments (including their `opus` fallbacks), which are not stack-specific
+and ship exactly as written, like the § Effort set
+and § Coercion. Only the `{{slots}}` (among them § Model set availability) and
+the stack-specific standards docs are authored fresh, from the survey.
 
 ## Inputs
 
@@ -137,7 +141,7 @@ Each probe maps to a `MATERIA.md` section and a prune decision:
 | Does it persist data? | § Surface gates § Data-affecting, § Data layer | the data-safety review angle (recorded in § Data layer as `none`) |
 | Any extra review angles the domain demands (a11y, perf budgets, compliance)? | § Review angles | — |
 | Anything unusual about cold-start (runtime versions, codegen, services)? | § Environment preflight | — |
-| Which models are available for spawn routing, and is any premium tier opt-in? (Sensible default: haiku/sonnet/opus as `default`, the premium tier as `opt-in`; the fallback pair.) | § Tiers | — (a declared model outside the set coerces to the fallback) |
+| Which models are available for spawn routing, and is any premium tier opt-in? (Sensible default: haiku/sonnet/opus as `default`, the premium tier as `opt-in`.) This fills § Model set availability only — the per-skill § Skill routing assignments and their fixed `opus` fallbacks are **not** surveyed; they ship verbatim. | § Model set | — (a declared model outside the set coerces to the fallback) |
 
 Skills that are never pruned: the two orchestrators, all pipeline mid-stages,
 `materia-propose-spec`, `materia-propose-epic`, `materia-reconcile-epic`, `materia-report-bug`,
@@ -149,8 +153,10 @@ Skills that are never pruned: the two orchestrators, all pipeline mid-stages,
 Draft everything in-memory and present one confirmation block: the § Identity
 sentence, the product brief's spine (name/positioning · audience · the five
 feel adjectives · taste references · principles), the stack, the § Gate
-table, the surface-gate patterns, the Eyes choice, the § Tiers model set
-(availability + fallback), the prune list with reasons, and the bootstrap
+table, the surface-gate patterns, the Eyes choice, the § Model set availability
+(the § Skill routing assignments and their fallbacks ship verbatim — not
+surveyed),
+the prune list with reasons, and the bootstrap
 epic's proposed member specs (titles + one-liners). Reply verbs, with producer-lifecycle semantics
 (`docs/standards/skills.md` § Producer lifecycle once materialized):
 `approve` · `edit: <feedback>` · `cancel`. Nothing is written until

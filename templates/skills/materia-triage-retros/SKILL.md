@@ -224,8 +224,8 @@ How they're produced depends on batch size:
   in-memory. (2026-07-01 amendment — dispatch overhead exceeds the context
   saved on small batches; see design-notes.)
 
-**Sub-agent tier: `sonnet/low`** (vocabulary:
-`MATERIA.md` § Tiers) — bucketing and quoting over
+**Sub-agent tier: `sonnet/low`** (row `triage-retros: sub-agent`,
+`MATERIA.md` § Tiers § Skill routing) — bucketing and quoting over
 one small retro is mechanical; the genuine reasoning (clustering, triage,
 prioritisation, protected-contract flagging) lives in the parent's Synthesis.
 
