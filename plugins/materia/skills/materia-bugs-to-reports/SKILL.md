@@ -1,6 +1,6 @@
 ---
 name: materia-bugs-to-reports
-description: Drafts conformant bug reports in docs/bugs/_reports/ from unprocessed `bug-reports.md` hand-off files emitted by `materia-triage-retros`. Single-shot: parse the gathered bug items in-memory, present candidates for approval, then write reports and rename consumed sources on approve. As soon as discovery finds work the skill syncs latest main and branches; on approve it commits the reports + renames and opens a single PR covering both.
+description: "Drafts conformant bug reports in docs/bugs/_reports/ from unprocessed `bug-reports.md` hand-off files emitted by `materia-triage-retros`. Single-shot: parse the gathered bug items in-memory, present candidates for approval, then write reports and rename consumed sources on approve. As soon as discovery finds work the skill syncs latest main and branches; on approve it commits the reports + renames and opens a single PR covering both."
 ---
 
 # materia-bugs-to-reports — queue reports from gathered bugs

@@ -1,6 +1,6 @@
 ---
 name: materia-propose-epic
-description: Take a user's raw idea for a large, multi-spec feature-set and develop it into an epic — iterative brainstorm Q&A with the operator, a parallel web-research fan-out run on low-tier subagents, then decomposition into 2–N single-shippable-unit spec proposals with an explicit dependency graph. Produces docs/epics/<dated-slug>/ (epic.md + research.md) plus one member proposal per spec in docs/specs/_proposed/ (source: epic), all in one PR. Use when an idea is too big for /propose-spec's one-shot draft; as members ship, ship-spec's epic gate (reconcile-epic in pipeline mode) keeps the epic and its remaining members in sync automatically.
+description: "Take a user's raw idea for a large, multi-spec feature-set and develop it into an epic — iterative brainstorm Q&A with the operator, a parallel web-research fan-out run on low-tier subagents, then decomposition into 2–N single-shippable-unit spec proposals with an explicit dependency graph. Produces docs/epics/<dated-slug>/ (epic.md + research.md) plus one member proposal per spec in docs/specs/_proposed/ (source: epic), all in one PR. Use when an idea is too big for /propose-spec's one-shot draft; as members ship, ship-spec's epic gate (reconcile-epic in pipeline mode) keeps the epic and its remaining members in sync automatically."
 ---
 
 # materia-propose-epic — develop a big idea into an epic + member specs

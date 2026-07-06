@@ -1,6 +1,6 @@
 ---
 name: materia-ship-spec
-description: Run the full spec-to-PR pipeline for a new product spec or feature request — intake → design → architecture → task breakdown → autonomous implementation → post-implementation multi-angle review → lint/typecheck/test gate → docs → pull request. Supports `--auto` (autopilot): operator checkpoints accept grounded defaults, and after the PR opens the orchestrator watches CI, fixes failures, resolves merge conflicts, and merges once green. Captures a per-run retrospective (`retro.md`) at each touchpoint so a downstream skill can aggregate them into pipeline improvements. Resumable across sessions. Use when the user hands over a product spec or feature to build end-to-end.
+description: "Run the full spec-to-PR pipeline for a new product spec or feature request — intake → design → architecture → task breakdown → autonomous implementation → post-implementation multi-angle review → lint/typecheck/test gate → docs → pull request. Supports `--auto` (autopilot): operator checkpoints accept grounded defaults, and after the PR opens the orchestrator watches CI, fixes failures, resolves merge conflicts, and merges once green. Captures a per-run retrospective (`retro.md`) at each touchpoint so a downstream skill can aggregate them into pipeline improvements. Resumable across sessions. Use when the user hands over a product spec or feature to build end-to-end."
 ---
 
 # materia-ship-spec — the spec-to-ship orchestrator

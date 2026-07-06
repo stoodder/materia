@@ -11,4 +11,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node scripts/validate-template.mjs
+      - name: claude plugin validate (best-effort)
+        run: |
+          if command -v claude >/dev/null 2>&1; then
+            claude plugin validate .
+            claude plugin validate ./plugins/materia
+          else
+            echo "claude CLI not available on this runner — skipping plugin validate."
+          fi
+        continue-on-error: true
+      - run: node scripts/validate-plugin.mjs

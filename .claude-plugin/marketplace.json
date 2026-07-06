@@ -1,0 +1,12 @@
+{
+  "name": "materia",
+  "owner": { "name": "Rick Allen" },
+  "description": "The Materia spec-to-ship harness, distributed as a Claude Code plugin.",
+  "plugins": [
+    {
+      "name": "materia",
+      "source": "./plugins/materia",
+      "description": "The Materia spec-to-ship development harness."
+    }
+  ]
+}

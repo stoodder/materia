@@ -1,6 +1,6 @@
 ---
 name: materia-suggestions-to-specs
-description: Drafts proposed-spec file(s) in docs/specs/_proposed/ from unprocessed `product-suggestions.md` files emitted by `materia-triage-retros`. Single-shot: cluster + filter the suggestions in-memory, present candidates for approval, then write proposals and rename consumed sources on approve. As soon as discovery finds work the skill syncs latest main and branches; on approve it commits the proposals + renames and opens a single PR covering both.
+description: "Drafts proposed-spec file(s) in docs/specs/_proposed/ from unprocessed `product-suggestions.md` files emitted by `materia-triage-retros`. Single-shot: cluster + filter the suggestions in-memory, present candidates for approval, then write proposals and rename consumed sources on approve. As soon as discovery finds work the skill syncs latest main and branches; on approve it commits the proposals + renames and opens a single PR covering both."
 ---
 
 # materia-suggestions-to-specs — proposals from captured suggestions

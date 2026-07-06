@@ -1,6 +1,6 @@
 ---
 name: materia-finalize
-description: Final gate for a feature — re-run `verify` for any tasks that deferred behavior checks, then run lint/typecheck/tests/check:docs; fix everything they expose; confirm acceptance criteria; open the pull request. Stage 10 of the ship-spec pipeline (STATUS checkbox row 9 in the spec template, row 8 in the bug template — stage numbering: see docs/specs/_templates/status.md § Stages).
+description: "Final gate for a feature — re-run `verify` for any tasks that deferred behavior checks, then run lint/typecheck/tests/check:docs; fix everything they expose; confirm acceptance criteria; open the pull request. Stage 10 of the ship-spec pipeline (STATUS checkbox row 9 in the spec template, row 8 in the bug template — stage numbering: see docs/specs/_templates/status.md § Stages)."
 ---
 
 # materia-finalize — gate, behavior re-check, and ship

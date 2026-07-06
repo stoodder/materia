@@ -1,6 +1,6 @@
 ---
 name: materia-librarian
-description: Periodic maintenance sweep of the living docs (docs root + resources/ + standards/ + _templates/, CLAUDE.md, README.md) — seeks out drift against the codebase and the docs-authoring standard, fixes it directly, opens one docs-only PR, rides it to green (resolving merge conflicts and CI failures as they come up), and auto-merges. The docs counterpart to `/materia-janitor`: the janitor sweeps the code, the librarian sweeps the docs; both land their own fixes, but only the librarian auto-merges (its diff is mechanically docs-only). Fully autonomous; zero-drift runs exit clean with no branch or PR. Use on demand or on a schedule when the docs should be re-trued against reality.
+description: "Periodic maintenance sweep of the living docs (docs root + resources/ + standards/ + _templates/, CLAUDE.md, README.md) — seeks out drift against the codebase and the docs-authoring standard, fixes it directly, opens one docs-only PR, rides it to green (resolving merge conflicts and CI failures as they come up), and auto-merges. The docs counterpart to `/materia-janitor`: the janitor sweeps the code, the librarian sweeps the docs; both land their own fixes, but only the librarian auto-merges (its diff is mechanically docs-only). Fully autonomous; zero-drift runs exit clean with no branch or PR. Use on demand or on a schedule when the docs should be re-trued against reality."
 ---
 
 # materia-librarian — docs-drift sweep that lands its own fix
