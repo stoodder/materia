@@ -164,6 +164,52 @@ for (const [f, needle] of canon)
   if (!readFileSync(f, 'utf8').includes(needle)) fail(`stage canon: ${f} missing expected text: "${needle}"`)
 console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
 
+// ---- 1d. § Version control citation pin -------------------------------------
+// Git/forge portability (trunk, remote, baseline, and the PR/CI forge flow) is
+// no longer hardcoded in the skills — it resolves from MATERIA.md § Version
+// control (+ its § Forge subsection). Guard that the config home exists AND that
+// every skill which resolves trunk/remote/forge AT RUNTIME actually references
+// it, so a future edit can't silently re-hardcode a literal without also
+// dropping the pin. This is PRESENCE + CITATION only (no denylist scan for the
+// literals themselves — that was a deliberate scoping decision); the honesty of
+// the swap is carried by review, this pin catches the section being renamed away
+// or a listed skill losing its reference.
+//
+// The citation set is the skills that run trunk/remote/forge git/PR commands.
+// EXCLUDED by design: `init` (it MATERIALIZES MATERIA.md — it writes this section
+// from the repo's existing default branch and must not cite the config it
+// writes), and `docs-sync`/`docs-audit` (they are HANDED the branch diff and run
+// no git of their own — they may mention § Version control but are not required
+// to). The shared producer-lifecycle standard docs/standards/skills.md IS pinned:
+// the producers inherit their PR-open/branch rules from it.
+//
+// The match mirrors the § audit's normalization (whitespace-collapsed text +
+// an optional backtick/quote after `MATERIA.md`) so a citation that wraps across
+// lines or is written `MATERIA.md`\n§ Version control is not a false failure.
+{
+  const before = failures
+  const matSrc = readFileSync('plugins/materia/scaffold/MATERIA.md', 'utf8')
+  const matLines = matSrc.split('\n').map((l) => l.trimEnd())
+  for (const h of ['## Version control', '### Forge'])
+    if (!matLines.includes(h))
+      fail(`§ Version control pin: plugins/materia/scaffold/MATERIA.md is missing the \`${h}\` heading — it is the config home the pipeline resolves trunk/remote/forge from`)
+  const cites = (file) => /MATERIA\.md[`"']?\s*§\s*Version control/.test(readFileSync(file, 'utf8').replace(/\s+/g, ' '))
+  const VC_CITERS = [
+    'janitor', 'librarian', 'ship-spec', 'finalize', 'propose-spec', 'propose-epic',
+    'report-bug', 'reconcile-epic', 'ui-inspection', 'triage-retros', 'fix-bug',
+  ]
+  for (const s of VC_CITERS) {
+    const f = `plugins/materia/skills/${s}/SKILL.md`
+    if (!existsSync(f)) { fail(`§ Version control pin: ${f} not found`); continue }
+    if (!cites(f))
+      fail(`§ Version control pin: ${s}/SKILL.md does not cite \`MATERIA.md § Version control\` — it resolves trunk/remote/forge at runtime and must reference the config home (not re-hardcode main/origin)`)
+  }
+  if (!cites('plugins/materia/scaffold/docs/standards/skills.md'))
+    fail('§ Version control pin: docs/standards/skills.md does not cite `MATERIA.md § Version control` — the shared producer-lifecycle rule routes trunk/remote/forge through the config home')
+  if (failures === before)
+    console.log(`  ✓ § Version control citation pin: 2 headings + ${VC_CITERS.length} skills + skills.md reference the config home`)
+}
+
 // ---- helpers ---------------------------------------------------------------
 const mdFiles = []
 const walk = (p) => {
