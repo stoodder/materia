@@ -24,8 +24,9 @@ like the § Effort set and § Coercion. The **review-angle library** ships
 verbatim the same way: the six canonical `.materia/review-angles/` files and
 their `MATERIA.md` § Review angles registry rows are not stack-specific — the
 survey only *appends* any repo-specific angles (Phase 4). Only the `{{slots}}`
-(among them § Model set availability) and the stack-specific standards docs are
-authored fresh, from the survey.
+and the stack-specific standards docs are authored fresh, from the survey
+(§ Model set ships populated — the survey only trims a model the plan can't
+spawn).
 
 ## Inputs
 
@@ -168,14 +169,14 @@ rest). No skill is removed from the repo.
 | Does it persist data? | § Surface gates § Data-affecting, § Data layer | both `none`; the ship-spec data-safety review angle never runs (the orchestrator's per-run data gate) |
 | Any extra review angles the domain demands (a11y, perf budgets, compliance)? | § Review angles registry + a `.materia/review-angles/<slug>.md` file | absent → just the canonical six; a positive answer **appends** an angle file + a registry row (File / Gate / Tier) |
 | Anything unusual about cold-start (runtime versions, codegen, services)? | § Environment preflight | — |
-| Which models are available for spawn routing, and is any premium tier opt-in? (Sensible default: haiku/sonnet/opus as `default`, the premium tier as `opt-in`.) This fills § Model set availability only — the per-skill § Skill routing assignments and their fixed `opus` fallbacks are **not** surveyed; they ship verbatim. | § Model set | — (a declared model outside the set coerces to the fallback) |
+| Which models are available for spawn routing? (Sensible default: `haiku`/`sonnet`/`opus`/`fable` — all listed; `fable` is assigned nowhere by default, so it's never spent unless an operator assigns it in § Skill routing. Trim a row only if the plan genuinely can't spawn it, keeping `opus` as the protected fallback anchor.) This fills § Model set only — the per-skill § Skill routing assignments and their fixed `opus` fallbacks are **not** surveyed; they ship verbatim. | § Model set | — (a declared model outside the set coerces to the fallback) |
 
 ### Phase 5 — Confirmation checkpoint
 
 Draft everything in-memory and present one confirmation block: the § Identity
 sentence, the product brief's spine (name/positioning · audience · the five
 feel adjectives · taste references · principles), the stack, the § Gate
-table, the surface-gate patterns, the Eyes choice, the § Model set availability
+table, the surface-gate patterns, the Eyes choice, the § Model set
 (the § Skill routing assignments and their fallbacks ship verbatim — not
 surveyed), the review-angle library (the canonical six ship verbatim; note any
 repo-specific angle to be appended from Phase 4),

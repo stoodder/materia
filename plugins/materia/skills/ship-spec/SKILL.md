@@ -417,19 +417,16 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
    § Skill routing row; the review-loop tiebreaker → its `ship-spec:
    review/tiebreaker` row. An explicit operator override wins; record
    `tier-override: <unit> <artifact-value> → <operator-value>`.
-2. **Resolve availability** against `MATERIA.md` § Tiers § Model set: a
-   `default` model resolves as declared; an `opt-in` model resolves only when
-   the operator has enabled it (a per-run instruction recorded in `STATUS.md`
-   § Notes, or the availability cell flipped to `default`), otherwise coerce
-   to the fallback with `tier-fallback: <unit> <tier> → <fallback> (not
-   enabled)`; a model absent from the table coerces the same way (reason
-   `not in model set`).
+2. **Resolve availability** against `MATERIA.md` § Tiers § Model set: a model
+   listed there resolves as declared; a model absent from the table coerces to
+   the fallback with `tier-fallback: <unit> <tier> → <fallback> (not in model
+   set)`.
 3. **Map** `<model>/<effort>` → `(model, effortSentence)` per `MATERIA.md`
    § Tiers § Effort set.
 4. **Spawn** `Agent(..., model: <model>)` with the effort sentence prepended
    to the prompt. Record the resolved tier per spawn for the retro.
 
-**Fallback:** a resolved model that is not-enabled / out-of-table /
+**Fallback:** a resolved model that is out-of-table /
 `Agent`-rejected coerces to the unit's own **Fallback Model** — the
 `Fallback Model` column of its row in `MATERIA.md` § Tiers § Skill routing
 (the **Default** row's fallback for a unit with no row of its own), run at the

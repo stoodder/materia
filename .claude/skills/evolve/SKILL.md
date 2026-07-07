@@ -156,7 +156,7 @@ Route each spawned unit as a `<model>/<effort>` pair.
 | `haiku` | trivial / mechanical / bookkeeping — single-file edits, renames, tracker updates |
 | `sonnet` | standard slices, systematic synthesis, writing, most reviews |
 | `opus` | gnarly / cross-cutting / high-risk work, contract redesigns, and the final verification pass |
-| `fable` | *(opt-in, premium/per-token)* the highest-judgement units — interactive intake, approach-correctness review, qualitative design calls; use only when the operator has enabled it, else it coerces to `opus` |
+| `fable` | *(premium/per-token — listed, but nothing routes to it by default)* reserved for the highest-judgement units (interactive intake, approach-correctness review, qualitative design calls); run those at `opus` unless the operator asks for `fable` on the run |
 
 ### Effort
 

@@ -136,7 +136,7 @@ their own tier** — a spawned unit's assignment is resolved here, from one of
 two tables:
 
 - **§ Model set** — the catalog of models this repo can spawn, with their
-  availability and *preferred usage*. Dynamic assigners (the per-task
+  *preferred usage*. Dynamic assigners (the per-task
   `Model/effort` field `plan-tasks` writes into `tasks.md`, the
   per-question research tiers `propose-epic` picks) choose from this
   menu per unit.
@@ -161,35 +161,26 @@ One representation everywhere: the token pair **`<model>/<effort>`**
 
 ### Model set
 
-The models available for spawn routing in this repo, their availability, and
-what each is for. This is the menu a dynamic assigner picks from.
+The models available for spawn routing in this repo and what each is for. This
+is the menu a dynamic assigner picks from — every model listed here is
+available.
 
-| Model | Availability | Preferred usage |
-|---|---|---|
-| `haiku` | {{default}} | cheap / mechanical units — markdown-only, bookkeeping, single-doc edits |
-| `sonnet` | {{default}} | standard vertical slices, systematic synthesis, most implementation and review |
-| `opus` | {{default}} | gnarly / cross-cutting / high-risk units; the default fallback model |
-| `fable` | {{opt-in — flip to `default`, or omit the row entirely}} | the highest-judgement units — architecture, interactive intake, qualitative visual review; billed per-token |
+| Model | Preferred usage |
+|---|---|
+| `haiku` | cheap / mechanical units — markdown-only, bookkeeping, single-doc edits |
+| `sonnet` | standard vertical slices, systematic synthesis, most implementation and review |
+| `opus` | gnarly / cross-cutting / high-risk units; the default fallback model |
+| `fable` | the highest-judgement units — architecture, interactive intake, qualitative visual review; billed per-token. Listed but assigned nowhere by default; an operator opts in by assigning it in § Skill routing (or a `tasks.md` field). |
 
-- **`default`** — resolves whenever a unit assigns it.
-- **`opt-in`** — resolves **only** when the operator has explicitly enabled it
-  (flip this cell to `default`, or give a per-run instruction that the
-  orchestrator records in `STATUS.md` § Notes). Otherwise a unit assigning it
-  coerces to its fallback with the standard one-line note. This is how a
-  premium, per-token-billed model stays in the routing vocabulary without ever
-  being spent silently.
 - A model **not in this table at all** coerces to the unit's Fallback Model
   (see § Coercion) — the § Skill routing table names canonical models this repo
   may not carry; that is expected, not an error.
-- **Default cost note.** With `fable` left `opt-in` (the shipped default),
-  every `fable` row in § Skill routing coerces to `opus` on a fresh repo —
-  enable `fable` (per above) to route those units to it instead.
 
 ### Skill routing
 
 The model/effort assignment for the units the pipeline spawns. This table
-**ships verbatim** (it is not stack-specific — only § Model set availability
-is). Resolution reads the unit's row; a spawned unit with no row uses the
+**ships verbatim** (it is not stack-specific — only § Model set is).
+Resolution reads the unit's row; a spawned unit with no row uses the
 **Default** row — **except** a review angle (canonical or repo-specific), which
 is not routed here at all (it carries its own `Tier` column in § Review angles;
 see the § Tiers intro). One row (`propose-epic: research`) describes a
@@ -204,20 +195,20 @@ per-task-field cases) live in § Fallback.
 | Skill / role | Model | Effort | Fallback Model | Notes |
 |---|---|---|---|---|
 | **Default** (any unlisted spawned unit) | `opus` | `high` | `opus` | the backstop when a unit has no row of its own |
-| `intake-spec` | `fable` | `high` | `opus` | interactive intake; resolve spec ambiguities before the autonomous stages run |
-| `architecture` | `fable` | `high` | `opus` | highest-stakes planning; grounds the plan in existing resources and reuse |
+| `intake-spec` | `opus` | `high` | `opus` | interactive intake; resolve spec ambiguities before the autonomous stages run |
+| `architecture` | `opus` | `high` | `opus` | highest-stakes planning; grounds the plan in existing resources and reuse |
 | `design` | `sonnet` | `high` | `opus` | UX flows + states across every screen surface |
 | `plan-tasks` | `sonnet` | `medium` | `opus` | systematic decomposition; per-task tiers it emits are dynamic (§ Model set) |
 | `implement-task` | `sonnet` | `medium` | `opus` | standalone backstop — a task's own `Model/effort` in `tasks.md` overrides this row; an *absent or malformed* field takes the **Default** row (`opus/high`), not this one |
 | `reproduce-bug` | `sonnet` | `high` | `opus` | find the right test surface; land a genuine RED |
-| `bug-analysis` | `fable` | `medium` | `opus` | synthesis of `reproduction.md` + the report into a thin output |
+| `bug-analysis` | `opus` | `medium` | `opus` | synthesis of `reproduction.md` + the report into a thin output |
 | `docs-sync` | `sonnet` | `medium` | `opus` | systematic doc↔intent synthesis, bounded scope |
 | `docs-audit` | `sonnet` | `medium` | `opus` | five well-defined properties over bounded inputs |
 | `finalize` | `sonnet` | `high` | `opus` | orchestrates gate + PR; a clean handoff |
 | `reconcile-epic` | `sonnet` | `high` | `opus` | **pipeline mode only** — standalone mode runs in the operator session (no spawn); cascade edits feed a future `ship-spec` run, so reason carefully |
 | `ui-test-plan` | `sonnet` | `medium` | `opus` | enumerate flows worth guarding from a resolved design |
-| `ui-review` | `fable` | `high` | `opus` | qualitative cross-screen cohesion judgement; UI-gated. Governs standalone invocation of the skill; the ship-spec ui-angle spawn resolves via the **`ui` row in § Review angles** instead — the validator pins this row's model/effort equal to that registry Tier, so keep them in sync |
-| `ship-spec: review/tiebreaker` | `fable` | `high` | `opus` | resolves conflicting review recommendations |
+| `ui-review` | `opus` | `high` | `opus` | qualitative cross-screen cohesion judgement; UI-gated. Governs standalone invocation of the skill; the ship-spec ui-angle spawn resolves via the **`ui` row in § Review angles** instead — the validator pins this row's model/effort equal to that registry Tier, so keep them in sync |
+| `ship-spec: review/tiebreaker` | `opus` | `high` | `opus` | resolves conflicting review recommendations |
 | `triage-retros: sub-agent` | `sonnet` | `low` | `opus` | mechanical parse + quote of one retro into an insight envelope; the clustering/drafting reasoning stays in the parent |
 | `propose-epic: research` | per-question (§ Model set) | per-question | `opus` | one subagent per question; model+effort picked together per § Model set (default / ceiling defined in the skill body) |
 
@@ -225,7 +216,7 @@ per-task-field cases) live in § Fallback.
 
 The single home for how a unit degrades when its assigned model can't be spawned.
 
-When a unit's **model** is unavailable — not-enabled (opt-in), out-of-table, or
+When a unit's **model** is unavailable — out-of-table or
 `Agent`-rejected — it degrades to the **Fallback Model** named in
 its § Skill routing row (a unit with no row, and a § Review angle, use the
 **Default** row's **`opus`**), run at the unit's **own effort** (effort
@@ -238,8 +229,8 @@ the `implement-task` row. A malformed value is treated exactly like an
 absent one, so a botched value never runs at lower effort than an omitted one.
 
 **The anchor is protected.** The Default row's Fallback Model MUST stay a
-`default`-availability model — do not set it `opt-in` or remove its § Model set
-row. If a unit's Fallback Model is somehow itself unavailable, the run does
+model listed in § Model set — do not remove its § Model set row. If a unit's
+Fallback Model is somehow itself unavailable, the run does
 **not** loop: spawn at the harness default model and record `tier-fallback:
 <unit> … → harness-default (fallback anchor unavailable)`. The fallback never
 blocks a run.
@@ -258,8 +249,8 @@ The matching guidance sentence is injected into the spawn prompt verbatim:
 
 ### Coercion
 
-When a unit's assigned model is **unavailable** — not-enabled (opt-in),
-out-of-table, or `Agent`-rejected — coerce to the unit's **Fallback Model** (its
+When a unit's assigned model is **unavailable** — out-of-table or
+`Agent`-rejected — coerce to the unit's **Fallback Model** (its
 § Skill routing row, or the Default row) and record a one-line note:
 
 ```
@@ -294,18 +285,18 @@ markdown-only exemption and trivial-diff collapse), `ui-affecting`,
 `data-affecting` are evaluated exactly as ship-spec's UI/Data-surface gates —
 over the cumulative diff, per `MATERIA.md § Surface gates`.
 
-**Tier** is a `<model>/<effort>` pair resolved like any other (availability per
+**Tier** is a `<model>/<effort>` pair resolved like any other (model drawn from
 § Model set; § Effort set for the guidance sentence). These angles carry no
 `Fallback Model` of their own — a `Tier` that coerces falls to the § Skill
 routing **Default** row (`opus`), per § Coercion.
 
 | Angle | File | Gate | Tier |
 |---|---|---|---|
-| `correctness` | `correctness.md` | `always` | `fable/high` |
+| `correctness` | `correctness.md` | `always` | `opus/high` |
 | `security` | `security.md` | `always` | `sonnet/high` |
 | `spec-adherence` | `spec-adherence.md` | `always` | `sonnet/medium` |
 | `behavior` | `behavior.md` | `always` | `sonnet/medium` |
-| `ui` | `ui.md` | `ui-affecting` | `fable/high` |
+| `ui` | `ui.md` | `ui-affecting` | `opus/high` |
 | `data-safety` | `data-safety.md` | `data-affecting` | `sonnet/high` |
 
 Repo-specific angles go in additional rows below the canonical six.

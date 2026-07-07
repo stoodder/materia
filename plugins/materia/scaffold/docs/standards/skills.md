@@ -41,10 +41,8 @@
   its § Model set catalog, § Fallback backstop, and § Effort set map) is where
   a unit's model and effort live. An **orchestrator/producer** runs in the
   operator's session and is unrouted (no spawn tier). A model that
-  `MATERIA.md` § Model set lists as `opt-in` (or does not list at all) coerces
-  to the row's **Fallback Model** — the Default row's when the skill has no row
-  of its own — unless the operator has enabled it (§ Coercion); availability is
-  durable repo config, not a per-run flag.
+  `MATERIA.md` § Model set does not list coerces to the row's **Fallback
+  Model** — the Default row's when the skill has no row of its own (§ Coercion).
 - **Keep state in the diff** where the skill's nature allows — prefer a
   reviewable PR/working-tree diff over a side audit folder; say so under Scope.
 - **A skill change is not done until its registration surfaces are updated**
@@ -271,7 +269,7 @@ touch-X→update-Y map:
 | [`CLAUDE.md`](../../CLAUDE.md) — the spec-to-ship pipeline paragraph | the pipeline's shape or the producer count changes |
 | [`docs/specs/README.md`](../specs/README.md) — pipeline / closing-loop / producers tables | a stage, sibling, or producer skill changes |
 | The **target queue's** producers table + `source` key (e.g. [`docs/specs/_proposed/README.md`](../specs/_proposed/README.md) for spec proposals, [`docs/bugs/_reports/README.md`](../bugs/_reports/README.md) for bug reports); the epic family additionally keeps [`docs/epics/README.md`](../epics/README.md) true | a **producer** skill is added or its source key changes |
-| The skill's row in `MATERIA.md` § Skill routing (and § Model set when the catalog or availability changes) | a sub-skill's model/effort changes |
+| The skill's row in `MATERIA.md` § Skill routing (and § Model set when the model catalog changes) | a sub-skill's model/effort changes |
 | This standard (including `### Retro touchpoint contract` below) | the authoring convention itself changes, **including** any change to the retro touchpoint sole-writer invariant or the ` ```retro ` fenced-block contract |
 
 ### Retro touchpoint contract
@@ -323,7 +321,7 @@ This section states the invariant; that file carries the implementation detail.
   A project-owned skill of your own lives at `.claude/skills/<name>/SKILL.md`
   instead.
 - `MATERIA.md` § Tiers — the single source of truth for `<model>/<effort>`:
-  its § Model set catalog (the models this repo can spawn + availability) and
+  its § Model set catalog (the models this repo can spawn) and
   its § Skill routing table (the per-skill / per-role assignment).
 - The registration surfaces listed above — how skills are advertised.
 
