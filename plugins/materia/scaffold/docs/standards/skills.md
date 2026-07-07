@@ -97,9 +97,10 @@ reuse it when reworking any skill):
 4. **Reinvest in verification** where retro evidence shows drift: validate
    references at write time, fail-fast at read time, retry transient
    sub-agent failures once.
-5. **Check environment parity** — every `gh` call needs its GitHub-MCP twin;
-   every reviewer/implementer brief carries the inline-only/no-nested-spawn
-   rule.
+5. **Check environment parity** — every `gh` call routes through `MATERIA.md`
+   § Version control § Forge, which names each operation's GitHub-MCP twin and
+   the `none`/manual fallback; every reviewer/implementer brief carries the
+   inline-only/no-nested-spawn rule.
 6. **Keep tiers out of the body** — routing lives in `MATERIA.md`
    § Skill routing (assignment) and § Model set (the catalog); a skill body
    names no tier and never pins a dated model name.
@@ -165,9 +166,10 @@ skill.
   exactly these semantics: `approve` (write + ship), `edit: <feedback>`
   (adjust all drafts, re-present), `edit <id>: <feedback>` (adjust one),
   `drop <id>` (remove one from the batch), `cancel` (exit cleanly — nothing
-  written, and if a branch was already created, switch to `main` and delete
-  it). Fold-and-re-present loops until `approve`; usually one round — on
-  round 5+ prefer a fresh re-draft over incremental edits. Silence is fine;
+  written, and if a branch was already created, switch to the trunk branch
+  (`MATERIA.md` § Version control) and delete it). Fold-and-re-present loops
+  until `approve`; usually one round — on round 5+ prefer a fresh re-draft
+  over incremental edits. Silence is fine;
   nothing lands until `approve`.
 - **Autonomous** (`ui-inspection`): no mid-run checkpoint —
   the PR is the operator's review gate, so triage MUST be conservative (when
@@ -177,9 +179,9 @@ skill.
 
 - **Branch-at-discovery** (autonomous producers with no interactive
   checkpoint — `ui-inspection`): once the run commits to writing a report,
-  `git checkout main && git pull` then branch, write, and open the PR in one
-  pass; the PR is the review gate, so there is no `approve` to defer the
-  branch to.
+  `git checkout <trunk> && git pull` (`<trunk>`/`<remote>` per `MATERIA.md`
+  § Version control) then branch, write, and open the PR in one pass; the PR
+  is the review gate, so there is no `approve` to defer the branch to.
 - **Branch-at-approve** (in-memory producers — `report-bug`, `propose-spec`,
   `propose-epic`, `reconcile-epic` standalone, `triage-retros`): the whole
   draft (Q&A, or `triage-retros`'s harvest + synthesis) is in-memory; the
@@ -209,26 +211,27 @@ rerun), append a short hex suffix (`openssl rand -hex 2`).
   `^[a-z0-9]{4,8}$` at discovery (non-conforming → drop with a warning);
   paths derived from fields are pattern-checked against their queue's
   folder/filename contract (no `..`, confined to the queue dir) and quoted
-  before any `git rm`/`git mv`; free-text fields (`title`) reach `gh pr
-  create` only via `--body-file` or after stripping `"`, backticks, and
-  `$(`. The kebab-slug algorithm covers slugs/branches; this rule covers
-  everything else that touches a shell.
+  before any `git rm`/`git mv`; free-text fields (`title`) reach the open-PR
+  op's `gh` path (`gh pr create` — `MATERIA.md` § Version control § Forge)
+  only via `--body-file` or after stripping `"`, backticks, and `$(`. The
+  kebab-slug algorithm covers slugs/branches; this rule covers everything
+  else that touches a shell.
 - **Consume-by-rename** — a consumed source is `git mv`'d to its
   `.processed.md` name with a one-line `processed_on: <YYYY-MM-DD>` footer,
   in the same commit as the entries it produced.
 - **Link integrity on new files** — before committing, run
   `node scripts/check-docs.mjs` and fix any link the *new* files introduce
-  (pre-existing debt on `main` is not this run's job). If `check:docs` isn't
+  (pre-existing debt on the trunk is not this run's job). If `check:docs` isn't
   runnable, grep the new files for `](../` and `](./` and verify each target
   manually.
 - **One PR per run, no auto-merge.** PR body carries the rendered entries
   inline (reviewers read without fetching) plus the dropped/skipped list
   with one-line rationales — nothing is silently discarded. The body's last
   element is the Materia sigil (§ PR attribution — the Materia sigil).
-- **PR tooling** — `gh pr create` locally; in the remote execution
-  environment there is **no `gh` CLI** — open the PR via the GitHub MCP
-  `create_pull_request` tool (same title/body). Both paths produce the same
-  PR.
+- **PR tooling** — opening the PR routes through `MATERIA.md`
+  § Version control § Forge (open-PR op), which owns the `gh` recipe, the
+  `create_pull_request` GitHub-MCP twin, and the `none`/manual fallback; this
+  contract does not restate that recipe.
 - **No session survival** — an interrupted run is re-invoked fresh; a stray
   pre-push branch is deleted or pushed manually by the operator.
 
