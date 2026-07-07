@@ -86,9 +86,8 @@ produced.
      not demote the status) — relay them as available, not needed.
    - **`warnings`** — e.g. an untracked pre-tracking (legacy) install, or a stale
      schema whose adoptable changes are *recommended*. Relay the script's
-     suggested `/materia:migrate --plan` (noting that `/materia:migrate` is
-     forthcoming — for now the report's manual action items describe the change
-     by hand).
+     suggested next step, `/materia:migrate --plan` — the operator runs that to
+     see the proposed migration (and, on `--apply`, adopt the safe ones).
    - **`action-needed`** — a `required`-impact change is outstanding; relay the
      script's suggestion.
    - **`blocked`** — malformed `.materia/project.json`, an unknown schema, or a
@@ -116,8 +115,7 @@ produced.
 - The **script owns the verdict.** The skill relays it; it does not override the
   status or fabricate state the script marked `unknown`/`blocked`.
 - **No destructive or mutating action** is ever taken — not even the fixes the
-  report suggests. Doctor diagnoses; the operator (or a future `/materia:migrate`)
-  acts.
+  report suggests. Doctor diagnoses; the operator (or `/materia:migrate`) acts.
 - When the report suggests `/materia:migrate --plan`, present it as the next
-  step and note that command is forthcoming; fall back to the report's manual
-  action items until it ships.
+  step; migrate is the plan-first command that proposes the change (and applies
+  the safe migrations on `--apply`). Doctor itself stays read-only.

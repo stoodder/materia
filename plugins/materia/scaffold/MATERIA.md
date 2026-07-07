@@ -294,6 +294,7 @@ parent reads as intentional, not missing:
 - `librarian` — operator-session docs maintainer; sweeps and fixes docs in place, no spawn.
 - `ui-inspection` — operator-session; inspects the running app and files one report, no spawn.
 - `doctor` — operator-session; non-destructive health check that runs the deterministic inspector and reports, no spawn.
+- `migrate` — operator-session; plan-first project upgrade that runs the deterministic engine (plans by default, applies only safe migrations on `--apply`), no spawn.
 - `ship-spec` — orchestrator parent; runs in the operator session and spawns its stages (each stage has its own row); the parent itself has no row.
 - `fix-bug` — orchestrator parent; same rationale as `ship-spec`.
 - `propose-epic` — orchestrator parent; its research fan-out has the `propose-epic: research` row, but the parent itself is rowless.
