@@ -73,7 +73,9 @@ the in-scope standards and both live queues into context.
 
 Scanning is the context-heavy half, so fan it out: group the in-scope
 standards into 2–4 briefs by shared source targets (§ Scan strategy), then
-spawn one **read-only** subagent per group in parallel. Each brief names the
+spawn one **read-only** subagent per group in parallel — **tier `sonnet/low`**
+(row `janitor: scan`, `MATERIA.md` § Tiers § Skill routing): a findings-only
+standards sweep is mechanical pattern-matching. Each brief names the
 standard doc(s) to read, the folders to sweep, and the return contract:
 **findings only** — file:line, the violated rule, a one-line proposed fix, and
 a confidence tag — never file dumps. Retry a failed subagent once; a group
@@ -109,8 +111,9 @@ Apply the fixes in small scoped commits (`janitor: <what> (<rule it
 violated>)`), one commit per cluster, each carrying the doc updates
 `docs/contributing.md` maps to the files it touched. Fixes land
 **sequentially in one working tree** — a large mechanical cluster may be
-delegated to a single implementer subagent, but never two writers at once;
-the parent stays the sole committer.
+delegated to a single implementer subagent (**tier `sonnet/medium`**, row
+`janitor: implementer`, `MATERIA.md` § Tiers § Skill routing), but never two
+writers at once; the parent stays the sole committer.
 
 ### 5. Gate locally, then PR
 
