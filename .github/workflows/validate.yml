@@ -20,4 +20,6 @@ jobs:
             echo "claude CLI not available on this runner — skipping plugin validate."
           fi
         continue-on-error: true
+      - name: install busybox (check-docs portability lane)
+        run: sudo apt-get update && sudo apt-get install -y busybox-static
       - run: node scripts/validate-plugin.mjs
