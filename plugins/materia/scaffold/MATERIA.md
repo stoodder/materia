@@ -354,7 +354,20 @@ recorded so a repo that breaks one adapts deliberately, not by surprise:
 - **One MATERIA.md = one adaptation surface.** § Gate, § Run it, and the baseline
   in § Surface gates describe a **single package** over the whole tree. A polyglot
   monorepo whose packages need different gates or run commands is not expressible
-  in one file: adopt Materia **per package** — a MATERIA.md at each package root,
-  running the pipeline from that package as its own root (the skills resolve one
-  root MATERIA.md and diff the whole tree, so this is not automatic) — or make each
-  § Gate command an umbrella script that dispatches across packages.
+  in one file. First-class per-package support (a package-path axis in these
+  sections plus a diff the pipeline partitions by package) was **weighed and
+  deferred**: it reshapes the pipeline's single-baseline diff model — § Surface
+  gates, the ship-spec review fan-out, and finalize's gate all read one whole-tree
+  diff — and lands that complexity on the single-package common case, for a gain
+  the two adoption patterns below already deliver. It is warranted only when
+  packages must ship in **one cross-package PR**; short of that, adopt one of:
+  - **Per package root** — a MATERIA.md at each package root, running the pipeline
+    from that package as its own root. This is **not automatic**: the pipeline
+    resolves one root MATERIA.md, and its baseline is a **whole-tree**
+    `git diff <baseline>...HEAD` with no package pathspec (finalize likewise runs
+    the gate "from the repo root"), so a run rooted at one package still sees other
+    packages' changes in its § Surface gates and review fan-out. Scope each run to
+    one package's changes yourself, or accept the whole-tree diff.
+  - **Umbrella § Gate commands** — keep one root MATERIA.md and make each § Gate
+    command a script that dispatches across packages, so the single gate fans out
+    to every package.
