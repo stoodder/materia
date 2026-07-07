@@ -25,8 +25,10 @@ release/
 
 - `latest.json` — `{ pluginVersion, artifactSchema, latestVersionFile }`. Its
   `latestVersionFile` points at the newest `versions/*.json`; its `pluginVersion` and
-  `artifactSchema` must agree with that file and with the scaffold's shipped
-  `.materia/project.json`. `scripts/validate-plugin.mjs` pins this coherence.
+  `artifactSchema` must agree with that file, and its `artifactSchema` must also agree with the
+  scaffold's shipped `.materia/project.json` (the scaffold is version-agnostic — it ships
+  `pluginVersion: null` — so only the schema is pinned against it).
+  `scripts/validate-plugin.mjs` pins this coherence.
 - `versions/<pluginVersion>.json` — one file per plugin release (see schema below).
 
 ## Plugin semver is not the artifact schema
