@@ -245,11 +245,10 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
 
      4. **Fallback:** if `<owner>/<repo>` cannot be resolved from the remote
         URL (empty output, unexpected format), attempt
-        `gh repo view --json nameWithOwner` (the `gh` path — `MATERIA.md`
-        § Version control § Forge) to retrieve the canonical `<owner>/<repo>`
-        string. The GitHub MCP `create_pull_request` context
-        (already available to finalize) may also supply it. Use whichever
-        resolves first.
+        `gh repo view --json nameWithOwner` (when `gh` is present) to retrieve
+        the canonical `<owner>/<repo>` string. The GitHub MCP
+        `create_pull_request` context (already available to finalize) may also
+        supply it. Use whichever resolves first.
 
      5. **Unresolvable escape hatch:** if neither the remote-URL parse nor the
         `gh`/MCP fallback can resolve `<owner>/<repo>`, render the degraded
