@@ -58,15 +58,15 @@ status: proposed                         # always literally `proposed` while in 
   Format: a 6-character base36 (lowercase a–z and 0–9) token
   (`LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6`) freshly
   generated per proposal — **the same shape as the `<rand>` token used in
-  spec folder names under `docs/specs/` and improvement folder names under
-  `docs/specs/_improvements/`**, so the proposed-spec filename pattern
+  spec folder names under `docs/specs/` and in the `_proposed/`
+  proposed-spec filenames**, so the proposed-spec filename pattern
   matches them. Treat `id` as opaque — do not parse it. Legacy 5-char hex
   ids remain valid — id resolution is format-agnostic.
 - **`schema_version`** — informational version of this frontmatter shape.
   Bump when the contract changes. Consumers SHOULD record an unrecognised
   `schema_version` and degrade rather than halt.
 - **`source`** — short kebab-case identifier of the producing loop. Examples:
-  `retro-suggestions`, `market-research`, `user-feedback`, `manual`. New
+  `retro-triage`, `market-research`, `user-feedback`, `manual`. New
   sources are added by convention; no enum is enforced.
 - **`source_refs`** — list of strings (repo-root-relative paths or URLs)
   pointing back at the producer's input artifact(s) so a reviewer can trace
@@ -93,8 +93,7 @@ Files are named:
 ```
 
 This matches the **`<yyyy-mm-dd-hhmmss>-<rand>-<slug>` convention** used by
-spec folders under `docs/specs/` and improvement folders under
-`docs/specs/_improvements/` — the `id` and the `<rand>` token are
+spec folders under `docs/specs/` — the `id` and the `<rand>` token are
 the same shape (a 6-character base36 token) and serve the same
 role: a chronologically-sortable, globally-unique disambiguator.
 
@@ -102,14 +101,14 @@ role: a chronologically-sortable, globally-unique disambiguator.
   matches the frontmatter `date`; the time part is minted at write time
   (`date -u +%Y-%m-%d-%H%M%S`) so queue files `ls`-sort in creation order.
 - `<id>` — the frontmatter `id` (6-char base36; the same shape as
-  `<rand>` in spec/improvement folder names).
+  `<rand>` in spec folder names and `_proposed/` proposal filenames).
 - `<slug>` — a short kebab-case rendering of the title; see § Kebab-slug
   derivation below for the normative algorithm both producers and
   consumers MUST use.
 
 The frontmatter `source` field is **not** part of the filename. It lives
 in the YAML block only, queried at parse time. This keeps the filename
-shape aligned with spec/improvement folder names; the source is still
+shape aligned with spec folder names; the source is still
 discoverable for any consumer that opens the file.
 
 ### Kebab-slug derivation
@@ -222,8 +221,8 @@ than re-presenting the proposal in the menu.
 Because the directory is transient, **it is NOT an archive** and consumers
 SHOULD NOT mine it for historical data. A producer that wants an audit
 trail of what it has proposed keeps its own log alongside its input
-artifacts (e.g. `suggestions.processed.md` for the `retro-suggestions`
-producer).
+artifacts (e.g. the renamed `retro.processed.md` captures the
+`retro-triage` producer leaves beside its consumed retros).
 
 ## Producer responsibilities
 
@@ -269,7 +268,7 @@ folder directly) MUST:
 
 | Source key | Skill | Input(s) it consumes |
 |---|---|---|
-| `retro-suggestions` | `suggestions-to-specs` | `docs/specs/_improvements/**/product-suggestions.md` files emitted by `triage-retros` |
+| `retro-triage` | `triage-retros` | Unprocessed `retro.md` captures under `docs/specs/**` and `docs/bugs/**` from ship-spec / fix-bug runs; clustered in-memory into proposed specs (product improvements), de-duplicated against the pending queue + recent merge log, then written on approve (defects go to the sibling `docs/bugs/_reports/` queue in the same run) |
 | `user-proposed` | `propose-spec` | The user's raw idea, refined via in-conversation Q&A; Q&A is in-memory, then on approve it branches, commits, and opens a PR |
 | `janitor` | `janitor` | Legacy key — carried only by entries still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
 | `ui-inspection` | `ui-inspection` | Operator-requested variant of a ui-inspection run: judgment-based UX-improvement recommendations that exceed the bug-report rubric become spec proposals; `source_refs` points at the run's report folder in `docs/bugs/_reports/` (the standards-violation findings stay in that bug report) |
@@ -286,4 +285,4 @@ The frontmatter contract and the filename pattern are **shared across all
 producers and consumers**. Any change here forces every producer to update
 in lockstep. Flag PRs that modify this file for extra scrutiny: review them
 with the same care as a change to any shared artifact contract (e.g. the
-retro/hand-off contracts `triage-retros` and its consumers parse).
+retro contract `triage-retros` parses).

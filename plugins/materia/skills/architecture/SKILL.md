@@ -186,8 +186,8 @@ matters more than the section labels**.
   / `Contracts & models` / `Client state` / `UI`.
 - **Map "existing resources" (step 2)** to whatever the equivalent is —
   sibling skills under `${CLAUDE_PLUGIN_ROOT}/skills/`, related templates under
-  `docs/specs/_templates/`, prior decisions captured in
-  `docs/specs/_improvements/` plans.
+  `docs/specs/_templates/`, prior decisions captured in pending proposals under
+  `docs/specs/_proposed/`.
 - **Enumerate the operator surface.** The design stage is UI-gated and does
   not run for these features, so this doc carries what design would have:
   the operator-facing phases the feature produces (e.g. Discovery →

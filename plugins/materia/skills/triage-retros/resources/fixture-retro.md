@@ -9,7 +9,7 @@ status: completed
 
 # Fixture Verification — triage fixture
 
-Synthetic retro carrying one unambiguous signal of each kind — pipeline/harness friction (out of scope under the project retarget → **no** bucket item), a product improvement (→ `suggestions[]`), and a bug (→ `bugs[]`) — for verification testing of the two-bucket project triage.
+Synthetic retro carrying one unambiguous signal of each kind — pipeline/harness friction (out of scope under the project retarget → **no** artifact), a product improvement (→ a drafted proposed spec), and a bug (→ a drafted bug report) — for verification testing of the single-hop producer triage.
 
 ## Entry 1 — intake — 2026-06-18T10:05:00Z
 
@@ -40,15 +40,13 @@ Synthetic retro carrying one unambiguous signal of each kind — pipeline/harnes
 - The weekly summary page layout rendered cleanly with the current set-log integration
 
 ### What could be improved
-- The app would benefit from a streak counter on the weekly summary page to help users visualize workout consistency over multiple weeks
-- The rest-timer component could display estimated remaining zone-2 volume for the week
-- Sorting workout history by date is useful but filtering by lift type would improve scanning time
+- The weekly summary page would benefit from a streak counter to help users visualize workout consistency over consecutive weeks
 
 ### Unexpected
-- Users noticed the summary does not aggregate cross-week progress on lifts
+- Users repeatedly asked how many weeks in a row they had logged a lift — the weekly summary page has no such indicator today
 
 ### Other signals
-- Product improvement: implement a visual streak counter showing consecutive workout weeks with at least one lift logged
+- Product improvement: implement a visual streak counter on the weekly summary page showing consecutive workout weeks with at least one lift logged
 
 ## Entry 3 — finalize — 2026-06-18T10:15:00Z
 

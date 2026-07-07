@@ -73,35 +73,30 @@ does.
 A manually-invoked skill consumes the `retro.md` files that ship-spec and
 fix-bug capture and turns their signal into **project-specific** backlog
 items. It is **not** a pipeline stage — it runs after a stretch of ship-spec /
-fix-bug runs. Retros feed the project (product suggestions + bug reports), not
+fix-bug runs. Retros feed the project (proposed specs + bug reports), not
 the pipeline skills themselves:
 
 | Skill | Produces |
 |---|---|
-| `triage-retros` (retro triage) | `docs/specs/_improvements/<dated-slug>/pipeline-health.md` (always emitted — an accumulating health-rollup corpus that is never consumed, and the run's resumability sentinel) + a `product-suggestions.md` hand-off for product improvements (consumed by `suggestions-to-specs`) + a `bug-reports.md` gather hand-off when bugs were found (consumed by `bugs-to-reports`); renames each consumed `retro.md` → `retro.processed.md` across both `docs/specs/**/` and `docs/bugs/**/`; opens exactly one PR (no auto-merge). Performs two-way triage on retro signal (product improvements / bugs); a batch with neither is a valid health-only run. It **stops at the artifacts**. |
-| `bugs-to-reports` (bug-queue producer) | Reads gathered `bug-reports.md` hand-offs from `docs/specs/_improvements/**/`; drafts conformant 13-section bug-report files; on approve writes them into `docs/bugs/_reports/` and renames each consumed `bug-reports.md` → `bug-reports.processed.md`; opens one PR per run (no auto-merge). |
+| `triage-retros` (retro triage) | Clusters retro signal **in-memory** and authors it **directly** into both queues under `source: retro-triage`: product improvements become proposed specs in `docs/specs/_proposed/`, defects become 13-section bug reports in `docs/bugs/_reports/`. Consolidates related signal (specs bundle related stories up to `propose-spec`'s split line; reports fold same-defect signal only), de-duplicates the drafts against the pending queues + the recent merge log (nothing silently discarded — a dropped/parked list rides the confirmation and the PR), renames each consumed `retro.md` → `retro.processed.md` across both `docs/specs/**/` and `docs/bugs/**/`, and opens exactly one PR (no auto-merge). Pure pipeline/harness friction is out of scope — it produces no artifact. |
 
-`suggestions-to-specs` (a `_proposed/`-queue producer — see § Proposed
-specs) consumes the `product-suggestions.md` hand-off the same way.
-
-The improvements tree (`docs/specs/_improvements/`) is a sibling to feature
-spec folders and `_templates/`; its `README.md` is seeded by the first run of
-`triage-retros` (no infrastructure pre-commit). See
-`triage-retros` for the full procedure.
+It is a single-hop producer for **both** queues: one confirmation, one PR,
+retro straight to reviewable proposal/report. See `triage-retros` for the
+full procedure.
 
 ## Bug reports — sibling queue
 
 A separate `docs/bugs/` tree (queue at [`docs/bugs/_reports/`](../bugs/_reports/README.md),
 overview at [`docs/bugs/README.md`](../bugs/README.md)) mirrors this one for
 bug reports. Producers that write into the queue: `/materia:report-bug` (operator-described bugs),
-`/materia:bugs-to-reports` (files the gathered `bug-reports.md` hand-offs that `triage-retros`
-emits), and `/materia:ui-inspection` (drives the live app
+`/materia:triage-retros` (authors bug reports clustered from retro signal, `source: retro-triage`),
+and `/materia:ui-inspection` (drives the live app
 across the full surface-map and files one consolidated checklist bug report).
 `/materia:fix-bug` is the consumer that drives a report through reproduce-bug (RED gate)
 → bug-analysis → plan-tasks → implement → review → docs-sync ⇄ docs-audit →
 finalize (dequeue), opening one PR at terminal state.
 
-## Proposed specs — the shared intake queue (`suggestions-to-specs`, `propose-spec`, and future producers)
+## Proposed specs — the shared intake queue (`triage-retros`, `propose-spec`, and future producers)
 
 [`docs/specs/_proposed/`](_proposed/README.md) is a **shared intake surface**
 where proposed specs from any source land for operator review. It is a
@@ -113,17 +108,17 @@ trend toward empty.
 The frontmatter contract (`id`, `source`, `source_refs`, `title`, `date`,
 `status: proposed`) and the filename pattern
 (`<YYYY-MM-DD-HHMMSS>-<id>-<slug>.md`, matching the `<yyyy-mm-dd-hhmmss>-<rand>-<slug>`
-shape used by spec and improvement folders) are documented in
+shape used by spec folders) are documented in
 [`_proposed/README.md`](_proposed/README.md). Any producer that drops a file
 there MUST conform; any consumer that reads from there MAY rely on it.
 
 | Skill | Source key | Produces |
 |---|---|---|
-| `suggestions-to-specs` | `retro-suggestions` | Drafts proposed specs from `docs/specs/_improvements/**/product-suggestions.md`, presents them for approval, then on approve writes the file(s), renames each consumed `product-suggestions.md` → `product-suggestions.processed.md`, and opens a single PR (no auto-merge). |
+| `triage-retros` | `retro-triage` | Clusters retro signal into proposed specs (product improvements), presents every draft for approval with a de-dup dropped/parked list, then on approve writes the file(s), renames each consumed `retro.md` → `retro.processed.md`, and opens a single PR (no auto-merge). Also authors bug reports into the sibling `_reports/` queue in the same run. |
 | `propose-spec` | `user-proposed` | Drafts proposed specs from the user's raw idea via in-conversation Q&A; splits sprawling ideas into separate single-shippable-unit proposals. Q&A is in-memory; on approve it branches, writes the file(s), commits, and opens a PR. |
 | `propose-epic` | `epic` | Develops the operator's large multi-spec idea into an epic under [`docs/epics/`](../epics/README.md) (iterative brainstorm Q&A + a parallel low-tier web-research fan-out), then decomposes it into 2–N member proposals wired by a `depends_on` dependency graph — epic folder + members land in one PR. When a member is later shipped, `ship-spec`'s epic gate spawns the sibling `reconcile-epic` skill (pipeline mode) to sync the epic from as-built reality and cascade changes into the remaining pending members inside the member's own PR; standalone `/materia:reconcile-epic` is the backstop. |
 
-See `suggestions-to-specs`, `propose-spec`,
+See `triage-retros`, `propose-spec`,
 and `propose-epic`
 for the full procedures. Epics themselves (the parent initiative documents,
 their member-linkage contract, and the `reconcile-epic` cascade lifecycle)

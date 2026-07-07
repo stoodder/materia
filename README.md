@@ -18,14 +18,13 @@ spec-to-ship pipeline tailored to your tech stack:
 - **Producers** — skills that fill the queues from every signal source you
   have: your ideas (`/materia:propose-spec`, `/materia:propose-epic`), your own eyes
   (`/materia:report-bug`), the app's UI (`/materia:ui-inspection`), and the pipeline's own
-  retrospectives (`/materia:suggestions-to-specs`, `/materia:bugs-to-reports`).
+  retrospectives (`/materia:triage-retros`).
 - **Maintainers** — `/materia:janitor` sweeps the code against your standards docs;
   `/materia:librarian` sweeps the docs against the code. Both fix drift directly.
 - **A retro-triage loop that feeds your backlog, not the harness.** Every
-  pipeline run writes a `retro.md`; `/materia:triage-retros` triages the
-  accumulated signal two ways (product suggestions / bug reports) into
-  **your project's** backlog. `/materia:suggestions-to-specs` turns suggestions
-  into proposed specs and `/materia:bugs-to-reports` files the bugs — the
+  pipeline run writes a `retro.md`; `/materia:triage-retros` clusters the
+  accumulated signal and authors it directly into **your project's** backlog —
+  proposed specs and bug reports (`source: retro-triage`) — in one PR. The
   pipeline itself ships as a versioned plugin and does not rewrite its own
   skills.
 - **A docs system built for agent context** — a progressive-disclosure read

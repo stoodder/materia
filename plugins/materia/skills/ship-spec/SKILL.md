@@ -168,9 +168,9 @@ one re-enters the Resume gate rather than starting a parallel run.
 
 **Empty queue** (zero pending unclaimed proposals AND no ad-hoc text): exit
 cleanly — no branch, no files — telling the operator their options
-(`/materia:suggestions-to-specs`, hand-write a proposal per
-`docs/specs/_proposed/README.md`, or re-invoke with a freeform spec). End the
-turn.
+(`/materia:triage-retros` to mine retros into proposals, `/materia:propose-spec`
+or hand-write a proposal per `docs/specs/_proposed/README.md`, or re-invoke with
+a freeform spec). End the turn.
 
 ### Present the menu
 
@@ -889,7 +889,7 @@ the fix in place and re-flow the artifacts **asymmetrically**:
 This pipeline keeps a per-run retrospective at
 `docs/specs/<dated-slug>/retro.md`. The orchestrator owns it end-to-end —
 stages just respond when asked. The retro is the raw data `triage-retros`
-later consumes to propose improvements to this pipeline.
+later consumes to author project backlog items (proposed specs + bug reports).
 
 **Sole-writer invariant:** the orchestrator is the **sole writer** of
 `retro.md`. No subagent in any stage writes to or commits `retro.md` directly.
@@ -1047,8 +1047,8 @@ is always a valid record of however far the run got.
 ### Scope
 
 This skill only **writes** `retro.md`. It does not read or act on past retros
-— `triage-retros` harvests them and triages their signal into the
-project's backlog (product suggestions + bug reports).
+— `triage-retros` harvests them and authors their signal into the
+project's backlog (proposed specs + bug reports).
 
 ## Guardrails (don't spin forever)
 

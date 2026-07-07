@@ -291,7 +291,7 @@ End the turn.
 
 ```yaml
 ---
-id: <fresh 6-char base36 token; same shape as `<rand>` in spec/improvement folder names>
+id: <fresh 6-char base36 token; same shape as `<rand>` in spec folder names>
 schema_version: 1
 source: user-proposed
 source_refs:
@@ -381,7 +381,7 @@ spawn-contract authoring rule the pipeline already applies to
 ```
 
 This matches the **`<yyyy-mm-dd-hhmmss>-<rand>-<slug>` convention** used by
-spec folders and improvement folders — same shape, just a file rather
+spec folders — same shape, just a file rather
 than a directory. The `source` field is in frontmatter only, not in the
 filename.
 

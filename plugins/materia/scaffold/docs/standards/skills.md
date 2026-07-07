@@ -141,7 +141,7 @@ human comments and no `Blocker`.
 |---|---|---|---|
 | **Orchestrator** | operator session | none (dispatches others) | `ship-spec`, `fix-bug`, `triage-retros` |
 | **Sub-skill** | a fresh-context subagent the orchestrator spawns | its row in `MATERIA.md` § Skill routing | `intake-spec`, `design`, `ui-test-plan`, `architecture`, `plan-tasks`, `implement-task`, `finalize`, `docs-sync`, `docs-audit`, `reproduce-bug`, `bug-analysis`, `ui-review` |
-| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `suggestions-to-specs`, `report-bug`, `bugs-to-reports`, `ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key |
+| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `report-bug`, `triage-retros`, `ui-inspection` — each writes into a queue under that queue's contract (`docs/specs/_proposed/` for spec proposals; `docs/bugs/_reports/` for bug reports) with a distinct `source:` key. `triage-retros` writes into **both** queues in one run, under `source: retro-triage` |
 | **Maintainer** | operator session (or scheduled) | none | `librarian` (sweeps the living docs) and `janitor` (sweeps the code against `docs/standards/`) — each fixes drift directly and opens one PR instead of filing queue entries. Only the librarian **auto-merges its own PR**: a standing exception to the "no auto-merge" invariant, valid only behind a mechanical diff envelope + green CI (its § The docs-only envelope); the janitor's diff is product code, so it stops for human review. Per-run exception: `--auto` (§ The `--auto` argument). |
 
 A producer additionally MUST conform to the queue's frontmatter/filename
@@ -162,8 +162,7 @@ skill.
 **Checkpoint mode** — one of:
 
 - **Interactive** (`report-bug`, `propose-spec`, `propose-epic`,
-  `reconcile-epic` standalone, `suggestions-to-specs`,
-  `bugs-to-reports`): draft everything
+  `reconcile-epic` standalone, `triage-retros`): draft everything
   in-memory, present one confirmation block, then pause. Reply verbs, with
   exactly these semantics: `approve` (write + ship), `edit: <feedback>`
   (adjust all drafts, re-present), `edit <id>: <feedback>` (adjust one),
@@ -178,14 +177,15 @@ skill.
 
 **Branch timing** — one of:
 
-- **Branch-at-discovery** (queue consumers — `suggestions-to-specs`,
-  `bugs-to-reports`): once work is found,
-  `git checkout main && git pull` then branch; the branch holds **zero
-  diffs** until approve.
-- **Branch-at-approve** (Q&A producers — `report-bug`, `propose-spec`,
-  `propose-epic`, `reconcile-epic` standalone): the
-  whole Q&A is in-memory; the branch is created only on `approve`, so an
-  abandoned conversation leaves no trace.
+- **Branch-at-discovery** (autonomous producers with no interactive
+  checkpoint — `ui-inspection`): once the run commits to writing a report,
+  `git checkout main && git pull` then branch, write, and open the PR in one
+  pass; the PR is the review gate, so there is no `approve` to defer the
+  branch to.
+- **Branch-at-approve** (in-memory producers — `report-bug`, `propose-spec`,
+  `propose-epic`, `reconcile-epic` standalone, `triage-retros`): the whole
+  draft (Q&A, or `triage-retros`'s harvest + synthesis) is in-memory; the
+  branch is created only on `approve`, so an abandoned run leaves no trace.
 
 Either way: if `git pull` is blocked by local uncommitted changes, halt and
 surface the conflict; if the branch name already exists locally (same-day
@@ -255,9 +255,9 @@ after a horizontal rule, with the casting skill's name substituted:
   can ignore it. Keep the line's shape stable so it stays greppable
   (`Forged with [Materia]`).
 - The "feeds the backlog" clause is literal: each run leaves a `retro.md`, and
-  `triage-retros` triages the batch into product suggestions and bug
-  reports that reach the project's backlog via `suggestions-to-specs`
-  and `bugs-to-reports`.
+  `triage-retros` triages the batch into proposed specs and bug reports that it
+  authors directly into `docs/specs/_proposed/` and `docs/bugs/_reports/`
+  (`source: retro-triage`), reaching the project's backlog in one PR.
 
 ### Registration surfaces — update in the same change
 

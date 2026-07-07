@@ -218,7 +218,7 @@ per-task-field cases) live in § Fallback.
 | `ui-test-plan` | `sonnet` | `medium` | `opus` | enumerate flows worth guarding from a resolved design |
 | `ui-review` | `fable` | `high` | `opus` | qualitative cross-screen cohesion judgement; UI-gated. Governs standalone invocation of the skill; the ship-spec ui-angle spawn resolves via the **`ui` row in § Review angles** instead — the validator pins this row's model/effort equal to that registry Tier, so keep them in sync |
 | `ship-spec: review/tiebreaker` | `fable` | `high` | `opus` | resolves conflicting review recommendations |
-| `triage-retros: sub-agent` | `sonnet` | `low` | `opus` | mechanical bucketing / quoting over one retro |
+| `triage-retros: sub-agent` | `sonnet` | `low` | `opus` | mechanical parse + quote of one retro into an insight envelope; the clustering/drafting reasoning stays in the parent |
 | `propose-epic: research` | per-question (§ Model set) | per-question | `opus` | one subagent per question; model+effort picked together per § Model set (default / ceiling defined in the skill body) |
 
 ### Fallback

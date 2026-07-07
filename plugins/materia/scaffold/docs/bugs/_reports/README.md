@@ -56,15 +56,14 @@ status: reported                            # always literally `reported` while 
   base36 (lowercase a–z and 0–9) token
   (`LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6`) freshly generated
   per report — the same shape as the `<rand>` token used in spec folder names
-  under `docs/specs/` and improvement folder names under
-  `docs/specs/_improvements/`. Treat `id` as opaque — do not parse it.
+  under `docs/specs/`. Treat `id` as opaque — do not parse it.
   Legacy 5-char hex ids remain valid — id resolution is format-agnostic.
 - **`schema_version`** — informational version of this frontmatter shape.
   Bump when the contract changes. Consumers SHOULD record an unrecognised
   `schema_version` and degrade rather than halt.
-- **`source`** — short kebab-case identifier of the producing loop. The only
-  value `/materia:report-bug` writes is `bug-report`. New sources are added by
-  convention; no enum is enforced.
+- **`source`** — short kebab-case identifier of the producing loop.
+  `/materia:report-bug` writes `bug-report`; `/materia:triage-retros` writes
+  `retro-triage`. New sources are added by convention; no enum is enforced.
 - **`severity`** — a **required** closed enum: `low | medium | high | critical`.
   Gives the downstream `/materia:fix-bug` consumer a stable field to filter and
   prioritize on (a closed set, deliberately — never free text). The
@@ -94,7 +93,7 @@ Report folders are named:
 and the report itself lives at `<YYYY-MM-DD-HHMMSS>-<id>-<slug>/report.md`.
 
 This matches the `<yyyy-mm-dd-hhmmss>-<rand>-<slug>` convention used by spec folders
-under `docs/specs/` and improvement folders under `docs/specs/_improvements/` —
+under `docs/specs/` —
 the `id` and the `<rand>` token are the same shape (a 6-character base36
 token) and serve the same role: a chronologically-sortable, globally-unique
 disambiguator.
@@ -236,7 +235,7 @@ MUST:
 | Source key | Skill | Input(s) it consumes |
 |---|---|---|
 | `bug-report` | `/materia:report-bug` | The operator's raw bug description, refined via in-memory Q&A; on approve it branches, writes the report, and opens a PR |
-| `bugs-to-reports` | `/materia:bugs-to-reports` | Gathered `bug-reports.md` hand-offs from `docs/specs/_improvements/**/`; drafts conformant reports and files them into `docs/bugs/_reports/`; `triage-retros` gathers the items but no longer writes queue files directly |
+| `retro-triage` | `/materia:triage-retros` | Unprocessed `retro.md` captures under `docs/specs/**` and `docs/bugs/**`; clusters defect signal in-memory into single-defect 13-section reports (folding duplicate signal about the same defect), de-duplicates against the pending queue + recent merge log, and on approve writes them directly into `docs/bugs/_reports/` (product improvements go to the sibling `docs/specs/_proposed/` queue in the same run) |
 | `janitor` | `/materia:janitor` | Legacy key — carried only by reports still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
 | `ui-inspection` | `/materia:ui-inspection` | The running app, driven across `docs/surface-map.md § Pages` at the canonical viewport (MATERIA.md § Eyes); judged against the repo's visual standards docs. Writes one consolidated checklist report; captures co-located in the report folder as `<surface-slug>.{png,html}`. |
 
