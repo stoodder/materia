@@ -1,6 +1,6 @@
 ---
 name: init
-description: Materialize the Materia harness into this repo. Interviews the engineer about what they're building (brainstorm survey → product identity & taste → tech-stack selection → capability probes), then writes MATERIA.md + CLAUDE.md + the docs/product.md product brief, generates the stack-specific standards docs, materializes the docs skeleton, check-docs.sh, and the .materia/review-angles/ review-angle library, and seeds docs/specs/_proposed/ with a bootstrap epic so the pipeline's own first /materia:ship-spec run scaffolds the app. Reads its sources from the plugin's bundled scaffold at ${CLAUDE_PLUGIN_ROOT}/scaffold; copies no skills into the repo (they run from the installed materia plugin) and prunes nothing. Run once on a fresh repo after installing the materia plugin; idempotent to re-run before the first bootstrap spec ships.
+description: Materialize the Materia harness into this repo. Interviews the engineer about what they're building (brainstorm survey → product identity & taste → tech-stack selection → capability probes), then writes MATERIA.md + CLAUDE.md + the docs/product.md product brief, generates the stack-specific standards docs, materializes the docs skeleton, check-docs.sh, the .materia/review-angles/ review-angle library, and the .materia/project.json project-state file, and seeds docs/specs/_proposed/ with a bootstrap epic so the pipeline's own first /materia:ship-spec run scaffolds the app. Reads its sources from the plugin's bundled scaffold at ${CLAUDE_PLUGIN_ROOT}/scaffold; copies no skills into the repo (they run from the installed materia plugin) and prunes nothing. Run once on a fresh repo after installing the materia plugin; idempotent to re-run before the first bootstrap spec ships.
 ---
 
 # init — materialize Materia into this repo
@@ -46,6 +46,10 @@ Read tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path) — e.g.
   library (the six canonical angle definitions + the directory `README.md`),
   materialized so projects can fork or extend it; the `MATERIA.md` § Review
   angles registry maps each to its File / Gate / Tier.
+- `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/project.json` — the project-state
+  file (artifact schema, baseline source, applied migrations), materialized
+  verbatim so the repo is tracked from init forward. Copied, not authored — init
+  fills no slot in it.
 - The engineer, interactively — this is the most interactive skill in the
   harness; everything downstream runs autonomously *because* this survey
   resolved the ambiguity up front.
@@ -64,6 +68,8 @@ branch-and-PR discipline — there is nothing to diff against yet):
 - `.materia/review-angles/**` — the review-angle library (six canonical angle
   files + `README.md`), materialized verbatim; repo-specific angles append as
   new files + `MATERIA.md` § Review angles rows.
+- `.materia/project.json` — the project-state file, materialized verbatim so the
+  repo carries release/artifact tracking from init forward.
 - `.claude/settings.json` — seeded with this repo's dev permissions (Phase 6).
 - `docs/epics/<dated-slug>/` + 2–N member proposals in
   `docs/specs/_proposed/` — the **bootstrap epic** (see Phase 7).
@@ -198,7 +204,9 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
    `${CLAUDE_PLUGIN_ROOT}/scaffold/scripts/check-docs.sh` → `scripts/`; and
    `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/**` → `.materia/` (the review-angle
    library — angle definitions are **config**, read at runtime from the repo
-   like `docs/`, not skills). **No skills are copied** — the pipeline skills run
+   like `docs/`, not skills — plus `project.json`, the project-state file that
+   tracks artifact schema + applied migrations; both copied verbatim, no slots).
+   **No skills are copied** — the pipeline skills run
    from the installed `materia` plugin, so the user repo has no `.claude/skills/`
    of its own and there is nothing to prune or deregister. Every producer stays
    advertised in the queue tables and skill rosters exactly as the scaffold
@@ -318,8 +326,9 @@ every change flows through the pipeline and lands via PR.
 ### Phase 8 — Report
 
 Close with: what was materialized (standards generated, the product brief, the
-docs skeleton + `check-docs.sh`, the `.materia/review-angles/` library),
-the MATERIA.md sections marked `none` (and
+docs skeleton + `check-docs.sh`, the `.materia/review-angles/` library, the
+`.materia/project.json` project-state file), the MATERIA.md sections marked
+`none` (and
 which UI/data-gated skills that leaves inert), the bootstrap
 epic's member list with the recommended shipping order, and the one-line
 next step (`/materia:ship-spec`).

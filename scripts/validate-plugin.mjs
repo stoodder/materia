@@ -773,6 +773,123 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
     console.log(`  ✓ review-angle hygiene: no unquoted {{slot}} markers or live repo-relative links in ${files.length} angle-dir files`)
 }
 
+// ---- 6. release ledger + project-state sanity -------------------------------
+// Basic JSON parse + coherence sanity for the release/migration ledger
+// (plugins/materia/release/) and the scaffold's project-state artifact. This is
+// v0: it asserts internal consistency of the SHIPPED data only. NOTHING here
+// requires /materia:doctor or /materia:migrate to exist — the doctorChecks /
+// migrations IDs are validated for SHAPE (non-empty, unique) not resolved against
+// any check/script (those are forthcoming). The one invariant that earns its
+// keep: the artifact schema is declared in three places — release/latest.json,
+// the pointed-to versions/*.json, and scaffold/.materia/project.json — and they
+// must agree; a silent drift between them is exactly the contract break a future
+// doctor/migrate would trust. That coupling is guarded here.
+{
+  const before = failures
+  const REL = 'plugins/materia/release'
+  const IMPACTS = ['none', 'doctor-only', 'optional', 'recommended', 'required', 'breaking']
+  const isInt = (n) => typeof n === 'number' && Number.isInteger(n)
+  const isStr = (s) => typeof s === 'string' && s.length > 0
+  const parseJson = (f) => {
+    let v
+    try { v = JSON.parse(readFileSync(f, 'utf8')) }
+    catch (e) { fail(`${f}: not valid JSON — ${e.message}`); return null }
+    if (v === null || typeof v !== 'object' || Array.isArray(v)) { fail(`${f}: must be a JSON object`); return null }
+    return v
+  }
+
+  const plugin = parseJson('plugins/materia/.claude-plugin/plugin.json')
+  const latest = parseJson(join(REL, 'latest.json'))
+  if (plugin && latest) {
+    if (latest.pluginVersion !== plugin.version)
+      fail(`release/latest.json pluginVersion "${latest.pluginVersion}" != plugin.json version "${plugin.version}"`)
+    if (!isInt(latest.artifactSchema))
+      fail(`release/latest.json artifactSchema must be an integer (got ${JSON.stringify(latest.artifactSchema)})`)
+    if (!isStr(latest.latestVersionFile))
+      fail(`release/latest.json latestVersionFile must be a non-empty string`)
+    else if (!latest.latestVersionFile.startsWith('versions/'))
+      fail(`release/latest.json latestVersionFile "${latest.latestVersionFile}" must point into versions/`)
+    else if (!existsSync(join(REL, latest.latestVersionFile)))
+      fail(`release/latest.json latestVersionFile "${latest.latestVersionFile}" does not resolve under ${REL}/`)
+  }
+
+  // Every versions/*.json: shape + per-change validity; collect for coherence.
+  const versionsDir = join(REL, 'versions')
+  const versionFiles = existsSync(versionsDir)
+    ? readdirSync(versionsDir).filter((f) => f.endsWith('.json')).sort()
+    : (fail(`${versionsDir} does not exist`), [])
+  const parsedVersions = new Map() // "versions/x.json" -> parsed object
+  for (const vf of versionFiles) {
+    const rel = `versions/${vf}`
+    const obj = parseJson(join(REL, rel))
+    if (!obj) continue
+    parsedVersions.set(rel, obj)
+    const stem = vf.replace(/\.json$/, '')
+    if (!isStr(obj.pluginVersion)) fail(`${rel}: pluginVersion must be a non-empty string`)
+    else if (obj.pluginVersion !== stem) fail(`${rel}: pluginVersion "${obj.pluginVersion}" must equal the filename stem "${stem}"`)
+    if (!isInt(obj.artifactSchema)) fail(`${rel}: artifactSchema must be an integer`)
+    if (!Array.isArray(obj.changes)) { fail(`${rel}: changes must be an array`); continue }
+    const seenIds = new Set()
+    for (const [i, ch] of obj.changes.entries()) {
+      const where = `${rel} changes[${i}]`
+      if (ch === null || typeof ch !== 'object' || Array.isArray(ch)) { fail(`${where}: change must be an object`); continue }
+      if (!isStr(ch.id)) fail(`${where}: id must be a non-empty string`)
+      else if (seenIds.has(ch.id)) fail(`${where}: duplicate change id "${ch.id}"`)
+      else seenIds.add(ch.id)
+      if (!isStr(ch.summary)) fail(`${where}: summary must be a non-empty string`)
+      if (!IMPACTS.includes(ch.impact)) fail(`${where}: impact "${ch.impact}" is not one of ${IMPACTS.join(', ')}`)
+      if (!Array.isArray(ch.surfaces) || !ch.surfaces.every(isStr))
+        fail(`${where}: surfaces must be an array of non-empty strings`)
+      else if (ch.impact !== 'none' && ch.surfaces.length === 0)
+        fail(`${where}: surfaces must be non-empty when impact is not "none"`)
+      if (typeof ch.detectable !== 'boolean') fail(`${where}: detectable must be a boolean`)
+      if (typeof ch.migratable !== 'boolean') fail(`${where}: migratable must be a boolean`)
+      // doctorChecks / migrations are OPTIONAL; when present, arrays of unique
+      // non-empty strings. SHAPE ONLY — the referenced checks/scripts ship later
+      // and are deliberately NOT resolved here.
+      for (const key of ['doctorChecks', 'migrations']) {
+        if (ch[key] === undefined) continue
+        if (!Array.isArray(ch[key]) || !ch[key].every(isStr)) { fail(`${where}: ${key} must be an array of non-empty strings`); continue }
+        if (new Set(ch[key]).size !== ch[key].length) fail(`${where}: ${key} has duplicate ids`)
+      }
+      if (ch.manualMigration !== undefined && !isStr(ch.manualMigration))
+        fail(`${where}: manualMigration, when present, must be a non-empty string`)
+    }
+  }
+
+  // Scaffold project-state artifact shape.
+  const scaffoldState = parseJson('plugins/materia/scaffold/.materia/project.json')
+  if (scaffoldState) {
+    if (!isInt(scaffoldState.artifactSchema)) fail(`scaffold .materia/project.json: artifactSchema must be an integer`)
+    if (!Array.isArray(scaffoldState.appliedMigrations)) fail(`scaffold .materia/project.json: appliedMigrations must be an array`)
+    if (!isStr(scaffoldState.source)) fail(`scaffold .materia/project.json: source must be a non-empty string`)
+  }
+
+  // Coherence coupling: latest ↔ pointed version file ↔ scaffold project.json.
+  if (latest && isInt(latest.artifactSchema)) {
+    const pointed = latest.latestVersionFile ? parsedVersions.get(latest.latestVersionFile) : null
+    if (pointed) {
+      if (pointed.artifactSchema !== latest.artifactSchema)
+        fail(`release: latest.artifactSchema (${latest.artifactSchema}) != ${latest.latestVersionFile} artifactSchema (${pointed.artifactSchema})`)
+      if (pointed.pluginVersion !== latest.pluginVersion)
+        fail(`release: latest.pluginVersion (${latest.pluginVersion}) != ${latest.latestVersionFile} pluginVersion (${pointed.pluginVersion})`)
+    }
+    if (scaffoldState && isInt(scaffoldState.artifactSchema) && scaffoldState.artifactSchema !== latest.artifactSchema)
+      fail(`release: scaffold .materia/project.json artifactSchema (${scaffoldState.artifactSchema}) != latest.artifactSchema (${latest.artifactSchema})`)
+  }
+
+  // Fixture pins: tracked carries a schema-2 project.json; legacy carries none
+  // (its defining trait — the absence a future doctor keys on).
+  const trackedState = 'tests/fixtures/materia/tracked-current-project/.materia/project.json'
+  if (!existsSync(trackedState)) fail(`fixture: ${trackedState} must exist (tracked shape)`)
+  else { const t = parseJson(trackedState); if (t && t.artifactSchema !== 2) fail(`fixture: ${trackedState} artifactSchema must be 2 (schema-2 tracked shape)`) }
+  const legacyState = 'tests/fixtures/materia/legacy-0.1.0-project/.materia/project.json'
+  if (existsSync(legacyState)) fail(`fixture: ${legacyState} must NOT exist — the legacy fixture's defining trait is the absence of project state`)
+
+  if (failures === before)
+    console.log(`  ✓ release ledger + project-state sanity: ${versionFiles.length} version file(s); latest↔versions↔scaffold coherent; fixtures pinned`)
+}
+
 if (failures) {
   console.error(`\n${failures} validation failure(s).`)
   process.exit(1)

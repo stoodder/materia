@@ -1,0 +1,19 @@
+{
+  "pluginVersion": "0.2.0",
+  "artifactSchema": 2,
+  "summary": "Introduces the v0 release/artifact compatibility contract: a machine-readable ledger, a project-state file (.materia/project.json), and the schema-2 scaffold baseline.",
+  "changes": [
+    {
+      "id": "0.2.0-project-state-file",
+      "summary": "New Materia-installed projects carry a .materia/project.json state file recording artifact schema, baseline source, and applied migrations.",
+      "impact": "recommended",
+      "surfaces": ["scaffold", "ledger", "validator", "doctor", "migrate"],
+      "detectable": true,
+      "migratable": true,
+      "doctorChecks": ["project-state-present"],
+      "migrations": ["init-project-state"],
+      "manualMigration": "Add .materia/project.json with { \"artifactSchema\": 2, \"pluginVersion\": null, \"source\": \"legacy-0.1.0\", \"appliedMigrations\": [] }. Automated adoption ships later with /materia:migrate.",
+      "notes": "New projects are born at schema 2 (required baseline). For existing 0.1.0 installs adoption is recommended: the old untracked shape still works until migrated."
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "pluginVersion": "0.1.0",
+  "artifactSchema": 1,
+  "baseline": true,
+  "summary": "Pre-tracking baseline harness. No project-state file and no release/migration ledger; installed projects were untracked.",
+  "changes": []
+}

@@ -83,6 +83,8 @@ plugins/materia/
   skills/                            the pipeline skills (stack-agnostic), invoked /materia:<name>
   scaffold/                          the bundled MATERIA.md/CLAUDE.md/docs templates + check-docs.sh
                                       that /materia:init materializes into your repo
+  release/                           the plugin's own release/migration ledger (semver +
+                                      artifact-schema contract; not materialized into repos)
 scripts/validate-plugin.mjs          validates the marketplace + plugin manifests and the scaffold
 ```
 
