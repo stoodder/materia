@@ -346,7 +346,7 @@ recorded so a repo that breaks one adapts deliberately, not by surprise:
   **`origin`** — branch creation, the baseline `git diff origin/main...HEAD`, and
   the PR commands. Trunk and remote are two independent knobs; a repo that differs
   on either adjusts those skill commands directly (they do not read this file).
-- **`check:docs` needs Node.** The one always-binding gate (§ Gate) ships as
+- **`check:docs` needs Node.** The one unconditionally-binding gate (§ Gate) ships as
   `node scripts/check-docs.mjs`. It travels with the harness, but it needs a
   **Node runtime** even in an otherwise non-JS repo — a Rust/Go/Python project
   must make `node` available to CI and local runs. The docs contract it enforces
@@ -354,5 +354,7 @@ recorded so a repo that breaks one adapts deliberately, not by surprise:
 - **One MATERIA.md = one adaptation surface.** § Gate, § Run it, and the baseline
   in § Surface gates describe a **single package** over the whole tree. A polyglot
   monorepo whose packages need different gates or run commands is not expressible
-  in one file: adopt Materia **per package** (one MATERIA.md at each package root),
-  or make each § Gate command an umbrella script that dispatches across packages.
+  in one file: adopt Materia **per package** — a MATERIA.md at each package root,
+  running the pipeline from that package as its own root (the skills resolve one
+  root MATERIA.md and diff the whole tree, so this is not automatic) — or make each
+  § Gate command an umbrella script that dispatches across packages.
