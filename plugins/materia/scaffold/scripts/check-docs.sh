@@ -22,8 +22,11 @@ set -u
 # File discovery: ROOTS = CLAUDE.md + docs. `find` then LC_ALL=C sort (byte
 # order == Node's default String.sort for ASCII paths). Roots are passed
 # verbatim so paths come out shaped `CLAUDE.md` / `docs/standards/x.md` with no
-# `./` prefix; a defensive strip happens in awk regardless.
-FILELIST=$(find CLAUDE.md docs -type f -name '*.md' 2>/dev/null | LC_ALL=C sort)
+# `./` prefix; a defensive strip happens in awk regardless. `-L` follows
+# symlinks so symlinked `.md` files/dirs are walked too (mjs statSync/walk
+# follows links) — the `N files` count then matches mjs. Same cyclic-symlink
+# fragility as mjs, by design.
+FILELIST=$(find -L CLAUDE.md docs -type f -name '*.md' 2>/dev/null | LC_ALL=C sort)
 export FILELIST
 
 AWK_BIN=${AWK:-awk}
@@ -114,6 +117,21 @@ function countNL(s,   t) { t = s; return gsub(/\n/, "", t) }
 
 function trim(s) { gsub(/^[[:space:]]+/, "", s); gsub(/[[:space:]]+$/, "", s); return s }
 
+# JS \s-aware whitespace helpers (see WSRE/WSMB in BEGIN).
+# wsNorm: collapse every whitespace code point (ASCII incl. \n AND the Unicode
+#   ws sequences) to a single ASCII space — for single-line / newline-free
+#   contexts where the mjs `\s` regexes treat every ws (incl. a stray \n) alike
+#   (slugify, fragment normalization, glossary term).
+function wsNorm(s) { gsub(WSRE, " ", s); return s }
+# wsNormNar: replace only the *multibyte* Unicode ws sequences (never \n) with a
+#   single ASCII space, leaving ASCII bytes (incl. \n) untouched — for narration
+#   prose, where line numbers derive from the \n count and the phraseRe
+#   [[:space:]]+ already matches the ASCII ws (and \n line-wraps).
+function wsNormNar(s) { gsub(WSMB, " ", s); return s }
+# wsTrim: strip the full JS \s class at both ends only, interior bytes intact —
+#   for mjs `.trim()` (link target, fragment, glossary term, dup key).
+function wsTrim(s) { sub("^(" WSRE ")+", "", s); sub("(" WSRE ")+$", "", s); return s }
+
 # Split on "\n" preserving JS String.split semantics (trailing empty kept).
 function mysplit(s, arr,   n, start, p) {
   n = 0; start = 1
@@ -142,28 +160,38 @@ function linkTextStrip(s,   out, i, L, c, br, par) {
   return out
 }
 # GitHub-style heading slug (mirrors mjs slugify): lowercase, strip backticks,
-# [text](url)->text, drop [^\w\s-] (\w == ASCII [A-Za-z0-9_]), trim, [\s-]+->-.
+# [text](url)->text, drop [^\w\s-] (\w == ASCII [A-Za-z0-9_], \s == JS Unicode
+# ws), trim, [\s-]+->-. wsNorm first folds every ws code point (incl. NBSP and
+# the other Unicode ws) to an ASCII space so the ASCII-class steps below are
+# exactly the JS `\s` behavior (NBSP interior collapses to `-`, not dropped).
 function slugify(s) {
   s = tolower(s)
   gsub(/`/, "", s)
   s = linkTextStrip(s)
-  gsub(/[^A-Za-z0-9_[:space:]-]/, "", s)
+  s = wsNorm(s)
+  gsub(/[^A-Za-z0-9_ -]/, "", s)
   s = trim(s)
-  gsub(/[[:space:]-]+/, "-", s)
+  gsub(/[ -]+/, "-", s)
   return s
 }
 
 # Heading detect + extract, mirroring /^#{1,6}\s+(.+)$/m on a single line.
 # Sets HTEXT to the captured (.+) text. Returns 1 if the line is a heading.
-function isHeading(line,   h, ws, L) {
+# The `\s+` run after the hashes is JS-Unicode-aware (WSRE) so `### <NBSP>Title`
+# is detected with HTEXT="Title". Residual narrowing (pathological/malformed
+# input only, matching the mjs residual note): a *bare* `###` line with no
+# same-line text does NOT borrow the next-line text the way the mjs cross-newline
+# `\s+(.+)` does, and a line whose only post-hash content is whitespace is a
+# non-heading here (mjs would keep the last ws char as a near-empty slug).
+function isHeading(line,   h, rest) {
   h = 0
   while (substr(line, h + 1, 1) == "#") h++
   if (h < 1 || h > 6) return 0
-  if (substr(line, h + 1, 1) !~ /[[:space:]]/) return 0
-  ws = h + 1; L = length(line)
-  while (ws <= L && substr(line, ws, 1) ~ /[[:space:]]/) ws++
-  if (ws > L) return 0                 # nothing after the whitespace run
-  HTEXT = substr(line, ws)
+  rest = substr(line, h + 1)
+  if (!match(rest, "^(" WSRE ")+")) return 0   # need `\s+` (>= 1 ws after hashes)
+  rest = substr(rest, RLENGTH + 1)
+  if (rest == "") return 0                      # (.+) needs >= 1 char
+  HTEXT = rest
   return 1
 }
 
@@ -286,8 +314,12 @@ function phraseRe(p,   n, i, re) {
 
 # ---------------------------------------------------------------- collation
 # Glossary uses localeCompare('en',{sensitivity:'base',numeric:true}):
-# case-fold + Latin accent-fold (primary weights) + natural-numeric. Collation
-# beyond Latin (CJK/astral) is out of realistic-glossary scope (documented).
+# case-fold + Latin accent-fold (primary weights) + natural-numeric. Whitespace
+# now matches JS \s exactly (WSRE). Remaining known narrowing (residual, out of
+# realistic-glossary scope): ordering matches ICU for ASCII letters/digits + the
+# folded Latin accents in the FOLD table, but high-ASCII punctuation ({ } ~,
+# which byte-sort AFTER letters where ICU puts them before) and unfolded
+# extended-Latin / other-script terms may order differently.
 function foldAccents(s,   k) { for (k in FOLD) gsub(k, FOLD[k], s); return s }
 function collKey(s) { return tolower(foldAccents(s)) }
 function cmpNum(x, y,   xs, ys) {
@@ -330,6 +362,27 @@ BEGIN {
   CONTCLASS = "["
   for (b = 128; b <= 191; b++) CONTCLASS = CONTCLASS sprintf("%c", b)
   CONTCLASS = CONTCLASS "]"
+
+  # Whitespace classes reproducing the JS `\s` / String.trim() repertoire
+  # (Unicode-aware) so parity holds on realistic input (e.g. an NBSP pasted
+  # into markdown). WSMB = the multibyte UTF-8 sequences of the non-ASCII
+  # members, built with decimal sprintf("%c") (mawk parses hex literals as 0):
+  #   U+00A0 C2 A0 · U+1680 E1 9A 80 · U+2000-200A E2 80 80..8A ·
+  #   U+2028/2029 E2 80 A8/A9 · U+202F E2 80 AF · U+205F E2 81 9F ·
+  #   U+3000 E3 80 80 · U+FEFF EF BB BF. WSRE = WSMB PLUS the ASCII ws class
+  #   ([[:space:]] covers space/\t/\n/\v/\f/\r). Verified identical under mawk
+  #   1.3.4 and busybox awk 1.36.1 (dynamic multibyte-literal alternation).
+  wsE2_80 = sprintf("%c%c", 226, 128)
+  wsT3 = "["
+  for (b = 128; b <= 138; b++) wsT3 = wsT3 sprintf("%c", b)   # U+2000-200A
+  wsT3 = wsT3 sprintf("%c", 168) sprintf("%c", 169) sprintf("%c", 175) "]"  # U+2028/2029/202F
+  WSMB = wsE2_80 wsT3 \
+    "|" sprintf("%c%c%c", 226, 129, 159) \
+    "|" sprintf("%c%c", 194, 160) \
+    "|" sprintf("%c%c%c", 225, 154, 128) \
+    "|" sprintf("%c%c%c", 227, 128, 128) \
+    "|" sprintf("%c%c%c", 239, 187, 191)
+  WSRE = "([[:space:]]|" WSMB ")"
 
   # bounded Latin-1 / Latin-Extended-A accent fold (base letter, en primary).
   buildFold()
@@ -377,7 +430,7 @@ BEGIN {
       } else {
         fragDef = 0; target = url; fragment = ""
       }
-      path = trim(target)
+      path = wsTrim(target)
       if (path ~ /^https?:/ || path ~ /^mailto:/) continue
       if (path == "") {
         rkey = f; endsMd = (f ~ /\.md$/)
@@ -387,7 +440,7 @@ BEGIN {
         if (!exists(rkey)) { fail(f " -> " url); continue }
       }
       if (fragDef && isStyle(f) && endsMd) {
-        want = trim(fragment); want = tolower(want); gsub(/[[:space:]-]+/, "-", want)
+        want = wsTrim(fragment); want = tolower(want); want = wsNorm(want); gsub(/[ -]+/, "-", want)
         computeSlugs(rkey)
         want2 = want; sub(/-[0-9]+$/, "", want2)
         if (!((rkey SUBSEP want) in SLUG) && !((rkey SUBSEP want2) in SLUG))
@@ -403,7 +456,9 @@ BEGIN {
     raw = readFile(f)
     fb = blankFences(raw)
     prose = blankInline(fb)
-    lprose = tolower(prose)
+    # Fold the multibyte Unicode ws to a space (\n preserved for line numbers) so
+    # the phraseRe [[:space:]]+ assembles narration across an NBSP etc. like JS \s.
+    lprose = tolower(wsNormNar(prose))
 
     # narration — phrases in NARRATION-list order, matches in position order.
     for (pi = 1; pi <= NNAR; pi++) {
@@ -426,11 +481,13 @@ BEGIN {
     nl = mysplit(fb, FL)
     mysplit(raw, RL)
     for (i = 1; i <= nl; i++) {
-      if (trim(FL[i]) == "" && trim(RL[i]) != "") continue    # inside a fence
+      if (wsTrim(FL[i]) == "" && wsTrim(RL[i]) != "") continue    # inside a fence
       llen = cpLen(RL[i])
       if (llen > 600)
         fail(f ":" i " line is " llen " chars (max 600) \342\200\224 move detail out of the table cell (docs/standards/docs.md)")
-      tr = trim(RL[i])
+      # dup key = mjs rawLine.trim(): strip Unicode ws at ENDS only, interior
+      # bytes (incl. NBSP) intact — a space-vs-NBSP interior pair is not a dup.
+      tr = wsTrim(RL[i])
       if (cpLen(tr) >= 100) {
         if ((f SUBSEP tr) in SEEN)
           fail(f ":" i " duplicates line " SEEN[f SUBSEP tr] " \342\200\224 copy-paste drift")
@@ -449,7 +506,7 @@ BEGIN {
       split(GL[i], gp, "[|]")
       t = gp[2]
       gsub(/[*`]/, "", t)
-      t = trim(t)
+      t = wsTrim(t)
       nt++; TERM[nt] = t; TLINE[nt] = i
     }
     for (i = 2; i <= nt; i++) {
