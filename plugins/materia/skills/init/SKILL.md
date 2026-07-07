@@ -1,6 +1,6 @@
 ---
 name: init
-description: Materialize the Materia harness into this repo. Interviews the engineer about what they're building (brainstorm survey → product identity & taste → tech-stack selection → capability probes), then writes MATERIA.md + CLAUDE.md + the docs/product.md product brief, generates the stack-specific standards docs, materializes the docs skeleton, check-docs.mjs, and the .materia/review-angles/ review-angle library, and seeds docs/specs/_proposed/ with a bootstrap epic so the pipeline's own first /materia:ship-spec run scaffolds the app. Reads its sources from the plugin's bundled scaffold at ${CLAUDE_PLUGIN_ROOT}/scaffold; copies no skills into the repo (they run from the installed materia plugin) and prunes nothing. Run once on a fresh repo after installing the materia plugin; idempotent to re-run before the first bootstrap spec ships.
+description: Materialize the Materia harness into this repo. Interviews the engineer about what they're building (brainstorm survey → product identity & taste → tech-stack selection → capability probes), then writes MATERIA.md + CLAUDE.md + the docs/product.md product brief, generates the stack-specific standards docs, materializes the docs skeleton, check-docs.sh, and the .materia/review-angles/ review-angle library, and seeds docs/specs/_proposed/ with a bootstrap epic so the pipeline's own first /materia:ship-spec run scaffolds the app. Reads its sources from the plugin's bundled scaffold at ${CLAUDE_PLUGIN_ROOT}/scaffold; copies no skills into the repo (they run from the installed materia plugin) and prunes nothing. Run once on a fresh repo after installing the materia plugin; idempotent to re-run before the first bootstrap spec ships.
 ---
 
 # init — materialize Materia into this repo
@@ -13,7 +13,7 @@ first epic, so the harness dogfoods from commit one.
 The pipeline skills are **installed globally** with the `materia` plugin and
 run from that read-only cache — init copies **no** skills into the repo and
 prunes **nothing**. What init writes into the user repo (MATERIA.md, CLAUDE.md,
-`docs/**`, `scripts/check-docs.mjs`) it reads from the plugin's bundled scaffold
+`docs/**`, `scripts/check-docs.sh`) it reads from the plugin's bundled scaffold
 at `${CLAUDE_PLUGIN_ROOT}/scaffold/` — the canonical, battle-tested sources.
 **Init fills slots; it does not redraft contracts.** The queue frontmatter
 contracts, producer lifecycle, RED gate, sole-writer retro rule, and the tier
@@ -41,7 +41,7 @@ Read tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path) — e.g.
 - `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/**` — the docs-system skeleton (contracts,
   `_templates/`, canonical standards, stubs), including the
   `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/product.md` brief template.
-- `${CLAUDE_PLUGIN_ROOT}/scaffold/scripts/check-docs.mjs` — the portable docs checker.
+- `${CLAUDE_PLUGIN_ROOT}/scaffold/scripts/check-docs.sh` — the portable docs checker.
 - `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/review-angles/**` — the review-angle
   library (the six canonical angle definitions + the directory `README.md`),
   materialized so projects can fork or extend it; the `MATERIA.md` § Review
@@ -60,7 +60,7 @@ discipline — there is nothing to diff against yet):
 - `CLAUDE.md` (repo root) — the always-loaded guide, slots filled.
 - `docs/**` — the skeleton, the filled `docs/product.md` product brief, plus
   the generated stack-specific standards.
-- `scripts/check-docs.mjs`.
+- `scripts/check-docs.sh`.
 - `.materia/review-angles/**` — the review-angle library (six canonical angle
   files + `README.md`), materialized verbatim; repo-specific angles append as
   new files + `MATERIA.md` § Review angles rows.
@@ -195,7 +195,7 @@ active read or copy (`cp "$CLAUDE_PLUGIN_ROOT/scaffold/..." ...`) — the Read
 tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
 
 1. **Copy the skeleton:** `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/**` → `docs/`;
-   `${CLAUDE_PLUGIN_ROOT}/scaffold/scripts/check-docs.mjs` → `scripts/`; and
+   `${CLAUDE_PLUGIN_ROOT}/scaffold/scripts/check-docs.sh` → `scripts/`; and
    `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/**` → `.materia/` (the review-angle
    library — angle definitions are **config**, read at runtime from the repo
    like `docs/`, not skills). **No skills are copied** — the pipeline skills run
@@ -257,7 +257,7 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
 8. **Rewrite `README.md`** for the app: name, one-liner, run-it, a short
    "how changes ship here" section pointing at `docs/specs/README.md` and
    the skill roster.
-9. **Interim check:** run `node scripts/check-docs.mjs` and fix every failure
+9. **Interim check:** run `sh scripts/check-docs.sh` and fix every failure
    it reports. This is the *interim* pass — the **binding** self-check runs at
    the end of Phase 7, after the bootstrap epic exists, so the green-gate
    guarantee covers everything init writes.
@@ -300,7 +300,7 @@ single-shippable units; the typical decomposition:
 - **S4+ —** the first thin vertical slice of the actual product, per
   Phase 1 — shaped by the brief's § Product principles.
 
-**Final self-check (binding):** re-run `node scripts/check-docs.mjs` over
+**Final self-check (binding):** re-run `sh scripts/check-docs.sh` over
 the full tree — now including the epic + proposals — and fix every failure;
 then grep for any surviving `{{` slot marker, `<!-- init:` / `<!-- template:`
 comment, or **unfilled init-obligation placeholder** (`<S1 proposal id>`,
@@ -317,7 +317,7 @@ every change flows through the pipeline and lands via PR.
 ### Phase 8 — Report
 
 Close with: what was materialized (standards generated, the product brief, the
-docs skeleton + `check-docs.mjs`, the `.materia/review-angles/` library),
+docs skeleton + `check-docs.sh`, the `.materia/review-angles/` library),
 the MATERIA.md sections marked `none` (and
 which UI/data-gated skills that leaves inert), the bootstrap
 epic's member list with the recommended shipping order, and the one-line
@@ -330,7 +330,7 @@ restore: the pipeline skills live in the installed `materia` plugin (nothing was
 moved out of the repo) and init does not remove itself, so there is nothing to
 restore and nothing self-removed. It re-enters the survey with the previous
 `MATERIA.md` answers as defaults and rewrites the materialized files (MATERIA.md,
-CLAUDE.md, `docs/**`, `scripts/check-docs.mjs`, `.materia/review-angles/**`)
+CLAUDE.md, `docs/**`, `scripts/check-docs.sh`, `.materia/review-angles/**`)
 wholesale from the bundled scaffold at `${CLAUDE_PLUGIN_ROOT}/scaffold/`.
 
 After the pipeline has started shipping, init refuses to run wholesale (the repo

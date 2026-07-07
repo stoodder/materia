@@ -67,7 +67,7 @@ acting on them wastes context.
 
    The gate is every non-`none` row of `MATERIA.md` § Gate, in table order
    (`lint` · `typecheck` · `test` · `test:e2e` where CI runs it ·
-   `check:docs` — `node scripts/check-docs.mjs`). While § Gate's
+   `check:docs` — `sh scripts/check-docs.sh`). While § Gate's
    Bootstrap-grace marker is present, a row whose command does not exist is
    skip + record per that section (`check:docs` always binding); state the
    graced rows in the PR body. On the bootstrap gate spec itself, the grace
@@ -81,7 +81,7 @@ acting on them wastes context.
    same predicate as `ship-spec` § Review's markdown-only exemption) — the
    code gates (`lint`, `typecheck`, `test`) cover nothing on this branch.
    Declare them **no-ops for this
-   branch** and name `node scripts/check-docs.mjs` the **binding gate**, instead of
+   branch** and name `sh scripts/check-docs.sh` the **binding gate**, instead of
    re-reasoning that conclusion each run. State the profile explicitly in the PR
    body. If the no-op gates can't even run (Node/deps gap), say so in the PR
    rather than claiming they passed — `check:docs` remains the gate of record
@@ -112,7 +112,7 @@ acting on them wastes context.
      finalize ran._" — not a Blocker; the operator's deletion was
      deliberate.
 
-   - **Re-run `node scripts/check-docs.mjs` against the staged (file-removed)
+   - **Re-run `sh scripts/check-docs.sh` against the staged (file-removed)
      working tree.** If green, commit the dequeue:
 
      ```bash

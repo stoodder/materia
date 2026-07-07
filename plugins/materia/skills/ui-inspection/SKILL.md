@@ -196,7 +196,7 @@ outermost guard — nothing upstream has already filtered by UI.)
    PR is the operator's review surface — PR-is-the-gate; there is no second
    "approve" checkpoint). Sync `main`
    and branch `ui-inspection/<id>-<slug>`, write the report file and its
-   co-located captures, run `node scripts/check-docs.mjs` to verify link integrity,
+   co-located captures, run `sh scripts/check-docs.sh` to verify link integrity,
    commit, push `-u origin ui-inspection/<id>-<slug>`, and open a PR with
    `gh pr create` (title `ui-inspection: <title>`, body with the rendered report
    inline, a closing "Triage with `/materia:fix-bug <id>` once this PR lands",

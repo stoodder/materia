@@ -1,6 +1,6 @@
 ---
 name: docs-audit
-description: Verify docs against the branch's code diff after `docs-sync` edits — audit coverage, accuracy, consistency, authoring-standard conformance (docs/standards/docs.md), and the mechanical `node scripts/check-docs.mjs` gate (links + style); return HIGH/MEDIUM/LOW findings or a clean verdict. Spawned by `ship-spec` as a sibling stage after `docs-sync` (never by a subagent). Stage 9 of the ship-spec pipeline.
+description: Verify docs against the branch's code diff after `docs-sync` edits — audit coverage, accuracy, consistency, authoring-standard conformance (docs/standards/docs.md), and the mechanical `sh scripts/check-docs.sh` gate (links + style); return HIGH/MEDIUM/LOW findings or a clean verdict. Spawned by `ship-spec` as a sibling stage after `docs-sync` (never by a subagent). Stage 9 of the ship-spec pipeline.
 ---
 
 # docs-audit — verify docs against the final branch state
@@ -68,7 +68,7 @@ Runs as a **fresh-context subagent** spawned by `ship-spec` — never by
 3. **Consistency** — `CLAUDE.md`, `docs/README.md` indexes,
    `docs/surface-map.md`, `docs/glossary.md` reflect new resources / routes /
    terms that the matrix produced.
-4. **Mechanical gate** — run `node scripts/check-docs.mjs` (read-only; it verifies
+4. **Mechanical gate** — run `sh scripts/check-docs.sh` (read-only; it verifies
    links across `CLAUDE.md` + `docs/**`, `#anchor`
    fragments, and style over the agent-context docs: change-narration
    phrases, >600-char lines, duplicated long lines, glossary alphabetical
@@ -119,6 +119,6 @@ What `docs-audit` does NOT do:
   only; never by `docs-sync` or any other subagent.
 
 Standalone mechanical checking (links + style) is covered by
-`node scripts/check-docs.mjs`; use that command when running outside the pipeline —
+`sh scripts/check-docs.sh`; use that command when running outside the pipeline —
 the judgment checks (coverage, accuracy, consistency, conformance) are what
 this skill adds on top of it.

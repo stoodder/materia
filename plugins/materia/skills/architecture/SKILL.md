@@ -138,7 +138,7 @@ standalone runs apply it on first use.
    `architecture.md` for relative markdown links (`](./` or `](../` or
    `](docs/`) and verify each target resolves on disk. Catches broken
    cross-links at the source rather than several stages downstream when
-   `docs-sync` runs `node scripts/check-docs.mjs` over the whole branch.
+   `docs-sync` runs `sh scripts/check-docs.sh` over the whole branch.
 
    **Convention for to-be-created docs.** When `architecture.md`
    references a doc that this PR will create in a later stage (e.g. a
@@ -151,7 +151,7 @@ standalone runs apply it on first use.
    human-readable prose and is ignored by the link-checker. After the
    to-be-created doc lands in a later commit, a markdown link is fine.
 
-   **Inline-backtick hazard.** `node scripts/check-docs.mjs` only strips
+   **Inline-backtick hazard.** `sh scripts/check-docs.sh` only strips
    fenced (triple-backtick) blocks when extracting links; inline
    single-backtick code spans are NOT stripped. So an inline example
    like `` `[bar](baz.md)` `` (illustrating link syntax in prose) will

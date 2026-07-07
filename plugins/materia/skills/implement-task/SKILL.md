@@ -114,14 +114,16 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
    that the installed runtime version matches what `MATERIA.md` § Environment
    preflight requires, and switch/install per its recipe if not.
 
-   - **Markdown-only tasks may proceed on the resident runtime.** If this task
-     touches only `*.md` (docs/skills, no source or schema files), the
-     pure-Node `check:docs` gate runs fine on any recent Node — proceed and
-     note the version in the commit. **Code-touching tasks block** when the
-     required runtime is unavailable: halt with a clear remediation naming the
-     desired version. Do **not** run lint/typecheck/tests for code under the
-     wrong runtime — that produces cryptic errors that obscure the real
-     problem.
+   - **Markdown-only tasks may proceed regardless of the project's required
+     runtime.** If this task touches only `*.md` (docs/skills, no source or
+     schema files), the `check:docs` gate needs only POSIX `sh`+`awk` —
+     present on essentially any Unix without install — so it runs
+     independent of whatever *language* runtime `MATERIA.md` § Environment
+     preflight requires for this repo; proceed and note the version in the
+     commit. **Code-touching tasks block** when the required runtime is
+     unavailable: halt with a clear remediation naming the desired version.
+     Do **not** run lint/typecheck/tests for code under the wrong runtime —
+     that produces cryptic errors that obscure the real problem.
 
    **Gate.** `lint` and `typecheck` (`MATERIA.md` § Gate) clean and the
    relevant tests green. (While § Gate's Bootstrap-grace marker is present,
@@ -188,7 +190,7 @@ your returned retro block:
   a broken link and fails the gate. Write it in arrow/prose form instead
   (`text → path`).
 - **Read the gate verdict from the exit code, not the display line.** Treat
-  `node scripts/check-docs.mjs` (and every gate command) as passing **iff its exit code
+  `sh scripts/check-docs.sh` (and every gate command) as passing **iff its exit code
   is 0** — do not judge it by the trailing summary/display line it prints, which
   can read as success while the command exits non-zero.
 

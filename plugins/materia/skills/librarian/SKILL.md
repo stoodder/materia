@@ -48,7 +48,7 @@ ambiguous fix is skipped and noted, never guessed at (§ Rules).
 - `docs/standards/docs.md` (the authoring standard) and
   `docs/contributing.md` (the touch-X→update-Y map, read in reverse: which
   code would have demanded which doc).
-- `scripts/check-docs.mjs` via `node scripts/check-docs.mjs` (the mechanical gate).
+- `scripts/check-docs.sh` via `sh scripts/check-docs.sh` (the mechanical gate).
 
 **Not inputs, never edited:** `docs/specs/**`, `docs/bugs/**`,
 `docs/epics/**`, `docs/research/**` — historical run artifacts, exempt by the
@@ -69,7 +69,7 @@ same rule that exempts them from `check:docs` style checks.
 ### 1. Preflight
 
 `git checkout main && git pull` (halt and surface if blocked by local
-changes). Verify `gh auth status` and that `node scripts/check-docs.mjs` is runnable —
+changes). Verify `gh auth status` and that `sh scripts/check-docs.sh` is runnable —
 apply `${CLAUDE_PLUGIN_ROOT}/skills/ship-spec/resources/env-preflight.md` (and `MATERIA.md`
 § Environment preflight) recipes if not.
 Read `docs/standards/docs.md` and the doc indexes into context.
@@ -105,7 +105,7 @@ that proves the doc wrong).
    supports…", change-log-shaped sections), facts duplicated across docs
    instead of linked to their one home, table-cell bloat, multi-sentence
    glossary entries. Fix by rewriting to present-state.
-5. **Mechanical gate.** Run `node scripts/check-docs.mjs`; any failure on `main` is a
+5. **Mechanical gate.** Run `sh scripts/check-docs.sh`; any failure on `main` is a
    finding to fix (narration phrases, over-long lines, duplicate lines,
    glossary order, broken links, unresolvable `#anchor` fragments).
 
@@ -140,7 +140,7 @@ alphabetical position). Commit in small scoped commits
 ### 5. Gate locally, then PR
 
 ```bash
-node scripts/check-docs.mjs && <lint — MATERIA.md § Gate>   # links/style + formatting over the .md diff
+sh scripts/check-docs.sh && <lint — MATERIA.md § Gate>   # links/style + formatting over the .md diff
 git diff main...HEAD --name-only     # § The docs-only envelope — assert now
 git push -u origin librarian/sweep-<YYYY-MM-DD>
 gh pr create --title "librarian: docs-drift sweep <YYYY-MM-DD>" --body "<body>"
