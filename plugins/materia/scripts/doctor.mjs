@@ -171,7 +171,10 @@ const inspect = (targetRoot, releaseDir) => {
       changes.length
         ? 'Materia appears installed, but no .materia/project.json was found. This likely predates artifact tracking (untracked legacy).'
         : 'No .materia/project.json, but the ledger declares no adoptable changes — nothing to migrate.')
-    if (changes.length) report.suggestedNextCommand = '/materia:migrate --plan'
+    // Suggest migrate only for warning-or-worse adoptable drift; optional-only
+    // (info) drift keeps the report `healthy` with an optional-changes list and
+    // no suggestion, matching the skill's "healthy → nothing required" contract.
+    if (sevRank(sev) >= sevRank('warning')) report.suggestedNextCommand = '/materia:migrate --plan'
     report.status = statusFrom(overall)
     return report
   }
@@ -224,7 +227,10 @@ const inspect = (targetRoot, releaseDir) => {
     overall = worst(overall, sev)
     add('artifact-schema-current', 'Artifact schema is current', sev,
       `schema ${schema} is behind latest ${ledger.latestSchema} — ${changes.length} change(s) to adopt.`)
-    if (changes.length) report.suggestedNextCommand = '/materia:migrate --plan'
+    // Suggest migrate only for warning-or-worse adoptable drift; optional-only
+    // (info) drift keeps the report `healthy` with an optional-changes list and
+    // no suggestion, matching the skill's "healthy → nothing required" contract.
+    if (sevRank(sev) >= sevRank('warning')) report.suggestedNextCommand = '/materia:migrate --plan'
   }
 
   report.status = statusFrom(overall)
