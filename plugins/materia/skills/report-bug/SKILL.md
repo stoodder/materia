@@ -177,9 +177,10 @@ above this step leaves no stray branch behind.
    git checkout -b report-bug/<id>-<slug>
    ```
 
-   (`<trunk>`/`<remote>` per `MATERIA.md` § Version control.) The new
-   branch is based off `<trunk>`. `<id>-<slug>` is derived from the report's frontmatter `id` and the
-   kebab-slug of its title (e.g. `report-bug/3a1f2-save-button-spinner-hangs`).
+   (`<trunk>`/`<remote>` per `MATERIA.md` § Version control; the new branch is
+   based off `<trunk>`.) `<id>-<slug>` is derived from the report's frontmatter
+   `id` and the kebab-slug of its title
+   (e.g. `report-bug/3a1f2-save-button-spinner-hangs`).
 
    (Dirty-pull and branch-name collisions per the lifecycle.)
 
