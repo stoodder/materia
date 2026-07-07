@@ -301,6 +301,87 @@ for (const [skill, anchor] of Object.entries(UI_SELF_GATE)) {
 if (failures === gateBefore)
   console.log(`  ✓ UI self-gate: ${Object.keys(UI_SELF_GATE).length} UI skills carry the "${GATE_MARKER}" gate before their first side-effect`)
 
+// ---- 2d. skill ↔ § Skill routing coverage -----------------------------------
+// init no longer prunes, so EVERY skill dir ships in every repo, and each must
+// be accounted for in MATERIA.md § Skill routing exactly once — via a plain row
+// (label == dir) XOR the "Operator-session skills (rowless by design)" list. A
+// future skill added with neither is the F3 gap this guards: it would silently
+// fall to the Default row with no operator ever having sized it. Role rows
+// (`<skill>: <role>`) account for an internal role only, never the parent dir —
+// so a role-row parent (`janitor`, `ship-spec`, …) is covered by its LIST entry,
+// not its role row, and that is not a double-count. We parse ONLY the § Skill
+// routing section slice (bounded by its h3 and the next ##/### — the operator-
+// session #### h4 stays inside it, and its bullets aren't `|`-rows) and the
+// operator-session list slice separately, so no rows from § Review angles /
+// § Model set can leak in.
+{
+  const before = failures
+  const src = readFileSync('plugins/materia/scaffold/MATERIA.md', 'utf8')
+  const lines = src.split('\n')
+  // Slice § Skill routing: from its h3 to the next ##/### (a #### h4 — the
+  // operator-session subheading — does NOT terminate the slice).
+  let secStart = -1, secEnd = lines.length
+  for (let i = 0; i < lines.length; i++) {
+    if (/^### Skill routing\s*$/.test(lines[i])) { secStart = i; continue }
+    if (secStart !== -1 && /^#{2,3} /.test(lines[i])) { secEnd = i; break }
+  }
+  if (secStart === -1) fail('skill↔routing: MATERIA.md has no `### Skill routing` section')
+  const routing = secStart === -1 ? '' : lines.slice(secStart, secEnd).join('\n')
+  // Table-row labels: first cell, backtick-wrapped. The `**Default** …` row is
+  // not backticked, so it never matches (correct). Classify each label:
+  // `a: b` → role row, parent `a`; else plain row, the label IS a skill name.
+  const plainRows = new Set(), roleParents = new Set(), rowLabels = []
+  for (const ln of routing.split('\n')) {
+    const m = /^\|\s*`([^`]+)`/.exec(ln)
+    if (!m) continue
+    const label = m[1].trim()
+    rowLabels.push(label)
+    if (label.includes(': ')) roleParents.add(label.split(': ')[0].trim())
+    else plainRows.add(label)
+  }
+  // Slice the operator-session list: from its exact #### h4 to the next heading
+  // of any level; each bullet's first backticked token is a rowless-by-design
+  // skill name.
+  let listStart = -1, listEnd = lines.length
+  for (let i = 0; i < lines.length; i++) {
+    if (/^#### Operator-session skills \(rowless by design\)\s*$/.test(lines[i])) { listStart = i; continue }
+    if (listStart !== -1 && /^#{1,6} /.test(lines[i])) { listEnd = i; break }
+  }
+  if (listStart === -1) fail('skill↔routing: MATERIA.md has no `#### Operator-session skills (rowless by design)` list')
+  const opList = new Set()
+  for (const ln of (listStart === -1 ? [] : lines.slice(listStart + 1, listEnd))) {
+    const m = /^-\s*`([^`]+)`/.exec(ln)
+    if (m) opList.add(m[1].trim())
+  }
+  // Skill dirs shipped under plugins/materia/skills/.
+  const skillDirs = readdirSync('plugins/materia/skills', { withFileTypes: true })
+    .filter((e) => e.isDirectory()).map((e) => e.name)
+  const dirSet = new Set(skillDirs)
+  // A. Coverage — each dir accounted by EXACTLY ONE of {plain row} XOR {list}.
+  for (const d of skillDirs) {
+    const hasRow = plainRows.has(d), inList = opList.has(d)
+    if (!hasRow && !inList)
+      fail(`skill \`${d}\` is unaccounted in MATERIA.md § Skill routing — add a plain row, or list it under 'Operator-session skills (rowless by design)'`)
+    else if (hasRow && inList)
+      fail(`skill \`${d}\` is double-accounted (has a plain row AND is in the operator-session list) — pick one`)
+  }
+  // B. Orphan-row hygiene — every plain label + every role-row parent is a dir.
+  for (const name of [...plainRows, ...roleParents])
+    if (!dirSet.has(name))
+      fail(`§ Skill routing row \`${name}\` names no skill dir under plugins/materia/skills/`)
+  // C. Operator-session list hygiene — every listed name is a real dir.
+  for (const name of opList)
+    if (!dirSet.has(name))
+      fail(`§ Skill routing operator-session list entry \`${name}\` names no skill dir under plugins/materia/skills/`)
+  // Canon pin: janitor cites BOTH role rows it spawns, or its scan/implementer
+  // subagents fall silently to the Default row.
+  const jan = readFileSync('plugins/materia/skills/janitor/SKILL.md', 'utf8')
+  if (!jan.includes('`janitor: scan`') || !jan.includes('`janitor: implementer`'))
+    fail('janitor/SKILL.md no longer cites its `janitor: <role>` routing row — the scan/implementer subagents would silently fall to Default')
+  if (failures === before)
+    console.log(`  ✓ skill↔routing coverage: ${skillDirs.length} skill dirs each accounted (plain row XOR operator-session list); ${rowLabels.length + opList.size} rows/list entries name real skills`)
+}
+
 // ---- 3. slot hygiene ---------------------------------------------------------
 // Skills ship slot-free (slots live in MATERIA.md/CLAUDE.md/docs). Rule is
 // pattern-scoped, not file-scoped: flag a `{{` only when it is NOT immediately
