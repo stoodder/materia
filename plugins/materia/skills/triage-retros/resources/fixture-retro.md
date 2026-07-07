@@ -9,7 +9,7 @@ status: completed
 
 # Fixture Verification — triage fixture
 
-Synthetic retro carrying one unambiguous signal of each kind — pipeline/harness friction (out of scope under the project retarget → **no** bucket item), a product improvement (→ `suggestions[]`), and a bug (→ `bugs[]`) — for verification testing of the two-bucket project triage.
+Synthetic retro carrying one unambiguous signal of each kind — pipeline/harness friction (out of scope under the project retarget → **no** artifact), a product improvement (→ a drafted proposed spec), and a bug (→ a drafted bug report) — for verification testing of the single-hop producer triage.
 
 ## Entry 1 — intake — 2026-06-18T10:05:00Z
 

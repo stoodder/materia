@@ -1,209 +1,239 @@
-# Rendering the run artifacts
+# Rendering the authored artifacts
 
-Read this at **synthesis time** (and again during fold-feedback rounds). It
-covers what the `_templates/` stubs can't express: field semantics, ordering,
-conditional-emit rules, the fold-feedback edit rules, and the shared
-traceback + placeholder conventions the downstream consumers rely on.
+Read this at **Synthesis** (and again during fold-feedback rounds). It carries
+the semantics `SKILL.md § Synthesis` / `§ File format` defer here: the in-memory
+working shape, how to render the authored **proposed-spec** and **bug-report**
+bodies, the per-artifact consolidation rule, the producer de-dup / dropped-list
+surfacing, the `source` / `source_refs` conventions, the retro-rename footer, and
+the confirmation fold-edit rules.
 
-**Shape truth lives in the stubs** at `docs/specs/_improvements/_templates/`
-(`product-suggestions.md`, `bug-reports.md`, `pipeline-health.md`) —
-reproduce their section order and field labels character-for-character. The
-traceback and placeholder conventions those artifacts use are defined in
-§ Findings traceback format and § Placeholder convention below (relocated here
-so they survive independent of any one artifact).
+**Shape truth for the bodies lives in the producer/intake contracts** — this
+file never re-prints a whole template. Defer:
+
+- **Spec body** → `plugins/materia/skills/propose-spec/SKILL.md` § Body and
+  `plugins/materia/skills/intake-spec/SKILL.md` § Procedure (step "Detect the
+  input shape") — the H1 + H2 set `intake-spec` matches to adopt a proposal body
+  verbatim.
+- **Bug-report body** → `plugins/materia/skills/report-bug/SKILL.md` § Body and
+  `docs/bugs/_templates/bug-report.md` (the 13-section single-defect format).
+
+Reproduce those section orders and field labels character-for-character; this
+file covers only what is triage-specific (grounding the drafts in the retro
+quotes and the project vocabulary).
 
 ## The in-memory working shape
 
-The cluster pass reasons in this structured shape, then writes it straight
-into the markdown artifacts. The shape itself is **never persisted as JSON** —
-no `synthesis.json`, no intermediate file; every field lands in the markdown,
-which is the only durable output. In particular `summary_paragraph` is written
-into `pipeline-health.md` (below), so it survives the checkpoint turn-break —
-the PR-open step re-derives the PR title/body from it **on disk**, never from
-the in-memory shape. The shape exists so the artifacts render consistently
-every run:
+The cluster pass reasons in this structured shape, then renders it straight into
+the confirmation and — on `approve` — into the authored markdown files. The
+shape is **never persisted as JSON** — no `synthesis.json`, no intermediate
+file. Every field lands either in an authored `_proposed/` / `_reports/` file or
+in the confirmation / PR text, which are the only durable outputs. An interrupt
+before `approve` discards it entirely (see design-notes: no session survival).
 
 ```jsonc
 {
-  "schema_version": 1,
-  "slug": "<dated-slug minted at branch bootstrap>",
-  "generated_at": "<ISO timestamp>",
   "retros_consumed": [
-    { "path": "...", "slug": "...", "run_kind": "spec run", "entry_count": 6, "parse_status": "ok" }
+    // one per consumed retro; the "retros to mark processed" list + the PR's
+    // "retros consumed" line derive from this. Degraded ones are flagged.
+    { "path": "docs/specs/<slug>/retro.md", "slug": "<slug>", "run_kind": "spec run", "parse_status": "ok" }
   ],
-  "suggestions": [
+  "drafted_specs": [
     {
-      "id": "S1",
-      "title": "<short title>",
-      "kind": "feature" | "fix" | "tech-debt" | "other", // "bug" is a dead value — defects route to bugs[]
-      "description": "<one paragraph>",
+      "id": "<fresh 6-char base36 token>",
+      "title": "<one-line title; == the body H1>",
+      "frontmatter": { /* source: retro-triage · source_refs[] · status: proposed · … per § File format */ },
+      "body": "<full spec body — H1 + tagline + the seven required H2s, in order>",
       "supporting": [{ "retro_path": "...", "anchor": "Entry 3 — implement-task", "quote": "<verbatim>" }]
     }
   ],
-  "bugs": [
+  "drafted_reports": [
     {
-      "id": "B1",
-      "title": "<short title>",
-      "severity": "low" | "medium" | "high" | "critical", // required; infer best-effort
-      "description": "<one paragraph — the defect and its impact>",
-      "supporting": [{ "retro_path": "...", "anchor": "Entry 2 — implement-task", "quote": "<verbatim>" }],
-      "report_file": null // always null — bugs-to-reports mints the id + filename downstream
+      "id": "<fresh 6-char base36 token>",
+      "title": "<one-line title; == the body H1>",
+      "severity": "low" | "medium" | "high" | "critical", // mirrored in frontmatter + `## Severity & impact`
+      "frontmatter": { /* source: retro-triage · severity · source_refs[] · status: reported · … */ },
+      "body": "<full 13-section single-defect body>",
+      "supporting": [{ "retro_path": "...", "anchor": "Entry 2 — reproduce-bug", "quote": "<verbatim>" }]
     }
   ],
-  "health": {
-    // aggregated per-retro `health` tallies (outcome/subagent-return counts,
-    // by-stage rows) → pipeline-health.md; see § pipeline-health.md below
-  },
-  "summary_paragraph": "<one paragraph in the orchestrator's voice — written into pipeline-health.md; the PR title/body are re-derived from it on disk at PR-open>"
+  "dropped": [
+    // every in-scope draft removed by the skeptic pass, the de-dup pass, or an
+    // operator `drop` — nothing silently discarded. Surfaced at the confirmation
+    // AND in the PR body. Pipeline/harness friction is NOT here (excluded by
+    // design, not dropped — see § Producer de-dup below).
+    { "kind": "spec" | "bug", "rationale": "<one line>", "anchor": "Entry N — <stage>", "retro_path": "..." }
+  ]
 }
 ```
 
-`suggestions[]` is the improvement bucket (a pure hand-off to
-`suggestions-to-specs`); `bugs[]` is the defect bucket (gathered into
-`bug-reports.md` for `bugs-to-reports` to file). A
-`suggestions[*].kind: "bug"` is a classification error — move the item to
-`bugs[]`. There is **no** findings / actions / pipeline-plan bucket — retros
-feed the project's backlog, not the pipeline skills.
+`drafted_specs[]` and `drafted_reports[]` are the two authored queues; a defect
+never sits in `drafted_specs[]` and a capability-gap never sits in
+`drafted_reports[]` (classification is one-way — see `SKILL.md § Synthesis`).
+Each `supporting[]` entry is one originating retro reference; it renders into the
+draft's `source_refs` (see below) and grounds the draft's acceptance criteria /
+reproduction steps.
 
-## Common rules
+## Authored proposed-spec body
 
-- **Title case** — strip the leading `<yyyy-mm-dd-hhmmss>-<rand>-` prefix
-  from `slug`, split the remainder on `-`, and title-case it joined with
-  spaces (`2026-06-21-134501-9c2a3-weekly-roundup` → `Weekly Roundup`).
-- **Traceback format** — per § Findings traceback format below. Note the
-  **per-artifact variance**: `product-suggestions.md` carries the verbatim
-  quote; `bug-reports.md` is **quote-less** (`` `<retro_path>` § `<anchor>` ``).
-- **Formatting** — before staging any commit that touches generated
-  artifacts, run the repo formatter (MATERIA.md § Gate, lint row) scoped to **only the files the
-  run actually wrote** (never `--write .`). This is load-bearing: hand-written
-  markdown trips the CI format gate (MATERIA.md § Gate, lint row).
+Render the exact structure `propose-spec` § Body produces and `intake-spec`'s
+detector matches — H1 + one-sentence tagline blockquote + `## Problem`,
+`## Goals`, `## Non-goals`, `## Users & context`,
+`## User stories & acceptance criteria` (each story a
+`- [ ] **Story:** … / - **Accept:** <testable AC>` pair), `## Constraints`,
+`## Open questions`. **Every required H2 must be present verbatim and in order,
+even when thin** — `intake-spec` adopts the body only when it finds the H1 plus
+`## Problem`, `## Goals`, `## User stories & acceptance criteria`, and
+`## Open questions`; a missing or renamed heading breaks that verbatim adoption
+and forces a re-draft at intake.
 
-## `product-suggestions.md` — emitted iff `suggestions.length > 0`
+Triage-specific rendering:
 
-Five sections per the stub: frontmatter (`source_rollup` points at the sibling
-`pipeline-health.md`; `suggestion_count` matches the body) · H1
-(`# <Title> — product suggestions`) · intro paragraph (per the stub) · one H2 per suggestion
-(`## S<n> — <title>` with `**Kind:**`, `**Description:**`, `**Source:**`
-bullets — every `supporting[]` entry as its own source bullet, **with** the
-verbatim quote) · footer
-(`_Captured by \`triage-retros\` run \`<slug>\` on \`<generated_at>\`._`).
+- **Ground the acceptance criteria in the retro quotes.** The `supporting[]`
+  quotes are the evidence the capability is wanted; write each AC so it is
+  **literally testable** against the behaviour the quotes describe, not a vague
+  aspiration. Use the project's vocabulary (`docs/glossary.md`) and the relevant
+  standards.
+- **Tagline** — one sentence derived from the clustered signal.
+- **Link paths** follow `propose-spec` § Link paths: backtick/arrow prose
+  (`visual-language → docs/standards/visual-language.md`) or
+  absolute-from-repo-root — **never** a relative markdown link, which breaks when
+  `intake-spec` adopts the body at a different folder depth.
 
-Never emit an empty file — the file's presence is the downstream "anything to
-do?" signal. Downstream, `suggestions-to-specs` renames it
-`product-suggestions.processed.md` on consumption; this skill never renames it.
+## Authored bug-report body
 
-## `bug-reports.md` — emitted iff `bugs.length > 0`
+Render the 13-section format `report-bug` § Body / `docs/bugs/_templates/bug-report.md`
+define, every H2 verbatim and in order: `## Summary` · `## Environment` ·
+`## Steps to reproduce` · `## Expected` · `## Actual` · `## Reproducibility` ·
+`## Severity & impact` · `## Affected surface / route / module` ·
+`## Preconditions / data setup` · `## Evidence` · `## Regression window` ·
+`## Workaround` · `## Open questions`.
 
-Per the stub: frontmatter (`source_rollup` → the sibling `pipeline-health.md`;
-`bug_count`) · H1 (`# <Title> — bug reports`) · intro paragraph (gathered, not
-yet filed — run `/materia:bugs-to-reports`) · `## Filed reports` table, one row
-per bug in `bugs[]` order. The "Report file" cell is **always `—`** — this
-skill mints no ids and writes no report files; `bugs-to-reports` mints
-both. The "Source retro" cell uses the **quote-less** variant
-(`` `<retro_path>` § `<anchor>` `` — no quote; see § Findings traceback
-format). Footer as above (`_Captured by \`triage-retros\` …_`).
-Downstream rename: `bug-reports.processed.md` by `bugs-to-reports`.
+Triage-specific rendering:
 
-## `pipeline-health.md` — always emitted, **never renamed**
+- **Single-defect** — one `## Steps to reproduce`, one `## Expected` /
+  `## Actual`, one `severity`. `fix-bug` consumes one report = one defect.
+- **Mirror `severity`** in both the frontmatter `severity:` field and the
+  `## Severity & impact` section — both must agree.
+- Fill each section from the retro signal; where the source data doesn't
+  populate a field, use a placeholder line (e.g. "Unknown — see source retro.").
+- The body **MUST NOT** repeat frontmatter metadata (no second `id:`, no heading
+  duplicating the frontmatter `severity`).
+- **Link paths** are absolute-from-repo-root (`report-bug` § Link paths), so they
+  survive `fix-bug` adopting the body into a `docs/bugs/<dated-slug>/` run
+  folder.
 
-No consumer dequeues it — it accumulates as a historical corpus (a
-`pipeline-health.processed.md` is a scope-guard violation). Per the stub:
+## Per-artifact consolidation
 
-- **Frontmatter** — all nine fields required. `retros_consumed` carries the
-  run-kind split — `"<n> (<S> spec, <B> bug)"` — so a 2c checkpoint resume can
-  reprint the true spec/bug breakdown from disk. `blocker_rate` is
-  `"<pct>% (<blocked+failed> of <total_entries> entries)"`;
-  `triage_conversion` is
-  `"<product_count> product suggestions + <bug_count> bugs from <total_entries> entries"`.
-- **Summary paragraph** — the synthesizer's voice (`summary_paragraph` from
-  the working shape): what the batch signals — its health (which stage
-  dominates, whether the signal is clean or noisy) and what was captured
-  (suggestion/bug counts). This paragraph is the **on-disk seed** the PR-open
-  step re-derives the PR title/body from, so lead with the batch headline.
-- **`## Outcome counts by stage`** — one row per distinct stage across all
-  envelopes, **sorted by descending `blocked + failed`**, with a bold
-  `**Total**` row. The `subagent_return issues` column counts non-`ok`
-  returns per stage (e.g. `1 crashed`), `0` when clean.
-- **`## Triage conversion`** — all five bullets, per the stub.
-- **`## What's working`** — 2–4 bullets of positives appearing across ≥2
-  retros or worth preserving; **omit the section entirely** when none
-  surface.
-- **`## Degraded retros`** — one bullet per degraded envelope
-  (`` `<retro_path>` — <first parse_note> ``); **omit when all clean**.
-- **Footer** — per the stub (names the run, notes it is not consumed).
+Fold recurring signal so the batch produces **as few artifacts as each queue's
+shape allows** — but "consolidate" means something different per artifact:
 
-## Findings traceback format
+- **Proposed specs — bundle related stories, capped at the split line.** Bundle
+  small *related* capabilities into **one** proposed spec as multiple user
+  stories rather than fragmenting into many one-item specs. Still **split** when
+  a cluster crosses `propose-spec`'s bright line — `>~5 user stories`,
+  independent surfaces touched, or multiple unrelated outcomes — so each spec
+  stays a single shippable unit `ship-spec` can build end-to-end. The same need
+  reported across two retros is **one** spec, not two (with both retro anchors in
+  `source_refs`).
+- **Bug reports — fold same-defect signal only.** Because the body is
+  single-defect, "consolidate" for bugs means **fold duplicate / related signal
+  about the *same* defect into one report** (multiple `source_refs` / supporting
+  anchors) — **never** merge unrelated defects into one report.
 
-Every supporting reference uses a backticked path, ` § `, and a backticked
-verbatim `Entry N — <stage>` anchor. There are **two variants — per artifact,
-not identical**:
+## Producer de-dup + the dropped/parked list
 
-- **`product-suggestions.md`** (`**Source:**` bullets) carries the verbatim
-  quote:
+Every draft is filtered against the live queues + the recent merge log
+(`SKILL.md § Producer de-duplication`). Any draft that overlaps a pending or
+recently-shipped/fixed item is **dropped** — added to `dropped[]` with a one-line
+rationale (e.g. `spec: duplicates pending proposal 9c4f1q`, `bug: fixed in the
+merge log 2026-06-28`). The skeptic pass and operator `drop <id>` also feed
+`dropped[]`.
 
-  ```markdown
-  `<retro_path>` § `<anchor>` — "<quote>"
-  ```
+**No in-scope (spec/bug) draft is silently discarded** — the dropped/parked list
+is surfaced **both** at the confirmation prompt and in the PR body, one bullet
+each: `<spec|bug>: <rationale> (from <retro-anchor>)`.
 
-  `suggestions-to-specs` parses each entry back into
-  `{ retro_path, anchor, quote }`.
+**Pipeline / harness friction is excluded by design, NOT itemized on this list.**
+Signal about how the pipeline operates (a stage, skill, orchestration mechanic,
+retro-capture, allowlist, or the pipeline docs) is not project backlog signal
+under the project retarget — it produces no spec and no report, and it does **not**
+appear in `dropped[]`. The "nothing silently discarded" invariant governs only
+in-scope signal (there is no longer a pipeline-health corpus to absorb the
+friction).
 
-- **`bug-reports.md`** (the "Source retro" table cell) is **quote-less** —
-  path + anchor only:
+## `source` / `source_refs` conventions
 
-  ```markdown
-  `<retro_path>` § `<anchor>`
-  ```
+- **`source: retro-triage`** on every authored spec and report (registered in
+  both queues' producer tables; the queue contracts are source-agnostic — no enum
+  edit).
+- **`source_refs`** is **always a YAML list**, one entry per originating retro
+  anchor, pointing at the retro's **post-run resting path**
+  (`docs/.../retro.processed.md § Entry N — <stage>`). The retro is renamed in
+  the **same commit** that writes the artifact, so the `.processed.md` path is the
+  one that resolves — never the pre-rename `retro.md`.
+- The **anchor** is the retro heading's stable prefix through its stage (the
+  heading may carry a trailing timestamp; the anchor is the substring-resolvable
+  prefix). Grep'ing the anchor as a substring in the linked `retro.processed.md`
+  must find the source.
 
-  `bugs-to-reports` parses `{ retro_path, anchor }` (no quote — see its
-  SKILL.md § Parse each source).
+## Retro-rename footer
 
-Grep'ing the anchor (and, for suggestions, the quoted phrase) in the linked
-file must find the source. Both shapes are contracts — reproduce them
-character-for-character, and **do not add a quote to the bug-reports cell** (it
-breaks the quote-less parser).
+Each consumed retro is `git mv`'d to `retro.processed.md` and gets **one** footer
+line appended in the same commit (` · `-separated, one line — **no** PR-URL
+backfill):
 
-## Placeholder convention
-
-Two run-scoped artifacts carry a literal placeholder that the **PR-URL
-backfill** step rewrites once the real PR URL exists:
-
-- `<filled by finalize>` — in each `retro.processed.md` footer (both
-  `docs/specs/**` and `docs/bugs/**`).
-- `<filled by PR open>` — in the run's row in
-  `docs/specs/_improvements/README.md`.
-
-The resumability gate (SKILL § Resumability gate, 2e) treats either literal
-surviving anywhere on the branch as "PR-URL backfill still pending".
+```
+processed_on: <YYYY-MM-DD>  ·  processed_by: /materia:triage-retros
+```
 
 ## Fold-feedback edit rules (checkpoint rounds)
 
-Operator nudges are applied **directly to the markdown files** — drop or add
-suggestions/bugs, edit a description, adjust a bug's severity, re-bucket an
-item between suggestions and bugs — keeping section order and field labels
-intact (the downstream consumers parse them) and re-deriving the frontmatter
-counts. Conditional-emit invariants are maintained on every round:
+Operator nudges (`edit: …`, `edit <id>: …`, `drop <id>`) are applied **directly
+to the in-memory drafts** — nothing is on disk yet. Keep the required section
+order and field labels intact (so the bodies stay verbatim-adoptable by
+`intake-spec` / `fix-bug`) and **re-derive the frontmatter** from the edited body
+(counts, `severity`, `source_refs`). Maintain the invariants on every round:
 
-- All suggestions moved out → **delete `product-suggestions.md`**; a first
-  suggestion added → create it per this file.
-- An item re-bucketed to bugs → add its row to `bug-reports.md` (creating the
-  file if needed) and remove it from where it came; update both frontmatters.
-- Last bug removed → **delete `bug-reports.md`**.
-- A round that **flips the run between health-only and captured** (first
-  suggestion/bug added, or last one removed) → update the run's outcome cell in
-  `docs/specs/_improvements/README.md` (`health-only` ↔ `captured`) in the same
-  fold commit.
-- `pipeline-health.md` is **never created or deleted** by fold-feedback (it is
-  always present), but its **bucket-derived parts must be re-derived and
-  re-committed in the same fold commit** on any round that changes the
-  suggestion/bug counts or flips the run between health-only and captured —
-  otherwise PR-open (which re-reads it) ships a stale title/body (e.g. still
-  "health-only" after a suggestion is added). Precisely:
-  - **Re-derive** (they mirror the buckets): the `triage_conversion`
-    frontmatter field, the `## Triage conversion` **Product suggestions** and
-    **Bugs gathered** count bullets, and the `summary_paragraph`'s
-    captured-counts clause.
-  - **Leave fixed** (they derive purely from the retros, not the buckets):
-    `retros_consumed`, `total_entries`, `blocker_rate`, `ok_rate`,
-    `most_failing_stage`, `## Outcome counts by stage`, `## What's working`,
-    `## Degraded retros`.
+- **Classification stays one-way** — a defect never becomes a spec, a spec never
+  carries a bug. If feedback re-classifies an item, create the draft in the other
+  queue and remove it from the one it came from.
+- **Add / drop drafts as items move.** A first story for a new capability → a new
+  `drafted_specs[]` draft (mint a fresh `id`). `drop <id>` → move that draft to
+  `dropped[]` with rationale `operator drop`. Folding two drafts about the same
+  need/defect → one draft with both retro anchors in `source_refs`.
+- **Moving an item never resurrects an `_improvements` artifact** — there are no
+  intermediate buckets; every edit lands in a `drafted_specs[]` / `drafted_reports[]`
+  / `dropped[]` entry.
+- On round 5+ prefer a fresh re-draft from the new direction over incremental
+  edits.
+
+## Common rules
+
+- **Title case (slug → title)** — strip the leading `<yyyy-mm-dd-hhmmss>-<id>-`
+  prefix from a filename slug, split the remainder on `-`, and title-case it
+  joined with spaces (`2026-06-21-134501-9c2a3-weekly-roundup` → `Weekly
+  Roundup`). The kebab-slug itself is derived from the title via the normative
+  algorithm in `docs/specs/_proposed/README.md` § Kebab-slug derivation — do not
+  invent a different one.
+- **Scoped formatting** — before staging the commit, run the repo formatter
+  (`MATERIA.md` § Gate, lint row) scoped to **only the files the run actually
+  wrote** (the authored specs + reports + renamed retros) — **never** `--write .`.
+  This is load-bearing: hand-authored markdown trips the CI format gate, and an
+  unscoped format sweeps unrelated files into the diff (which the scope guard
+  would then halt on).
+
+## Fixture-verification rubric
+
+`SKILL.md § Fixture verification` runs the classification rubric over
+`${CLAUDE_PLUGIN_ROOT}/skills/triage-retros/resources/fixture-retro.md` — a
+synthetic retro with **one unmistakable signal per outcome**. The expected
+mapping (the rubric this file defines):
+
+| Fixture signal | Kind | Expected outcome |
+| --- | --- | --- |
+| Entry 2 — the visual **streak counter** on the weekly summary page (a new product capability) | improvement | lands as **one drafted proposed spec** in `drafted_specs[]` |
+| Entry 3 — **set-log undo discards the wrong row** in rapid succession (a regression in shipped behaviour) | defect | lands as **one drafted bug report** in `drafted_reports[]` |
+| Entry 1 — the intake-spec **AskUserQuestion / deferred-tool fallback** friction (how the pipeline operates) | pipeline/harness friction | produces **no artifact** — excluded by design, not even on `dropped[]` |
+
+A change is verified when the improvement item drafts a spec, the bug item drafts
+a report, and the pipeline-friction entry yields nothing.
