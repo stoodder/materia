@@ -378,13 +378,17 @@ if (failures === gateBefore)
   // this table regardless, but the prose citation is what keeps a maintainer
   // sizing the spawn here — an uncited role row is the drift that lets a future
   // edit relocate the spawn and silently pick up the Default row. Guards every
-  // role row, not just janitor's.
+  // role row, not just janitor's. (Boundary: this covers skill dirs and cited
+  // role rows — a future internal role added with no row at all is not a dir and
+  // has no label, so it stays outside the mechanical guarantee; check A + the
+  // operator-session list close the skill-dir case, which is the guarded one.)
   for (const label of rowLabels) {
     if (!label.includes(': ')) continue
     const parent = label.split(': ')[0].trim()
     if (!dirSet.has(parent)) continue // orphan parent already reported by check B
-    const body = readFileSync(`plugins/materia/skills/${parent}/SKILL.md`, 'utf8')
-    if (!body.includes('`' + label + '`'))
+    const skillFile = `plugins/materia/skills/${parent}/SKILL.md`
+    if (!existsSync(skillFile)) { fail(`${parent}/ has no SKILL.md — cannot verify it cites its \`${label}\` routing row`); continue }
+    if (!readFileSync(skillFile, 'utf8').includes('`' + label + '`'))
       fail(`${parent}/SKILL.md does not cite its \`${label}\` routing row — a spawned role left uncited can drift to the Default row`)
   }
   if (failures === before)
