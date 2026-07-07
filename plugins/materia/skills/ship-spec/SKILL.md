@@ -227,8 +227,9 @@ Proposal path only (the ad-hoc fallback defers minting to `intake-spec`, which
 fills the `## Provenance` block with `—`):
 
 1. Mint `<dated-slug>` per `intake-spec`'s rule.
-2. Create branch `<type>/<slug>` off latest `main` (bare feature slug;
-   `<type>` defaults to `feat`).
+2. Create branch `<type>/<slug>` off latest `<trunk>` (the trunk branch per
+   `MATERIA.md` § Version control; bare feature slug, `<type>` defaults to
+   `feat`).
 3. `mkdir docs/specs/<dated-slug>/`.
 4. Seed `STATUS.md` from `docs/specs/_templates/status.md`, filling `Slug:`,
    `Branch:`, `Updated:`, and the `## Provenance` block: `Proposed-id:` ←
@@ -547,11 +548,14 @@ context.
 
 ### When the review pass runs
 
-After every task in `tasks.md` is `[x]`, before `finalize`. Compute the
-baseline against **`origin/main`, not local `main`** (a stale local `main`
-yields a phantom diff):
-`git fetch origin main && git merge-base HEAD origin/main`, review over
-`git diff <baseline>...HEAD`.
+After every task in `tasks.md` is `[x]`, before `finalize`. Resolve the
+baseline from `MATERIA.md` § Version control: `git fetch <remote> <trunk>`
+first so the base is fresh, then review over `git diff <baseline>...HEAD`
+(**diff against `<baseline>` — the ref `<remote>/<trunk>` — not a stale local
+`<trunk>`, which yields a phantom diff**). The three-dot diff resolves the
+merge-base against `HEAD` for you, so no separate `git merge-base` step is
+needed — the review still sees the branch's own changes against the
+up-to-date base.
 
 ### Reviewer fan-out
 
@@ -833,14 +837,15 @@ the orchestrator continues in its own lane after finalize returns:
    the spec folder afterward without a new PR.
 2. **Watch the PR.** Poll `gh pr checks <n>` and
    `gh pr view <n> --json mergeable,mergeStateStatus` in the foreground with
-   explicit exit-code capture (GitHub MCP equivalents in the remote
-   environment). Between polls, wait on the CI's actual cadence rather than
-   spinning.
+   explicit exit-code capture — the PR-status op, `MATERIA.md` § Version
+   control § Forge (which routes the tool to its GitHub-MCP twin in a
+   `gh`-less environment). Between polls, wait on the CI's actual cadence
+   rather than spinning.
 3. **CI failure** → read the failing job's log, fix on the branch, commit +
    push, re-watch. **≤3 fix rounds**; non-convergence →
    `Blocker: auto-merge — CI would not converge after 3 fix rounds
    (<failing check>)`, no merge, surface to the human.
-4. **Merge conflict** (`mergeable: CONFLICTING`) → merge `origin/main` into
+4. **Merge conflict** (`mergeable: CONFLICTING`) → merge `<baseline>` into
    the branch — **never rebase, never force-push** — resolve (the
    `docs/specs/README.md` Index table is the recurring trivial conflict:
    keep both rows, per `finalize/SKILL.md`), re-run the local gate, push,
@@ -848,9 +853,16 @@ the orchestrator continues in its own lane after finalize returns:
    conservative resolution; if the safe resolution isn't obvious, write a
    `Blocker` instead of guessing.
 5. **Merge.** When every check is green, the PR is mergeable, and no human
-   has left review comments on it: `gh pr merge <n> --merge --delete-branch`
-   (a merge commit — matches this repo's history). Report the merge SHA to
-   the operator in the final turn message.
+   has left review comments on it, merge through the **merge-PR op**
+   (`MATERIA.md` § Version control § Forge) — `--merge` is ship-spec's own
+   chosen `<strategy>` (a merge commit — matches this repo's history), which
+   § Forge routes the tool for but never overrides:
+
+   ```bash
+   gh pr merge <n> --merge --delete-branch
+   ```
+
+   Report the merge SHA to the operator in the final turn message.
 6. **Never merge** over a `Blocker`, a red or pending check, or unresolved
    human PR comments — if the operator commented mid-run, stop and surface
    the comments instead. **Never merge while `MATERIA.md` § Gate carries the
@@ -863,6 +875,16 @@ the orchestrator continues in its own lane after finalize returns:
    deletes the marker line without being the named gate spec does not
    qualify. Autopilot's merge authority is exactly the
    operator's explicit `--auto` at invocation, nothing broader.
+7. **No forge, no merge (`none`).** Checked before watching: this section
+   exists only to poll checks and merge a PR through the forge, so when
+   `MATERIA.md` § Version control § Forge is `none` there is no PR to watch
+   or merge — yet `--auto` asked for one. Autopilot **cannot** merge here.
+   Refuse the autopilot merge and degrade to the non-autopilot path:
+   finalize has already opened/prepared the PR handoff (drafted title/body +
+   branch for the operator), and the run stops there. Record why —
+   `Blocker: auto-merge — no forge (§ Forge = none); nothing to watch or
+   merge, PR handoff prepared for the operator` — and surface to the human.
+   Never silently no-op the merge.
 
 ## Course corrections (mid-pipeline)
 
