@@ -828,7 +828,9 @@ choice in the review-loop commit message
 
 On a non-autopilot run the pipeline ends where it always has: finalize opens
 the PR and the human reviews and merges. On an autopilot run (§ Autopilot)
-the orchestrator continues in its own lane after finalize returns:
+the orchestrator continues in its own lane after finalize returns (but if
+`MATERIA.md` § Version control § Forge is `none`, autopilot cannot merge —
+see step 7 first, before any watching):
 
 1. **Flush the run record first.** Append the orchestrator self-review retro
    entry, set `Next: merge (autopilot)` in `STATUS.md`, note
