@@ -1,7 +1,6 @@
 #!/bin/sh
-# Deterministic docs checker — no network, no AI. Portable POSIX sh + awk
-# reimplementation of check-docs.mjs, byte-for-byte identical output. Three
-# layers (mirrors check-docs.mjs exactly):
+# Deterministic docs checker — no network, no AI. Portable POSIX sh + awk;
+# the reference implementation of the Materia docs contract. Three layers:
 #   1. Link check (CLAUDE.md + docs/**): every relative Markdown link resolves
 #      to a real file on disk.
 #   2. Anchor check (agent-context docs only): every `#fragment` in a relative
