@@ -178,11 +178,15 @@ function slugify(s) {
 # Heading detect + extract, mirroring /^#{1,6}\s+(.+)$/m on a single line.
 # Sets HTEXT to the captured (.+) text. Returns 1 if the line is a heading.
 # The `\s+` run after the hashes is JS-Unicode-aware (WSRE) so `### <NBSP>Title`
-# is detected with HTEXT="Title". Residual narrowing (pathological/malformed
+# is detected with HTEXT="Title". Residual narrowings (pathological/malformed
 # input only, matching the mjs residual note): a *bare* `###` line with no
 # same-line text does NOT borrow the next-line text the way the mjs cross-newline
 # `\s+(.+)` does, and a line whose only post-hash content is whitespace is a
-# non-heading here (mjs would keep the last ws char as a near-empty slug).
+# non-heading here (mjs would keep the last ws char as a near-empty slug). Also,
+# a "line" here is `\n`-delimited only (see mysplit); the mjs `/m` regex also
+# treats a lone `\r`, U+2028, and U+2029 as line boundaries, so those three
+# terminators (which never appear in a git-managed LF/CRLF repo — CRLF is safe)
+# can desync heading detection. Same `\n`-line-model-vs-JS-line-terminator class.
 function isHeading(line,   h, rest) {
   h = 0
   while (substr(line, h + 1, 1) == "#") h++
