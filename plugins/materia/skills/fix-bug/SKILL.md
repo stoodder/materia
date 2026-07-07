@@ -166,7 +166,8 @@ claim before spawning any subagent. This makes the pick durable on disk.
 2. Mint `<dated-slug>`: the UTC creation timestamp
    (`date -u +%Y-%m-%d-%H%M%S`) + fresh 6-char base36 token + the kebab
    slug derived from `frontmatter.title`.
-3. Create branch `fix/<slug>` off latest `main`.
+3. Create branch `fix/<slug>` off latest `<trunk>` (the trunk per
+   `MATERIA.md` § Version control).
 4. `mkdir docs/bugs/<dated-slug>/`.
 5. Seed `STATUS.md` from `docs/bugs/_templates/status.md`, filling:
    - `Slug:` → `<dated-slug>`

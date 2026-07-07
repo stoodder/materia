@@ -1,6 +1,6 @@
 ---
 name: report-bug
-description: Take a raw bug description and produce a reproducible bug-report file in `docs/bugs/_reports/`. The skill reads project context (CLAUDE.md, docs/, surface-map) and uses sensible defaults to draft the full report in one shot, then asks the operator to confirm or adjust — minimizing the questions they have to answer. The Q&A is in-memory; once the operator confirms the draft, the skill syncs latest main, branches, writes the report file, commits, pushes, and opens a PR.
+description: Take a raw bug description and produce a reproducible bug-report file in `docs/bugs/_reports/`. The skill reads project context (CLAUDE.md, docs/, surface-map) and uses sensible defaults to draft the full report in one shot, then asks the operator to confirm or adjust — minimizing the questions they have to answer. The Q&A is in-memory; once the operator confirms the draft, the skill syncs the latest trunk, branches, writes the report file, commits, pushes, and opens a PR.
 ---
 
 # report-bug — capture a bug, produce a report file
@@ -170,15 +170,17 @@ On `approve`, run the git workflow before writing any file. Up to this point
 nothing has touched the repo; the branch is created now so an abandoned Q&A
 above this step leaves no stray branch behind.
 
-1. **Sync `main` and branch.**
+1. **Sync the trunk and branch.**
 
    ```bash
-   git checkout main && git pull
+   git checkout <trunk> && git pull <remote> <trunk>
    git checkout -b report-bug/<id>-<slug>
    ```
 
-   `<id>-<slug>` is derived from the report's frontmatter `id` and the
-   kebab-slug of its title (e.g. `report-bug/3a1f2-save-button-spinner-hangs`).
+   (`<trunk>`/`<remote>` per `MATERIA.md` § Version control; the new branch is
+   based off `<trunk>`.) `<id>-<slug>` is derived from the report's frontmatter
+   `id` and the kebab-slug of its title
+   (e.g. `report-bug/3a1f2-save-button-spinner-hangs`).
 
    (Dirty-pull and branch-name collisions per the lifecycle.)
 
@@ -200,10 +202,11 @@ above this step leaves no stray branch behind.
 4. **Push** the branch:
 
    ```bash
-   git push -u origin report-bug/<id>-<slug>
+   git push -u <remote> report-bug/<id>-<slug>
    ```
 
-5. **Open the PR** with `gh pr create`. Title: `report-bug: <title>`.
+5. **Open the PR** via the open-PR op (`MATERIA.md` § Version control
+   § Forge). Title: `report-bug: <title>`.
 
    Body includes the rendered report inline so the reviewer can read it without
    fetching the branch, plus a closing line: "Triage with `/materia:fix-bug <id>` once
@@ -216,7 +219,7 @@ Wrote 1 bug report:
   - docs/bugs/_reports/<dated-slug>/report.md  (id <id>)
 
 Branch: report-bug/<id>-<slug>
-PR:     <URL from gh pr create>
+PR:     <URL from the open-PR op>
 
 The report is queued in docs/bugs/_reports/ awaiting a fix run.
 ```

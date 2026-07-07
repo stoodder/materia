@@ -124,7 +124,8 @@ run) · `cancel`. End the turn; fold-and-re-present until `approve`.
 
 On `approve`:
 
-1. `git checkout main && git pull`, then
+1. `git checkout <trunk> && git pull <remote> <trunk>` (`<trunk>`/`<remote>`
+   per `MATERIA.md` § Version control), then branch off `<trunk>`:
    `git checkout -b epic/reconcile-<epic-id>` — validating `<epic-id>`
    against `^[a-z0-9]{4,8}$` first, like every consumed id (dirty-pull + same-day
    collision handling per the lifecycle).

@@ -216,7 +216,8 @@ before re-presenting. Fold-and-re-present per the lifecycle.
 
 On `approve` (nothing has touched the repo before this):
 
-1. `git checkout main && git pull`, then
+1. `git checkout <trunk> && git pull <remote> <trunk>` (`<trunk>`/`<remote>`
+   per `MATERIA.md` § Version control), then branch off `<trunk>`:
    `git checkout -b epic/<epic-id>-<kebab-slug>` (dirty-pull + collision
    handling per the lifecycle).
 2. Write `docs/epics/<dated-slug>/epic.md` + `research.md`, then each

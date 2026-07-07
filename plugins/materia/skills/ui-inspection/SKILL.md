@@ -194,13 +194,16 @@ outermost guard — nothing upstream has already filtered by UI.)
 4. **Branch / commit / open the PR** — the run is autonomous past the Phase 0
    gate, so once the report is assembled it always finishes on a PR (the opened
    PR is the operator's review surface — PR-is-the-gate; there is no second
-   "approve" checkpoint). Sync `main`
-   and branch `ui-inspection/<id>-<slug>`, write the report file and its
-   co-located captures, run `node scripts/check-docs.mjs` to verify link integrity,
-   commit, push `-u origin ui-inspection/<id>-<slug>`, and open a PR with
-   `gh pr create` (title `ui-inspection: <title>`, body with the rendered report
-   inline, a closing "Triage with `/materia:fix-bug <id>` once this PR lands",
-   and the Materia sigil last — `docs/standards/skills.md` § PR attribution — the Materia sigil). The
+   "approve" checkpoint). Sync the trunk (`git checkout <trunk> && git pull
+   <remote> <trunk>` — `<trunk>`/`<remote>` per `MATERIA.md` § Version
+   control) and branch `ui-inspection/<id>-<slug>` off `<trunk>`, write the
+   report file and its co-located captures, run `node scripts/check-docs.mjs`
+   to verify link integrity, commit, push `-u <remote>
+   ui-inspection/<id>-<slug>`, and open the PR via the open-PR op
+   (`MATERIA.md` § Version control § Forge; title `ui-inspection: <title>`,
+   body with the rendered report inline, a closing "Triage with
+   `/materia:fix-bug <id>` once this PR lands", and the Materia sigil last —
+   `docs/standards/skills.md` § PR attribution — the Materia sigil). The
    only terminal paths that do **not** open a PR are the clean exits defined
    earlier: the Phase 0 abort / unreachable-app exit, and the Phase 1
    instability degrade (which writes a stub report and stops).

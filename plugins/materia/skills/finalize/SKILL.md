@@ -19,7 +19,8 @@ same rule: run the live-stack verify in your own foreground lane.
 
 - `docs/specs/<dated-slug>/tasks.md` (tasks `[x]`) + `spec.md` (acceptance
   criteria).
-- The branch's changes (full diff vs `main`).
+- The branch's changes (full diff vs the trunk — `<baseline>`, per
+  `MATERIA.md` § Version control).
 - `STATUS.md` — read it for `behavior-deferred:` (tasks whose `verify` was
   skipped during parallel implement-task runs and must be re-checked here)
   and the existing stage state.
@@ -144,7 +145,7 @@ acting on them wastes context.
    - **UI-affecting feature:** require evidence of e2e test coverage. (When
      `MATERIA.md` § Gate's `test:e2e` row is `none`, record
      `e2e-coverage: skipped (no e2e suite)` in `STATUS.md` and skip this
-     gate.) Check the branch diff (`git diff origin/main...HEAD --name-only`)
+     gate.) Check the branch diff (`git diff <baseline>...HEAD --name-only`)
      for any new or updated files under the repo's e2e suite directory (named
      in the `test:e2e` row's Notes). Then check `STATUS.md` for a
      `ui-coverage-waiver:` line. One of the following must be true:
@@ -162,7 +163,7 @@ acting on them wastes context.
 
 **Concurrent-run Index conflict (trivial merge).** `docs/specs/README.md`'s Index
 table is a recurring low-grade merge conflict for concurrent ship-spec runs —
-when `main` advances mid-run, the colliding hunk is almost always another run's
+when `<trunk>` advances mid-run, the colliding hunk is almost always another run's
 Index-table row addition. Resolve it as a **trivial merge: keep both rows** (yours
 and theirs) and re-run `check:docs`; **never rebase the shared branch** to
 sidestep it. The larger append-only / one-file-per-spec registry redesign that
@@ -182,11 +183,13 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
    `fix-bug`) as the caster; it stays the last element through every
    later body edit.
 
-   **PR-creation tool.** Use `gh pr create` when the `gh` CLI is available. In
-   the remote execution environment there is **no `gh` CLI** — open the PR via
-   the GitHub MCP `create_pull_request` tool instead (draft the title/body the
-   same way; if finalize runs as a subagent without MCP tools, hand the drafted
-   title/body to the orchestrator to open). Either path produces the same PR.
+   **PR-creation tool.** Open the PR through the **open-PR op**
+   (`MATERIA.md` § Version control § Forge), which routes the tool — `gh pr
+   create` by default, its GitHub-MCP twin in a `gh`-less environment, or the
+   `none` manual handoff — while you draft the title/body the same way
+   regardless. Finalize's one wrinkle § Forge does not cover: if finalize
+   runs as a **subagent without MCP tools**, it cannot open the PR itself —
+   hand the drafted title/body (and branch) to the orchestrator to open.
 
    **E2e-coverage block in the PR body (UI features only).** If step 3'' passed
    with coverage present, render a `## E2e coverage` section listing the spec
@@ -225,8 +228,9 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
         before finalize runs), so the SHA resolves to a commit that contains
         the files.
 
-     2. `<owner>/<repo>` = parsed from `git remote get-url origin` as the
-        **last two path segments** of the URL, stripping a trailing `.git`.
+     2. `<owner>/<repo>` = parsed from `git remote get-url <remote>` (the
+        remote per `MATERIA.md` § Version control) as the **last two path
+        segments** of the URL, stripping a trailing `.git`.
         This parse is robust across `git@github.com:o/r.git`,
         `https://github.com/o/r.git`, and the proxy-rewritten form
         `http://local_proxy@127.0.0.1:41729/git/<owner>/<repo>` — the
@@ -241,10 +245,10 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
 
      4. **Fallback:** if `<owner>/<repo>` cannot be resolved from the remote
         URL (empty output, unexpected format), attempt
-        `gh repo view --json nameWithOwner` to retrieve the canonical
-        `<owner>/<repo>` string. The GitHub MCP `create_pull_request` context
-        (already available to finalize) may also supply it. Use whichever
-        resolves first.
+        `gh repo view --json nameWithOwner` (when `gh` is present) to retrieve
+        the canonical `<owner>/<repo>` string. The GitHub MCP
+        `create_pull_request` context (already available to finalize) may also
+        supply it. Use whichever resolves first.
 
      5. **Unresolvable escape hatch:** if neither the remote-URL parse nor the
         `gh`/MCP fallback can resolve `<owner>/<repo>`, render the degraded
