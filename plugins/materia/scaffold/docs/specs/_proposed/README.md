@@ -101,14 +101,14 @@ role: a chronologically-sortable, globally-unique disambiguator.
   matches the frontmatter `date`; the time part is minted at write time
   (`date -u +%Y-%m-%d-%H%M%S`) so queue files `ls`-sort in creation order.
 - `<id>` — the frontmatter `id` (6-char base36; the same shape as
-  `<rand>` in spec/improvement folder names).
+  `<rand>` in spec folder names and `_proposed/` proposal filenames).
 - `<slug>` — a short kebab-case rendering of the title; see § Kebab-slug
   derivation below for the normative algorithm both producers and
   consumers MUST use.
 
 The frontmatter `source` field is **not** part of the filename. It lives
 in the YAML block only, queried at parse time. This keeps the filename
-shape aligned with spec/improvement folder names; the source is still
+shape aligned with spec folder names; the source is still
 discoverable for any consumer that opens the file.
 
 ### Kebab-slug derivation

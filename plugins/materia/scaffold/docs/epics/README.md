@@ -18,7 +18,7 @@ maintains them as member specs ship. Anything else reads but does not write.
 ## What lives here
 
 One folder per epic, named with the same `<yyyy-mm-dd-hhmmss>-<rand>-<slug>` triad
-used by spec folders, improvement folders, and proposal filenames:
+used by spec folders and proposal filenames:
 
 ```
 docs/epics/
