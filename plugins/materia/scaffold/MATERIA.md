@@ -140,10 +140,13 @@ two tables:
   `Model/effort` field `plan-tasks` writes into `tasks.md`, the
   per-question research tiers `propose-epic` picks) choose from this
   menu per unit.
-- **§ Skill routing** — the per-unit assignment. Every spawned sub-skill and
-  every internal sub-agent role has a row (`Model`, `Effort`, `Fallback
-  Model`); a unit with no row uses the **Default** row. Review angles are the
-  exception — they carry their tier in the § Review angles registry, not here.
+- **§ Skill routing** — the per-unit assignment. Each spawned sub-skill or
+  internal sub-agent role resolves to a row (`Model`, `Effort`, `Fallback
+  Model`), or to the **Default** row when it has none. Coverage is by role, not
+  by skill dir: a `<skill>: <role>` row covers that role, not its parent, and a
+  skill that only runs in the operator session is rowless **by design** (listed
+  as such in § Skill routing). Review angles are the exception — they carry
+  their tier in the § Review angles registry, not here.
   Two further dynamic assigners are also exceptions to a fixed row:
   `propose-epic: research` has a row marked as picking from § Model set rather
   than a fixed pair, and the per-task spawns `plan-tasks` emits carry their
@@ -192,6 +195,16 @@ row. The **Fallback Model** column names what a unit degrades to when its
 `Model` is unavailable; the degradation rules (Fallback Model, effort, and the
 per-task-field cases) live in § Fallback.
 
+**Coverage, not partition.** A `<skill>: <role>` row accounts for that
+**internal role only**, never its parent skill dir. A skill's parent dir is
+accounted for by **either** a plain § Skill routing row **or** an entry in the
+**Operator-session skills (rowless by design)** list below — never both. So the
+four orchestrator parents that also spawn a routed role (`janitor`, `ship-spec`,
+`propose-epic`, `triage-retros`) appear in **both** forms — a role row for the
+spawned unit and the operator-session list for the parent — which is coverage,
+not duplication. `reconcile-epic` is not in that list: its own plain row (whose
+Notes cell records the standalone operator-session mode) is its accounting.
+
 | Skill / role | Model | Effort | Fallback Model | Notes |
 |---|---|---|---|---|
 | **Default** (any unlisted spawned unit) | `opus` | `high` | `opus` | the backstop when a unit has no row of its own |
@@ -210,7 +223,26 @@ per-task-field cases) live in § Fallback.
 | `ui-review` | `opus` | `high` | `opus` | qualitative cross-screen cohesion judgement; UI-gated. Governs standalone invocation of the skill; the ship-spec ui-angle spawn resolves via the **`ui` row in § Review angles** instead — the validator pins this row's model/effort equal to that registry Tier, so keep them in sync |
 | `ship-spec: review/tiebreaker` | `opus` | `high` | `opus` | resolves conflicting review recommendations |
 | `triage-retros: sub-agent` | `sonnet` | `low` | `opus` | mechanical parse + quote of one retro into an insight envelope; the clustering/drafting reasoning stays in the parent |
+| `janitor: scan` | `sonnet` | `low` | `opus` | read-only standards-drift scan fan-out; findings-only, mechanical pattern-match (mirrors `triage-retros: sub-agent`) |
+| `janitor: implementer` | `sonnet` | `medium` | `opus` | optional single subagent for a large mechanical cluster; the parent stays sole committer (mirrors `implement-task`) |
 | `propose-epic: research` | per-question (§ Model set) | per-question | `opus` | one subagent per question; model+effort picked together per § Model set (default / ceiling defined in the skill body) |
+
+#### Operator-session skills (rowless by design)
+
+These skills run in the operator's own session and are never spawned as a
+sub-unit, so they carry no § Skill routing row; each is listed here so a rowless
+parent reads as intentional, not missing:
+
+- `init` — runs in the operator's session (materializes the harness); never spawned, so no row.
+- `propose-spec` — operator-session producer; drafts a proposed-spec, no spawn.
+- `report-bug` — operator-session producer; drafts a bug report, no spawn.
+- `librarian` — operator-session docs maintainer; sweeps and fixes docs in place, no spawn.
+- `ui-inspection` — operator-session; inspects the running app and files one report, no spawn.
+- `ship-spec` — orchestrator parent; runs in the operator session and spawns its stages (each stage has its own row); the parent itself has no row.
+- `fix-bug` — orchestrator parent; same rationale as `ship-spec`.
+- `propose-epic` — orchestrator parent; its research fan-out has the `propose-epic: research` row, but the parent itself is rowless.
+- `janitor` — orchestrator parent; its scan/implementer roles now have rows (`janitor: scan`, `janitor: implementer`), but the parent itself is rowless.
+- `triage-retros` — orchestrator parent; its `triage-retros: sub-agent` role has a row, but the parent itself is rowless.
 
 ### Fallback
 
