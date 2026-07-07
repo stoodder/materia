@@ -335,3 +335,24 @@ Repo-specific angles go in additional rows below the canonical six.
 
 The `spec-adherence` angle drops to `haiku/low` on ship-spec's markdown-only
 exemption path (binding rule stated in `ship-spec` § Review).
+
+## Adapting to your repo
+
+Most stack specifics are captured by the slots above. Three portability
+assumptions ship **hardcoded in the pipeline skills** rather than as slots here —
+recorded so a repo that breaks one adapts deliberately, not by surprise:
+
+- **Default branch & remote.** The skills assume trunk **`main`** on remote
+  **`origin`** — branch creation, the baseline `git diff origin/main...HEAD`, and
+  the PR commands. Trunk and remote are two independent knobs; a repo that differs
+  on either adjusts those skill commands directly (they do not read this file).
+- **`check:docs` needs Node.** The one always-binding gate (§ Gate) ships as
+  `node scripts/check-docs.mjs`. It travels with the harness, but it needs a
+  **Node runtime** even in an otherwise non-JS repo — a Rust/Go/Python project
+  must make `node` available to CI and local runs. The docs contract it enforces
+  is runtime-agnostic; only the implementation is Node.
+- **One MATERIA.md = one adaptation surface.** § Gate, § Run it, and the baseline
+  in § Surface gates describe a **single package** over the whole tree. A polyglot
+  monorepo whose packages need different gates or run commands is not expressible
+  in one file: adopt Materia **per package** (one MATERIA.md at each package root),
+  or make each § Gate command an umbrella script that dispatches across packages.
