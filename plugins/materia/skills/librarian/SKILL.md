@@ -72,8 +72,8 @@ same rule that exempts them from `check:docs` style checks.
 blocked by local changes; `<trunk>`/`<remote>` per `MATERIA.md` § Version
 control). Confirm the forge is reachable — `gh auth status` when `gh` is on
 PATH, else that the GitHub-MCP twin tooling responds, and skip the check
-entirely when the forge is `none` (`MATERIA.md` § Version control § Forge) —
-and that `node scripts/check-docs.mjs` is runnable — apply
+entirely when the forge is `none` (`MATERIA.md` § Version control § Forge).
+Verify that `node scripts/check-docs.mjs` is runnable — apply
 `${CLAUDE_PLUGIN_ROOT}/skills/ship-spec/resources/env-preflight.md` (and
 `MATERIA.md` § Environment preflight) recipes if not.
 Read `docs/standards/docs.md` and the doc indexes into context.
