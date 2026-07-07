@@ -101,6 +101,17 @@ runSim('non-UI repo', { standards: ['architecture', 'testing', 'workflow'] })
     else
       console.log('  ⚠ SKIP busybox lane: busybox not found on PATH — running host-awk parity only (oracle==sh still asserted). Set CI=1 to make this a hard failure.')
   }
+  // gawk lane under a UTF-8 locale (C.UTF-8): gawk is multibyte-aware, so under a
+  // UTF-8 locale it uses CHARACTER semantics and would diverge on non-ASCII
+  // slugs/glossary sorts — exactly what broke on GitHub Actions (default awk =
+  // gawk, LANG=C.UTF-8). check-docs.sh pins LC_ALL=C internally to force byte
+  // semantics; this lane runs the CI-failure environment so a future removal of
+  // that pin fails here, not just in CI. Gated on gawk's presence (skip locally
+  // if absent — the CI host-awk lane already IS gawk).
+  const gawkProbe = spawnSync('gawk', ['--version'], { encoding: 'utf8' })
+  const haveGawk = !gawkProbe.error && gawkProbe.status === 0
+  if (!haveGawk && !process.env.CI)
+    console.log('  ⚠ SKIP gawk lane: gawk not found on PATH — the CI host-awk lane covers gawk. Install gawk to run it locally.')
 
   const snippet = (s) => { s = s ?? ''; return s.length > 700 ? s.slice(0, 700) + '\n…[truncated]' : s }
   // Run all lanes over `cwd` and assert three-way (or two-way, no-busybox)
@@ -111,6 +122,8 @@ runSim('non-UI repo', { standards: ['architecture', 'testing', 'workflow'] })
     const lanes = [['oracle(node)', oracle], ['sh(host-awk)', spawnSync('sh', [SH], { cwd, encoding: 'utf8' })]]
     if (haveBusybox)
       lanes.push(['sh(busybox-awk)', spawnSync('sh', [SH], { cwd, encoding: 'utf8', env: { ...process.env, AWK: 'busybox awk' } })])
+    if (haveGawk)
+      lanes.push(['sh(gawk,C.UTF-8)', spawnSync('sh', [SH], { cwd, encoding: 'utf8', env: { ...process.env, AWK: 'gawk', LC_ALL: 'C.UTF-8' } })])
     const [refName, ref] = lanes[0]
     for (const [name, r] of lanes.slice(1)) {
       const diffs = []
@@ -218,8 +231,10 @@ runSim('non-UI repo', { standards: ['architecture', 'testing', 'workflow'] })
         fail(`check-docs parity scaffold profile "${label}": oracle reports failures (expected clean):\n${snippet(ref.stderr)}`)
     }
 
-    if (failures === before)
-      console.log(`  ✓ check-docs parity: ${fixtures.length} fixtures + ${profiles.length} scaffold profiles — oracle == sh${haveBusybox ? ' (host awk == busybox awk)' : ' (host awk; busybox lane skipped)'}`)
+    if (failures === before) {
+      const awks = ['host awk', haveBusybox && 'busybox awk', haveGawk && 'gawk/C.UTF-8'].filter(Boolean).join(' == ')
+      console.log(`  ✓ check-docs parity: ${fixtures.length} fixtures + ${profiles.length} scaffold profiles — oracle == sh (${awks})`)
+    }
   } finally {
     rmSync(corpus, { recursive: true, force: true })
   }

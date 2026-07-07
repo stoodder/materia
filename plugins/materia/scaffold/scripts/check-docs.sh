@@ -14,9 +14,20 @@
 # `AWK='busybox awk' sh scripts/check-docs.sh`).
 #
 # Portability floor: strict POSIX sh (dash) + POSIX awk. Runs unmodified under
-# mawk 1.3.4 AND busybox awk 1.36.1 (no gawk gensub/IGNORECASE, no bashisms).
+# mawk 1.3.4, busybox awk 1.36.1, and gawk 5.x (no gawk gensub/IGNORECASE, no
+# bashisms).
 
 set -u
+
+# Pin the C locale so every stage — find, sort, and especially awk — is
+# BYTE-oriented and deterministic. This checker processes UTF-8 as raw bytes on
+# purpose (byte-sequence accent-fold keys, byte-counted code-point length, the
+# multibyte-whitespace class), which matches Node's output. A multibyte-aware
+# awk (gawk under a UTF-8 locale such as GitHub Actions' default C.UTF-8) would
+# instead use CHARACTER semantics and diverge on non-ASCII slugs/glossary sorts;
+# LC_ALL=C forces byte semantics everywhere, so the result is identical across
+# mawk, busybox awk, and gawk regardless of the ambient locale.
+export LC_ALL=C
 
 # File discovery: ROOTS = CLAUDE.md + docs. `find` then LC_ALL=C sort (byte
 # order == Node's default String.sort for ASCII paths). Roots are passed
