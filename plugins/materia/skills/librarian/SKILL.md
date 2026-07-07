@@ -68,10 +68,14 @@ same rule that exempts them from `check:docs` style checks.
 
 ### 1. Preflight
 
-`git checkout main && git pull` (halt and surface if blocked by local
-changes). Verify `gh auth status` and that `node scripts/check-docs.mjs` is runnable —
-apply `${CLAUDE_PLUGIN_ROOT}/skills/ship-spec/resources/env-preflight.md` (and `MATERIA.md`
-§ Environment preflight) recipes if not.
+`git checkout <trunk> && git pull <remote> <trunk>` (halt and surface if
+blocked by local changes; `<trunk>`/`<remote>` per `MATERIA.md` § Version
+control). Confirm the forge is reachable — `gh auth status` when `gh` is on
+PATH, else that the GitHub-MCP twin tooling responds, and skip the check
+entirely when the forge is `none` (`MATERIA.md` § Version control § Forge) —
+and that `node scripts/check-docs.mjs` is runnable — apply
+`${CLAUDE_PLUGIN_ROOT}/skills/ship-spec/resources/env-preflight.md` (and
+`MATERIA.md` § Environment preflight) recipes if not.
 Read `docs/standards/docs.md` and the doc indexes into context.
 
 ### 2. Scan — the drift taxonomy
@@ -105,7 +109,7 @@ that proves the doc wrong).
    supports…", change-log-shaped sections), facts duplicated across docs
    instead of linked to their one home, table-cell bloat, multi-sentence
    glossary entries. Fix by rewriting to present-state.
-5. **Mechanical gate.** Run `node scripts/check-docs.mjs`; any failure on `main` is a
+5. **Mechanical gate.** Run `node scripts/check-docs.mjs`; any failure on the trunk is a
    finding to fix (narration phrases, over-long lines, duplicate lines,
    glossary order, broken links, unresolvable `#anchor` fragments).
 
@@ -141,8 +145,9 @@ alphabetical position). Commit in small scoped commits
 
 ```bash
 node scripts/check-docs.mjs && <lint — MATERIA.md § Gate>   # links/style + formatting over the .md diff
-git diff main...HEAD --name-only     # § The docs-only envelope — assert now
-git push -u origin librarian/sweep-<YYYY-MM-DD>
+git diff <baseline>...HEAD --name-only     # § The docs-only envelope — assert now
+git push -u <remote> librarian/sweep-<YYYY-MM-DD>
+# open the PR — MATERIA.md § Version control § Forge (open-PR op)
 gh pr create --title "librarian: docs-drift sweep <YYYY-MM-DD>" --body "<body>"
 ```
 
@@ -151,40 +156,53 @@ caster (`docs/standards/skills.md` § PR attribution — the Materia sigil).
 
 The PR body carries: the fix list (one line each, with the oracle that proved
 the drift), the skipped list with rationales, the needs-human notes, and the
-deferred remainder. In the remote execution environment (no `gh` CLI), use
-the GitHub MCP `create_pull_request` tool with the same title/body.
+deferred remainder.
 
 ### 6. Ride the PR to green — the resolution loop
 
 Repeat until merged, **bounded at 3 rounds**:
 
 1. **Conflicts?** If GitHub reports the branch un-mergeable:
-   `git fetch origin main && git merge origin/main` — **merge, never rebase,
-   never force-push** (the same rule as ship-spec's merge watch; the shipped
-   permission rules deny force spellings). Resolve conflicts by
-   taking `main`'s content as the new base and re-deriving the fix against it
-   — re-verify the underlying claim against the code before re-applying; if
-   `main`'s change made the fix moot, drop it. Then push normally.
-2. **Wait for CI:** `gh pr checks <num> --watch` (poll `gh pr checks <num>`
-   if `--watch` is unavailable).
-3. **CI failed?** Read the failing job log (`gh run view <id> --log-failed`).
+   `git fetch <remote> <trunk> && git merge <baseline>` — **merge, never
+   rebase, never force-push** (the same rule as ship-spec's merge watch; the
+   shipped permission rules deny force spellings). Resolve conflicts by
+   taking the trunk's content as the new base and re-deriving the fix against
+   it — re-verify the underlying claim against the code before re-applying; if
+   the trunk's change made the fix moot, drop it. Then push normally.
+2. **Wait for CI:** `gh pr checks <n> --watch` (poll `gh pr checks <n>` if
+   `--watch` is unavailable) — PR-status op, `MATERIA.md` § Version control
+   § Forge.
+3. **CI failed?** Read the failing job log (CI-logs op, `MATERIA.md`
+   § Version control § Forge).
    - Failure caused by this diff (a `docs` job failure, a formatter
      complaint on an edited `.md`) → fix on the branch, re-gate locally,
      push, loop.
-   - Failure unrelated to the diff (a flaky e2e, `main` already red) → retry
-     the job once (`gh run rerun <id> --failed`); if still red, **stop**:
-     leave the PR open, comment on it naming the failing job and why it looks
-     unrelated, and report to the operator. Never merge over a red check.
-4. **Green?** Re-assert the docs-only envelope on the final diff, then:
+   - Failure unrelated to the diff (a flaky e2e, the trunk already red) →
+     re-run CI once (re-run-CI op, same § Forge); this op has no exact
+     GitHub-MCP twin, so in a `gh`-less env skip the one-shot rerun and
+     surface it to the operator instead. If still red, **stop**: leave the
+     PR open, comment on it (post-PR-comment op, same § Forge) naming the
+     failing job and why it looks unrelated, and report to the operator.
+     Never merge over a red check.
+4. **Green?** Re-assert the docs-only envelope on the final diff, then merge
+   through the **merge-PR op** (`MATERIA.md` § Version control § Forge) —
+   `--squash` is the librarian's own chosen `<strategy>`, which § Forge routes
+   the tool for but never overrides:
 
    ```bash
-   gh pr merge <num> --squash --delete-branch
+   gh pr merge <n> --squash --delete-branch
    ```
 
    If the merge is rejected by branch protection (required review), fall back
-   to `gh pr merge <num> --auto --squash` and report the PR URL — the merge
-   then completes on approval. `--no-merge` runs stop here either way and
-   report the green PR URL.
+   to the distinct **auto-merge op** (twin `enable_pr_auto_merge`, same
+   § Forge) — still `--squash` — and report the PR URL; the merge then
+   completes on approval:
+
+   ```bash
+   gh pr merge <n> --auto --squash
+   ```
+
+   `--no-merge` runs stop here either way and report the green PR URL.
 
 If the loop exhausts 3 rounds without merging, stop, leave the PR open with a
 comment summarizing the state, and report to the operator.
@@ -197,7 +215,7 @@ remainder, PR URL + merge state. End the turn.
 ## The docs-only envelope (binding)
 
 Before **every push** and again **immediately before merge**, assert that
-`git diff main...HEAD --name-only` matches only:
+`git diff <baseline>...HEAD --name-only` matches only:
 
 ```
 CLAUDE.md
@@ -217,9 +235,9 @@ auto-merge privilege exists only inside this envelope.
 
 **Scale guard (mechanical, same assertion points).** The envelope constrains
 file *kind*; this constrains *magnitude*. Compute
-`git diff main...HEAD --numstat` and use the **deleted-lines column**
+`git diff <baseline>...HEAD --numstat` and use the **deleted-lines column**
 (insertions never offset deletions — a balanced rewrite is still a rewrite),
-plus `git diff main...HEAD --name-status --diff-filter=D` for whole-file
+plus `git diff <baseline>...HEAD --name-status --diff-filter=D` for whole-file
 deletions (numstat alone can't distinguish them).
 If the deletion filter reports **any file**, numstat shows a **binary
 entry** (`-`), or the diff deletes
@@ -245,7 +263,7 @@ enforcement configuration, not prose; a human reviews every change to them.
 - **Invents no docs.** A missing resource doc for a new entity is a
   needs-human note — authoring a doc from scratch needs intent the librarian
   doesn't have (that's `docs-sync`'s job inside a feature's own run).
-- **Never merges over a red or skipped check**, and never pushes to `main`
+- **Never merges over a red or skipped check**, and never pushes to the trunk
   directly.
 
 ## Rules
