@@ -244,7 +244,7 @@ abandoned Q&A above this step leaves no stray branch behind.
 
 3. **Verify link integrity, then commit** the proposal file(s):
 
-   Verify link integrity per the lifecycle invariant (`node scripts/check-docs.mjs`;
+   Verify link integrity per the lifecycle invariant (`sh scripts/check-docs.sh`;
    fix any links the new files introduce), then commit:
 
    ```bash
@@ -367,7 +367,7 @@ body.** Proposal files live under `docs/specs/_proposed/<file>.md`, but
 `intake-spec` adopts the body **verbatim** into
 `docs/specs/<dated-slug>/spec.md` at a different folder depth — a relative
 link that resolves from one location is broken from the other, and
-`check-docs.mjs` resolves every link against the containing file's own
+`check-docs.sh` resolves every link against the containing file's own
 directory (repo-root-style paths do NOT resolve from either location).
 
 Reference repo files in backtick/arrow prose form instead —

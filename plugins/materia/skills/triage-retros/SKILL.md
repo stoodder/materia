@@ -491,7 +491,7 @@ repo; the branch is created now so an abandoned confirmation leaves no trace.
    ```
 
 7. **Verify link integrity, then run the scope guard on the *staged* diff,
-   before committing.** Run `node scripts/check-docs.mjs` and fix any link the
+   before committing.** Run `sh scripts/check-docs.sh` and fix any link the
    *new* files introduce (pre-existing debt on the trunk is not this run's job; if
    `check:docs` isn't runnable, grep the new files for `](../` and `](./` and
    verify each target manually). Then run the **scope guard** (§ Scope guard)

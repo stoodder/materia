@@ -81,7 +81,7 @@ upgrading the plugin upgrades every repo it's installed in.
 plugins/materia/
   .claude-plugin/plugin.json         the plugin manifest
   skills/                            the pipeline skills (stack-agnostic), invoked /materia:<name>
-  scaffold/                          the bundled MATERIA.md/CLAUDE.md/docs templates + check-docs.mjs
+  scaffold/                          the bundled MATERIA.md/CLAUDE.md/docs templates + check-docs.sh
                                       that /materia:init materializes into your repo
 scripts/validate-plugin.mjs          validates the marketplace + plugin manifests and the scaffold
 ```

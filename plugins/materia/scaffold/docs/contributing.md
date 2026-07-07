@@ -64,8 +64,8 @@ it per **Adding a new doc** below as part of the same change.
 
 ## Docs checks (links + style)
 
-A committed, deterministic script (`scripts/check-docs.mjs` — pure Node, no
-network, no AI) enforces three layers:
+A committed, deterministic script (`scripts/check-docs.sh` — portable POSIX
+`sh`+`awk`, no network, no AI) enforces three layers:
 
 1. **Links** (`CLAUDE.md` + all of `docs/**`): every
    relative Markdown link resolves to a real file. External (`http(s)://`,
@@ -84,7 +84,7 @@ network, no AI) enforces three layers:
 Run it from the repo root; it exits non-zero and lists every failure:
 
 ```bash
-node scripts/check-docs.mjs
+sh scripts/check-docs.sh
 ```
 
 CI runs it on every PR, so a broken cross-link or a style regression fails

@@ -191,7 +191,7 @@ above this step leaves no stray branch behind.
 
 3. **Verify link integrity, then commit** the report file:
 
-   Verify link integrity per the lifecycle invariant (`node scripts/check-docs.mjs`;
+   Verify link integrity per the lifecycle invariant (`sh scripts/check-docs.sh`;
    fix any links the new file introduces), then commit:
 
    ```bash

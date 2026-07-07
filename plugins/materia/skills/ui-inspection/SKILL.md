@@ -197,7 +197,7 @@ outermost guard — nothing upstream has already filtered by UI.)
    "approve" checkpoint). Sync the trunk (`git checkout <trunk> && git pull
    <remote> <trunk>` — `<trunk>`/`<remote>` per `MATERIA.md` § Version
    control) and branch `ui-inspection/<id>-<slug>` off `<trunk>`, write the
-   report file and its co-located captures, run `node scripts/check-docs.mjs`
+   report file and its co-located captures, run `sh scripts/check-docs.sh`
    to verify link integrity, commit, push `-u <remote>
    ui-inspection/<id>-<slug>`, and open the PR via the open-PR op
    (`MATERIA.md` § Version control § Forge; title `ui-inspection: <title>`,

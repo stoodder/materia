@@ -1,6 +1,6 @@
 ---
 name: docs-sync
-description: Reconcile docs with the branch's aggregate code changes before the PR — apply docs/contributing.md touch-X→update-Y to the whole diff, edit stale resource/standards docs (intent-oracle rules), update cross-cutting docs (CLAUDE.md, README index, surface-map, glossary), with every edit written to docs/standards/docs.md (present-state, one home per fact) and gated by `node scripts/check-docs.mjs` before commit, then hand off to the sibling `docs-audit` stage. Invoked by `ship-spec` as its own pipeline stage (after review, paired with the sibling `docs-audit` stage, before finalize); usable standalone after a hotfix.
+description: Reconcile docs with the branch's aggregate code changes before the PR — apply docs/contributing.md touch-X→update-Y to the whole diff, edit stale resource/standards docs (intent-oracle rules), update cross-cutting docs (CLAUDE.md, README index, surface-map, glossary), with every edit written to docs/standards/docs.md (present-state, one home per fact) and gated by `sh scripts/check-docs.sh` before commit, then hand off to the sibling `docs-audit` stage. Invoked by `ship-spec` as its own pipeline stage (after review, paired with the sibling `docs-audit` stage, before finalize); usable standalone after a hotfix.
 ---
 
 # docs-sync — reconcile docs to the final branch state
@@ -59,7 +59,7 @@ present-state description.
 - **Glossary entries are one line** (one sentence + Detail link), inserted at
   the term's alphabetical position.
 
-`node scripts/check-docs.mjs` mechanically enforces the checkable subset (narration
+`sh scripts/check-docs.sh` mechanically enforces the checkable subset (narration
 phrases, >600-char lines, duplicated long lines, glossary order, links,
 `#anchor` fragments) over CLAUDE.md + docs root + `resources/` +
 `standards/` + `_templates/` (links also across `docs/**`) — run it before
@@ -197,7 +197,7 @@ standalone runs apply it on first use.
    - New convention/rule documented as a deliberate change in `architecture.md`
      → reflected in `CLAUDE.md` AND the matching `docs/standards/*.md`.
 
-6. **Run `node scripts/check-docs.mjs`, then commit and hand off to `docs-audit`.**
+6. **Run `sh scripts/check-docs.sh`, then commit and hand off to `docs-audit`.**
    Run the docs checks **before committing** and fix every failure — the
    checker gates style (change-narration phrases, >600-char lines, duplicated
    long lines, glossary order) as well as links and `#anchor` fragments, and
@@ -234,7 +234,7 @@ to the human. The run resumes once the blocker is cleared.
 - Every edit follows § Authoring rules (present-state, folded, one home per
   fact).
 - Doc edits committed and pushed; the sibling `docs-audit` stage will verify them.
-- `node scripts/check-docs.mjs` **passes — run it yourself in step 6** (links + style;
+- `sh scripts/check-docs.sh` **passes — run it yourself in step 6** (links + style;
   `finalize`'s gate re-verifies).
 
 ## Standalone use
@@ -244,5 +244,5 @@ Runnable on its own after a hotfix: invoke with the branch diff vs the trunk
 when a manual edit landed without going through the full pipeline.
 
 In standalone mode the sibling `docs-audit` stage is **not** auto-spawned — run
-`node scripts/check-docs.mjs` to catch link + style issues mechanically, or invoke the
+`sh scripts/check-docs.sh` to catch link + style issues mechanically, or invoke the
 docs-audit procedure manually for the judgment checks.
