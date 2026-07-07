@@ -44,6 +44,22 @@ project state a non-Materia repo doesn't have.
 
 Doctor reads no other repo state and needs no network or AI.
 
+## Outputs
+
+Doctor writes **nothing to the repo**. Its only output is the report it prints:
+
+- **Default** — a human-readable summary: overall status, whether the repo is
+  Materia-enabled, current vs latest artifact schema, the project-state location
+  (or that it is missing/malformed), the per-check results, any
+  required/recommended/optional changes, manual action items, and the suggested
+  next command.
+- **`--json`** — the same report as a structured JSON object (for piping into
+  other tooling).
+
+The script's exit code encodes the status (`0` healthy/warnings/unknown, `1`
+action-needed, `2` blocked). No branch, commit, PR, or file change is ever
+produced.
+
 ## Procedure
 
 1. **Run the deterministic inspector.** Resolve the plugin token in the **shell**
@@ -65,9 +81,11 @@ Doctor reads no other repo state and needs no network or AI.
    listed.
 
 3. **Recommend the next step the script named** — no more. Common cases:
-   - **`healthy`** — schema is current; nothing to do. Say so.
+   - **`healthy`** — schema is current; nothing required. Note that a healthy
+     report can still list *optional* changes (an `optional`-impact drift does
+     not demote the status) — relay them as available, not needed.
    - **`warnings`** — e.g. an untracked pre-tracking (legacy) install, or a stale
-     schema whose adoptable changes are recommended/optional. Relay the script's
+     schema whose adoptable changes are *recommended*. Relay the script's
      suggested `/materia:migrate --plan` (noting that `/materia:migrate` is
      forthcoming — for now the report's manual action items describe the change
      by hand).
@@ -76,7 +94,9 @@ Doctor reads no other repo state and needs no network or AI.
    - **`blocked`** — malformed `.materia/project.json`, an unknown schema, or a
      project newer than the installed plugin. Relay the script's manual fix item
      (e.g. repair the JSON, or update the plugin); do **not** attempt the fix as
-     part of doctor.
+     part of doctor. (One `blocked` sub-case is a **tool fault** — the plugin's
+     own ledger failing to read — which the script labels as such and attaches no
+     project fix item; relay that framing rather than blaming the target repo.)
    - **`unknown`** — the repo does not appear Materia-enabled. State that plainly
      and invent no project state. (If the operator expected a Materia repo, the
      likely next step is `/materia:init` — offer it, don't run it.)
