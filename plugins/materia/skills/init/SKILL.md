@@ -52,8 +52,8 @@ Read tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path) — e.g.
 
 ## Outputs
 
-All committed to `main` (init is the bootstrap exception to branch-and-PR
-discipline — there is nothing to diff against yet):
+All committed to the repo's default branch (init is the bootstrap exception to
+branch-and-PR discipline — there is nothing to diff against yet):
 
 - `MATERIA.md` (repo root) — every section filled, `none` where a capability
   is absent.
@@ -262,11 +262,12 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
    the end of Phase 7, after the bootstrap epic exists, so the green-gate
    guarantee covers everything init writes.
 10. **Commit** in logical chunks (skeleton · MATERIA/CLAUDE · product brief ·
-    standards · README) directly to `main`, and push if a remote
-    exists — **as bare `git push`** (or `git push -u origin HEAD` on first
-    push). The user repo's own deny rules block explicit `git push origin main`
-    spellings for the pipeline's sake; init's direct-to-main bootstrap is
-    sanctioned, and the bare form is how it's expressed.
+    standards · README) directly to the default branch, and push if a
+    remote exists — **as bare `git push`** (or `git push -u origin HEAD` on
+    first push). The user repo's own deny rules block explicit
+    `git push origin main` spellings for the pipeline's sake; init's
+    direct-to-main bootstrap is sanctioned, and the bare form is how it's
+    expressed.
 
 ### Phase 7 — Seed the bootstrap epic
 
@@ -310,8 +311,8 @@ is retained documentation, not a placeholder — never "fix" it. Zero on all
 three is the exit criterion; init never hands over a repo that fails its own
 docs gate.
 
-Commit the epic + members to `main` (still bootstrap), then hand off: tell
-the engineer to run `/materia:ship-spec` (or `/materia:ship-spec --auto`) — from this point
+Commit the epic + members to the default branch (still bootstrap), then hand
+off: tell the engineer to run `/materia:ship-spec` (or `/materia:ship-spec --auto`) — from this point
 every change flows through the pipeline and lands via PR.
 
 ### Phase 8 — Report

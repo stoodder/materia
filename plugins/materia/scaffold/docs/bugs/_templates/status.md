@@ -71,7 +71,8 @@
      - a `## Per-task review state` block with per-task `baselineSha` /
        review counts (pre-post-implementation-review template) → ignored;
        review runs once over the cumulative diff and its baseline is
-       `git merge-base HEAD origin/main`
+       `<baseline>` (the ref `<remote>/<trunk>`, per `MATERIA.md` § Version
+       control)
      - missing `behavior-deferred:` → `finalize` re-runs `verify` on all
        user-visible ACs (safer default)
      - missing `docs-sync:` row → the docs-sync stage creates it

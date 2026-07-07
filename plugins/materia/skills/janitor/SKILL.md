@@ -46,7 +46,8 @@ behavior-affecting fix is noted, never guessed at (§ Rules).
   the pipeline run that will consume it):
   `git ls-files 'docs/specs/_proposed/*.md'` and
   `git ls-files 'docs/bugs/_reports/*/report.md'`, plus the recent merge log
-  (`git log main --since='3 months ago' --pretty=oneline`).
+  (`git log <trunk> --since='3 months ago' --pretty=oneline`; `<trunk>` per
+  `MATERIA.md` § Version control).
 
 ## Outputs
 
@@ -63,11 +64,14 @@ behavior-affecting fix is noted, never guessed at (§ Rules).
 
 ### 1. Preflight
 
-`git checkout main && git pull` (halt and surface if blocked by local
-changes). Verify `gh auth status` and the Node toolchain — the full local gate
-must be runnable (apply
-`${CLAUDE_PLUGIN_ROOT}/skills/ship-spec/resources/env-preflight.md` recipes if not). Read
-the in-scope standards and both live queues into context.
+`git checkout <trunk> && git pull <remote> <trunk>` (halt and surface if
+blocked by local changes; `<trunk>`/`<remote>` per `MATERIA.md` § Version
+control). Confirm the forge is reachable — `gh auth status` when `gh` is on
+PATH, else that the GitHub-MCP twin tooling responds, and skip the check
+entirely when the forge is `none` (`MATERIA.md` § Version control § Forge).
+Verify the Node toolchain — the full local gate must be runnable (apply
+`${CLAUDE_PLUGIN_ROOT}/skills/ship-spec/resources/env-preflight.md` recipes if
+not). Read the in-scope standards and both live queues into context.
 
 ### 2. Scan — subagent fan-out
 
@@ -119,7 +123,8 @@ writers at once; the parent stays the sole committer.
 
 ```bash
 <full gate - every non-`none` row of MATERIA.md § Gate, in table order>
-git push -u origin janitor/sweep-<YYYY-MM-DD>
+git push -u <remote> janitor/sweep-<YYYY-MM-DD>
+# open the PR — MATERIA.md § Version control § Forge (open-PR op)
 gh pr create --title "janitor: standards-drift sweep <YYYY-MM-DD>" --body "<body>"
 ```
 
@@ -129,23 +134,25 @@ caster (`docs/standards/skills.md` § PR attribution — the Materia sigil).
 A gate failure a fix caused is fixed on the branch before pushing; a fix that
 can't be made green is reverted and demoted to a needs-human note. The PR body
 carries the fix list (each naming its standard rule), skips, needs-human
-notes, and the deferred remainder. In the remote execution environment (no
-`gh` CLI), use the GitHub MCP `create_pull_request` tool.
+notes, and the deferred remainder.
 
 ### 6. Ride the PR to green
 
 Repeat until green, **bounded at 3 rounds**:
 
-1. **Conflicts?** `git fetch origin main && git merge origin/main` —
+1. **Conflicts?** `git fetch <remote> <trunk> && git merge <baseline>` —
    **merge, never rebase, never force-push** (same rule as the librarian and
    ship-spec's merge watch; the shipped permission rules deny force
-   spellings); re-derive each conflicted fix against `main`'s content (drop
+   spellings); re-derive each conflicted fix against the trunk's content (drop
    it if moot), then push normally.
-2. **Wait for CI:** `gh pr checks <num> --watch`.
+2. **Wait for CI:** `gh pr checks <n> --watch` (PR-status op,
+   `MATERIA.md` § Version control § Forge).
 3. **CI failed?** Failure caused by this diff → fix on the branch, re-gate
-   locally, push, loop. Unrelated failure (flaky e2e, `main` already red) →
-   retry once (`gh run rerun <id> --failed`); if still red, stop and report
-   with a PR comment naming the failing job.
+   locally, push, loop. Unrelated failure (flaky e2e, the trunk already red) →
+   re-run CI once (re-run-CI op, `MATERIA.md` § Version control § Forge); this
+   op has no exact GitHub-MCP twin, so in a `gh`-less env skip the one-shot
+   rerun and surface it to the operator instead. If still red, stop and report
+   with a PR comment (post-PR-comment op, same § Forge) naming the failing job.
 4. **Green?** Stop. Report the PR URL for human review — **never merge**.
 
 If the loop exhausts 3 rounds, stop, leave the PR open with a comment
@@ -169,7 +176,7 @@ package manifest and CI config.
 
 ## Scope (what this skill does NOT do)
 
-- **NEVER auto-merges and never pushes to `main`** — the green PR is the
+- **NEVER auto-merges and never pushes to the trunk** — the green PR is the
   hand-off; a human merges.
 - **NEVER makes behavior-changing fixes.** Behavioral faults are needs-human
   notes; their fix path is the RED-first `/materia:fix-bug` pipeline, not a sweep.

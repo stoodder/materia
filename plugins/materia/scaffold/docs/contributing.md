@@ -24,8 +24,8 @@ A change is "done" only when every box is checked.
 - [ ] New or changed source has its tests, per
       [standards/testing.md](standards/testing.md).
 - [ ] **Docs updated in the same change** — see the touch-X→update-Y map below.
-- [ ] Branched off `main`; commit messages are clear and scoped. Open a PR
-      **only when asked**.
+- [ ] Branched off the trunk (`MATERIA.md` § Version control); commit
+      messages are clear and scoped. Open a PR **only when asked**.
 
 ## Keep the docs true — touch X → update Y
 

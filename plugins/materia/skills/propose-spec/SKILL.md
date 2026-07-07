@@ -1,6 +1,6 @@
 ---
 name: propose-spec
-description: Take a user's raw idea and produce a well-formed proposed-spec file in docs/specs/_proposed/. The skill reads the project context (CLAUDE.md, docs/, existing specs) and uses sensible defaults to draft the full spec in one shot, then asks the user to confirm or adjust — minimizing the questions the user has to answer. The Q&A is in-memory; once the user confirms the draft, the skill syncs latest main, branches, writes the proposal file(s), commits, pushes, and opens a PR.
+description: Take a user's raw idea and produce a well-formed proposed-spec file in docs/specs/_proposed/. The skill reads the project context (CLAUDE.md, docs/, existing specs) and uses sensible defaults to draft the full spec in one shot, then asks the user to confirm or adjust — minimizing the questions the user has to answer. The Q&A is in-memory; once the user confirms the draft, the skill syncs the latest trunk, branches, writes the proposal file(s), commits, pushes, and opens a PR.
 ---
 
 # propose-spec — capture an idea, produce a proposal file
@@ -219,14 +219,15 @@ On `approve`, run the git workflow before writing any file. Up to this
 point nothing has touched the repo; the branch is created now so an
 abandoned Q&A above this step leaves no stray branch behind.
 
-1. **Sync `main` and branch.**
+1. **Sync the trunk and branch.**
 
    ```bash
-   git checkout main && git pull
+   git checkout <trunk> && git pull <remote> <trunk>
    git checkout -b propose/<branch-slug>
    ```
 
-   `<branch-slug>` is descriptive and tied to the run:
+   (`<trunk>`/`<remote>` per `MATERIA.md` § Version control.) The new branch
+   is based off `<trunk>`. `<branch-slug>` is descriptive and tied to the run:
 
    - **Single proposal:** `<id>-<kebab-slug>` of the proposal (e.g.
      `propose/356ef-add-and-remove-weeks`).
@@ -257,10 +258,11 @@ abandoned Q&A above this step leaves no stray branch behind.
 4. **Push** the branch:
 
    ```bash
-   git push -u origin propose/<branch-slug>
+   git push -u <remote> propose/<branch-slug>
    ```
 
-5. **Open the PR** with `gh pr create`. Title summarises the run:
+5. **Open the PR** via the open-PR op (`MATERIA.md` § Version control
+   § Forge). Title summarises the run:
 
    - Single: `propose: <title>` (e.g. `propose: Add and remove weeks`).
    - Multi: `propose: <N> proposals from /materia:propose-spec`.
@@ -277,7 +279,7 @@ Wrote <N> proposal(s):
   - docs/specs/_proposed/<filename-2>  (id <id-2>)
 
 Branch: propose/<branch-slug>
-PR:     <URL from gh pr create>
+PR:     <URL from the open-PR op>
 
 Build any of them with:  /materia:ship-spec <id>
 Reject one by closing the PR (or deleting its file in a follow-up).

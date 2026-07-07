@@ -1,6 +1,6 @@
 ---
 name: triage-retros
-description: "Run manually via `/materia:triage-retros` after a stretch of `ship-spec` / `fix-bug` runs to harvest unprocessed retros (one sub-agent per retro at 3+, parsed inline by the parent at ≤2), cluster the project-specific signal in-memory, and author it directly — proposed specs into `docs/specs/_proposed/` and bug reports into `docs/bugs/_reports/`, both with `source: retro-triage` — following the `propose-spec` / `report-bug` producer practice. Bundles small related capabilities into as few specs as `propose-spec`'s split line allows, and folds duplicate signal about the same defect into one report; de-duplicates the drafts against the pending queues + the recent merge log (nothing silently discarded — a dropped/parked list rides the confirmation and the PR). Drafts everything in-memory, presents one confirmation, and on approve branches, writes the specs + reports, renames each consumed retro to `retro.processed.md`, and opens exactly one PR against `main` — no auto-merge. In-memory until approve; re-invoke fresh if interrupted."
+description: "Run manually via `/materia:triage-retros` after a stretch of `ship-spec` / `fix-bug` runs to harvest unprocessed retros (one sub-agent per retro at 3+, parsed inline by the parent at ≤2), cluster the project-specific signal in-memory, and author it directly — proposed specs into `docs/specs/_proposed/` and bug reports into `docs/bugs/_reports/`, both with `source: retro-triage` — following the `propose-spec` / `report-bug` producer practice. Bundles small related capabilities into as few specs as `propose-spec`'s split line allows, and folds duplicate signal about the same defect into one report; de-duplicates the drafts against the pending queues + the recent merge log (nothing silently discarded — a dropped/parked list rides the confirmation and the PR). Drafts everything in-memory, presents one confirmation, and on approve branches, writes the specs + reports, renames each consumed retro to `retro.processed.md`, and opens exactly one PR against the trunk — no auto-merge. In-memory until approve; re-invoke fresh if interrupted."
 ---
 
 # triage-retros — scan retros and author backlog artifacts
@@ -16,7 +16,8 @@ live queues, presents **one confirmation** showing every draft inline plus a
 dropped/parked list, and on `approve` branches, writes the specs into
 `docs/specs/_proposed/` and the reports into `docs/bugs/_reports/` (both with
 `source: retro-triage`), renames each consumed `retro.md` to
-`retro.processed.md`, and opens exactly one PR against `main`.
+`retro.processed.md`, and opens exactly one PR against the trunk
+(`MATERIA.md` § Version control).
 
 This is a **producer**: it authors directly into both queues under their shared
 contracts, following the `propose-spec` / `report-bug` practice — a single hop
@@ -318,7 +319,8 @@ Load the live queues + the recent merge log, then filter every draft:
 1. Pending proposals: `git ls-files 'docs/specs/_proposed/*.md'` (minus
    `README.md`) — read frontmatter + tagline + body for content-level dedupe.
 2. The recent merge log:
-   `git log main --since='3 months ago' --grep='ship-spec\|_proposed\|triage-retros' --pretty=oneline`
+   `git log <trunk> --since='3 months ago' --grep='ship-spec\|_proposed\|triage-retros' --pretty=oneline`
+   (`<trunk>` per `MATERIA.md` § Version control)
    — so a draft duplicating recently-shipped work is dropped.
 
 **Reports — filter against:**
@@ -326,7 +328,7 @@ Load the live queues + the recent merge log, then filter every draft:
 1. Pending reports: `git ls-files 'docs/bugs/_reports/*/report.md'` — read
    frontmatter + summary for content-level dedupe.
 2. The recent merge log:
-   `git log main --since='3 months ago' --grep='fix-bug\|_reports\|report-bug\|triage-retros' --pretty=oneline`
+   `git log <trunk> --since='3 months ago' --grep='fix-bug\|_reports\|report-bug\|triage-retros' --pretty=oneline`
    — so a draft duplicating a recently-fixed defect is dropped.
 
 Any draft that overlaps a pending or recently-shipped/fixed item is **dropped**.
@@ -427,14 +429,16 @@ producer lifecycle. There is no cross-session resume.
 Run the whole workflow in one shot. Up to this point nothing has touched the
 repo; the branch is created now so an abandoned confirmation leaves no trace.
 
-1. **Sync `main` and branch.**
+1. **Sync the trunk and branch.**
 
    ```bash
-   git checkout main && git pull
+   git checkout <trunk> && git pull <remote> <trunk>
    git checkout -b chore/triage-retros-<YYYY-MM-DD>
    ```
 
-   `<YYYY-MM-DD>` is today's date (branch names stay date-only). Same-day
+   (`<trunk>`/`<remote>` per `MATERIA.md` § Version control; the new branch is
+   based off `<trunk>`.) `<YYYY-MM-DD>` is today's date (branch names stay
+   date-only). Same-day
    collision + dirty-pull handling per the lifecycle (append `openssl rand -hex
    2` on a local name clash; halt and surface a `git pull` blocked by local
    changes).
@@ -488,7 +492,7 @@ repo; the branch is created now so an abandoned confirmation leaves no trace.
 
 7. **Verify link integrity, then run the scope guard on the *staged* diff,
    before committing.** Run `sh scripts/check-docs.sh` and fix any link the
-   *new* files introduce (pre-existing debt on `main` is not this run's job; if
+   *new* files introduce (pre-existing debt on the trunk is not this run's job; if
    `check:docs` isn't runnable, grep the new files for `](../` and `](./` and
    verify each target manually). Then run the **scope guard** (§ Scope guard)
    over `git diff --cached --name-only` — running it pre-commit means a stray
@@ -503,13 +507,12 @@ repo; the branch is created now so an abandoned confirmation leaves no trace.
 8. **Push** the branch:
 
    ```bash
-   git push -u origin chore/triage-retros-<YYYY-MM-DD>
+   git push -u <remote> chore/triage-retros-<YYYY-MM-DD>
    ```
 
-9. **Open exactly one PR** against `main`. **Tooling:** `gh pr create` locally;
-   in the remote environment (no `gh` CLI) use the GitHub MCP
-   `create_pull_request` with the same base/head/title/body. No `--draft`, no
-   auto-merge — the operator merges after review.
+9. **Open exactly one PR** against the trunk, via the open-PR op
+   (`MATERIA.md` § Version control § Forge). No `--draft`, no auto-merge —
+   the operator merges after review.
 
    - **Title:** `triage-retros: <P> spec(s) + <R> report(s) from <K> retro(s)`
      (a no-artifact run: `triage-retros: <K> retro(s), no backlog signal`).
