@@ -115,11 +115,13 @@ differs on one leaves the others alone.
   diff against. (A repo on `master`/`develop` sets it here.)
 - **Remote** — `origin`. The git remote skills fetch, push, and name in the
   baseline. (A fork workflow on `upstream` sets it here.)
-- **Baseline** — `<remote>/<trunk>`, derived; default `origin/main`. The
-  review/diff base: skills diff `git diff <baseline>...HEAD` and derive it with
-  `git fetch <remote> <trunk> && git merge-base HEAD <baseline>`. This is the
-  defined home for the `<baseline>` placeholder used across the pipeline
-  (ship-spec, spawn-contract, § Surface gates, spec-adherence.md).
+- **Baseline** — `<baseline>` **is** the ref `<remote>/<trunk>` (default
+  `origin/main`): the review/diff base skills diff as `git diff <baseline>...HEAD`.
+  Run `git fetch <remote> <trunk>` first so the base isn't stale-local; the
+  three-dot diff resolves the merge-base against `HEAD` for you (no separate
+  `git merge-base` step needed). This is the defined home for the `<baseline>`
+  placeholder used across the pipeline (ship-spec, spawn-contract, § Surface
+  gates, spec-adherence.md).
 
 `/materia:init` (bootstrap) operates on the repo's **existing default branch** —
 it *writes* this section, so it does not read it (the single exception).
@@ -146,6 +148,7 @@ manually". Never block.
 | re-run CI | `gh run rerun <id> --failed` | *(no exact twin — degrade)* | operator re-runs |
 | merge PR | `gh pr merge <n> --<strategy> --delete-branch` | `merge_pull_request` | operator merges after review |
 | merge PR (auto, branch protection) | `gh pr merge <n> --auto --<strategy>` | `enable_pr_auto_merge` | operator enables auto-merge |
+| post PR comment | `gh pr comment <n> --body …` | `add_issue_comment` | operator posts the note |
 
 - **re-run CI has no exact MCP twin.** `actions_run_trigger` dispatches a *new*
   workflow, not a re-run of the failed jobs — so in a `gh`-less environment the
@@ -395,11 +398,12 @@ assumptions the pipeline depends on are recorded here so a repo that breaks one
 adapts deliberately, not by surprise — the first has a config home in
 § Version control; the other two are properties of the harness with no slot:
 
-- **Default branch, remote & forge.** Trunk (**`main`**), remote (**`origin`**),
-  the baseline `git diff origin/main...HEAD`, and the whole forge/PR flow —
-  PR-opening, CI, and merge (including librarian's `--squash`) — resolve from
-  § Version control (and § Version control § Forge). A repo that differs on any
-  of these edits that section, **not** the skills.
+- **Default branch, remote & forge.** The trunk branch, the remote, the baseline
+  diff, and the forge/PR flow — PR-opening, CI, and merge — resolve from
+  § Version control (and § Version control § Forge). A repo that differs on any of
+  these edits that section, **not** the skills. (The merge *strategy* — librarian's
+  `--squash`, ship-spec's `--merge` — stays each skill's own, per § Forge; only the
+  tool is routed there.)
 - **`check:docs` needs Node.** The one unconditionally-binding gate (§ Gate) ships as
   `node scripts/check-docs.mjs`. It travels with the harness, but it needs a
   **Node runtime** even in an otherwise non-JS repo — a Rust/Go/Python project
