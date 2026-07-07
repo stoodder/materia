@@ -16,7 +16,8 @@ Runs as a **fresh-context subagent** spawned by `ship-spec` — never by
 
 ## Inputs
 
-- The full branch diff vs `main` (`git diff main...HEAD`).
+- The full branch diff vs the trunk (`git diff <baseline>...HEAD`, `<baseline>`
+  per `MATERIA.md` § Version control).
 - The post-edit working tree (staged doc edits from `docs-sync`).
 - `docs/contributing.md` (the **touch-X→update-Y** map — the authoritative
   definition of what "docs" means for a given change; `docs-audit` verifies

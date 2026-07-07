@@ -18,7 +18,8 @@ finalize). Usable standalone after a hotfix if docs slip.
 
 ## Inputs
 
-- The full branch diff vs `main` (`git diff main...HEAD`).
+- The full branch diff vs the trunk (`git diff <baseline>...HEAD`, `<baseline>`
+  per `MATERIA.md` § Version control).
 - `docs/specs/<dated-slug>/spec.md` + `architecture.md` (intent oracles).
 - `docs/contributing.md` (the **touch-X→update-Y** map — the authoritative
   definition of what "docs" means for a given change).
@@ -238,9 +239,9 @@ to the human. The run resumes once the blocker is cleared.
 
 ## Standalone use
 
-Runnable on its own after a hotfix: invoke with the branch diff vs `main` and
-the same inputs. Useful when a manual edit landed without going through the
-full pipeline.
+Runnable on its own after a hotfix: invoke with the branch diff vs the trunk
+(`<baseline>`, per `MATERIA.md` § Version control) and the same inputs. Useful
+when a manual edit landed without going through the full pipeline.
 
 In standalone mode the sibling `docs-audit` stage is **not** auto-spawned — run
 `node scripts/check-docs.mjs` to catch link + style issues mechanically, or invoke the
