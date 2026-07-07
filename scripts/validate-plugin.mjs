@@ -169,6 +169,13 @@ runSim('non-UI repo', { standards: ['architecture', 'testing', 'workflow'] })
     { name: 'specs-exempt', expect: 'fail', files: { 'docs/specs/s.md': doc('# S', '', 'This was removed previously.', '', '[bad](none.md)', '', '[self](s.md#no-such)') } },
     // fully clean tree
     { name: 'clean-tree', expect: 'clean', files: { 'CLAUDE.md': doc('# App', '', 'See [readme](docs/README.md) and [alpha](docs/glossary.md#alpha).'), 'docs/README.md': doc('# Readme'), 'docs/glossary.md': doc('# Glossary', '', '## Alpha', '', '| Term | Def |', '| --- | --- |', '| **alpha** | 1 |', '| **beta** | 2 |') } },
+    // coverage — branches otherwise unexercised by the corpus or scaffold profiles
+    { name: 'self-anchor-clean', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', 'See [x](#section-two).', '', '## Section Two', '', 'body') } }, // empty-target self-link resolves
+    { name: 'self-anchor-bad', expect: 'fail', files: { 'CLAUDE.md': doc('# T', '', 'See [x](#no-such).', '', '## Section Two') } },
+    { name: 'resources-style', expect: 'fail', files: { 'docs/resources/r.md': doc('# R', '', 'This was removed previously.') } }, // docs/resources/ isStyle branch
+    { name: 'templates-style', expect: 'fail', files: { 'docs/_templates/t.md': doc('# Tmpl', '', 'This was removed previously.') } }, // docs/_templates/ isStyle branch
+    { name: 'unpaired-fence', expect: 'fail', files: { 'docs/standards/uf.md': doc('# T', '', TICK, 'code', '', 'This was removed here.') } }, // unclosed fence → content not blanked
+    { name: 'multi-hash-fragment', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[x](docs/mh.md#foo#bar)'), 'docs/mh.md': doc('# H', '', '## Foo', '', 'body') } }, // fragment = first #-segment
   ]
   // one fixture per NARRATION phrase (each a lone violation in a style-checked doc)
   for (const p of NARRATION)
