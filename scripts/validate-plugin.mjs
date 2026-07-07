@@ -373,11 +373,20 @@ if (failures === gateBefore)
   for (const name of opList)
     if (!dirSet.has(name))
       fail(`§ Skill routing operator-session list entry \`${name}\` names no skill dir under plugins/materia/skills/`)
-  // Canon pin: janitor cites BOTH role rows it spawns, or its scan/implementer
-  // subagents fall silently to the Default row.
-  const jan = readFileSync('plugins/materia/skills/janitor/SKILL.md', 'utf8')
-  if (!jan.includes('`janitor: scan`') || !jan.includes('`janitor: implementer`'))
-    fail('janitor/SKILL.md no longer cites its `janitor: <role>` routing row — the scan/implementer subagents would silently fall to Default')
+  // Canon pin (consistency anchor): every `<skill>: <role>` row must be cited by
+  // its exact backticked label in that skill's SKILL.md. Routing resolves from
+  // this table regardless, but the prose citation is what keeps a maintainer
+  // sizing the spawn here — an uncited role row is the drift that lets a future
+  // edit relocate the spawn and silently pick up the Default row. Guards every
+  // role row, not just janitor's.
+  for (const label of rowLabels) {
+    if (!label.includes(': ')) continue
+    const parent = label.split(': ')[0].trim()
+    if (!dirSet.has(parent)) continue // orphan parent already reported by check B
+    const body = readFileSync(`plugins/materia/skills/${parent}/SKILL.md`, 'utf8')
+    if (!body.includes('`' + label + '`'))
+      fail(`${parent}/SKILL.md does not cite its \`${label}\` routing row — a spawned role left uncited can drift to the Default row`)
+  }
   if (failures === before)
     console.log(`  ✓ skill↔routing coverage: ${skillDirs.length} skill dirs each accounted (plain row XOR operator-session list); ${rowLabels.length + opList.size} rows/list entries name real skills`)
 }
