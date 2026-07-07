@@ -24,8 +24,9 @@ like the § Effort set and § Coercion. The **review-angle library** ships
 verbatim the same way: the six canonical `.materia/review-angles/` files and
 their `MATERIA.md` § Review angles registry rows are not stack-specific — the
 survey only *appends* any repo-specific angles (Phase 4). Only the `{{slots}}`
-(among them § Model set availability) and the stack-specific standards docs are
-authored fresh, from the survey.
+and the stack-specific standards docs are authored fresh, from the survey
+(§ Model set ships populated — the survey only trims a model the plan can't
+spawn).
 
 ## Inputs
 
