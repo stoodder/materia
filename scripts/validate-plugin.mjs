@@ -186,14 +186,25 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
 // The match mirrors the § audit's normalization (whitespace-collapsed text +
 // an optional backtick/quote after `MATERIA.md`) so a citation that wraps across
 // lines or is written `MATERIA.md`\n§ Version control is not a false failure.
+// It first blanks code fences and HTML comments so a stray reference left inside
+// a ``` block or an <!-- --> comment can't satisfy the pin while the real prose
+// citation was replaced by a hardcode (the decoy-match gap). Inline code is NOT
+// blanked — the citation writes `MATERIA.md` as inline code, so blanking it would
+// destroy the very token being matched (the § audit matches these the same way).
 {
   const before = failures
+  const FENCE = /```[\s\S]*?```|~~~[\s\S]*?~~~/g
+  const HTML_COMMENT = /<!--[\s\S]*?-->/g
+  const blankOut = (t, re) => t.replace(re, (m) => m.replace(/[^\n]/g, ' '))
   const matSrc = readFileSync('plugins/materia/scaffold/MATERIA.md', 'utf8')
   const matLines = matSrc.split('\n').map((l) => l.trimEnd())
   for (const h of ['## Version control', '### Forge'])
     if (!matLines.includes(h))
       fail(`§ Version control pin: plugins/materia/scaffold/MATERIA.md is missing the \`${h}\` heading — it is the config home the pipeline resolves trunk/remote/forge from`)
-  const cites = (file) => /MATERIA\.md[`"']?\s*§\s*Version control/.test(readFileSync(file, 'utf8').replace(/\s+/g, ' '))
+  const cites = (file) => {
+    const t = blankOut(blankOut(readFileSync(file, 'utf8'), FENCE), HTML_COMMENT)
+    return /MATERIA\.md[`"']?\s*§\s*Version control/.test(t.replace(/\s+/g, ' '))
+  }
   const VC_CITERS = [
     'janitor', 'librarian', 'ship-spec', 'finalize', 'propose-spec', 'propose-epic',
     'report-bug', 'reconcile-epic', 'ui-inspection', 'triage-retros', 'fix-bug',
