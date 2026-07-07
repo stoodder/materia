@@ -1,17 +1,18 @@
 # Materia release / migration ledger
 
 The machine-readable compatibility contract for the `materia` plugin. It records, per
-plugin release, what changed about the **installed-project artifact contract** — enough for a
-future `/materia:doctor` to detect drift and a future `/materia:migrate` to adopt changes.
+plugin release, what changed about the **installed-project artifact contract** — enough for
+`/materia:doctor` to detect drift and a future `/materia:migrate` to adopt changes.
 
 This directory ships **inside the distributed plugin** but is **not** materialized into user
 repos: `/materia:init` copies `scaffold/`, never `release/`. Doctor/migrate read it from the
 installed plugin cache.
 
-> **Status: v0, dogfood-grade.** The ledger is the data contract only. `/materia:doctor` and
-> `/materia:migrate` are **forthcoming** — this release ships no detection or migration
-> behavior. The `doctorChecks` / `migrations` IDs below are stable identifiers reserved for
-> those forthcoming checks/scripts; nothing consumes them yet.
+> **Status: v0, dogfood-grade.** `/materia:doctor` now ships and reads this ledger to report
+> drift **read-only** (it consumes the `doctorChecks` IDs, starting with
+> `project-state-present`); it writes nothing and runs no migration. `/materia:migrate`
+> remains **forthcoming** — no migration behavior ships yet, so the `migrations` IDs below
+> are still reserved identifiers nothing consumes.
 
 ## Files
 
@@ -67,7 +68,7 @@ contract change, not a version coincidence.
 | `surfaces` | Array of surface tokens this change touches (glossary below). |
 | `detectable` | `true` if a doctor check can detect the drift in an installed repo. |
 | `migratable` | `true` if adoption can be automated (vs manual-only). |
-| `doctorChecks` | Stable check IDs a forthcoming `/materia:doctor` will implement. |
+| `doctorChecks` | Stable check IDs `/materia:doctor` implements to detect this change's drift. |
 | `migrations` | Stable migration IDs a forthcoming `/materia:migrate` will implement. |
 | `manualMigration` | Instructions to adopt by hand when automation is absent or unsafe. |
 | `notes` | Optional clarifications (e.g. how impact differs for new vs existing projects). |
@@ -87,7 +88,7 @@ Exactly one per change. These match the classifications the repo-local `evolve` 
 ### Surface tokens
 
 The short machine tokens used in `change.surfaces` (deliberately terser than prose surface
-names). A future doctor/migrate reads this array to decide whether a change concerns it:
+names). Doctor (and a future migrate) reads this array to decide whether a change concerns it:
 
 - `scaffold` — the bundled `scaffold/` templates changed.
 - `ledger` — this ledger changed.

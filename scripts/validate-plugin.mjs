@@ -890,6 +890,92 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
     console.log(`  ✓ release ledger + project-state sanity: ${versionFiles.length} version file(s); latest↔versions↔scaffold coherent; fixtures pinned`)
 }
 
+// ---- 7. /materia:doctor deterministic behavior ------------------------------
+// Spawn the shipped doctor script (plugins/materia/scripts/doctor.mjs) against
+// the committed fixtures + synthetic temp cases and pin its JSON verdict. This
+// proves doctor recognizes a tracked-current project as `healthy`, a
+// pre-tracking legacy install as `warnings` (untracked-legacy, the ledger's
+// recommended drift, migrate suggested), a malformed project-state as `blocked`,
+// and a non-Materia repo as `unknown` WITHOUT inventing state. Deterministic —
+// no network/AI. The non-Materia + malformed cases use mkdtemp so they never
+// become committed fixtures (§6 pins the committed fixture shapes: legacy must
+// carry NO project.json). Assertions key on the JSON `status` + report fields;
+// exit code is checked secondarily.
+{
+  const before = failures
+  const DOCTOR = resolve('plugins/materia/scripts/doctor.mjs')
+  const runDoctor = (target) => {
+    const r = spawnSync('node', [DOCTOR, target, '--json'], { encoding: 'utf8' })
+    let report = null
+    try { report = JSON.parse(r.stdout) } catch { /* leave null; asserted below */ }
+    return { r, report }
+  }
+  const want = (rep, field, expected) =>
+    rep[field] === expected ? [] : [`${field}=${JSON.stringify(rep[field])} (want ${JSON.stringify(expected)})`]
+  const exitWant = (r, code) => (r.status === code ? [] : [`exit=${r.status} (want ${code})`])
+  const check = (label, target, assertFn) => {
+    const { r, report } = runDoctor(target)
+    if (!report) {
+      fail(`doctor [${label}]: emitted no parseable JSON (exit ${r.status}); stderr: ${(r.stderr || '').slice(0, 200)}`)
+      return
+    }
+    const problems = assertFn(report, r)
+    if (problems.length) fail(`doctor [${label}]: ${problems.join('; ')}`)
+  }
+
+  // tracked-current fixture -> healthy, schema 2, nothing outstanding
+  check('tracked-current', resolve('tests/fixtures/materia/tracked-current-project'), (rep, r) => [
+    ...want(rep, 'status', 'healthy'),
+    ...want(rep, 'materiaEnabled', true),
+    ...want(rep, 'currentSchema', 2),
+    ...want(rep, 'suggestedNextCommand', null),
+    ...exitWant(r, 0),
+  ])
+
+  // legacy 0.1.0 fixture -> warnings (untracked-legacy, recommended drift, migrate)
+  check('legacy-0.1.0', resolve('tests/fixtures/materia/legacy-0.1.0-project'), (rep, r) => [
+    ...want(rep, 'status', 'warnings'),
+    ...want(rep, 'materiaEnabled', true),
+    ...want(rep, 'currentSchema', 'untracked-legacy'),
+    ...want(rep, 'missing', true),
+    ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'),
+    ...(rep.recommendedChanges.some((c) => c.id === '0.2.0-project-state-file')
+      ? [] : ['recommendedChanges missing 0.2.0-project-state-file']),
+    ...exitWant(r, 0),
+  ])
+
+  // synthetic non-Materia repo -> unknown, no invented state
+  const nm = mkdtempSync(join(tmpdir(), 'materia-doctor-nm-'))
+  try {
+    writeFileSync(join(nm, 'README.md'), '# just a repo\n')
+    check('non-materia', nm, (rep, r) => [
+      ...want(rep, 'status', 'unknown'),
+      ...want(rep, 'materiaEnabled', false),
+      ...want(rep, 'suggestedNextCommand', null),
+      ...(rep.recommendedChanges.length === 0 && rep.requiredChanges.length === 0 && rep.optionalChanges.length === 0
+        ? [] : ['invented change entries for a non-Materia repo']),
+      ...exitWant(r, 0),
+    ])
+  } finally { rmSync(nm, { recursive: true, force: true }) }
+
+  // synthetic malformed project-state -> blocked (Materia-enabled, malformed)
+  const mf = mkdtempSync(join(tmpdir(), 'materia-doctor-mf-'))
+  try {
+    mkdirSync(join(mf, '.materia'), { recursive: true })
+    writeFileSync(join(mf, 'MATERIA.md'), '# m\n')
+    writeFileSync(join(mf, '.materia', 'project.json'), '{ not valid json')
+    check('malformed-state', mf, (rep, r) => [
+      ...want(rep, 'status', 'blocked'),
+      ...want(rep, 'materiaEnabled', true),
+      ...want(rep, 'malformed', true),
+      ...exitWant(r, 2),
+    ])
+  } finally { rmSync(mf, { recursive: true, force: true }) }
+
+  if (failures === before)
+    console.log('  ✓ doctor behavior: tracked→healthy · legacy→warnings(untracked-legacy) · non-materia→unknown · malformed→blocked')
+}
+
 if (failures) {
   console.error(`\n${failures} validation failure(s).`)
   process.exit(1)
