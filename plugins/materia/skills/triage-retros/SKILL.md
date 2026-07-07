@@ -46,9 +46,11 @@ front-load):
   shape, the confirmation fold-edit rules, and the retro-rename footer; read at
   Synthesis and on every fold round.
 - **Spec body shape truth** — `plugins/materia/skills/propose-spec/SKILL.md`
-  § Body and `plugins/materia/skills/intake-spec/SKILL.md` § Detect the input
-  shape (the structured body the proposal must hit so `intake-spec` adopts it
+  § Body (the structured body the proposal must hit so `intake-spec` adopts it
   verbatim).
+- **Spec structured-body detector** — `plugins/materia/skills/intake-spec/SKILL.md`
+  § Procedure (step "Detect the input shape") — the H1 + H2 set `intake-spec`
+  matches to adopt a proposal body verbatim.
 - **Bug-report body shape truth** — `plugins/materia/skills/report-bug/SKILL.md`
   § Body and `docs/bugs/_templates/bug-report.md` (the 13-section format).
 - **Queue contracts** — `docs/specs/_proposed/README.md` and
@@ -74,6 +76,8 @@ front-load):
 | `## On approve — branch, write, rename, commit, PR` | The whole git workflow, run in one shot |
 | `## Scope guard` | The allowlist of touchable paths |
 | `## File format` | Spec + report frontmatter/body/filename; ids; `source_refs`; retro footer |
+| `## Scope (what this skill does NOT do)` | Non-goals — the boundaries of the run |
+| `## Rules` | The load-bearing invariants, restated |
 
 ## Discovery
 
@@ -132,7 +136,7 @@ bumps adjust one place. Implementation is section-regex over the raw markdown
       "what_could_be_improved": [],
       "unexpected": [],
       "other_signals": [],
-      "anchor": "Entry 1 — intake",   // LOAD-BEARING: verbatim H2 text — the traceback link target
+      "anchor": "Entry 1 — intake",   // LOAD-BEARING: the retro H2 through its stage (the heading may carry a trailing timestamp; the anchor is the stable prefix, substring-resolvable by grep) — the traceback target
       "raw": "<full markdown of the entry block>" // LOAD-BEARING: fallback context for clustering
     }
   ],
@@ -238,10 +242,14 @@ the degradation.
   capability**: behaviour absent or merely sub-optimal, not broken.
 - **Defect → bug report.** A **defect or regression in already-shipped
   behaviour**.
-- **Pure pipeline / harness friction → dropped (no artifact).** Signal about
-  how the pipeline operates is not project backlog signal — it produces no spec
-  and no report. (Sub-agents already leave it out of the buckets; the parent
-  drops any that slipped through.)
+- **Pure pipeline / harness friction → excluded by design (no artifact).**
+  Signal about how the pipeline operates is not project backlog signal — it
+  produces no spec and no report. (Sub-agents already leave it out of the
+  buckets; the parent drops any that slipped through.) This is a **deliberate,
+  by-design exclusion under the project retarget** — distinct from a "drop"; it
+  is not itemized on the dropped/parked list (the operator removed the
+  pipeline-health corpus that once absorbed it). The "nothing silently
+  discarded" invariant governs only **in-scope** (spec/bug) signal.
 
 **Tie-break (ambiguous improvement vs defect):** **bug wins when behaviour is
 broken**; spec only when a capability is absent or sub-optimal. Never
@@ -322,8 +330,9 @@ Load the live queues + the recent merge log, then filter every draft:
    — so a draft duplicating a recently-fixed defect is dropped.
 
 Any draft that overlaps a pending or recently-shipped/fixed item is **dropped**.
-**Nothing is silently discarded** — every drop (from the skeptic pass or this
-de-dup pass) goes to a **dropped/parked list** with a one-line rationale each
+**No in-scope draft is silently discarded** — every drop (from the skeptic pass
+or this de-dup pass) goes to a **dropped/parked list** with a one-line rationale
+each
 (e.g. `spec: duplicates pending proposal 9c4f1q`, `bug: fixed in the merge log
 2026-06-28`). That list is surfaced at the confirmation prompt **and** in the PR
 body — it is both the queue-contract requirement and the producer-lifecycle
@@ -464,24 +473,32 @@ repo; the branch is created now so an abandoned confirmation leaves no trace.
    row, scoped to exactly the files written — never `--write .`; see
    `resources/rendering.md` § Common rules).
 
-6. **Verify link integrity, then commit** everything in **one atomic commit**:
-
-   Run `node scripts/check-docs.mjs` and fix any link the *new* files introduce
-   (pre-existing debt on `main` is not this run's job; if `check:docs` isn't
-   runnable, grep the new files for `](../` and `](./` and verify each target
-   manually). Then:
+6. **Stage only the literal paths this run wrote or renamed** — never a whole
+   tree. `git mv` already staged the renames; stage the new artifacts and the
+   footer edits by their exact paths so nothing co-located (a formatter-touched
+   `README.md`, an unrelated `retro.md`) can sweep in:
 
    ```bash
-   git add docs/specs/_proposed/ docs/bugs/_reports/ docs/specs/ docs/bugs/
-   git commit -m "triage-retros: <P> spec(s) + <R> report(s) from <K> retro(s)"
+   # each authored spec, each authored report folder, each renamed retro:
+   git add docs/specs/_proposed/<filename-1>.md [ …more specs ] \
+           docs/bugs/_reports/<dated-slug-1>/ [ …more report folders ] \
+           docs/specs/<retro-slug>/retro.processed.md [ …more renamed retros ] \
+           docs/bugs/<retro-slug>/retro.processed.md
    ```
 
-   (`git mv` already staged the renames; `git add` picks up the new artifacts +
-   footer edits. Scope the `git add` paths so nothing outside the allowlist
-   sweeps in.)
+7. **Verify link integrity, then run the scope guard on the *staged* diff,
+   before committing.** Run `node scripts/check-docs.mjs` and fix any link the
+   *new* files introduce (pre-existing debt on `main` is not this run's job; if
+   `check:docs` isn't runnable, grep the new files for `](../` and `](./` and
+   verify each target manually). Then run the **scope guard** (§ Scope guard)
+   over `git diff --cached --name-only` — running it pre-commit means a stray
+   path never enters history. Only if the guard passes, commit in **one atomic
+   commit**:
 
-7. **Run the scope guard** (§ Scope guard) over `git diff --name-only
-   main...HEAD` before opening the PR.
+   ```bash
+   git commit -m "triage-retros: <P> spec(s) + <R> report(s) from <K> retro(s)"
+   # no-artifact run: "triage-retros: <K> retro(s) triaged, no backlog signal"
+   ```
 
 8. **Push** the branch:
 
@@ -517,22 +534,28 @@ re-invokes.
 ## Scope guard
 
 This skill writes a small fixed set of paths and **never edits pipeline skills
-or product source**. Before opening the PR, sweep `git diff --name-only
-main...HEAD`; every path must match one of:
+or product source**. Run this guard on the **staged diff, before committing**
+(step 7) — `git diff --cached --name-only` — so a stray path never enters
+history. Every staged path must match one of these (the dated-prefix / basename
+anchors keep the patterns from matching a queue `README.md` or an unrelated
+file swept in by formatting):
 
 ```
-^docs/specs/_proposed/[^/]+\.md$                  # authored proposed specs
-^docs/bugs/_reports/.+$                            # authored bug-report folders
-^docs/specs/.*/retro\.(md|processed\.md)$          # spec-run retro renames + footers
-^docs/bugs/.*/retro\.(md|processed\.md)$           # bug-run retro renames + footers
+^docs/specs/_proposed/[0-9]{4}-[0-9]{2}-[0-9]{2}-[^/]+\.md$        # authored proposed specs (dated filename)
+^docs/bugs/_reports/[0-9]{4}-[0-9]{2}-[0-9]{2}-[^/]+/report\.md$   # authored bug reports (dated folder + report.md)
+^docs/specs/[^/]+/retro\.(md|processed\.md)$                       # spec-run retro renames + footers
+^docs/bugs/[^/]+/retro\.(md|processed\.md)$                        # bug-run retro renames + footers
 ```
 
 Writing into `docs/bugs/_reports/**` is now **legitimate** — this skill is a
-producer for that queue (the old gather-only prohibition is gone). Any path
-outside the allowlist — a pipeline skill under `plugins/materia/skills/**`,
-product source, any other doc — **halts** the run without opening the PR,
-naming the offending file + the commit SHA and the unwind options (`git reset
-HEAD~1` / `git revert <SHA>`).
+producer for that queue (the old gather-only prohibition is gone), but only the
+run's **own** dated report folders (the `report.md` basename anchor rejects a
+stray edit to another producer's folder). Any staged path outside the
+allowlist — a pipeline skill under `plugins/materia/skills/**`, product source,
+a queue `README.md`, any other doc — **halts** the run **before the commit**,
+naming the offending file and the unwind (unstage it with `git restore --staged
+<path>`, or abort and re-invoke). Nothing is committed or pushed until the guard
+is clean.
 
 ## File format
 
@@ -610,7 +633,8 @@ Link paths are absolute-from-repo-root (`report-bug` § Link paths). The body
   anchor, pointing at the retro's **post-run resting path**
   (`docs/.../retro.processed.md § Entry N — <stage>`) — the retro is renamed in
   the **same commit**, so the `.processed.md` path is the one that resolves.
-  Grep'ing the anchor in the linked file must find the source.
+  The anchor is the heading's stable prefix (through the stage); grep'ing it as
+  a substring in the linked file must find the source.
 - **Ids** — a fresh 6-char base36 token per artifact,
   `LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6` (the same command
   `intake-spec`, `propose-spec`, and `report-bug` use). Never reuse an id on
@@ -644,8 +668,9 @@ Link paths are absolute-from-repo-root (`report-bug` § Link paths). The body
 
 - **Producer de-duplication is mandatory.** Filter every draft against the
   pending queue + the recent merge log; drop duplicates to the dropped/parked
-  list. Nothing is silently discarded — the dropped list rides the confirmation
-  and the PR.
+  list. No in-scope draft is silently discarded — the dropped list rides the
+  confirmation and the PR. (Out-of-scope pipeline/harness friction is excluded
+  by design, not itemized — see § Synthesis.)
 - **Consolidate per artifact.** Specs bundle related stories, capped at
   `propose-spec`'s split line; bug reports fold same-defect signal only, never
   merging unrelated defects.
