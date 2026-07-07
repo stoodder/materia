@@ -173,7 +173,7 @@ The directory is a **transient queue**:
      YAML frontmatter block, mints a `<dated-slug>`, and creates a
      `docs/bugs/<dated-slug>/` run folder on a `fix/<slug>` branch. At the
      terminal state (finalize), the report folder is staged for `git rm -r`,
-     `node scripts/check-docs.mjs` is re-run against the staged removal, and the dequeue
+     `sh scripts/check-docs.sh` is re-run against the staged removal, and the dequeue
      is committed as part of the finalize PR.
    - **Close** — delete the folder manually (e.g. `git rm -r` or via a follow-up
      PR). No state is persisted; closed reports leave no trace except in git
@@ -186,7 +186,7 @@ The directory is a **transient queue**:
 | Status | Who sets it | When |
 |---|---|---|
 | `reported` | producer (`/materia:report-bug`) | Folder is written into `_reports/` |
-| _(removed by `/materia:fix-bug`)_ | `/materia:fix-bug` orchestrator at finalize | `/materia:fix-bug` stages `git rm -r <report-folder>`, re-runs `node scripts/check-docs.mjs` against the staged removal, and commits the dequeue as part of the finalize PR (commit message pattern: `fix-bug(stake): dequeue report <id> from _reports/`) |
+| _(removed by `/materia:fix-bug`)_ | `/materia:fix-bug` orchestrator at finalize | `/materia:fix-bug` stages `git rm -r <report-folder>`, re-runs `sh scripts/check-docs.sh` against the staged removal, and commits the dequeue as part of the finalize PR (commit message pattern: `fix-bug(stake): dequeue report <id> from _reports/`) |
 | _(closed manually)_ | operator | Folder deleted without a fix run; no trace except git history |
 
 If `/materia:fix-bug` halts mid-run (Blocker, session crash, abort), the report folder
@@ -260,7 +260,7 @@ Resolves a selection **by frontmatter `id` only, never by folder name**.
 kebab rendering of the report's `title`).
 
 **Terminal-state dequeue lifecycle:** at finalize, `/materia:fix-bug` stages
-`git rm -r docs/bugs/_reports/<dated-slug>/`, re-runs `node scripts/check-docs.mjs`
+`git rm -r docs/bugs/_reports/<dated-slug>/`, re-runs `sh scripts/check-docs.sh`
 against the staged removal, and commits the removal as part of the finalize PR.
 The dequeue commit message pattern is:
 

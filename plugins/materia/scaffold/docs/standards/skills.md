@@ -217,7 +217,7 @@ rerun), append a short hex suffix (`openssl rand -hex 2`).
   `.processed.md` name with a one-line `processed_on: <YYYY-MM-DD>` footer,
   in the same commit as the entries it produced.
 - **Link integrity on new files** — before committing, run
-  `node scripts/check-docs.mjs` and fix any link the *new* files introduce
+  `sh scripts/check-docs.sh` and fix any link the *new* files introduce
   (pre-existing debt on `main` is not this run's job). If `check:docs` isn't
   runnable, grep the new files for `](../` and `](./` and verify each target
   manually.
