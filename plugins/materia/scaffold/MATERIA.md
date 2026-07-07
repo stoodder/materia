@@ -51,7 +51,7 @@ the skip).
 | `typecheck` | {{command or none}} | |
 | `test` | {{unit/integration suite command}} | |
 | `test:e2e` | {{browser/e2e suite command, or none}} | |
-| `check:docs` | {{e.g. node scripts/check-docs.mjs}} | ships with materia; portable |
+| `check:docs` | {{e.g. sh scripts/check-docs.sh}} | ships with materia; portable |
 
 **The full gate** (what `finalize` and CI run): every non-`none` row above,
 in table order, all green.
@@ -346,11 +346,13 @@ recorded so a repo that breaks one adapts deliberately, not by surprise:
   **`origin`** — branch creation, the baseline `git diff origin/main...HEAD`, and
   the PR commands. Trunk and remote are two independent knobs; a repo that differs
   on either adjusts those skill commands directly (they do not read this file).
-- **`check:docs` needs Node.** The one unconditionally-binding gate (§ Gate) ships as
-  `node scripts/check-docs.mjs`. It travels with the harness, but it needs a
-  **Node runtime** even in an otherwise non-JS repo — a Rust/Go/Python project
-  must make `node` available to CI and local runs. The docs contract it enforces
-  is runtime-agnostic; only the implementation is Node.
+- **`check:docs` needs POSIX `sh`+`awk`.** The one unconditionally-binding gate
+  (§ Gate) ships as `sh scripts/check-docs.sh`. It travels with the harness and
+  needs only a **POSIX shell and `awk`** — present on essentially any Unix
+  (Linux, macOS, BSD) and in Alpine/distroless images (busybox), with nothing to
+  install, so a Rust/Go/Python project needs no extra runtime; native Windows
+  runs it via WSL or Git Bash. The docs contract it enforces is runtime-agnostic;
+  only the implementation is POSIX sh+awk.
 - **One MATERIA.md = one adaptation surface.** § Gate, § Run it, and the baseline
   in § Surface gates describe a **single package** over the whole tree. A polyglot
   monorepo whose packages need different gates or run commands is not expressible
