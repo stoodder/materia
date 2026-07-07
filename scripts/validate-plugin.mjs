@@ -776,10 +776,12 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
 // ---- 6. release ledger + project-state sanity -------------------------------
 // Basic JSON parse + coherence sanity for the release/migration ledger
 // (plugins/materia/release/) and the scaffold's project-state artifact. This is
-// v0: it asserts internal consistency of the SHIPPED data only. NOTHING here
-// requires /materia:doctor or /materia:migrate to exist — the doctorChecks /
-// migrations IDs are validated for SHAPE (non-empty, unique) not resolved against
-// any check/script (those are forthcoming). The one invariant that earns its
+// v0: it asserts internal consistency of the SHIPPED data only. This section
+// validates the doctorChecks / migrations IDs for SHAPE (non-empty, unique) and
+// does NOT resolve them against the actual scripts — that behavioral coverage
+// lives in §7 (doctor) and §8 (migrate), which spawn the shipped scripts. The
+// split is deliberate: §6 guards the data contract, §7/§8 the tools. The one
+// invariant that earns its
 // keep: the artifact schema is declared in three places — release/latest.json,
 // the pointed-to versions/*.json, and scaffold/.materia/project.json — and they
 // must agree; a silent drift between them is exactly the contract break a future
@@ -845,8 +847,8 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
       if (typeof ch.detectable !== 'boolean') fail(`${where}: detectable must be a boolean`)
       if (typeof ch.migratable !== 'boolean') fail(`${where}: migratable must be a boolean`)
       // doctorChecks / migrations are OPTIONAL; when present, arrays of unique
-      // non-empty strings. SHAPE ONLY — the referenced checks/scripts ship later
-      // and are deliberately NOT resolved here.
+      // non-empty strings. SHAPE ONLY here — the referenced checks/scripts (doctor
+      // + migrate) exist, but are exercised behaviorally in §7/§8, not resolved here.
       for (const key of ['doctorChecks', 'migrations']) {
         if (ch[key] === undefined) continue
         if (!Array.isArray(ch[key]) || !ch[key].every(isStr)) { fail(`${where}: ${key} must be an array of non-empty strings`); continue }
@@ -974,6 +976,163 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
 
   if (failures === before)
     console.log('  ✓ doctor behavior: tracked→healthy · legacy→warnings(untracked-legacy) · non-materia→unknown · malformed→blocked')
+}
+
+// ---- 8. /materia:migrate deterministic behavior -----------------------------
+// Spawn the shipped migrate script (plugins/materia/scripts/migrate.mjs) and pin
+// its plan/apply JSON. Migrate is PLAN-FIRST and its apply path MUTATES a target,
+// so — unlike §7's mostly-read-only doctor cases — every mutation case runs on an
+// mkdtemp COPY of a committed fixture (or a synthetic temp tree); the committed
+// fixtures are NEVER mutated (the legacy fixture's project.json-absence is a §6
+// pin). What this proves: plan writes nothing; apply on a pre-tracking install
+// creates EXACTLY .materia/project.json with the ledger-consistent state; re-apply
+// is idempotent; an existing valid/malformed state is never overwritten; a
+// non-Materia repo gets no invented state; and doctor agrees the migrated repo is
+// healthy (the doctor↔migrate consistency contract). Deterministic — no net/AI.
+{
+  const before = failures
+  const MIGRATE = resolve('plugins/materia/scripts/migrate.mjs')
+  const DOCTOR = resolve('plugins/materia/scripts/doctor.mjs')
+  const runMigrate = (target, ...flags) => {
+    const r = spawnSync('node', [MIGRATE, target, '--json', ...flags], { encoding: 'utf8' })
+    let report = null
+    try { report = JSON.parse(r.stdout) } catch { /* asserted below */ }
+    return { r, report }
+  }
+  const check = (label, run) => {
+    const problems = run()
+    if (problems && problems.length) fail(`migrate [${label}]: ${problems.join('; ')}`)
+  }
+  // Snapshot a dir tree as a rel-path -> contents map, so "apply touched ONLY
+  // .materia/project.json" and "plan mutated nothing" are provable, not asserted.
+  const snapshot = (root) => {
+    const out = new Map()
+    const walk = (p) => {
+      for (const e of readdirSync(p, { withFileTypes: true })) {
+        const fp = join(p, e.name)
+        if (e.isDirectory()) walk(fp)
+        else out.set(relative(root, fp), readFileSync(fp, 'utf8'))
+      }
+    }
+    walk(root)
+    return out
+  }
+  const diffKeys = (a, b) => {
+    const changed = []
+    for (const [k, v] of b) if (!a.has(k) || a.get(k) !== v) changed.push(k)
+    for (const k of a.keys()) if (!b.has(k)) changed.push(`-${k}`)
+    return changed
+  }
+  const copyFixture = (name) => {
+    const dst = mkdtempSync(join(tmpdir(), `materia-migrate-${name}-`))
+    cpSync(join('tests/fixtures/materia', name), dst, { recursive: true })
+    return dst
+  }
+
+  // 1. PLAN on the committed legacy fixture -> init-project-state applicable,
+  //    would create .materia/project.json, and writes NOTHING to the fixture.
+  check('plan-legacy', () => {
+    const legacy = resolve('tests/fixtures/materia/legacy-0.1.0-project')
+    const before = snapshot(legacy)
+    const { r, report } = runMigrate(legacy) // default = plan
+    if (!report) return [`no parseable JSON (exit ${r.status})`]
+    const after = snapshot(legacy)
+    const problems = []
+    if (report.mode !== 'plan') problems.push(`mode=${report.mode} (want plan)`)
+    if (!report.applicable.some((m) => m.id === 'init-project-state')) problems.push('init-project-state not applicable')
+    if (!report.filesToChange.includes('.materia/project.json')) problems.push('filesToChange missing .materia/project.json')
+    if (report.localEditsAffected !== false) problems.push('localEditsAffected should be false')
+    if (report.nextCommand !== '/materia:migrate --apply') problems.push(`nextCommand=${JSON.stringify(report.nextCommand)}`)
+    const changed = diffKeys(before, after)
+    if (changed.length) problems.push(`plan MUTATED the fixture: ${changed.join(', ')}`)
+    if (existsSync(join(legacy, '.materia/project.json'))) problems.push('plan created .materia/project.json in the committed fixture')
+    return problems
+  })
+
+  // 2. PLAN on tracked-current -> nothing applicable, no next command.
+  check('plan-tracked', () => {
+    const { report } = runMigrate(resolve('tests/fixtures/materia/tracked-current-project'))
+    if (!report) return ['no parseable JSON']
+    const problems = []
+    if (report.applicable.length !== 0) problems.push(`applicable=${JSON.stringify(report.applicable.map((m) => m.id))} (want none)`)
+    if (report.nextCommand !== null) problems.push(`nextCommand=${JSON.stringify(report.nextCommand)} (want null)`)
+    return problems
+  })
+
+  // 3. APPLY on a COPY of legacy -> creates EXACTLY .materia/project.json with the
+  //    ledger-consistent state; re-apply idempotent; doctor then reports healthy.
+  {
+    const work = copyFixture('legacy-0.1.0-project')
+    try {
+      const before = snapshot(work)
+      const { report } = runMigrate(work, '--apply')
+      const after = snapshot(work)
+      const problems = []
+      if (!report) problems.push('apply emitted no parseable JSON')
+      else {
+        if (!report.applied.some((m) => m.id === 'init-project-state')) problems.push('init-project-state not in applied')
+        if (!report.created.includes('.materia/project.json')) problems.push('created missing .materia/project.json')
+        const want = { artifactSchema: 2, pluginVersion: null, source: 'legacy-0.1.0', appliedMigrations: ['init-project-state'] }
+        if (JSON.stringify(report.projectState) !== JSON.stringify(want))
+          problems.push(`projectState=${JSON.stringify(report.projectState)} (want ${JSON.stringify(want)})`)
+        if (report.status !== 'healthy') problems.push(`post-apply status=${report.status} (want healthy)`)
+      }
+      // ONLY .materia/project.json may be new; nothing else changed/removed.
+      const changed = diffKeys(before, after)
+      if (changed.length !== 1 || changed[0] !== '.materia/project.json')
+        problems.push(`apply changed files other than .materia/project.json: ${changed.join(', ')}`)
+      // Written file parses to the exact state (independent of the report echo).
+      const onDisk = JSON.parse(readFileSync(join(work, '.materia/project.json'), 'utf8'))
+      if (onDisk.artifactSchema !== 2 || onDisk.source !== 'legacy-0.1.0' ||
+          JSON.stringify(onDisk.appliedMigrations) !== JSON.stringify(['init-project-state']))
+        problems.push(`on-disk state wrong: ${JSON.stringify(onDisk)}`)
+      // Idempotent re-apply: nothing applied the second time.
+      const { report: again } = runMigrate(work, '--apply')
+      if (!again || again.applied.length !== 0) problems.push(`re-apply not idempotent: applied=${JSON.stringify(again && again.applied)}`)
+      // doctor↔migrate consistency: the migrated repo is healthy.
+      const dr = spawnSync('node', [DOCTOR, work, '--json'], { encoding: 'utf8' })
+      let drep = null; try { drep = JSON.parse(dr.stdout) } catch { /* below */ }
+      if (!drep || drep.status !== 'healthy') problems.push(`doctor on migrated repo status=${drep && drep.status} (want healthy)`)
+      if (problems.length) fail(`migrate [apply-legacy-copy]: ${problems.join('; ')}`)
+    } finally { rmSync(work, { recursive: true, force: true }) }
+  }
+
+  // 4. APPLY on malformed state -> never overwritten; reported manual.
+  {
+    const mf = mkdtempSync(join(tmpdir(), 'materia-migrate-mf-'))
+    try {
+      mkdirSync(join(mf, '.materia'), { recursive: true })
+      writeFileSync(join(mf, 'MATERIA.md'), '# m\n')
+      const raw = '{ not valid json'
+      writeFileSync(join(mf, '.materia', 'project.json'), raw)
+      const { report } = runMigrate(mf, '--apply')
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else {
+        if (report.applied.length !== 0) problems.push(`applied=${JSON.stringify(report.applied)} (want none)`)
+        if (!report.notChanged.some((n) => n.id === 'project-state-parses')) problems.push('malformed not reported in notChanged')
+      }
+      if (readFileSync(join(mf, '.materia', 'project.json'), 'utf8') !== raw) problems.push('malformed project.json was OVERWRITTEN')
+      if (problems.length) fail(`migrate [apply-malformed]: ${problems.join('; ')}`)
+    } finally { rmSync(mf, { recursive: true, force: true }) }
+  }
+
+  // 5. APPLY on a non-Materia repo -> no invented state, no file written.
+  {
+    const nm = mkdtempSync(join(tmpdir(), 'materia-migrate-nm-'))
+    try {
+      writeFileSync(join(nm, 'README.md'), '# just a repo\n')
+      const { report } = runMigrate(nm, '--apply')
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else if (report.applied.length !== 0) problems.push(`applied=${JSON.stringify(report.applied)} (want none)`)
+      if (existsSync(join(nm, '.materia', 'project.json'))) problems.push('invented .materia/project.json for a non-Materia repo')
+      if (problems.length) fail(`migrate [apply-non-materia]: ${problems.join('; ')}`)
+    } finally { rmSync(nm, { recursive: true, force: true }) }
+  }
+
+  if (failures === before)
+    console.log('  ✓ migrate behavior: plan→no-mutate · apply(legacy)→creates state(→doctor healthy) · idempotent · malformed/tracked/non-materia→no-overwrite')
 }
 
 if (failures) {
