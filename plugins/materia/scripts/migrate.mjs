@@ -26,7 +26,7 @@
 //
 // Usage: node migrate.mjs [targetPath] [--plan|--apply] [--json] [--help]
 // Exit:  0 ok (plan produced / apply done) · 2 tool fault or apply write failure
-import { writeFileSync, readFileSync, renameSync, mkdirSync, existsSync } from 'node:fs'
+import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { inspect, readLedger, relevantChanges, isInt } from './lib/materia-contract.mjs'
 
@@ -81,10 +81,13 @@ const initProjectState = {
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
     const dest = join(targetRoot, STATE_REL)
     // Atomic write: temp file + rename, so an interrupted apply can never leave a
-    // half-written (self-inflicted malformed) project.json behind.
+    // half-written (self-inflicted malformed) project.json behind. If the rename
+    // throws (near-impossible same-dir case), clean up the temp so no stray file
+    // lingers, then rethrow for runApply to record as a tool fault.
     const tmp = join(dir, `.project.json.tmp-${process.pid}`)
     writeFileSync(tmp, JSON.stringify(state, null, 2) + '\n')
-    renameSync(tmp, dest)
+    try { renameSync(tmp, dest) }
+    catch (e) { rmSync(tmp, { force: true }); throw e }
     return { created: [STATE_REL], state }
   },
 }
@@ -259,14 +262,15 @@ const renderHuman = (r) => {
   const L = []
   L.push(`materia migrate (${r.mode}) — ${r.target}`)
   L.push('')
-  L.push(`  Materia-enabled: ${r.materiaEnabled ? 'yes' : 'no'}`)
-  L.push(`  project schema: ${r.currentSchema ?? 'unknown'}${r.missing ? ' (no project.json)' : ''}`)
-  L.push(`  target schema:  ${r.targetSchema}`)
+  // Tool fault: we bailed on our OWN ledger before determining anything about the
+  // target, so don't print (misleading) Materia-enabled / schema lines for it.
   if (r.toolFault) {
-    L.push('')
     for (const m of r.manual) L.push(`  ✗ ${m.reason}`)
     return L.join('\n')
   }
+  L.push(`  Materia-enabled: ${r.materiaEnabled ? 'yes' : 'no'}`)
+  L.push(`  project schema: ${r.currentSchema ?? 'unknown'}${r.missing ? ' (no project.json)' : ''}`)
+  L.push(`  target schema:  ${r.targetSchema}`)
 
   const block = (label, arr, fmt) => {
     if (!arr.length) return
