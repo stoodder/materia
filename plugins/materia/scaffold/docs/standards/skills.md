@@ -179,9 +179,9 @@ skill.
 
 - **Branch-at-discovery** (autonomous producers with no interactive
   checkpoint — `ui-inspection`): once the run commits to writing a report,
-  `git checkout <trunk> && git pull` (`<trunk>`/`<remote>` per `MATERIA.md`
-  § Version control) then branch, write, and open the PR in one pass; the PR
-  is the review gate, so there is no `approve` to defer the branch to.
+  `git checkout <trunk> && git pull <remote> <trunk>` (`<trunk>`/`<remote>` per
+  `MATERIA.md` § Version control) then branch, write, and open the PR in one
+  pass; the PR is the review gate, so there is no `approve` to defer the branch to.
 - **Branch-at-approve** (in-memory producers — `report-bug`, `propose-spec`,
   `propose-epic`, `reconcile-epic` standalone, `triage-retros`): the whole
   draft (Q&A, or `triage-retros`'s harvest + synthesis) is in-memory; the
@@ -221,7 +221,8 @@ rerun), append a short hex suffix (`openssl rand -hex 2`).
   in the same commit as the entries it produced.
 - **Link integrity on new files** — before committing, run
   `node scripts/check-docs.mjs` and fix any link the *new* files introduce
-  (pre-existing debt on the trunk is not this run's job). If `check:docs` isn't
+  (pre-existing debt on the trunk (`MATERIA.md` § Version control) is not this
+  run's job). If `check:docs` isn't
   runnable, grep the new files for `](../` and `](./` and verify each target
   manually.
 - **One PR per run, no auto-merge.** PR body carries the rendered entries
@@ -229,9 +230,8 @@ rerun), append a short hex suffix (`openssl rand -hex 2`).
   with one-line rationales — nothing is silently discarded. The body's last
   element is the Materia sigil (§ PR attribution — the Materia sigil).
 - **PR tooling** — opening the PR routes through `MATERIA.md`
-  § Version control § Forge (open-PR op), which owns the `gh` recipe, the
-  `create_pull_request` GitHub-MCP twin, and the `none`/manual fallback; this
-  contract does not restate that recipe.
+  § Version control § Forge (open-PR op), which owns the `gh` recipe, its
+  GitHub-MCP twin, and the `none`/manual fallback.
 - **No session survival** — an interrupted run is re-invoked fresh; a stray
   pre-push branch is deleted or pushed manually by the operator.
 
