@@ -179,8 +179,8 @@ available.
 ### Skill routing
 
 The model/effort assignment for the units the pipeline spawns. This table
-**ships verbatim** (it is not stack-specific — nor is § Model set; both ship
-as-is). Resolution reads the unit's row; a spawned unit with no row uses the
+**ships verbatim** (it is not stack-specific — only § Model set is).
+Resolution reads the unit's row; a spawned unit with no row uses the
 **Default** row — **except** a review angle (canonical or repo-specific), which
 is not routed here at all (it carries its own `Tier` column in § Review angles;
 see the § Tiers intro). One row (`propose-epic: research`) describes a

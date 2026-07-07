@@ -41,10 +41,8 @@
   its § Model set catalog, § Fallback backstop, and § Effort set map) is where
   a unit's model and effort live. An **orchestrator/producer** runs in the
   operator's session and is unrouted (no spawn tier). A model that
-  `MATERIA.md` § Model set lists as `opt-in` (or does not list at all) coerces
-  to the row's **Fallback Model** — the Default row's when the skill has no row
-  of its own — unless the operator has enabled it (§ Coercion); availability is
-  durable repo config, not a per-run flag.
+  `MATERIA.md` § Model set does not list coerces to the row's **Fallback
+  Model** — the Default row's when the skill has no row of its own (§ Coercion).
 - **Keep state in the diff** where the skill's nature allows — prefer a
   reviewable PR/working-tree diff over a side audit folder; say so under Scope.
 - **A skill change is not done until its registration surfaces are updated**
