@@ -64,8 +64,12 @@ Pick exactly one per change — and per planned task (Phase 1):
 - **`optional`** — a newer template/default is available, but adoption is purely optional.
 - **`recommended`** — existing projects should adopt the change, though old artifacts
   still work.
-- **`required`** — existing project artifacts must change for compatibility.
-- **`breaking`** — old project artifacts are unsupported without migration.
+- **`required`** — existing project artifacts must change for compatibility, but the
+  change is mechanical: old artifacts keep working until updated, and adoption needs no
+  data/format migration.
+- **`breaking`** — old project artifacts are **unsupported** without migration: they stop
+  working (or silently misbehave) until migrated, so a migration path is mandatory before
+  release.
 
 ### Release surfaces
 
@@ -163,7 +167,7 @@ Plugin version and installed-artifact schema are **not** coupled one-to-one:
 6. Spawn **fresh-context reviewers** on the plan's applicable angles (§ Review angles),
    typically *approach-correctness*, *completeness & coupling*, and *decision-fidelity &
    sequencing* — plus ***release-impact completeness*** whenever the change touches a
-   distributed plugin surface (§ Release / artifact impact contract → heuristic).
+   distributed plugin surface (Phase 1 → *Release-impact heuristic*; § Review angles).
    Reviewers are adversarial and **calibrated** — real Blocker/Major/Minor findings, not
    nitpicks.
 7. Fold findings → revise the plan → re-review, up to **3 rounds** or until reviewers
@@ -224,7 +228,10 @@ For each task, in order:
 14. Run a full green sweep (all validators + a repo-wide stale-token grep for whatever
     the change was supposed to remove/rename) and a **final whole-repo adversarial
     verification pass** (a fresh-context reviewer that checks the change hangs together
-    across every task's surface). Fold any finding via the loop above.
+    across every task's surface). Whenever the run touched a distributed plugin surface,
+    this pass **also carries the *release-impact completeness* angle** — it re-challenges
+    the run's overall impact verdict (including any `none` justification) before the PR the
+    operator merges from is opened. Fold any finding via the loop above.
 15. Push the branch and open **exactly one PR** — never auto-merge. The PR body records:
     a summary, the operator decisions, any veto-flagged engineering calls, the
     action-needed items, and what the review rounds hardened. It **must** include a
