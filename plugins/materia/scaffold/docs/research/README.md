@@ -5,10 +5,10 @@ captures **why** we believe a direction is worth taking — the external evidenc
 with citations — so a later reader (or a spec proposal) can trace a decision back
 to its sources.
 
-These are **reference docs, not a queue.** Unlike `docs/specs/_proposed/` (a
-transient intake surface that trends toward empty) and
-`docs/specs/_improvements/` (per-batch retro triage), research notes are kept as
-a standing corpus. A proposal drafted from a note cites it via `source_refs`.
+These are **reference docs, not a queue.** Unlike `docs/specs/_proposed/` and
+`docs/bugs/_reports/` (transient intake queues that trend toward empty),
+research notes are kept as a standing corpus. A proposal drafted from a note
+cites it via `source_refs`.
 
 | Doc | What |
 |---|---|

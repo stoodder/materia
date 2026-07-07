@@ -21,11 +21,12 @@ The canonical list of producers that write into `_reports/` lives in
 [`_reports/README.md` § Producers in this repo](_reports/README.md). It is not
 duplicated here — one fact, one place.
 
-`bugs-to-reports` files reports gathered by `triage-retros` into `_reports/`:
-`triage-retros` classifies retro signal as defects and gathers them into a
-`bug-reports.md` hand-off; `/materia:bugs-to-reports` then reads that hand-off and writes
-conformant reports into `docs/bugs/_reports/`; `triage-retros` itself only gathers.
-A third producer, `/materia:ui-inspection`, drives
+`/materia:triage-retros` authors reports directly into `_reports/`: it clusters
+retro signal, classifies defects, folds duplicate signal about the same defect
+into one single-defect report, and on approve writes conformant 13-section
+reports into `docs/bugs/_reports/` under `source: retro-triage` (product
+improvements go to the `docs/specs/_proposed/` queue in the same run).
+A second producer, `/materia:ui-inspection`, drives
 the running app across the surface-map and files one consolidated UI/UX checklist report.
 See the Producers table in [`_reports/README.md`](_reports/README.md).
 

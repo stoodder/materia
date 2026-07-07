@@ -95,11 +95,11 @@ for the details.
   lifecycle live in [skills](docs/standards/skills.md).
 - **Epics** ([docs/epics/](docs/epics/README.md)) group multiple specs under
   one researched initiative with a dependency graph.
-- Every run leaves a `retro.md`; `/materia:triage-retros` triages retros two ways
-  (product suggestions / bug reports) into the project's backlog —
-  `/materia:suggestions-to-specs` turns suggestions into proposed specs and
-  `/materia:bugs-to-reports` files the bugs. Authoring or changing any skill →
-  [skills](docs/standards/skills.md).
+- Every run leaves a `retro.md`; `/materia:triage-retros` clusters that signal
+  and authors it directly into the project's backlog — proposed specs into
+  [docs/specs/_proposed/](docs/specs/_proposed/README.md) and bug reports into
+  [docs/bugs/_reports/](docs/bugs/_reports/README.md) (`source: retro-triage`) —
+  in one PR. Authoring or changing any skill → [skills](docs/standards/skills.md).
 
 ## Before you finish
 
