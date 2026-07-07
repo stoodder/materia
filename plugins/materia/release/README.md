@@ -2,17 +2,19 @@
 
 The machine-readable compatibility contract for the `materia` plugin. It records, per
 plugin release, what changed about the **installed-project artifact contract** — enough for
-`/materia:doctor` to detect drift and a future `/materia:migrate` to adopt changes.
+`/materia:doctor` to detect drift and `/materia:migrate` to adopt changes.
 
 This directory ships **inside the distributed plugin** but is **not** materialized into user
 repos: `/materia:init` copies `scaffold/`, never `release/`. Doctor/migrate read it from the
 installed plugin cache.
 
-> **Status: v0, dogfood-grade.** `/materia:doctor` now ships and reads this ledger to report
+> **Status: v0, dogfood-grade.** `/materia:doctor` ships and reads this ledger to report
 > drift **read-only** (it consumes the `doctorChecks` IDs, starting with
-> `project-state-present`); it writes nothing and runs no migration. `/materia:migrate`
-> remains **forthcoming** — no migration behavior ships yet, so the `migrations` IDs below
-> are still reserved identifiers nothing consumes.
+> `project-state-present`); it writes nothing and runs no migration. `/materia:migrate` now
+> ships too — **plan-first** — and consumes the `migrations` IDs: v0 implements one,
+> `init-project-state` (reserved in `0.2.0-project-state-file`), which initializes
+> `.materia/project.json` for a pre-tracking install. Any other `migrations` ID below is
+> still a reserved identifier no handler consumes yet; migrate reports it as manual/skipped.
 
 ## Files
 
@@ -69,7 +71,7 @@ contract change, not a version coincidence.
 | `detectable` | `true` if a doctor check can detect the drift in an installed repo. |
 | `migratable` | `true` if adoption can be automated (vs manual-only). |
 | `doctorChecks` | Stable check IDs `/materia:doctor` implements to detect this change's drift. |
-| `migrations` | Stable migration IDs a forthcoming `/materia:migrate` will implement. |
+| `migrations` | Stable migration IDs `/materia:migrate` implements (or reserves for a later handler). |
 | `manualMigration` | Instructions to adopt by hand when automation is absent or unsafe. |
 | `notes` | Optional clarifications (e.g. how impact differs for new vs existing projects). |
 

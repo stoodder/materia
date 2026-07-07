@@ -12,7 +12,7 @@
       "migratable": true,
       "doctorChecks": ["project-state-present"],
       "migrations": ["init-project-state"],
-      "manualMigration": "Add .materia/project.json with { \"artifactSchema\": 2, \"pluginVersion\": null, \"source\": \"legacy-0.1.0\", \"appliedMigrations\": [] }. Automated adoption ships later with /materia:migrate.",
+      "manualMigration": "Run /materia:migrate --apply to adopt automatically (the init-project-state migration), or add .materia/project.json by hand with { \"artifactSchema\": 2, \"pluginVersion\": null, \"source\": \"legacy-0.1.0\", \"appliedMigrations\": [\"init-project-state\"] }.",
       "notes": "New projects are born at schema 2 (required baseline). For existing 0.1.0 installs adoption is recommended: the old untracked shape still works until migrated."
     }
   ]
