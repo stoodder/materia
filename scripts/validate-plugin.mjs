@@ -231,7 +231,7 @@ console.log(`  ✓ § audit: ${refs} MATERIA.md § references (nested, all chain
 // model/effort is pinned equal to the registry row's Tier here — an edit to one
 // that misses the other fails CI. The registry Tier is a single `<model>/<effort>`
 // pair with NO Fallback token, so this compares model+effort only (per-token
-// backticks stripped on both sides so `fable` and `` `fable` `` can't mismatch).
+// backticks stripped on both sides so `opus` and `` `opus` `` can't mismatch).
 const stripTicks = (s) => s.replace(/`/g, '').trim()
 const routingRow = (label) => {
   const src = readFileSync('plugins/materia/scaffold/MATERIA.md', 'utf8')
