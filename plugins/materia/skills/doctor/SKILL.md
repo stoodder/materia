@@ -115,6 +115,11 @@ action-needed, `2` blocked).
   anything — no branch, commit, PR, or file change is ever produced.
 - **Does not implement `/materia:migrate`.** It only *suggests* it (and its
   `--plan` mode) where the report calls for it.
+- **Certifies artifacts, not their consumers.** A healthy doctor confirms a gate
+  script is present and at its canonical location, but not that the repo's own
+  references to it (the `MATERIA.md § Gate` row, package scripts, CI, docs) still
+  point there; `/materia:migrate`'s plan carries the deterministic stale-reference
+  scan (`referenceFollowUps`) for that gap.
 - **Does not auto-run.** It is operator-invoked; nothing triggers it from plugin
   startup hooks.
 - Runs in the **operator's own session** — it is never spawned as a pipeline
