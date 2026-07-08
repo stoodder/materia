@@ -57,6 +57,11 @@ const initProjectState = {
     if (!report.materiaEnabled)
       return { disposition: 'not-applicable', files: [],
         reason: 'repo is not Materia-enabled (no MATERIA.md / .materia/) — no project state to initialize. If you expected a Materia repo, run /materia:init.' }
+    // Belt-and-suspenders: unreachable under current buildPlan control flow (a
+    // malformed state sets fromSchema=null, so relevantChanges returns [] and
+    // this classify() never runs — the malformed manual item comes from
+    // buildPlan's own structural check). Kept so the migration is self-contained
+    // and correct if a future caller classifies it directly.
     if (report.malformed)
       return { disposition: 'manual', files: [],
         reason: `${STATE_REL} is present but malformed — fix the invalid JSON by hand; migrate will not overwrite it.` }
