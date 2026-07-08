@@ -267,10 +267,12 @@ const renderHuman = (r) => {
   const L = []
   L.push(`materia migrate (${r.mode}) — ${r.target}`)
   L.push('')
-  // Tool fault: we bailed on our OWN ledger before determining anything about the
-  // target, so don't print (misleading) Materia-enabled / schema lines for it.
+  // Tool fault: we bailed on our OWN ledger (or an apply write failed) before a
+  // useful state read, so don't print (misleading) Materia-enabled / schema lines.
+  // The reason lives in `manual` (ledger fault) or `notChanged` (apply-write
+  // failure) — render both so the human mode never fails silently.
   if (r.toolFault) {
-    for (const m of r.manual) L.push(`  ✗ ${m.reason}`)
+    for (const m of [...r.manual, ...(r.notChanged ?? [])]) L.push(`  ✗ ${m.reason}`)
     return L.join('\n')
   }
   L.push(`  Materia-enabled: ${r.materiaEnabled ? 'yes' : 'no'}`)

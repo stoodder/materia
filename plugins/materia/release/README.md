@@ -90,7 +90,7 @@ Exactly one per change. These match the classifications the repo-local `evolve` 
 ### Surface tokens
 
 The short machine tokens used in `change.surfaces` (deliberately terser than prose surface
-names). Doctor (and a future migrate) reads this array to decide whether a change concerns it:
+names). Doctor and migrate read this array to decide whether a change concerns it:
 
 - `scaffold` — the bundled `scaffold/` templates changed.
 - `ledger` — this ledger changed.
