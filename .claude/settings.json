@@ -30,7 +30,7 @@
       "Bash(gh pr checks:*)",
       "Bash(gh run view:*)",
       "Bash(gh repo view:*)",
-      "Bash(sh scripts/check-docs.sh:*)",
+      "Bash(sh .materia/scripts/check-docs.sh:*)",
       "Bash(node scripts/validate-plugin.mjs:*)",
       "Bash(claude plugin validate:*)",
       "Bash(ls:*)",

@@ -133,7 +133,7 @@ definition — the full schema/semver contract and the impact classifications (`
 `breaking`) doctor and migrate act on.
 
 **Project state — new vs existing repos.** New repos get their state for free:
-`/materia:init` materializes `.materia/project.json` (schema 2) from the bundled scaffold,
+`/materia:init` materializes `.materia/project.json` (schema 3) from the bundled scaffold,
 so a fresh install is born tracked. Existing pre-tracking (dogfood) repos — created before
 schema 2 — have no `.materia/project.json`; `/materia:doctor` detects them as *untracked
 legacy* and points at `/materia:migrate --plan`, and `/materia:migrate --apply` then runs

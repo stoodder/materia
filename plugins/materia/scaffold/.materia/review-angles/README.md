@@ -32,6 +32,11 @@ Each body states:
   which the angle is relevant. Never write the gate token; the gate value has
   one home, the `MATERIA.md § Review angles` registry.
 
+Reviewer calibration — the severity rubric, the structured finding shape, and
+verify-before-reporting — is injected by the `ship-spec` review fan-out via
+its spawn contract, so angle files stay mission-only and add no generic
+review rubric.
+
 Every file path is backtick prose, never a live markdown link.
 
 ## Adding a new angle
