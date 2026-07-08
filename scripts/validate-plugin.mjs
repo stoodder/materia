@@ -45,7 +45,7 @@ const fail = (msg) => { console.error(`  ✗ ${msg}`); failures++ }
 
 // ---- 1. check-docs parity harness -------------------------------------------
 // The shipped checker is a portable POSIX-sh reimplementation
-// (plugins/materia/scaffold/scripts/check-docs.sh) of the Node reference
+// (plugins/materia/scaffold/.materia/scripts/check-docs.sh) of the Node reference
 // implementation (scripts/check-docs-oracle.mjs). "Byte-for-byte identical
 // output" is a CONTRACT, not a hope — so pin it here permanently: for a fixture
 // corpus that exercises every branch AND the known divergence surfaces, prove
@@ -57,7 +57,7 @@ const fail = (msg) => { console.error(`  ✗ ${msg}`); failures++ }
 // breaks parity (e.g. the round-1 NBSP-narration regression) cannot land green.
 {
   const ORACLE = resolve('scripts/check-docs-oracle.mjs')
-  const SH = resolve('plugins/materia/scaffold/scripts/check-docs.sh')
+  const SH = resolve('plugins/materia/scaffold/.materia/scripts/check-docs.sh')
 
   // ---- busybox lane gating (detect once) ----
   // The .sh must be portable across awks; busybox awk is the strict floor. In CI
@@ -372,6 +372,65 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
     fail('§ Version control pin: docs/standards/skills.md does not cite `MATERIA.md § Version control` — the shared producer-lifecycle rule routes trunk/remote/forge through the config home')
   if (failures === before)
     console.log(`  ✓ § Version control citation pin: 2 headings + ${VC_CITERS.length} skills + skills.md reference the config home`)
+}
+
+// ---- 1e. § Gate citation pin + no-hardcoded-gate-path scan ------------------
+// The docs gate's command is not hardcoded in the skills — it resolves from the
+// installed repo's own MATERIA.md § Gate `check:docs` row (the gate script ships
+// under .materia/scripts/, but a skill must never name that literal path: the
+// path is the repo's to set, exactly like trunk/remote resolve from § Version
+// control, §1d). Two guards, mirroring §1d's style:
+//   (a) No skill file may name the legacy root gate path `scripts/check-docs.sh`
+//       (a fixed-length lookbehind exempts the real `.materia/scripts/check-docs.sh`).
+//       doctor/ and migrate/ skills are EXEMPT — their either-location / ledger
+//       prose legitimately names the legacy root path a migrating repo still carries.
+//   (b) Every skill that runs or names the docs gate must cite `MATERIA.md § Gate`
+//       (the command-resolution home), matched whitespace-collapsed like §1d so a
+//       citation wrapped across lines still counts (fences/HTML comments blanked
+//       first — a citation left inside a ``` block can't satisfy the pin).
+//       The fence regex is line-ANCHORED (a real Markdown fence opens a line):
+//       §1d's un-anchored variant would mis-pair on an inline ` ```retro ` code
+//       span (triage-retros names one) and falsely blank real prose citations.
+{
+  const before = failures
+  const FENCE = /^[ \t]*(```|~~~)[\s\S]*?^[ \t]*\1/gm
+  const HTML_COMMENT = /<!--[\s\S]*?-->/g
+  const blankOut = (t, re) => t.replace(re, (m) => m.replace(/[^\n]/g, ' '))
+  // (a) legacy-path scan over every file under skills/, except doctor/ & migrate/.
+  const BADPATH = /(?<!\.materia\/)scripts\/check-docs\.sh/
+  const EXEMPT = new Set(['doctor', 'migrate'])
+  const scanDir = (dir) => {
+    for (const e of readdirSync(dir)) {
+      const fp = join(dir, e)
+      if (statSync(fp).isDirectory()) { scanDir(fp); continue }
+      readFileSync(fp, 'utf8').split('\n').forEach((ln, i) => {
+        if (BADPATH.test(ln))
+          fail(`§ Gate path pin: ${fp}:${i + 1} names the legacy gate path \`scripts/check-docs.sh\` — gate commands resolve from the repo's MATERIA.md § Gate row (do not hardcode the script path; the gate script ships under .materia/scripts/)`)
+      })
+    }
+  }
+  for (const d of readdirSync('plugins/materia/skills')) {
+    if (EXEMPT.has(d)) continue
+    const p = join('plugins/materia/skills', d)
+    if (statSync(p).isDirectory()) scanDir(p)
+  }
+  // (b) § Gate citation for the gate-running/naming skills.
+  const cites = (file) => {
+    const t = blankOut(blankOut(readFileSync(file, 'utf8'), FENCE), HTML_COMMENT)
+    return /MATERIA\.md[`"']?\s*§\s*Gate/.test(t.replace(/\s+/g, ' '))
+  }
+  const GATE_CITERS = [
+    'implement-task', 'report-bug', 'librarian', 'propose-spec', 'docs-audit',
+    'docs-sync', 'fix-bug', 'architecture', 'ui-inspection', 'finalize', 'triage-retros',
+  ]
+  for (const s of GATE_CITERS) {
+    const f = `plugins/materia/skills/${s}/SKILL.md`
+    if (!existsSync(f)) { fail(`§ Gate citation pin: ${f} not found`); continue }
+    if (!cites(f))
+      fail(`§ Gate citation pin: ${s}/SKILL.md does not cite \`MATERIA.md § Gate\` — the docs gate command resolves from the repo's MATERIA.md § Gate row (do not hardcode the script path)`)
+  }
+  if (failures === before)
+    console.log(`  ✓ § Gate path pin: no skill names the legacy gate path (doctor/migrate exempt) + ${GATE_CITERS.length} skills cite MATERIA.md § Gate`)
 }
 
 // ---- helpers ---------------------------------------------------------------

@@ -410,7 +410,7 @@ dequeue) semantics over the bugs queue:
    trusted path. Quote it. Then stage the removal: `git rm -r <report-folder>`. If the
    folder is already gone (operator removed it mid-run), skip the `git rm -r` and
    note "_report already removed from `_reports/`_" in the PR body — not a Blocker.
-3. Re-run `sh scripts/check-docs.sh` against the staged removal. If green, commit
+3. Re-run the `check:docs` gate (`MATERIA.md § Gate`) against the staged removal. If green, commit
    the dequeue and push. If red (something still links the report file), unstage
    (`git restore --staged <path>` + `git checkout -- <path>`), set
    `Blocker: dequeue tripped check:docs — <broken-link path>` in `STATUS.md`,

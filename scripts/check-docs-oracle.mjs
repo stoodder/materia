@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Parity ORACLE for the shipped docs checker — NOT the shipped checker itself.
 // The portable POSIX-sh checker that /materia:init materializes is
-// plugins/materia/scaffold/scripts/check-docs.sh; THIS file is the reference
+// plugins/materia/scaffold/.materia/scripts/check-docs.sh; THIS file is the reference
 // implementation it must match byte-for-byte. It lives under scripts/ (repo-
 // local, never bundled into the scaffold, never materialized by /materia:init)
 // and is run ONLY by scripts/validate-plugin.mjs's check-docs parity harness,
@@ -20,7 +20,7 @@
 //     lines, glossary stays alphabetical.
 // Exits non-zero (with the offending file:line) on any failure.
 // Run: `node scripts/check-docs-oracle.mjs` (parity oracle only — end users run
-// the shipped `sh scripts/check-docs.sh`).
+// the shipped `sh .materia/scripts/check-docs.sh`).
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, dirname, resolve, relative, sep } from 'node:path'
 

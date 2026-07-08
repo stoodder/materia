@@ -64,7 +64,7 @@ it per **Adding a new doc** below as part of the same change.
 
 ## Docs checks (links + style)
 
-A committed, deterministic script (`scripts/check-docs.sh` — portable POSIX
+A committed, deterministic script (`.materia/scripts/check-docs.sh` — portable POSIX
 `sh`+`awk`, no network, no AI) enforces three layers:
 
 1. **Links** (`CLAUDE.md` + all of `docs/**`): every
@@ -84,7 +84,7 @@ A committed, deterministic script (`scripts/check-docs.sh` — portable POSIX
 Run it from the repo root; it exits non-zero and lists every failure:
 
 ```bash
-sh scripts/check-docs.sh
+sh .materia/scripts/check-docs.sh
 ```
 
 CI runs it on every PR, so a broken cross-link or a style regression fails

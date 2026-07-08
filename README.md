@@ -54,7 +54,7 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
    `CLAUDE.md`, and the `docs/` skeleton into place — sections your stack
    doesn't need (no UI → § UI-affecting: none) are marked `none` and the
    corresponding skills self-gate at runtime instead of being pruned. Materia
-   reserves `docs/`, `scripts/check-docs.sh`, and `.materia/` in the target repo;
+   reserves `docs/` and `.materia/` (plus `MATERIA.md`/`CLAUDE.md` at the root) in the target repo;
    it adopts cleanly where those paths are free and layers onto an existing
    `docs/` rather than replacing it.
 3. `/materia:init` finishes by seeding `docs/specs/_proposed/` with a
@@ -91,9 +91,9 @@ upgrading the plugin upgrades every repo it's installed in.
 plugins/materia/
   .claude-plugin/plugin.json         the plugin manifest
   skills/                            the pipeline skills (stack-agnostic), invoked /materia:<name>
-  scaffold/                          the bundled MATERIA.md/CLAUDE.md/docs templates,
-                                      check-docs.sh, and .materia/ (review-angles library +
-                                      project.json) that /materia:init materializes into your repo
+  scaffold/                          the bundled MATERIA.md/CLAUDE.md/docs templates
+                                      and .materia/ (the check-docs.sh docs gate, review-angles
+                                      library + project.json) that /materia:init materializes into your repo
   release/                           the plugin's own release/migration ledger (semver +
                                       artifact-schema contract; not materialized into repos)
 scripts/validate-plugin.mjs          validates the marketplace + plugin manifests and the scaffold
