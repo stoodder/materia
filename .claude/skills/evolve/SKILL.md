@@ -5,11 +5,11 @@ description: Orchestrate a change to the Materia harness (the materia plugin's s
 
 # evolve — orchestrate a reviewed change to Materia
 
-The repo's own meta-orchestrator for evolving the Materia harness. It runs in the
-operator session, does the thinking + coordination itself, and dispatches the actual
-work to **fresh-context sub-agents** — the same loop that shipped the plugin-marketplace
-migration: **intake → plan → review → approve → execute-with-reviews → PR**, staying
-dynamic as new findings change scope.
+The repo's own meta-orchestrator for evolving the Materia harness. It runs in the operator
+session, does the thinking + coordination itself, and dispatches the actual work to
+**fresh-context sub-agents** — the same loop that shipped the v0 compatibility system (PRs
+#12–#16): **intake → plan → review → approve → execute-with-reviews → PR**, staying dynamic as
+new findings change scope.
 
 This skill is **repo-local** (`.claude/skills/evolve/`) — a development tool for *this*
 repo, deliberately outside the distributed `materia` plugin. It is distinct from the
@@ -48,60 +48,68 @@ Every harness change must answer one question before it is complete:
 > **Does this change alter what a Materia-installed repo should contain, expect, validate,
 > migrate, regenerate, or warn about?**
 
-`/evolve` is the **enforcement point** for that answer. A change is not done until its
-downstream installed-project impact has been **classified**, and — when the impact is
-anything other than `none` — its affected **release surfaces** identified. This is
-deliberately separate from "did the harness edit land": the plugin can be internally
-correct and still leave installed projects on a stale contract.
+`/evolve` is the **enforcement point**. A change is not done until its downstream impact is
+**classified** and — when other than `none` — its **release surfaces** named and the
+machine-readable ledger landed (§ Ledger mandate). `plugins/materia/release/README.md` is
+**normative** for the taxonomy, surface tokens, and version-file schema; the reminders below
+are a standalone-reading convenience and defer to it on any divergence.
 
 ### Impact classifications
 
-Pick exactly one per change — and per planned task (Phase 1):
+Pick exactly one per change — and per planned task (Phase 1). Full definitions live in
+release/README.md:
 
 - **`none`** — no installed-project artifact impact.
-- **`doctor-only`** — `/materia:doctor` should detect/report drift, but no migration is
-  needed.
-- **`optional`** — a newer template/default is available, but adoption is purely optional.
-- **`recommended`** — existing projects should adopt the change, though old artifacts
-  still work.
-- **`required`** — existing project artifacts must change for compatibility, but the
-  change is mechanical: old artifacts keep working until updated, and adoption needs no
-  data/format migration.
-- **`breaking`** — old project artifacts are **unsupported** without migration: they stop
-  working (or silently misbehave) until migrated, so a migration path is mandatory before
-  release.
+- **`doctor-only`** — doctor should report drift; no migration needed.
+- **`optional`** — a newer default is available; adoption is optional.
+- **`recommended`** — projects should adopt, though old artifacts still work.
+- **`required`** — artifacts must change, but mechanically; old ones keep working until updated.
+- **`breaking`** — old artifacts are unsupported without migration (migration path mandatory
+  before release).
 
 ### Release surfaces
 
-When impact is anything other than `none`, the plan names which of these the change
-touches. The v0 machinery that consumes them has now landed; classify against every
-surface a change touches, including any that a later PR deepens:
+When impact is other than `none`, the plan names the touched surfaces using the ledger's five
+machine tokens (release/README.md) so a PR-body list mirrors a `Change.surfaces` array 1:1:
 
-- **release/migration ledger** — the machine-readable compatibility contract *(exists)*.
-- **`/materia:doctor` detection behavior** — how drift is detected/reported *(exists)*.
-- **`/materia:migrate` behavior, or manual migration instructions** — *(exists — v0: one
-  migration, `init-project-state`; other ledger changes carry manual instructions)*.
-- **validator coverage** — `scripts/validate-plugin.mjs` expectations *(exists)*.
-- **scaffold/template updates** — `plugins/materia/scaffold/` *(exists)*.
-- **human changelog / release notes** — the human-readable summary *(exists as authored)*.
+- **`scaffold`** — bundled `plugins/materia/scaffold/` templates.
+- **`ledger`** — the release/migration ledger.
+- **`validator`** — `scripts/validate-plugin.mjs` expectations.
+- **`doctor`** — a `/materia:doctor` check applies.
+- **`migrate`** — a `/materia:migrate` step or manual migration instruction applies.
 
-**Precedence — the ledger is the contract, not the changelog.** PR-body notes and human
-changelogs are **not** the source of truth. The machine-readable release/migration ledger
-is the contract that `/materia:doctor` and `/materia:migrate` consume; human release notes
-*summarize* that contract for people. When they disagree, the ledger governs.
+**Precedence — the ledger is the contract, not the changelog.** The **human changelog /
+release notes** are not a sixth surface but a communication artifact — they map to the ledger
+`summary` field plus the PR body, and only *summarize* the machine-readable release/migration
+ledger that `/materia:doctor` and `/materia:migrate` consume. When they disagree, the ledger
+governs.
 
-### Plugin semver ≠ artifact schema
+### Ledger mandate
 
-Plugin version and installed-artifact schema are **not** coupled one-to-one:
+When a run's change is **non-`none` and touches a distributed surface whose drift is
+detectable**, it **MUST** land the ledger update in the **same PR** — a `Change` entry per the
+schema (release/README.md), plus the version-file mechanics (§ Shipping a schema/version
+change) when applicable — and re-run **validator §6 green** before Phase 6 opens the PR. The
+prose Downstream-project-impact section never substitutes for the ledger entry. Deferring is
+legal **only** for (a) a `none`/`doctor-only` change with a recorded detectionNotes-style
+justification, or (b) an explicit operator decision recorded at intake or Phase 3 (an operator
+may defer the ledger/version update to release time; recorded in the plan and PR body, that
+satisfies the contract). Silence, or an undefined "cover," is never enough.
 
-- The **plugin version** (`plugins/materia/.claude-plugin/plugin.json`) changes when the
-  plugin ships.
-- The **artifact schema** — what a Materia-installed repo is expected to contain — changes
-  only when the expected installed-project artifact contract changes.
-- Multiple plugin versions may share one artifact schema. Do **not** bump the schema just
-  because the plugin shipped, and do **not** assume a plugin release implies a project
-  migration. Coupling a schema change casually to a plugin release is itself a
-  release-impact defect (§ Review angles → release-impact completeness).
+### Shipping a schema/version change
+
+Ship these together — validator §6 pins their four-way coherence mechanically:
+
+1. Bump `plugins/materia/.claude-plugin/plugin.json` `version`.
+2. Add `release/versions/<v>.json` per the release/README.md schema.
+3. Repoint `release/latest.json` (`pluginVersion` + `latestVersionFile` + `artifactSchema`).
+4. Bump `artifactSchema` **only** when the installed-project contract genuinely changed — not
+   because the plugin shipped.
+5. Keep `scaffold/.materia/project.json`'s `artifactSchema` in lockstep.
+6. Re-run **validator §6 green**.
+
+Plugin semver and artifact schema are **not** coupled one-to-one — many plugin versions may
+share one `artifactSchema` (release/README.md defines both axes); casual coupling is a defect.
 
 ## Procedure
 
@@ -133,10 +141,9 @@ Plugin version and installed-artifact schema are **not** coupled one-to-one:
      still committed + gate-checked); **Substantial / multi-surface** → the full path (fan
      out to fresh-context sub-agents per task, each with its own adversarial review
      rounds).
-   - **Downstream artifact impact** (§ Release / artifact impact contract): every
-     `/evolve` run classifies impact — `none · doctor-only · optional · recommended ·
-     required · breaking` — and, when it is not `none`, names the affected release
-     surfaces. This is mandatory even on the small-change path.
+   - **Downstream artifact impact** (§ Release / artifact impact contract): every `/evolve`
+     run classifies impact and, when it is not `none`, names the affected release surfaces —
+     mandatory even on the small-change path.
 5. Ensure `.tmp/` is gitignored (add it if not); write the plan + task list to
    `.tmp/<slug>-plan.md`. It is the **single source of truth for progress** — a
    `## Progress tracker` and a `## Review log` (append per task/round: task · round ·
@@ -150,16 +157,14 @@ Plugin version and installed-artifact schema are **not** coupled one-to-one:
    explicitly.
 
    **Release-impact heuristic (path-based).** If a task touches a **distributed plugin
-   surface** — the scaffold (`plugins/materia/scaffold/`), skills, agents, hooks, the
-   marketplace/plugin manifests, the validator, doctor/migrate code, or CI that enforces
-   plugin behavior — then the plan must either carry a release-impact classification +
-   surfaces for it, or **explicitly justify `artifact impact: none`** (silence is not
-   allowed). Routine internal CI mechanics (runner tweaks, caching, job wiring) do **not**
-   trip this on their own — CI requires downstream impact classification only when it
-   alters validation expectations for distributed plugin artifacts or installed-project
-   contracts. Repo-local-only changes (this `evolve` skill, the check-docs oracle,
-   `.tmp/`) sit outside the distributed surface and normally classify `none` — state that
-   justification rather than omitting it.
+   surface** — the scaffold, skills, agents, hooks, the marketplace/plugin manifests, the
+   validator, doctor/migrate code, or CI that enforces plugin behavior — the plan must carry a
+   classification + surfaces, or **explicitly justify `artifact impact: none`** (silence is not
+   allowed). Routine CI mechanics (runner tweaks, caching, job wiring) don't trip this alone —
+   only CI that alters validation expectations for distributed artifacts or installed-project
+   contracts does. Repo-local-only changes (this `evolve` skill, the check-docs oracle,
+   `.tmp/`) sit outside the distributed surface and normally classify `none` — state that,
+   don't omit it.
 
 ### Phase 2 — Adversarial plan review (≤3 rounds to convergence)
 
@@ -196,11 +201,11 @@ For each task, in order:
     `claude plugin validate ./plugins/materia` where relevant, plus any change-specific
     check), sanity-checks the diff, then commits. Commit only green.
 11. **Review:** spawn fresh-context adversarial reviewers on the task's angles (§ Review
-    angles). For any task whose **artifact impact is not `none`**, its acceptance gates and
-    review set must cover the affected release surfaces (§ Release / artifact impact
-    contract) and include the ***release-impact completeness*** angle. Fold findings →
-    re-commit the fixes → re-review, ≤3 rounds to convergence. Append to the `.tmp/` review
-    log after each round.
+    angles). For any task whose **artifact impact is not `none`**, its gates and review set
+    must satisfy the **§ Ledger mandate** — land the ledger `Change` entry (or record a legal
+    deferral) and keep **validator §6 green** — and include the ***release-impact completeness***
+    angle. Fold findings → re-commit the fixes → re-review, ≤3 rounds to convergence. Append to
+    the `.tmp/` review log after each round.
 12. See § Non-convergence fallback if a task's reviews don't converge.
 
 ### Phase 5 — Dynamic re-scoping (stay aligned as scope changes)
@@ -210,49 +215,45 @@ For each task, in order:
     was left unclassified** (§ Release / artifact impact contract) — **fold it into the
     plan**: add/split/re-order tasks (including any newly-needed release-surface work),
     update the tracker + review log, and re-verify the ordering still has no
-    build-then-discard seams, then **continue autonomously**. Two cases need more than a
+    build-then-discard seams, then **continue autonomously**. Three findings need more than a
     quiet fold:
-    - An engineering call **beyond the operator's approved decisions** (a new
-      behavior/trade-off they didn't sign off on) — **including an operator-owned
-      compatibility decision** such as an impact classification the operator would need to
-      accept (e.g. `required`/`breaking`, or dropping support for an old artifact) → make
-      the safe/conservative choice and **flag it in the PR body for operator veto** — do
-      not pause the run, and do not ship it as settled. (This is how the migration caught
-      the `disable-model-invocation` risk and deferred it.)
+    - A milder **operator-owned compatibility judgment** or other call beyond the approved
+      decisions (e.g. `optional` vs `recommended`) → make the safe/conservative choice and
+      **flag it in the PR body for operator veto** — don't pause, don't ship it as settled.
+    - A newly-discovered **`required`/`breaking` impact** → **stop and return to the
+      operator**: `breaking` needs a migration path before release, so it invalidates the
+      approved plan (which has none). Present the classification + options (build the migration
+      as new tasks · descope · accept and defer with explicit sign-off); continue only after
+      their call.
     - A finding that **invalidates the approved goal or plan wholesale** (not mere growth)
       → stop and return to the operator; the approval no longer covers the work.
 
 ### Phase 6 — Finalize + open the PR
 
-14. Run a full green sweep (all validators + a repo-wide stale-token grep for whatever
-    the change was supposed to remove/rename) and a **final whole-repo adversarial
+14. Run a full green sweep (all validators — **§6 included** — + a repo-wide stale-token grep
+    for whatever the change was supposed to remove/rename) and a **final whole-repo adversarial
     verification pass** (a fresh-context reviewer that checks the change hangs together
-    across every task's surface). Whenever the run touched a distributed plugin surface,
-    this pass **also carries the *release-impact completeness* angle** — it re-challenges
-    the run's overall impact verdict (including any `none` justification) before the PR the
-    operator merges from is opened. Fold any finding via the loop above.
-15. Push the branch and open **exactly one PR** — never auto-merge. The PR body records:
-    a summary, the operator decisions, any veto-flagged engineering calls, the
-    action-needed items, and what the review rounds hardened. It **must** include a
-    **Downstream project impact** section (§ Release / artifact impact contract) —
-    required even when the answer is explicitly `none` — recording:
-    - the **impact classification** (`none · doctor-only · optional · recommended ·
-      required · breaking`);
-    - the **release surfaces touched** (ledger, doctor, migrate/manual, validator,
-      scaffold, human changelog);
-    - the **required / recommended / manual user action** for installed projects;
-    - any **operator-veto compatibility calls** the run flagged (Phase 5);
-    - **what the review rounds hardened about compatibility**.
+    across every task's surface). Whenever the run touched a distributed plugin surface, this
+    pass **also carries the *release-impact completeness* angle** — it re-challenges the run's
+    overall impact verdict (including any `none` justification) and confirms the **§ Ledger
+    mandate** is met before the PR opens. Fold any finding via the loop above.
+15. Push the branch and open **exactly one PR** — never auto-merge. The PR body records a
+    summary, the operator decisions, any veto-flagged engineering calls, the action-needed
+    items, and what the reviews hardened. It **must** include a **Downstream project impact**
+    section (§ Release / artifact impact contract) — required even when the answer is `none` —
+    recording the **impact classification**, the **release surfaces touched** (the five ledger
+    tokens), the **required / recommended / manual user action**, any **operator-veto
+    compatibility calls** (Phase 5), and **what the reviews hardened**. The ledger, not this
+    section, is what doctor/migrate consume (§ Ledger mandate). End with the PR link; the
+    operator merges.
 
-    This section summarizes the contract for humans; the machine-readable
-    release/migration ledger — not this section — is the source of truth doctor/migrate
-    consume. End the turn with the PR link; the operator merges.
-
-**Interrupting a run.** The operator may stop at any time. Committed work stays on the
-branch; report what landed and what's pending, and point at `.tmp/<slug>-plan.md` — a
-later `/evolve` (or manual resume) continues from the tracker. Resumability is
-**local-only**: `.tmp/` is gitignored and never pushed, so a resume needs the same
-working tree (a fresh clone or a deleted worktree loses the tracker).
+**Interrupting a run.** The operator may stop anytime. Committed work stays on the branch;
+report what landed and what's pending, and point at `.tmp/<slug>-plan.md`. On **any** interrupt
+or handoff, also dump the tracker state (remaining tasks + open findings) into the PR body, a PR
+comment, or a GitHub issue if no PR exists yet — so a working-tree change can't strand the run.
+Resumability is **local-only**: `.tmp/` is gitignored and never pushed, so a resume needs the
+same tree. `/evolve` must therefore run in a **persistent local working tree — never a
+cloud/ephemeral worktree agent.**
 
 ## Model/effort heuristic
 
@@ -263,7 +264,8 @@ Route each spawned unit as a `<model>/<effort>` pair.
 | `haiku` | trivial / mechanical / bookkeeping — single-file edits, renames, tracker updates |
 | `sonnet` | standard slices, systematic synthesis, writing, most reviews |
 | `opus` | gnarly / cross-cutting / high-risk work, contract redesigns, and the final verification pass |
-| `fable` | *(premium/per-token — listed, but nothing routes to it by default)* reserved for the highest-judgement units (interactive intake, approach-correctness review, qualitative design calls); run those at `opus` unless the operator asks for `fable` on the run |
+
+> `fable` — premium/per-token; reserved for the highest-judgement units when the operator opts in; otherwise route those to `opus`.
 
 ### Effort
 
@@ -297,8 +299,8 @@ challenges missed downstream compatibility work. It looks for, at least:
 - a **renamed or removed required artifact** marked merely `optional`/`recommended`;
 - **no handling for partially-migrated repos** (projects mid-adoption);
 - **`breaking`/`required` impact not surfaced to the operator** for veto;
-- an **artifact-schema change coupled too casually to plugin semver** (§ Plugin semver ≠
-  artifact schema);
+- an **artifact-schema change coupled too casually to plugin semver** (§ Shipping a
+  schema/version change; release/README.md);
 - **project-facing behavior changed but no release surface listed** (or an unjustified
   `artifact impact: none`).
 
@@ -331,12 +333,10 @@ silently proceed:
   (On the small-change path a careful self-review may substitute for a spawned reviewer —
   see Phase 1.)
 - **Beyond-decision calls are flagged for veto** in the PR, not shipped silently.
-- **Downstream contract is not optional.** If a change alters what a Materia-installed repo
-  should contain, expect, validate, migrate, regenerate, or warn about, then the change
-  must **update or explicitly defer** the release/artifact contract (§ Release / artifact
-  impact contract) in the **same PR** — classification, affected surfaces, and the
-  Downstream project impact section. No harness change is complete with its downstream
-  impact left unclassified.
+- **Downstream contract is not optional.** A non-`none` change touching a detectable
+  distributed surface must land the machine-readable ledger update in the **same PR** and keep
+  **validator §6 green** (§ Ledger mandate); deferral is legal only via a § Ledger mandate
+  exception. No harness change is complete with its downstream impact left unclassified.
 
 ## Scope
 
