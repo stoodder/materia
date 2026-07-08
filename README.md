@@ -53,7 +53,10 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
    you're building, helps you pick a stack, then writes `MATERIA.md`,
    `CLAUDE.md`, and the `docs/` skeleton into place — sections your stack
    doesn't need (no UI → § UI-affecting: none) are marked `none` and the
-   corresponding skills self-gate at runtime instead of being pruned.
+   corresponding skills self-gate at runtime instead of being pruned. Materia
+   reserves `docs/`, `scripts/check-docs.sh`, and `.materia/` in the target repo;
+   it adopts cleanly where those paths are free and layers onto an existing
+   `docs/` rather than replacing it.
 3. `/materia:init` finishes by seeding `docs/specs/_proposed/` with a
    **bootstrap epic**: the scaffolding of your app skeleton, CI, and gates as
    the pipeline's own first specs. Run `/materia:ship-spec` and the harness
@@ -68,6 +71,13 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
    makes "every change lands via PR" true regardless of what an agent types.
    With required approvals enabled, `--auto` autopilot merges wait for your
    approval instead of completing on green — both behaviors are correct.
+
+**Forge support is GitHub-only.** Materia's automated forge operations — opening
+PRs, reading CI, merging — drive **GitHub** through the `gh` CLI (or its GitHub
+MCP twins in a `gh`-less environment). On any other forge (GitLab, Bitbucket,
+Gitea, …) set `MATERIA.md` § Forge to `none`: the spec-to-ship pipeline still
+runs end to end, but the PR/CI/merge steps degrade to the manual `none`
+convention — the skill prints the drafted PR and stops for you to open and merge.
 
 Once initialized, the pipeline runs entirely through slash commands —
 `/materia:ship-spec`, `/materia:fix-bug`, the producers, the maintainers, and

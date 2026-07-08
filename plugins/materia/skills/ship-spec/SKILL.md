@@ -863,9 +863,10 @@ see step 7 first, before any watching):
    `Blocker` instead of guessing.
 5. **Merge.** When every check is green, the PR is mergeable, and no human
    has left review comments on it, merge through the **merge-PR op**
-   (`MATERIA.md` § Version control § Forge) — `--merge` is ship-spec's own
-   chosen `<strategy>` (a merge commit — matches this repo's history), which
-   § Forge routes the tool for but never overrides:
+   (`MATERIA.md` § Version control § Forge), using the `<strategy>` from that
+   section's **Merge strategy** knob when it names a concrete value — no
+   merge-strategy row (or `per-skill default`) → this skill's default `merge`
+   (a merge commit — matches this repo's history):
 
    ```bash
    gh pr merge <n> --merge --delete-branch
