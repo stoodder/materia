@@ -113,12 +113,15 @@ migrate actually read (from the installed plugin cache; the ledger is never copi
 your repo).
 
 **Plugin version ≠ artifact schema.** The plugin's semver changes whenever it ships; the
-**artifact schema** — an integer describing what an installed repo is expected to
-contain — changes only when that installed-project contract actually changes. Multiple
-plugin versions can share one schema, so a plugin upgrade does **not** imply a project
-migration. `0.1.0` is the **pre-tracking baseline** (schema 1): installs from before this
-system existed had no project-state file and no ledger. The **first tracked schema (2)**
-begins with this compatibility system itself.
+**artifact schema** — an integer tracking the installed-project *state contract*
+(`.materia/project.json`) — changes only when that contract actually changes. It is **not**
+a full-conformance certificate: a repo at the latest schema has an up-to-date project-state
+file, not necessarily an up-to-date scaffold. Multiple plugin versions can share one schema,
+so a plugin upgrade does **not** imply a project migration. `0.1.0` is the **pre-tracking
+baseline** (schema 1): installs from before this system existed had no project-state file and
+no ledger — a *range* of evolving dogfood shapes, not one stable contract (see the ledger's
+`0.1.0` reconciliation notes for legacy items an old install may still need by hand). The
+**first tracked schema (2)** begins with this compatibility system itself.
 
 **Project state — new vs existing repos.** New repos get their state for free:
 `/materia:init` materializes `.materia/project.json` (schema 2) from the bundled scaffold,

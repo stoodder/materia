@@ -2,6 +2,7 @@
   "pluginVersion": "0.1.0",
   "artifactSchema": 1,
   "baseline": true,
-  "summary": "Pre-tracking baseline harness. No project-state file and no release/migration ledger; installed projects were untracked.",
+  "summary": "Pre-tracking baseline. Not one stable contract but a RANGE of evolving dogfood harness shapes: no project-state file and no release/migration ledger existed, so installed projects were untracked and drifted freely as the scaffold changed.",
+  "notes": "Schema 1 is a reconciliation floor, not a conformance certificate: an old install adopting tracking (via /materia:migrate --apply) gains only .materia/project.json — it does NOT retrofit later scaffold changes. Known manual reconciliation items an old 0.1.0 install may still need, none of which the init-project-state migration touches: (1) scripts/check-docs.sh — the binding check:docs gate; it REPLACED scripts/check-docs.mjs, and the gate command is now `sh scripts/check-docs.sh`, so copy scaffold/scripts/check-docs.sh in and drop the old .mjs; (2) MATERIA.md § Version control and § Forge sections; (3) the .materia/review-angles/ review-angle library; (4) MATERIA.md § Review angles and § Skill routing sections. Reconcile these by hand against the current scaffold; schema currency alone certifies none of them.",
   "changes": []
 }

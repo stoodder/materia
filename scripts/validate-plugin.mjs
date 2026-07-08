@@ -1047,6 +1047,12 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   const want = (rep, field, expected) =>
     rep[field] === expected ? [] : [`${field}=${JSON.stringify(rep[field])} (want ${JSON.stringify(expected)})`]
   const exitWant = (r, code) => (r.status === code ? [] : [`exit=${r.status} (want ${code})`])
+  // Assert a named check's severity in the emitted report.checks array.
+  const checkOf = (rep, id) => (rep.checks ?? []).find((c) => c.id === id) ?? null
+  const sevWant = (rep, id, sev) => {
+    const c = checkOf(rep, id)
+    return c && c.severity === sev ? [] : [`check ${id} severity=${JSON.stringify(c && c.severity)} (want ${JSON.stringify(sev)})`]
+  }
   const check = (label, target, assertFn) => {
     const { r, report } = runDoctor(target)
     if (!report) {
@@ -1063,12 +1069,13 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     ...want(rep, 'materiaEnabled', true),
     ...want(rep, 'currentSchema', 2),
     ...want(rep, 'suggestedNextCommand', null),
+    ...sevWant(rep, 'check-docs-sh-present', 'ok'), // fixture ships the gate-script stub
     ...exitWant(r, 0),
   ])
 
-  // KNOWN_CHECK_IDS honesty pin (bidirectional). The tracked-current path emits ALL six
-  // checks in one run (present ∧ parsed ∧ known ∧ current), so the ids it emits must
-  // set-EQUAL KNOWN_CHECK_IDS — catching both a MISSING id (list forgets a real check)
+  // KNOWN_CHECK_IDS honesty pin (bidirectional). The tracked-current path emits ALL
+  // KNOWN_CHECK_IDS checks in one run (present ∧ parsed ∧ known ∧ current), so the ids it
+  // emits must set-EQUAL KNOWN_CHECK_IDS — catching both a MISSING id (list forgets a check)
   // and a BOGUS EXTRA id (list invents one the ledger's doctorChecks rule would then
   // wrongly trust). Keeps the exported list honest against what inspect() really emits.
   {
@@ -1080,15 +1087,36 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       fail(`KNOWN_CHECK_IDS drift vs doctor's emitted ids (tracked-current) — missing: [${missing}], extra: [${extra}]`)
   }
 
-  // legacy 0.1.0 fixture -> warnings (untracked-legacy, recommended drift, migrate)
+  // legacy 0.1.0 fixture -> warnings (untracked-legacy, recommended drift, migrate).
+  // It carries the check-docs.sh stub, so that check is `ok`; the sole drift is the
+  // recommended untracked-legacy adoption.
   check('legacy-0.1.0', resolve('tests/fixtures/materia/legacy-0.1.0-project'), (rep, r) => [
     ...want(rep, 'status', 'warnings'),
     ...want(rep, 'materiaEnabled', true),
     ...want(rep, 'currentSchema', 'untracked-legacy'),
     ...want(rep, 'missing', true),
     ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'),
+    ...sevWant(rep, 'check-docs-sh-present', 'ok'), // fixture ships the gate-script stub
     ...(rep.recommendedChanges.some((c) => c.id === '0.2.0-project-state-file')
       ? [] : ['recommendedChanges missing 0.2.0-project-state-file']),
+    ...exitWant(r, 0),
+  ])
+
+  // gnarly legacy fixture -> a REAL early dogfood repo: untracked-legacy AND missing
+  // the check-docs.sh gate. Proves (1) status stays `warnings` — the missing-gate
+  // warning does NOT escalate past the recommended untracked-legacy drift; (2)
+  // check-docs-sh-present is `warning`; (3) the honest caveat that schema currency
+  // certifies ONLY .materia/project.json is surfaced in the human rendering (pinned
+  // via the project-state-present check detail, the stable short pin below).
+  check('gnarly-legacy', resolve('tests/fixtures/materia/gnarly-legacy-project'), (rep, r) => [
+    ...want(rep, 'status', 'warnings'),
+    ...want(rep, 'materiaEnabled', true),
+    ...want(rep, 'currentSchema', 'untracked-legacy'),
+    ...want(rep, 'missing', true),
+    ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'),
+    ...sevWant(rep, 'check-docs-sh-present', 'warning'), // no scripts/check-docs.sh
+    ...((checkOf(rep, 'project-state-present')?.detail ?? '').includes('only .materia/project.json')
+      ? [] : ['honesty caveat "only .materia/project.json" missing from project-state-present detail']),
     ...exitWant(r, 0),
   ])
 
@@ -1121,7 +1149,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   } finally { rmSync(mf, { recursive: true, force: true }) }
 
   if (failures === before)
-    console.log('  ✓ doctor behavior: tracked→healthy · legacy→warnings(untracked-legacy) · non-materia→unknown · malformed→blocked')
+    console.log('  ✓ doctor behavior: tracked→healthy · legacy→warnings(untracked-legacy) · gnarly→warnings(+check-docs.sh warning, honesty caveat) · non-materia→unknown · malformed→blocked')
 }
 
 // ---- 8. /materia:migrate deterministic behavior -----------------------------
