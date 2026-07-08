@@ -1007,7 +1007,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   const baseErrs = lintLedger(ledger([goodChange()]))
   if (baseErrs.length) fail(`lintLedger negative: baseline good ledger did not lint clean — ${JSON.stringify(baseErrs)}`)
 
-  expect('invalid-impact', ledger([{ ...goodChange(), impact: 'sideways' }]), 'impact')
+  expect('invalid-impact', ledger([{ ...goodChange(), impact: 'sideways' }]), 'is not one of')
   expect('missing-latest-target', ledger([goodChange()], { latest: { pluginVersion: '0.2.0', artifactSchema: 2, latestVersionFile: 'versions/9.9.9.json' } }), 'latestVersionFile')
   expect('bad-semver', { latest: { pluginVersion: '0.2.0', artifactSchema: 2, latestVersionFile: 'versions/v2.json' }, versions: [{ stem: 'v2', obj: { pluginVersion: 'v2', artifactSchema: 2, changes: [goodChange()] } }], knownCheckIds: kChecks, knownMigrationIds: kMigs }, 'semver')
   expect('non-monotonic', ledger([goodChange()], { extraVersions: [{ stem: '0.3.0', obj: { pluginVersion: '0.3.0', artifactSchema: 1, changes: [] } }] }), 'non-monotonic')
@@ -1017,7 +1017,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   expect('unresolved-migration', ledger([{ ...goodChange(), migrations: ['no-handler'], manualMigration: undefined }]), 'no implemented handler')
   expect('migratable-no-path', ledger([{ ...goodChange(), migratable: true, migrations: [], manualMigration: undefined }]), 'migratable is true')
   expect('required-nonmigratable-no-manual', ledger([{ ...goodChange(), impact: 'required', migratable: false, migrations: [], manualMigration: undefined }]), 'must include manualMigration')
-  expect('surfaces-empty', ledger([{ ...goodChange(), surfaces: [] }]), 'surfaces')
+  expect('surfaces-empty', ledger([{ ...goodChange(), surfaces: [] }]), 'surfaces must be non-empty')
   expect('dup-change-id', ledger([goodChange(), goodChange()]), 'duplicate change id')
 
   if (failures === before)
@@ -1372,6 +1372,33 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
 
   if (failures === before)
     console.log('  ✓ migrate behavior: plan→no-mutate · apply(legacy)→state(→doctor healthy) · idempotent · never overwrites valid/stale/malformed · tracked-noop · unknown/future/non-materia→no-write')
+}
+
+// ---- 9. doctor/migrate skills + script references ---------------------------
+// If the release ledger exists, its consuming TOOLS must ship with it: the doctor +
+// migrate skills, and every script those skills name. Catches a deleted skill or a
+// renamed script silently shipping while the ledger still advertises drift/migration.
+// Robust, not brittle: resolve each referenced script's BASENAME from the skill text
+// (both the plugins/materia/scripts/… and the ${CLAUDE_PLUGIN_ROOT}/scripts/… runtime
+// forms collapse to the same basename) rather than pinning exact prose.
+{
+  const before = failures
+  const REL = 'plugins/materia/release'
+  if (existsSync(REL)) {
+    for (const s of ['doctor', 'migrate']) {
+      const skill = `plugins/materia/skills/${s}/SKILL.md`
+      if (!existsSync(skill)) { fail(`release ledger exists but ${skill} is missing — the doctor+migrate skills must ship alongside the ledger they consume`); continue }
+      const text = readFileSync(skill, 'utf8')
+      const refs = new Set([...text.matchAll(/scripts\/([\w.-]+\.mjs)/g)].map((m) => m[1]))
+      if (refs.size === 0)
+        fail(`${skill} names no scripts/*.mjs — expected it to reference plugins/materia/scripts/${s}.mjs (the deterministic engine it runs)`)
+      for (const base of refs)
+        if (!existsSync(`plugins/materia/scripts/${base}`))
+          fail(`${skill} references scripts/${base} but plugins/materia/scripts/${base} does not exist`)
+    }
+    if (failures === before)
+      console.log('  ✓ doctor/migrate skills + script refs: skills present; every scripts/*.mjs they name exists')
+  }
 }
 
 if (failures) {
