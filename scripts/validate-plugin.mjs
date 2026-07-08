@@ -29,6 +29,10 @@ import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, re
 import { join, resolve, dirname, relative, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import { spawnSync } from 'node:child_process'
+// Authoritative id lists from the PURE contract lib (no CLI main() runs on import), so §6
+// can resolve a ledger change's doctorChecks/migrations against the real doctor checks +
+// migrate handlers, and §7 can pin KNOWN_CHECK_IDS against what doctor actually emits.
+import { KNOWN_CHECK_IDS, KNOWN_MIGRATION_IDS } from '../plugins/materia/scripts/lib/materia-contract.mjs'
 
 process.chdir(join(import.meta.dirname, '..'))
 let failures = 0
@@ -773,6 +777,105 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
     console.log(`  ✓ review-angle hygiene: no unquoted {{slot}} markers or live repo-relative links in ${files.length} angle-dir files`)
 }
 
+// ---- pure release-ledger linter (shared by §6 and its §6b negative tests) ---
+// Operates on ALREADY-PARSED objects (no fs), so §6 runs it on the real shipped ledger
+// AND §6b runs it on synthetic bad ledgers to prove each rule fail-closes — the coverage
+// a validator that only ever sees good data can't give. Inputs:
+//   latest    parsed latest.json (or null)
+//   versions  [{ stem, obj }] — stem = filename without .json (for the semver + monotonic
+//             checks that need the version string); obj = the parsed version file
+//   knownCheckIds / knownMigrationIds — the authoritative id lists exported by the contract
+//             lib, so a ledger doctorChecks/migrations id naming no real check/handler is
+//             caught (unless the change ships a manualMigration plan).
+// Returns string[] of human-readable errors (empty === clean). The fs-coupled checks
+// (pluginVersion == filename stem, latestVersionFile resolves on disk) stay in §6.
+const SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+const semverCore = (v) => { const m = /^(\d+)\.(\d+)\.(\d+)/.exec(String(v)); return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null }
+const semverCmp = (a, b) => { const x = semverCore(a), y = semverCore(b); for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0 }
+const LEDGER_IMPACTS = ['none', 'doctor-only', 'optional', 'recommended', 'required', 'breaking']
+const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
+  const errs = []
+  const push = (m) => errs.push(m)
+  const isInt = (n) => typeof n === 'number' && Number.isInteger(n)
+  const isStr = (s) => typeof s === 'string' && s.length > 0
+  const kChecks = new Set(knownCheckIds)
+  const kMigs = new Set(knownMigrationIds)
+
+  // latest-level: semver, and the pointed version file is one we actually have.
+  if (latest && latest.pluginVersion !== undefined && !SEMVER_RE.test(String(latest.pluginVersion)))
+    push(`latest.json: pluginVersion "${latest.pluginVersion}" is not valid semver (X.Y.Z)`)
+  if (latest && isStr(latest.latestVersionFile) &&
+      !versions.some((v) => `versions/${v.stem}.json` === latest.latestVersionFile))
+    push(`latest.json: latestVersionFile "${latest.latestVersionFile}" names no known version file`)
+
+  for (const { stem, obj } of versions) {
+    const rel = `versions/${stem}.json`
+    if (isStr(obj.pluginVersion) && !SEMVER_RE.test(obj.pluginVersion))
+      push(`${rel}: pluginVersion "${obj.pluginVersion}" is not valid semver (X.Y.Z)`)
+    const changes = Array.isArray(obj.changes) ? obj.changes : []
+    const seenIds = new Set()
+    for (const [i, ch] of changes.entries()) {
+      const where = `${rel} changes[${i}]`
+      if (ch === null || typeof ch !== 'object' || Array.isArray(ch)) { push(`${where}: change must be an object`); continue }
+      if (!isStr(ch.id)) push(`${where}: id must be a non-empty string`)
+      else if (seenIds.has(ch.id)) push(`${where}: duplicate change id "${ch.id}"`)
+      else seenIds.add(ch.id)
+      if (!isStr(ch.summary)) push(`${where}: summary must be a non-empty string`)
+      if (!LEDGER_IMPACTS.includes(ch.impact)) push(`${where}: impact "${ch.impact}" is not one of ${LEDGER_IMPACTS.join(', ')}`)
+      if (!Array.isArray(ch.surfaces) || !ch.surfaces.every(isStr))
+        push(`${where}: surfaces must be an array of non-empty strings`)
+      else if (ch.impact !== 'none' && ch.surfaces.length === 0)
+        push(`${where}: surfaces must be non-empty when impact is not "none"`)
+      if (typeof ch.detectable !== 'boolean') push(`${where}: detectable must be a boolean`)
+      if (typeof ch.migratable !== 'boolean') push(`${where}: migratable must be a boolean`)
+      // doctorChecks / migrations: arrays of unique non-empty strings when present.
+      for (const key of ['doctorChecks', 'migrations']) {
+        if (ch[key] === undefined) continue
+        if (!Array.isArray(ch[key]) || !ch[key].every(isStr)) { push(`${where}: ${key} must be an array of non-empty strings`); continue }
+        if (new Set(ch[key]).size !== ch[key].length) push(`${where}: ${key} has duplicate ids`)
+      }
+      if (ch.manualMigration !== undefined && !isStr(ch.manualMigration))
+        push(`${where}: manualMigration, when present, must be a non-empty string`)
+      if (ch.detectionNotes !== undefined && !isStr(ch.detectionNotes))
+        push(`${where}: detectionNotes, when present, must be a non-empty string`)
+      // detectable ⇒ a doctor check declares the drift; not-detectable ⇒ say why not.
+      if (ch.detectable === true && !(Array.isArray(ch.doctorChecks) && ch.doctorChecks.length))
+        push(`${where}: detectable is true but no doctorChecks declare how the drift is detected`)
+      if (ch.detectable === false && !isStr(ch.detectionNotes))
+        push(`${where}: detectable is false but no detectionNotes explain why it cannot be detected`)
+      // doctorChecks resolve to real /materia:doctor checks.
+      if (Array.isArray(ch.doctorChecks))
+        for (const id of ch.doctorChecks)
+          if (isStr(id) && !kChecks.has(id))
+            push(`${where}: doctorChecks id "${id}" is not a known /materia:doctor check`)
+      // migrations resolve to an implemented handler OR the change ships a manual plan.
+      if (Array.isArray(ch.migrations))
+        for (const id of ch.migrations)
+          if (isStr(id) && !kMigs.has(id) && !isStr(ch.manualMigration))
+            push(`${where}: migrations id "${id}" has no implemented handler and the change declares no manualMigration plan`)
+      // migratable ⇒ there is an adoption path (automated ids or a manual plan).
+      if (ch.migratable === true && !(Array.isArray(ch.migrations) && ch.migrations.length) && !isStr(ch.manualMigration))
+        push(`${where}: migratable is true but declares neither migrations nor a manualMigration plan`)
+      // non-migratable required/breaking ⇒ manual instructions are mandatory.
+      if ((ch.impact === 'required' || ch.impact === 'breaking') && ch.migratable === false && !isStr(ch.manualMigration))
+        push(`${where}: impact "${ch.impact}" is not migratable and must include manualMigration instructions`)
+    }
+  }
+
+  // artifactSchema monotonic non-decreasing across versions ordered by REAL semver (not
+  // lexical — 0.10.0 must sort after 0.2.0): multiple plugin versions may share a schema,
+  // but it must never go backward. Encodes "artifact schema ≠ plugin semver, but
+  // comparable + monotonic".
+  const ordered = versions
+    .filter((v) => semverCore(v.obj.pluginVersion) && isInt(v.obj.artifactSchema))
+    .sort((a, b) => semverCmp(a.obj.pluginVersion, b.obj.pluginVersion))
+  for (let i = 1; i < ordered.length; i++)
+    if (ordered[i].obj.artifactSchema < ordered[i - 1].obj.artifactSchema)
+      push(`release: artifactSchema is non-monotonic — ${ordered[i - 1].obj.pluginVersion} has ${ordered[i - 1].obj.artifactSchema} but later ${ordered[i].obj.pluginVersion} has ${ordered[i].obj.artifactSchema} (must be non-decreasing by plugin semver)`)
+
+  return errs
+}
+
 // ---- 6. release ledger + project-state sanity -------------------------------
 // Basic JSON parse + coherence sanity for the release/migration ledger
 // (plugins/materia/release/) and the scaffold's project-state artifact. This is
@@ -789,7 +892,6 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
 {
   const before = failures
   const REL = 'plugins/materia/release'
-  const IMPACTS = ['none', 'doctor-only', 'optional', 'recommended', 'required', 'breaking']
   const isInt = (n) => typeof n === 'number' && Number.isInteger(n)
   const isStr = (s) => typeof s === 'string' && s.length > 0
   const parseJson = (f) => {
@@ -815,49 +917,33 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
       fail(`release/latest.json latestVersionFile "${latest.latestVersionFile}" does not resolve under ${REL}/`)
   }
 
-  // Every versions/*.json: shape + per-change validity; collect for coherence.
+  // Every versions/*.json: parse + fs-coupled top-level shape; collect for lint + coherence.
   const versionsDir = join(REL, 'versions')
   const versionFiles = existsSync(versionsDir)
     ? readdirSync(versionsDir).filter((f) => f.endsWith('.json')).sort()
     : (fail(`${versionsDir} does not exist`), [])
   const parsedVersions = new Map() // "versions/x.json" -> parsed object
+  const versionsForLint = []       // { stem, obj } handed to the pure ledger linter
   for (const vf of versionFiles) {
     const rel = `versions/${vf}`
     const obj = parseJson(join(REL, rel))
     if (!obj) continue
     parsedVersions.set(rel, obj)
     const stem = vf.replace(/\.json$/, '')
+    versionsForLint.push({ stem, obj })
+    // fs-coupled top-level shape stays here (needs the filename stem). The per-change
+    // semantics, the version-string semver, id-resolution, and monotonic-schema rules
+    // live in lintLedger (pure) so §6b can drive them with synthetic bad input.
     if (!isStr(obj.pluginVersion)) fail(`${rel}: pluginVersion must be a non-empty string`)
     else if (obj.pluginVersion !== stem) fail(`${rel}: pluginVersion "${obj.pluginVersion}" must equal the filename stem "${stem}"`)
     if (!isInt(obj.artifactSchema)) fail(`${rel}: artifactSchema must be an integer`)
-    if (!Array.isArray(obj.changes)) { fail(`${rel}: changes must be an array`); continue }
-    const seenIds = new Set()
-    for (const [i, ch] of obj.changes.entries()) {
-      const where = `${rel} changes[${i}]`
-      if (ch === null || typeof ch !== 'object' || Array.isArray(ch)) { fail(`${where}: change must be an object`); continue }
-      if (!isStr(ch.id)) fail(`${where}: id must be a non-empty string`)
-      else if (seenIds.has(ch.id)) fail(`${where}: duplicate change id "${ch.id}"`)
-      else seenIds.add(ch.id)
-      if (!isStr(ch.summary)) fail(`${where}: summary must be a non-empty string`)
-      if (!IMPACTS.includes(ch.impact)) fail(`${where}: impact "${ch.impact}" is not one of ${IMPACTS.join(', ')}`)
-      if (!Array.isArray(ch.surfaces) || !ch.surfaces.every(isStr))
-        fail(`${where}: surfaces must be an array of non-empty strings`)
-      else if (ch.impact !== 'none' && ch.surfaces.length === 0)
-        fail(`${where}: surfaces must be non-empty when impact is not "none"`)
-      if (typeof ch.detectable !== 'boolean') fail(`${where}: detectable must be a boolean`)
-      if (typeof ch.migratable !== 'boolean') fail(`${where}: migratable must be a boolean`)
-      // doctorChecks / migrations are OPTIONAL; when present, arrays of unique
-      // non-empty strings. SHAPE ONLY here — the referenced checks/scripts (doctor
-      // + migrate) exist, but are exercised behaviorally in §7/§8, not resolved here.
-      for (const key of ['doctorChecks', 'migrations']) {
-        if (ch[key] === undefined) continue
-        if (!Array.isArray(ch[key]) || !ch[key].every(isStr)) { fail(`${where}: ${key} must be an array of non-empty strings`); continue }
-        if (new Set(ch[key]).size !== ch[key].length) fail(`${where}: ${key} has duplicate ids`)
-      }
-      if (ch.manualMigration !== undefined && !isStr(ch.manualMigration))
-        fail(`${where}: manualMigration, when present, must be a non-empty string`)
-    }
+    if (!Array.isArray(obj.changes)) fail(`${rel}: changes must be an array`)
   }
+  // Pure ledger-data lint on the REAL shipped ledger: semver, monotonic schema, per-change
+  // semantics, and doctorChecks/migrations id resolution against the authoritative lists.
+  // §6b proves the same function REJECTS bad input.
+  for (const e of lintLedger({ latest, versions: versionsForLint, knownCheckIds: KNOWN_CHECK_IDS, knownMigrationIds: KNOWN_MIGRATION_IDS }))
+    fail(e)
 
   // Scaffold project-state artifact shape.
   const scaffoldState = parseJson('plugins/materia/scaffold/.materia/project.json')
@@ -890,6 +976,52 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
 
   if (failures === before)
     console.log(`  ✓ release ledger + project-state sanity: ${versionFiles.length} version file(s); latest↔versions↔scaffold coherent; fixtures pinned`)
+}
+
+// ---- 6b. lintLedger negative coverage ---------------------------------------
+// §6 asserts the SHIPPED ledger lints clean; here we prove each lintLedger rule
+// FAIL-CLOSES on crafted bad input — the coverage a validator that only ever sees good
+// data can't give. Pure + in-memory (no fixtures on disk): a `goodChange` builder yields
+// a valid change, each case mutates ONE thing and asserts the matching error surfaces.
+{
+  const before = failures
+  const kChecks = KNOWN_CHECK_IDS
+  const kMigs = KNOWN_MIGRATION_IDS
+  const goodChange = () => ({
+    id: 'x-change', summary: 'a change', impact: 'recommended',
+    surfaces: ['scaffold'], detectable: true, migratable: true,
+    doctorChecks: [kChecks[0]], migrations: [kMigs[0]], manualMigration: 'adopt by hand',
+  })
+  // A one-version ledger whose sole change is `ch`, with a latest that points at it.
+  const ledger = (changes, over = {}) => ({
+    latest: over.latest ?? { pluginVersion: '0.2.0', artifactSchema: 2, latestVersionFile: 'versions/0.2.0.json' },
+    versions: [{ stem: '0.2.0', obj: { pluginVersion: '0.2.0', artifactSchema: 2, changes } }, ...(over.extraVersions ?? [])],
+    knownCheckIds: kChecks, knownMigrationIds: kMigs,
+  })
+  const expect = (label, input, needle) => {
+    const errs = lintLedger(input)
+    if (!errs.some((e) => e.includes(needle)))
+      fail(`lintLedger negative [${label}]: expected an error containing "${needle}"; got ${JSON.stringify(errs)}`)
+  }
+  // Sanity: the baseline good ledger lints clean, else the negatives prove nothing.
+  const baseErrs = lintLedger(ledger([goodChange()]))
+  if (baseErrs.length) fail(`lintLedger negative: baseline good ledger did not lint clean — ${JSON.stringify(baseErrs)}`)
+
+  expect('invalid-impact', ledger([{ ...goodChange(), impact: 'sideways' }]), 'is not one of')
+  expect('missing-latest-target', ledger([goodChange()], { latest: { pluginVersion: '0.2.0', artifactSchema: 2, latestVersionFile: 'versions/9.9.9.json' } }), 'latestVersionFile')
+  expect('bad-semver', { latest: { pluginVersion: '0.2.0', artifactSchema: 2, latestVersionFile: 'versions/v2.json' }, versions: [{ stem: 'v2', obj: { pluginVersion: 'v2', artifactSchema: 2, changes: [goodChange()] } }], knownCheckIds: kChecks, knownMigrationIds: kMigs }, 'semver')
+  expect('non-monotonic', ledger([goodChange()], { extraVersions: [{ stem: '0.3.0', obj: { pluginVersion: '0.3.0', artifactSchema: 1, changes: [] } }] }), 'non-monotonic')
+  expect('detectable-no-check', ledger([{ ...goodChange(), detectable: true, doctorChecks: [] }]), 'doctorChecks')
+  expect('undetectable-no-notes', ledger([{ ...goodChange(), detectable: false, doctorChecks: undefined }]), 'detectionNotes')
+  expect('unknown-doctor-check', ledger([{ ...goodChange(), doctorChecks: ['no-such-check'] }]), 'not a known')
+  expect('unresolved-migration', ledger([{ ...goodChange(), migrations: ['no-handler'], manualMigration: undefined }]), 'no implemented handler')
+  expect('migratable-no-path', ledger([{ ...goodChange(), migratable: true, migrations: [], manualMigration: undefined }]), 'migratable is true')
+  expect('required-nonmigratable-no-manual', ledger([{ ...goodChange(), impact: 'required', migratable: false, migrations: [], manualMigration: undefined }]), 'must include manualMigration')
+  expect('surfaces-empty', ledger([{ ...goodChange(), surfaces: [] }]), 'surfaces must be non-empty')
+  expect('dup-change-id', ledger([goodChange(), goodChange()]), 'duplicate change id')
+
+  if (failures === before)
+    console.log('  ✓ lintLedger negatives: 12 rule violations each fail-close (baseline good ledger lints clean)')
 }
 
 // ---- 7. /materia:doctor deterministic behavior ------------------------------
@@ -933,6 +1065,20 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
     ...want(rep, 'suggestedNextCommand', null),
     ...exitWant(r, 0),
   ])
+
+  // KNOWN_CHECK_IDS honesty pin (bidirectional). The tracked-current path emits ALL six
+  // checks in one run (present ∧ parsed ∧ known ∧ current), so the ids it emits must
+  // set-EQUAL KNOWN_CHECK_IDS — catching both a MISSING id (list forgets a real check)
+  // and a BOGUS EXTRA id (list invents one the ledger's doctorChecks rule would then
+  // wrongly trust). Keeps the exported list honest against what inspect() really emits.
+  {
+    const { report } = runDoctor(resolve('tests/fixtures/materia/tracked-current-project'))
+    const emitted = new Set((report?.checks ?? []).map((c) => c.id))
+    const missing = KNOWN_CHECK_IDS.filter((id) => !emitted.has(id))
+    const extra = [...emitted].filter((id) => !KNOWN_CHECK_IDS.includes(id))
+    if (missing.length || extra.length)
+      fail(`KNOWN_CHECK_IDS drift vs doctor's emitted ids (tracked-current) — missing: [${missing}], extra: [${extra}]`)
+  }
 
   // legacy 0.1.0 fixture -> warnings (untracked-legacy, recommended drift, migrate)
   check('legacy-0.1.0', resolve('tests/fixtures/materia/legacy-0.1.0-project'), (rep, r) => [
@@ -1226,6 +1372,33 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
 
   if (failures === before)
     console.log('  ✓ migrate behavior: plan→no-mutate · apply(legacy)→state(→doctor healthy) · idempotent · never overwrites valid/stale/malformed · tracked-noop · unknown/future/non-materia→no-write')
+}
+
+// ---- 9. doctor/migrate skills + script references ---------------------------
+// If the release ledger exists, its consuming TOOLS must ship with it: the doctor +
+// migrate skills, and every script those skills name. Catches a deleted skill or a
+// renamed script silently shipping while the ledger still advertises drift/migration.
+// Robust, not brittle: resolve each referenced script's BASENAME from the skill text
+// (both the plugins/materia/scripts/… and the ${CLAUDE_PLUGIN_ROOT}/scripts/… runtime
+// forms collapse to the same basename) rather than pinning exact prose.
+{
+  const before = failures
+  const REL = 'plugins/materia/release'
+  if (existsSync(REL)) {
+    for (const s of ['doctor', 'migrate']) {
+      const skill = `plugins/materia/skills/${s}/SKILL.md`
+      if (!existsSync(skill)) { fail(`release ledger exists but ${skill} is missing — the doctor+migrate skills must ship alongside the ledger they consume`); continue }
+      const text = readFileSync(skill, 'utf8')
+      const refs = new Set([...text.matchAll(/scripts\/([\w.-]+\.mjs)/g)].map((m) => m[1]))
+      if (refs.size === 0)
+        fail(`${skill} names no scripts/*.mjs — expected it to reference plugins/materia/scripts/${s}.mjs (the deterministic engine it runs)`)
+      for (const base of refs)
+        if (!existsSync(`plugins/materia/scripts/${base}`))
+          fail(`${skill} references scripts/${base} but plugins/materia/scripts/${base} does not exist`)
+    }
+    if (failures === before)
+      console.log('  ✓ doctor/migrate skills + script refs: skills present; every scripts/*.mjs they name exists')
+  }
 }
 
 if (failures) {
