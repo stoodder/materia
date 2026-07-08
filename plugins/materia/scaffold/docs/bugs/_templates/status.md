@@ -11,7 +11,7 @@
 <!-- Filled by `/materia:fix-bug` at report selection (the run's entry point).
      `/materia:fix-bug` reads `Bug-report:` to build the `finalize` spawn prompt, which
      instructs `finalize` to `git rm -r` the report folder from `docs/bugs/_reports/` in
-     the same PR (finalize's own step 4' only recognizes the spec-pipeline
+     the same PR (finalize's own step 3' only recognizes the spec-pipeline
      `## Provenance` block, so the bug-run dequeue is orchestrator-driven).
      Omitting this block or setting any field to `—` means "no report to
      dequeue" (ad-hoc run). -->

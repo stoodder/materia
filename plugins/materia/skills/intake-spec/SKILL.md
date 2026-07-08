@@ -33,9 +33,11 @@ acting on them wastes context.
 
 ## Outputs
 
-- `docs/specs/<dated-slug>/spec.md` and `docs/specs/<dated-slug>/STATUS.md` (from
-  `_templates/`), the spec registered in `docs/specs/README.md` — committed and
-  pushed.
+- `docs/specs/<dated-slug>/spec.md` and — standalone, or on the orchestrator
+  lane's ad-hoc path (creation only) — `docs/specs/<dated-slug>/STATUS.md`
+  (from `_templates/`), the spec registered in `docs/specs/README.md` —
+  committed and pushed. On the proposal path under an orchestrator, folder and
+  `STATUS.md` already exist and intake never touches `STATUS.md` (step 7).
 
 ## The `<dated-slug>` folder name
 
@@ -247,7 +249,8 @@ standalone runs apply it on first use.
 - `spec.md` exists with concrete, testable acceptance criteria.
 - No blocking ambiguity remains (everything that affects design/architecture is
   resolved or explicitly deferred with the human's agreement).
-- The spec is registered, `STATUS.md` updated, and the work committed + pushed.
+- The spec is registered and the work committed + pushed (`STATUS.md` updated
+  only where step 7 allows: standalone tick, or ad-hoc creation).
 
 ## Standalone use
 
