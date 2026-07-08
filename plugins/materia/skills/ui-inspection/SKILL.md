@@ -1,12 +1,13 @@
 ---
 name: ui-inspection
-description: Run on demand to inspect the whole running app for UI/UX quality and file one consolidated checklist bug report into docs/bugs/_reports/. Provisions the Eyes toolchain on-demand per MATERIA.md § Eyes, drives every page in docs/surface-map.md § Pages at the canonical viewport, captures a screenshot + DOM snapshot per surface, judges each against the repo's visual standards docs, and writes one bug report with source ui-inspection. Observe-and-report only — never edits product code, never fixes anything, never opens a ship-spec or fix-bug run. Reach for it before a polish pass when you want a prioritized punch-list of UI/UX cleanups.
+description: Run on demand to inspect the whole running app for UI/UX quality and file one consolidated checklist bug report into docs/bugs/_reports/. Provisions the Eyes toolchain on-demand per MATERIA.md § Eyes, drives every surface in docs/surface-map.md (§ Pages for a web app; § Commands for a CLI/TUI) at the canonical viewport, takes a capture + structural snapshot per surface in the formats § Eyes defines, judges each against the repo's visual standards docs, and writes one bug report with source ui-inspection. Observe-and-report only — never edits product code, never fixes anything, never opens a ship-spec or fix-bug run. Reach for it before a polish pass when you want a prioritized punch-list of UI/UX cleanups.
 ---
 
 # ui-inspection — drive the whole app, file one UI/UX punch-list
 
 A single-shot **producer** skill. It drives the live local app across every
-surface in `docs/surface-map.md` § Pages at the canonical viewport
+surface in `docs/surface-map.md` (§ Pages for a web app; § Commands for a
+CLI/TUI) at the canonical viewport
 (`MATERIA.md` § Eyes), judges each page against the repo's visual standards
 docs, and files **one** consolidated, checklist-style bug report into the bug
 queue at `docs/bugs/_reports/` (`docs/bugs/_reports/README.md`). It
@@ -16,7 +17,7 @@ in-pipeline `ui` review angle scoped to a single feature diff and feeds the
 remediation loop, whereas `ui-inspection` sweeps the **whole running app**
 breadth-first and feeds the bug queue. It reuses `ui-review`'s Eyes machinery
 (the provisioning recipe, service env block, canonical viewport, and the
-screenshot + DOM-snapshot technique — all from `MATERIA.md` § Eyes) but
+capture + structural-snapshot technique — all from `MATERIA.md` § Eyes) but
 applies the same visual rubric across every surface rather than one diff. It
 is observe-only: its sole side effects are the report file it writes and the
 producer-bookkeeping screenshots it captures.
@@ -33,8 +34,8 @@ exits below (Phase 0 abort, instability degrade) are its zero-work paths.
   it is **not** already running, Phase 0 **starts it** (per the § Run it
   recipe, falling back to the § Eyes provisioning recipe) rather than
   aborting; the operator no longer has to bring it up by hand first.
-- **`docs/surface-map.md` § Pages** — the
-  inventory of routes to visit, in the order listed there.
+- **`docs/surface-map.md`** (§ Pages for a web app; § Commands for a CLI/TUI) —
+  the inventory of surfaces to visit, in the order listed there.
 - **The repo's visual standards docs** (the visual-language / UI-components
   standards under `docs/standards/`) — the judgment basis for findings.
 - **The queue contract:
@@ -49,8 +50,10 @@ There are no prior-stage artifacts — this is a producer, not a pipeline stage.
 - **Exactly one bug-report folder** in `docs/bugs/_reports/`, at
   `<dated-slug>/report.md` per the queue contract, with frontmatter
   `source: ui-inspection`. One report per run, with a fresh `id`.
-- **Captures co-located in the report folder** as `<surface-slug>.{png,html}`,
-  one pair per surface. The report's `source_refs` points at the report folder
+- **Captures co-located in the report folder** as `<surface-slug>.<capture-ext>`
+  + `<surface-slug>.<snapshot-ext>` (the formats `MATERIA.md` § Eyes defines; a
+  browser toolchain writes a PNG capture + an HTML snapshot), one pair per
+  surface. The report's `source_refs` points at the report folder
   when any captures exist.
 
 ## Procedure
@@ -96,7 +99,8 @@ outermost guard — nothing upstream has already filtered by UI.)
      "App not reachable. Start it with the § Run it recipe, then re-run." —
      and exit cleanly **without writing any file** (the original safe-exit
      behaviour, preserved as the final fallback).
-3. Read `docs/surface-map.md` § Pages and announce the run plan: "App reachable.
+3. Read `docs/surface-map.md` (§ Pages for a web app; § Commands for a CLI/TUI)
+   and announce the run plan: "App reachable.
    N surfaces to inspect at the canonical viewport."
 4. **Interactive abort prompt.** Present a single yes/no checkpoint before
    provisioning begins: **"Ready to inspect N surfaces? (y/n)"**. This is cheap
@@ -117,14 +121,14 @@ outermost guard — nothing upstream has already filtered by UI.)
    always the first action of this phase, never skipped even if the
    environment looks already provisioned (the recipe must be idempotent).
 2. **Export the service environment variables the recipe names** before
-   driving the browser, in the same command as the drive (shell state does not
+   driving the app (the § Eyes drive), in the same command as the drive (shell state does not
    persist between tool calls).
 3. **Authenticate** using the dev credentials from `MATERIA.md` § Run it to
    reach any authenticated surfaces. (If the operator has changed the
    credentials they pass them; the § Run it values are the default. Skip when
    the app has no auth.)
 4. **Provisioning failure / instability degrade path.** If provisioning fails
-   or the browser drive exits with a signature `MATERIA.md` § Eyes lists as
+   or the § Eyes drive exits with a signature `MATERIA.md` § Eyes lists as
    known environment instability (not a product bug), follow the
    degrade path: print "Eyes provisioning failed (known instability).
    Recording a note and stopping.", **write a stub report** (`source:
@@ -147,13 +151,15 @@ outermost guard — nothing upstream has already filtered by UI.)
    used in Phase 4 (formerly step 1 of Phase 4; it now lives here so captures
    can reference it immediately).
 
-1. Visit each page from `docs/surface-map.md` § Pages **in surface-map order**,
-   at the **canonical viewport** (`MATERIA.md` § Eyes).
-2. For each surface, capture a **screenshot and a DOM snapshot** (the same
-   "capture so judgment is grounded in observed output, not inference" technique
-   `ui-review` uses) into the report folder as
-   `docs/bugs/_reports/<dated-slug>/<surface-slug>.png` and
-   `docs/bugs/_reports/<dated-slug>/<surface-slug>.html`.
+1. Visit each surface from `docs/surface-map.md` (§ Pages for a web app;
+   § Commands for a CLI/TUI) **in surface-map order**, at the **canonical
+   viewport** (`MATERIA.md` § Eyes).
+2. For each surface, take a **capture and a structural snapshot**, in the formats
+   `MATERIA.md` § Eyes defines (the same "capture so judgment is grounded in
+   observed output, not inference" technique `ui-review` uses), into the report
+   folder as `docs/bugs/_reports/<dated-slug>/<surface-slug>.<capture-ext>` and
+   `docs/bugs/_reports/<dated-slug>/<surface-slug>.<snapshot-ext>` (for a browser
+   toolchain, a PNG capture + an HTML snapshot).
 3. **Per-surface error recovery.** If a surface returns an HTTP error, fails to
    render, or its capture fails, record a note under the report's
    `## Preconditions / data setup` section ("Surface `<route>` returned an
@@ -246,7 +252,7 @@ inspection-specific sections are filled as follows:
 
 **The `## Evidence` findings checklist.** Each finding is one list item carrying
 the **surface**, the **observed issue**, the **standard violated**, and an
-**optional screenshot reference**:
+**optional capture reference**:
 
 ```markdown
 ## Evidence
@@ -254,7 +260,7 @@ the **surface**, the **observed issue**, the **standard violated**, and an
 <!-- Consolidated findings checklist from ui-inspection run -->
 - [ ] **[<surface>]** <observed issue>
       Standard violated: <token or rule name from the repo's visual standards docs>
-      Screenshot: <surface-slug>.png (if captured)
+      Capture: <surface-slug>.<capture-ext> (if captured)
 ```
 
 **The drop note.** When the finding cap is reached, append this note at the end
@@ -284,7 +290,8 @@ This skill is **observe-and-report only**. It does **NOT**:
 - **Edit product files.** It never touches product source, schema, styles, or
   any other product code or UI. Its **only writes** are the one report folder
   in `docs/bugs/_reports/<dated-slug>/` — the `report.md` file and its
-  co-located captures (`<surface-slug>.{png,html}`).
+  co-located captures (`<surface-slug>.<capture-ext>` +
+  `<surface-slug>.<snapshot-ext>`, formats per `MATERIA.md` § Eyes).
 - **Fix anything.** It records UI/UX violations; it never remedies them.
 - **Open a `ship-spec` or `fix-bug` run**, or trigger any downstream pipeline
   stage. Triage of the filed report (and any fix) is the operator's call via
@@ -325,8 +332,9 @@ This skill is **observe-and-report only**. It does **NOT**:
   contract.
 - **Conform to the queue contract** — valid frontmatter, all 13 H2 sections in
   order, no frontmatter metadata duplicated in the body, report at
-  `<dated-slug>/report.md`, captures co-located as `<surface-slug>.{png,html}`
-  in the same folder.
+  `<dated-slug>/report.md`, captures co-located as `<surface-slug>.<capture-ext>`
+  + `<surface-slug>.<snapshot-ext>` (formats per `MATERIA.md` § Eyes) in the same
+  folder.
 
 ## Done when
 
@@ -336,7 +344,8 @@ This skill is **observe-and-report only**. It does **NOT**:
   the abort gate honored (interactive) or auto-proceeded (Auto Mode).
 - The Eyes toolchain was provisioned (or the instability / failure degrade
   path was taken and a stub report written).
-- Each surface in `docs/surface-map.md` § Pages was visited and captured (or its
+- Each surface in `docs/surface-map.md` (§ Pages for a web app; § Commands for a
+  CLI/TUI) was visited and captured (or its
   error recorded), and findings were judged and capped.
 - Exactly one conformant bug report was written to `docs/bugs/_reports/` with
   `source: ui-inspection`, and — on any run that completes past the Phase 0 gate

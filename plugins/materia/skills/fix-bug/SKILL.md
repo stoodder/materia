@@ -195,8 +195,10 @@ spawn, resolve the tier first and pass it as the `model` override — see
 § Tier routing.
 
 1. **reproduce-bug** (`reproduce-bug`) → `reproduction.md` + failing test(s).
-   **RED gate:** the orchestrator MUST verify `STATUS.md` stage 1 is ticked
-   before advancing to stage 2 (see § RED gate).
+   **RED gate:** the orchestrator independently verifies the committed RED
+   artifacts (`reproduction.md` + the failing test in the pushed commit, re-run
+   to confirm RED where a runnable command exists) and is itself the one that
+   ticks stage 1 before advancing to stage 2 (see § RED gate).
 
 2. **bug-analysis** (`bug-analysis`) → `bug-analysis.md`. Spawned only after
    the RED gate passes.
@@ -238,22 +240,37 @@ commit + push.
 
 ## RED gate
 
-**The orchestrator MUST verify `STATUS.md` stage 1 is ticked (checked) before
-spawning `bug-analysis`.** The check is machine-readable from the `STATUS.md`
-field — specifically, the stage-1 checkbox line (`- [x] 1. reproduce-bug …`
-must be `[x]`, not `[ ]`). Do not rely on prose or subagent return values
-alone; read the committed `STATUS.md` from the remote.
+**The orchestrator independently verifies the RED, then ticks stage 1 itself
+before spawning `bug-analysis`** — it never trusts a subagent's self-tick or
+bare return value. `reproduce-bug` commits + pushes its own artifacts
+(`reproduction.md` + the failing test) but, in this lane, does **not** touch
+`STATUS.md`. The gate is machine-checkable from those committed artifacts:
 
-**On `Blocker:`:** if `reproduce-bug` wrote `Blocker:` to `STATUS.md` instead
-of ticking stage 1, stop. Surface the blocker text to the human and wait for
-the operator to clear it (corrected repro steps, re-invocation). Do not
-advance to `bug-analysis`.
+1. **Confirm the artifacts are in the pushed commit** `reproduce-bug` returned:
+   `reproduction.md` present and the failing test file present (read the
+   committed state from the remote — not local working-tree, not prose, not the
+   subagent's summary).
+2. **Re-run the failing test to confirm RED** wherever `MATERIA.md` § Gate
+   provides a runnable test command (scope it to the new test file). Where the
+   test cannot run in this environment, the committed RED-evidence block in
+   `reproduction.md` (verbatim failing output + command + SHA) is the
+   **designated verified artifact** in its place.
+3. On success, **the orchestrator ticks stage 1 itself** (`- [x] 1.
+   reproduce-bug …`), sets `Next: bug-analysis`, and commits + pushes the
+   `STATUS.md` update.
 
-Two and only two `Blocker:` exits from `reproduce-bug`:
+**On `Blocker:`:** if `reproduce-bug` returns a blocker instead of confirmed
+RED artifacts, **the orchestrator writes the `Blocker:` line to `STATUS.md`**
+and stops. Surface the blocker text to the human and wait for the operator to
+clear it (corrected repro steps, re-invocation). Do not advance to
+`bug-analysis`.
+
+Two and only two `Blocker:` returns from `reproduce-bug`:
 - `Blocker: cannot reproduce — <reason>`
 - `Blocker: test passes on pre-fix code — bug may already be fixed or repro steps insufficient`
 
-Either means stage 1 is not ticked and the pipeline must pause.
+Either means the RED is unconfirmed, stage 1 stays unticked, and the pipeline
+must pause.
 
 ## plan-tasks input substitution
 
@@ -266,24 +283,24 @@ orchestrator parameterises the path in the spawn prompt.
 > Your decomposition source ("architecture.md" in this skill's text) is
 > `docs/bugs/<dated-slug>/bug-analysis.md`. Read it wherever the procedure says
 > "architecture.md". Also read `docs/bugs/<dated-slug>/reproduction.md` (for the
-> TDD exit condition) and the bug report body. Write `tasks.md`,
-> `STATUS.md`, and commit under `docs/bugs/<dated-slug>/`. `bug-analysis.md`'s
-> **Affected files** list is the "Affected existing resources" set for your
-> § step-3 reconciliation and pre-task grep validation.
-> **Stage-number override:** your procedure says "tick stage 5 in STATUS.md",
-> but in this bug-run STATUS.md `plan-tasks` is **stage 3** (stage 4 is
-> `implement`). Tick **stage 3**, not stage 5, and set `Next: T1`.
+> TDD exit condition) and the bug report body. Write `tasks.md` under
+> `docs/bugs/<dated-slug>/` and commit only that artifact — per your own
+> orchestrator-lane exception, do **not** tick or commit `STATUS.md`.
+> `bug-analysis.md`'s **Affected files** list is the "Affected existing
+> resources" set for your § step-3 reconciliation and pre-task grep validation.
 
-**Why the stage-number override matters.** `plan-tasks/SKILL.md` step 6
-hard-codes "tick stage 5" because in the *spec* pipeline plan-tasks is
-checkbox row 5. The bug pipeline's stage list is `reproduce-bug ·
-bug-analysis · plan-tasks · implement · review · docs-sync · docs-audit ·
-finalize`, so plan-tasks is stage 3. Without the override the reused skill
-would tick stage 5 (`review`) on its own commit. This is a spawn-prompt
-content override, not a fork — `plan-tasks/SKILL.md` is untouched.
-(The other reused stage skills don't collide: `finalize` carries its
-own per-template row numbers — row 9 spec / row 8 bug — and the
-`implement`/`review`/docs-stage ticks are orchestrator-driven here.)
+**Bug-lane stage number (for the orchestrator's tick).** `plan-tasks` runs
+under its own orchestrator-lane exception here (`plan-tasks/SKILL.md` step 6):
+it writes `tasks.md` and does **not** tick `STATUS.md`. The **orchestrator**
+owns the tick. The bug pipeline's stage list is `reproduce-bug · bug-analysis ·
+plan-tasks · implement · review · docs-sync · docs-audit · finalize`, so
+`plan-tasks` is stage 3 — when the orchestrator ticks after `plan-tasks`
+returns, it ticks **stage 3**, not stage 5 (the reused skill's spec-pipeline
+row), and sets `Next: T1`. This is a spawn-prompt content override, not a
+fork — `plan-tasks/SKILL.md` is untouched. (The other reused stage skills don't
+collide: `finalize` carries its own per-template row numbers — row 9 spec / row
+8 bug — and the `implement`/`review`/docs-stage ticks are orchestrator-driven
+here.)
 
 Three consequences the template + sub-skill must guarantee so the substitution
 is lossless:
@@ -337,25 +354,40 @@ tiebreaker are all identical.
 path(s) in every reviewer prompt so they can verify the RED→GREEN flip is
 intact in the cumulative diff.
 
+**No `spec.md` in the bug lane — remap the reviewer's intent oracle.**
+`spawn-contract.md` Block 3 lists `spec.md` among the docs a reviewer may read
+as the change's intent ("…and `spec.md`"). A bug run has no `spec.md`; state in
+every reviewer spawn prompt that the intent oracle is instead the **bug report
+body + `docs/bugs/<dated-slug>/bug-analysis.md` +
+`docs/bugs/<dated-slug>/reproduction.md`** — the same remap this skill already
+makes for docs-sync and plan-tasks.
+
 ## Finalize (dequeue + PR)
 
 Spawn the `finalize` skill with the bug-run folder path and the dequeue target.
 `finalize` runs its normal behavior re-check → gate → PR flow
-unchanged (docs-sync ⇄ docs-audit already ran as stages 6–7). The **one bug-run delta is the dequeue**, and it must be driven
+unchanged (docs-sync ⇄ docs-audit already ran as stages 6–7). The **one bug-run
+delta in finalize's procedure is the dequeue**, and it must be driven
 **explicitly by this orchestrator's spawn prompt** — not left to `finalize`'s
-built-in step 4'.
+built-in step 3'.
 
-Why: `finalize`'s step 4' only recognizes the spec-pipeline `## Provenance`
+Why: `finalize`'s step 3' only recognizes the spec-pipeline `## Provenance`
 block and its `Proposed-spec:` field (pointing into `docs/specs/_proposed/`). A
 bug-run `STATUS.md` carries `## Bug-report provenance` / `Bug-report:`
-(pointing into `docs/bugs/_reports/`) instead, so `finalize`'s own step 4'
+(pointing into `docs/bugs/_reports/`) instead, so `finalize`'s own step 3'
 finds no spec proposal and skips silently. Relying on it would leave the report
 un-dequeued. Keeping `finalize` unforked means the orchestrator supplies the
-bug-queue dequeue procedure in the spawn prompt, mirroring step 4''s semantics
-over the bugs queue.
+bug-queue dequeue procedure in the spawn prompt, mirroring finalize's step 3'
+(the spec-queue dequeue) semantics over the bugs queue.
 
 The spawn prompt must pass:
 
+- **Acceptance intent oracle (no `spec.md` in the bug lane):** `finalize`'s
+  acceptance cross-check (its step 3) reads `spec.md`; a bug run has none.
+  Instruct `finalize` to cross-check acceptance against the **bug report body +
+  `docs/bugs/<dated-slug>/bug-analysis.md` +
+  `docs/bugs/<dated-slug>/reproduction.md`** instead — the RED→GREEN
+  reproduction test(s) are the acceptance signal.
 - **Bug-run folder:** `docs/bugs/<dated-slug>/` (where docs-sync, the behavior
   re-check, and the PR-body artifact links point).
 - **Dequeue target:** the **parent folder** of the `Bug-report:` path from the
@@ -365,8 +397,9 @@ The spawn prompt must pass:
   `docs/bugs/_reports/<dated-slug>/`. That folder — not the `report.md` file — is
   the dequeue target so that co-located evidence (`.png`, `.html`) is removed with it.
 
-And must instruct `finalize` to perform the dequeue **after** its gate (step 3)
-and acceptance (step 4) pass, mirroring step 4''s semantics:
+And must instruct `finalize` to perform the dequeue **after** its gate (step 2)
+and acceptance (step 3) pass, mirroring finalize's step 3' (the spec-queue
+dequeue) semantics over the bugs queue:
 
 1. If `Bug-report:` is `—` (ad-hoc run), **skip the dequeue silently**.
 2. Derive `<report-folder>` as the parent folder of the `Bug-report:` path (strip
@@ -439,8 +472,9 @@ This skill:
   (`docs/contributing.md`); update docs in the same change.
 - Never force-push the shared branch. Open exactly one PR (in finalize).
 - **RED-before-fix invariant:** the orchestrator never advances past
-  `reproduce-bug` until `STATUS.md` stage 1 is ticked. This is the one
-  discipline the feature pipeline lacks.
+  `reproduce-bug` until it has verified the committed RED artifacts
+  (`reproduction.md` + the failing test in the pushed commit) and ticked
+  stage 1 itself. This is the one discipline the feature pipeline lacks.
 - **GREEN-after invariant:** the reproduction test(s) must be green in the
   final merged branch. The review pass confirms this explicitly.
 - If a stage contradicts the bug analysis, stop and ask rather than guess.

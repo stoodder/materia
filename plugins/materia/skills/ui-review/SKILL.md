@@ -1,12 +1,12 @@
 ---
 name: ui-review
-description: The ui review angle in the ship-spec Review fan-out (UI-gated). Provisions the Eyes environment on-demand per MATERIA.md § Eyes, drives the app at the canonical viewport, captures screenshots and DOM snapshots per ui-test-plan.md flows, and returns structured "ui"-category findings into the remediation loop. Degrades gracefully on known Eyes-toolchain instability (records a STATUS note, returns empty findings, never blocks). Only spawned when the diff is UI-affecting; the gate is defined in ship-spec/SKILL.md § Review — § UI-surface gate.
+description: The ui review angle in the ship-spec Review fan-out (UI-gated). Provisions the Eyes environment on-demand per MATERIA.md § Eyes, drives the app at the canonical viewport, captures screenshots and structural snapshots per ui-test-plan.md flows, and returns structured "ui"-category findings into the remediation loop. Degrades gracefully on known Eyes-toolchain instability (records a STATUS note, returns empty findings, never blocks). Only spawned when the diff is UI-affecting; the gate is defined in ship-spec/SKILL.md § Review — § UI-surface gate.
 ---
 
 # ui-review — Eyes-driven UI review angle
 
 Drive the running app at the canonical viewport (`MATERIA.md` § Eyes), capture
-screenshots and DOM snapshots per the feature's `ui-test-plan.md` flows, and
+screenshots and structural snapshots per the feature's `ui-test-plan.md` flows, and
 judge the rendered output against the repo's visual standards docs. Returns
 structured findings under the `"ui"` category into `ship-spec`'s remediation
 loop. Runs as a subagent in `ship-spec` § Review (the `ui` angle, UI-gated —
@@ -85,11 +85,11 @@ acting on them wastes context.
    `MATERIA.md` § Gate has no `test:e2e` row, skip this step and proceed to
    capture — the judgement pass still runs.)
 
-4. **Capture screenshots and DOM snapshots** per the flows enumerated in
+4. **Capture screenshots and structural snapshots** per the flows enumerated in
    `ui-test-plan.md`. For each flow section in `ui-test-plan.md`:
    - Navigate to the flow's entry point.
    - At each loading/empty/error/ready state the plan names, capture a
-     screenshot (or DOM snapshot for text-heavy assertions) so the judgment in
+     screenshot (or structural snapshot for text-heavy assertions) so the judgment in
      step 5 is grounded in observed output, not inference.
    - **Persist each captured screenshot to disk** at
      `docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png`:
@@ -226,7 +226,7 @@ This skill does **not**:
 
 - The `test:e2e` run completed (or the instability degrade was recorded in
   STATUS.md, or the repo has no `test:e2e` gate and the step was skipped).
-- Screenshots/DOM snapshots captured for each `ui-test-plan.md` flow and
+- Screenshots/structural snapshots captured for each `ui-test-plan.md` flow and
   persisted to `docs/specs/<dated-slug>/ui-proof/` (or absent/empty on the
   degrade path — **with the reason note written to `STATUS.md`**).
 - The `ui-proof/` commit step completed (or was a no-op on the degrade path).

@@ -132,8 +132,21 @@ The PR/CI operations and the tool that runs them. Default: GitHub's `gh` CLI.
 Each `gh` operation carries a **GitHub-MCP twin** — the named GitHub MCP tool a
 `gh`-less environment calls in its place (the remote execution environment has
 no `gh`): a skill runs the `gh` recipe when `gh` is on PATH, the MCP twin
-otherwise. The per-skill **merge strategy** — `<strategy>` (squash / merge) — is
-the *skill's* to name; § Forge routes only the tool, never the strategy.
+otherwise. **Automated forge operations support GitHub only** — the `gh` CLI and
+its GitHub-MCP twins. On any other forge (GitLab, Bitbucket, Gitea, …) set this
+to `none`: the spec-to-ship pipeline still runs end to end, but the PR/CI/merge
+operations degrade to the manual `none` convention below.
+
+- **Merge strategy** — `per-skill default`. How every self-merging skill merges
+  its PR. Values: `squash` · `merge` · `rebase` · `per-skill default`. Set to a
+  **concrete** value (`squash`/`merge`/`rebase`) and it governs *every*
+  self-merging skill, **overriding each skill's own default** — so a squash-only
+  / linear-history repo names `squash` here once and the whole pipeline complies.
+  Left at `per-skill default` — **or the line absent entirely**, as in a
+  MATERIA.md installed before this knob existed — each skill keeps its own default
+  (ship-spec `merge`, librarian `squash`), so an older companion doc without this
+  line keeps working unchanged. This is the home for the `<strategy>` the
+  operations table below routes.
 
 `none` = no forge. Per the `none` convention (self-gate / skip-and-record),
 PR-opening skills self-gate to **manual** (print the drafted title/body + branch
@@ -403,9 +416,10 @@ adapts deliberately, not by surprise — the first has a config home in
 - **Default branch, remote & forge.** The trunk branch, the remote, the baseline
   diff, and the forge/PR flow — PR-opening, CI, and merge — resolve from
   § Version control (and § Version control § Forge). A repo that differs on any of
-  these edits that section, **not** the skills. (The merge *strategy* — librarian's
-  `--squash`, ship-spec's `--merge` — stays each skill's own, per § Forge; only the
-  tool is routed there.)
+  these edits that section, **not** the skills. (The merge *strategy* resolves
+  from the § Forge **Merge strategy** knob when it names a concrete value;
+  left at `per-skill default` or absent, each skill falls back to its own default
+  — librarian `squash`, ship-spec `merge`.)
 - **`check:docs` needs POSIX `sh`+`awk`.** The one unconditionally-binding gate
   (§ Gate) ships as `sh scripts/check-docs.sh`. It travels with the harness and
   needs only a **POSIX shell and `awk`** — present on essentially any Unix
@@ -414,9 +428,13 @@ adapts deliberately, not by surprise — the first has a config home in
   runs it via WSL or Git Bash. The docs contract it enforces is runtime-agnostic;
   only the implementation is POSIX sh+awk.
 - **One MATERIA.md = one adaptation surface.** § Gate, § Run it, and the baseline
-  in § Surface gates describe a **single package** over the whole tree. A polyglot
-  monorepo whose packages need different gates or run commands is not expressible
-  in one file: adopt Materia **per package** — a MATERIA.md at each package root,
-  running the pipeline from that package as its own root (the skills resolve one
-  root MATERIA.md and diff the whole tree, so this is not automatic) — or make each
-  § Gate command an umbrella script that dispatches across packages.
+  in § Surface gates describe a **single package** over the whole tree. The
+  supported way to serve a polyglot monorepo is **one MATERIA.md at the repo
+  root** whose § Gate commands are **umbrella scripts that dispatch across
+  packages** — the pipeline stays whole-tree and every package's gate still runs.
+  Per-package MATERIA.md files do **not** scope classification: § Surface gates,
+  the review angles, and finalize all evaluate the **whole-tree** diff, and
+  `.materia/project.json` plus the trunk/PR flow are **repo-global** — so a
+  MATERIA.md dropped in a package subdir cannot narrow what a run classifies or
+  diffs. A per-package § Surface gates pathspec that would scope classification is
+  **future work, not a present capability**.

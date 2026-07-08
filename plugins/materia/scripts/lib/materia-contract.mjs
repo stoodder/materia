@@ -38,11 +38,12 @@ export const statusFrom = (severity) => SEV_STATUS[severity] ?? 'unknown'
 // /materia:doctor reports. A release-ledger change's `doctorChecks` MUST be a subset
 // of this. Its honesty (no missing AND no bogus-extra id) is pinned in
 // scripts/validate-plugin.mjs §7 by set-equality against the ids the tracked-current
-// fixture actually emits (that path exercises all six), so a hand-edit here that drifts
-// from what inspect() emits fails CI.
+// fixture actually emits (that path exercises all KNOWN_CHECK_IDS checks), so a hand-edit
+// here that drifts from what inspect() emits fails CI.
 export const KNOWN_CHECK_IDS = [
   'release-ledger-readable',
   'materia-enabled',
+  'check-docs-sh-present',
   'project-state-present',
   'project-state-parses',
   'artifact-schema-known',
@@ -119,11 +120,16 @@ export function bucketize (report, changes) {
 //
 // Check ID <-> ledger correspondence: `project-state-present` is the exact id the
 // ledger reserves in `0.2.0-project-state-file`.doctorChecks — inspect implements
-// it as that change's canonical detector. `artifact-schema-current` is a
-// change-agnostic schema-currency check (it also fires on schema-1 repos); by
-// design it is NOT listed in any ledger change's doctorChecks (that would be a
-// ledger-data change). A drift is never reported as MORE severe than the ledger's
-// own `impact` says — per-drift severity derives from that impact (IMPACT_SEV).
+// it as that change's canonical detector. `artifact-schema-current` and
+// `check-docs-sh-present` are change-agnostic checks (the former fires on schema-1
+// repos too; the latter inspects the scaffold gate script directly); by design
+// NEITHER is listed in any ledger change's doctorChecks (that would be a
+// ledger-data change). `check-docs-sh-present` guards the binding check:docs gate
+// (`sh scripts/check-docs.sh`): schema currency certifies ONLY .materia/project.json,
+// never full scaffold conformance, so this separate presence check catches a real
+// dogfood gap schema currency would otherwise hide. A drift is never reported as
+// MORE severe than the ledger's own `impact` says — per-drift severity derives from
+// that impact (IMPACT_SEV).
 export const inspect = (targetRoot, releaseDir) => {
   const checks = []
   const add = (id, title, severity, detail) => { checks.push({ id, title, severity, detail }) }
@@ -170,10 +176,26 @@ export const inspect = (targetRoot, releaseDir) => {
   add('materia-enabled', 'Repo appears Materia-enabled', 'ok',
     `detected ${[hasMateriaMd && 'MATERIA.md', hasMateriaDir && '.materia/'].filter(Boolean).join(' + ')}`)
 
-  // 3. project-state-present — .materia/project.json.
+  let overall = 'ok'
+
+  // 3. check-docs-sh-present — change-agnostic: a SINGLE emission on the shared
+  //    path (before any later branch return), so every Materia-enabled repo is
+  //    checked for the binding check:docs gate script. Schema currency certifies
+  //    ONLY .materia/project.json; this catches an old dogfood repo that predates
+  //    scripts/check-docs.sh (it replaced scripts/check-docs.mjs) — a gap the
+  //    project-state schema check cannot see.
+  if (existsSync(join(targetRoot, 'scripts', 'check-docs.sh'))) {
+    add('check-docs-sh-present', 'check:docs gate script present', 'ok',
+      'scripts/check-docs.sh present — the binding check:docs gate script is present.')
+  } else {
+    overall = worst(overall, 'warning')
+    add('check-docs-sh-present', 'check:docs gate script present', 'warning',
+      'scripts/check-docs.sh is missing — this repo predates the check-docs.sh gate script (it replaced scripts/check-docs.mjs) or has moved it; the binding gate `sh scripts/check-docs.sh` will fail. Copy it from the installed plugin scaffold (scaffold/scripts/check-docs.sh).')
+  }
+
+  // 4. project-state-present — .materia/project.json.
   const statePath = join(targetRoot, '.materia', 'project.json')
   const statePresent = existsSync(statePath)
-  let overall = 'ok'
 
   if (!statePresent) {
     // Untracked legacy: pre-tracking installs are schema 1 by definition. The
@@ -186,7 +208,7 @@ export const inspect = (targetRoot, releaseDir) => {
     overall = worst(overall, sev)
     add('project-state-present', 'Project state file present', sev,
       changes.length
-        ? 'Materia appears installed, but no .materia/project.json was found. This likely predates artifact tracking (untracked legacy).'
+        ? 'Materia appears installed, but no .materia/project.json was found. This likely predates artifact tracking (untracked legacy). Adopting tracking certifies only .materia/project.json, not full scaffold conformance — see the ledger 0.1.0 baseline reconciliation notes for legacy items (check-docs.sh, MATERIA.md sections, review-angles/) an old install may still need by hand.'
         : 'No .materia/project.json, but the ledger declares no adoptable changes — nothing to migrate.')
     // Suggest migrate only for warning-or-worse adoptable drift; optional-only
     // (info) drift keeps the report `healthy` with an optional-changes list and
@@ -198,7 +220,7 @@ export const inspect = (targetRoot, releaseDir) => {
   report.projectStateLocation = relative(targetRoot, statePath)
   add('project-state-present', 'Project state file present', 'ok', report.projectStateLocation)
 
-  // 4. project-state-parses — gated on present. Absent != malformed (handled above).
+  // 5. project-state-parses — gated on present. Absent != malformed (handled above).
   const parsed = readJson(statePath)
   if (parsed.error) {
     report.malformed = true
@@ -213,7 +235,7 @@ export const inspect = (targetRoot, releaseDir) => {
   const schema = parsed.value.artifactSchema
   report.currentSchema = isInt(schema) ? schema : null
 
-  // 5. artifact-schema-known — gated on present ∧ parses.
+  // 6. artifact-schema-known — gated on present ∧ parses.
   if (!isInt(schema) || schema < 1) {
     overall = worst(overall, 'blocked')
     add('artifact-schema-known', 'Artifact schema is known', 'blocked',
@@ -234,9 +256,10 @@ export const inspect = (targetRoot, releaseDir) => {
   }
   add('artifact-schema-known', 'Artifact schema is known', 'ok', `schema ${schema} (latest ${ledger.latestSchema})`)
 
-  // 6. artifact-schema-current — gated on present ∧ parses ∧ known.
+  // 7. artifact-schema-current — gated on present ∧ parses ∧ known.
   if (schema === ledger.latestSchema) {
-    add('artifact-schema-current', 'Artifact schema is current', 'ok', `schema ${schema} == latest`)
+    add('artifact-schema-current', 'Artifact schema is current', 'ok',
+      `schema ${schema} == latest — certifies only .materia/project.json, not full scaffold conformance.`)
   } else {
     const changes = relevantChanges(ledger.versions, schema, ledger.latestSchema)
     bucketize(report, changes)

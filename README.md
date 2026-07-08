@@ -53,7 +53,10 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
    you're building, helps you pick a stack, then writes `MATERIA.md`,
    `CLAUDE.md`, and the `docs/` skeleton into place — sections your stack
    doesn't need (no UI → § UI-affecting: none) are marked `none` and the
-   corresponding skills self-gate at runtime instead of being pruned.
+   corresponding skills self-gate at runtime instead of being pruned. Materia
+   reserves `docs/`, `scripts/check-docs.sh`, and `.materia/` in the target repo;
+   it adopts cleanly where those paths are free and layers onto an existing
+   `docs/` rather than replacing it.
 3. `/materia:init` finishes by seeding `docs/specs/_proposed/` with a
    **bootstrap epic**: the scaffolding of your app skeleton, CI, and gates as
    the pipeline's own first specs. Run `/materia:ship-spec` and the harness
@@ -69,6 +72,13 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
    With required approvals enabled, `--auto` autopilot merges wait for your
    approval instead of completing on green — both behaviors are correct.
 
+**Forge support is GitHub-only.** Materia's automated forge operations — opening
+PRs, reading CI, merging — drive **GitHub** through the `gh` CLI (or its GitHub
+MCP twins in a `gh`-less environment). On any other forge (GitLab, Bitbucket,
+Gitea, …) set `MATERIA.md` § Forge to `none`: the spec-to-ship pipeline still
+runs end to end, but the PR/CI/merge steps degrade to the manual `none`
+convention — the skill prints the drafted PR and stops for you to open and merge.
+
 Once initialized, the pipeline runs entirely through slash commands —
 `/materia:ship-spec`, `/materia:fix-bug`, the producers, the maintainers, and
 `/materia:triage-retros` — with no per-repo skill files to keep in sync;
@@ -81,8 +91,9 @@ upgrading the plugin upgrades every repo it's installed in.
 plugins/materia/
   .claude-plugin/plugin.json         the plugin manifest
   skills/                            the pipeline skills (stack-agnostic), invoked /materia:<name>
-  scaffold/                          the bundled MATERIA.md/CLAUDE.md/docs templates + check-docs.sh
-                                      that /materia:init materializes into your repo
+  scaffold/                          the bundled MATERIA.md/CLAUDE.md/docs templates,
+                                      check-docs.sh, and .materia/ (review-angles library +
+                                      project.json) that /materia:init materializes into your repo
   release/                           the plugin's own release/migration ledger (semver +
                                       artifact-schema contract; not materialized into repos)
 scripts/validate-plugin.mjs          validates the marketplace + plugin manifests and the scaffold
@@ -113,12 +124,13 @@ migrate actually read (from the installed plugin cache; the ledger is never copi
 your repo).
 
 **Plugin version ≠ artifact schema.** The plugin's semver changes whenever it ships; the
-**artifact schema** — an integer describing what an installed repo is expected to
-contain — changes only when that installed-project contract actually changes. Multiple
-plugin versions can share one schema, so a plugin upgrade does **not** imply a project
-migration. `0.1.0` is the **pre-tracking baseline** (schema 1): installs from before this
-system existed had no project-state file and no ledger. The **first tracked schema (2)**
-begins with this compatibility system itself.
+**artifact schema** — an integer tracking the installed-project *state contract*
+(`.materia/project.json`) — changes only when that contract actually changes, so a plugin
+upgrade does **not** imply a project migration. `0.1.0` is the pre-tracking baseline (schema
+1); the first tracked schema (2) begins with this compatibility system itself. See
+[`plugins/materia/release/README.md`](plugins/materia/release/README.md) for the normative
+definition — the full schema/semver contract and the impact classifications (`none` through
+`breaking`) doctor and migrate act on.
 
 **Project state — new vs existing repos.** New repos get their state for free:
 `/materia:init` materializes `.materia/project.json` (schema 2) from the bundled scaffold,
@@ -140,9 +152,13 @@ overwrites an existing or hand-edited state file.
   redraft contracts.
 - **One home per fact.** Stack specifics live in `MATERIA.md` and the
   generated `docs/standards/*`; skills point at them instead of restating.
-- **The PR is the review gate.** Every skill ends at exactly one PR; nothing
-  auto-merges except the librarian's mechanically docs-only diff and an
-  explicit `--auto` autopilot run.
+- **The PR is the review gate.** Every repo-changing pipeline run ends at
+  exactly one PR — the named exceptions are the read-only/operator tools
+  (`/materia:doctor`, which writes nothing; `/materia:migrate --apply`, which
+  writes the working tree directly with no PR), `/materia:init`'s bootstrap
+  commit to the default branch, and a pipeline's internal sub-stages (which
+  don't each open their own PR). Nothing auto-merges except the librarian's
+  mechanically docs-only diff and an explicit `--auto` autopilot run.
 - **The harness is a versioned plugin, not a self-editing one.** Every repo
   it's installed in runs the same skills from the same plugin cache; there is
   no per-repo fork to diverge. What *is* yours is the signal: retros feed

@@ -38,7 +38,10 @@ set) is prepended before Block 1.
 > The orchestrator owns `STATUS.md`, `retro.md`, and the run's status commits.
 > Do **not** edit, tick, or commit `STATUS.md` or `retro.md` — tick only your
 > own artifact (e.g. your task's `tasks.md` AC boxes). The orchestrator
-> advances the stage row and `Next:` after you return.
+> advances the stage row and `Next:` after you return. **One creation-only
+> carve-out:** on `ship-spec`'s ad-hoc path `intake-spec` seeds + commits the
+> initial `STATUS.md` at mint (the orchestrator hasn't pre-created the folder) —
+> it still never **ticks** a stage row; ticking stays the orchestrator's.
 
 ## Block 2 — stage and task spawns (adds the retro return)
 
@@ -58,6 +61,10 @@ set) is prepended before Block 1.
 Followed by the per-entry schema copied verbatim from
 `ship-spec/SKILL.md` § Retrospective capture (the schema lives there — the
 protected retro-generation contract; this file does not duplicate it).
+
+**Under `fix-bug`** the injected `Stage:` vocabulary additionally admits the
+bug-lane stage ids `reproduce-bug` and `bug-analysis` (see `fix-bug/SKILL.md`
+§ Retrospective capture); the schema is otherwise identical.
 
 ## Block 3 — reviewer spawns (adds fresh-context exclusions)
 

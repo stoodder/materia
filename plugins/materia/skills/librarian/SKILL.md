@@ -185,9 +185,10 @@ Repeat until merged, **bounded at 3 rounds**:
      failing job and why it looks unrelated, and report to the operator.
      Never merge over a red check.
 4. **Green?** Re-assert the docs-only envelope on the final diff, then merge
-   through the **merge-PR op** (`MATERIA.md` § Version control § Forge) —
-   `--squash` is the librarian's own chosen `<strategy>`, which § Forge routes
-   the tool for but never overrides:
+   through the **merge-PR op** (`MATERIA.md` § Version control § Forge), using the
+   `<strategy>` from that section's **Merge strategy** knob when it names a
+   concrete value — no merge-strategy row (or `per-skill default`) → this skill's
+   default `squash`:
 
    ```bash
    gh pr merge <n> --squash --delete-branch
@@ -195,11 +196,12 @@ Repeat until merged, **bounded at 3 rounds**:
 
    If the merge is rejected by branch protection (required review), fall back
    to the distinct **auto-merge op** (twin `enable_pr_auto_merge`, same
-   § Forge) — still `--squash` — and report the PR URL; the merge then
-   completes on approval:
+   § Forge) — at the same resolved `<strategy>` as the direct merge (the
+   § Forge Merge-strategy knob when concrete, else librarian's default
+   `squash`) — and report the PR URL; the merge then completes on approval:
 
    ```bash
-   gh pr merge <n> --auto --squash
+   gh pr merge <n> --auto --<strategy>
    ```
 
    `--no-merge` runs stop here either way and report the green PR URL.

@@ -1,6 +1,6 @@
 ---
 name: bug-analysis
-description: Synthesise reproduction.md and the bug report into bug-analysis.md — the architecture.md analogue for the bug loop that plan-tasks decomposes. Consumes docs/bugs/<dated-slug>/reproduction.md plus the bug report body (frontmatter stripped), produces docs/bugs/<dated-slug>/bug-analysis.md, and ticks STATUS.md stage 2. Stage 2 of the fix-bug pipeline; usable standalone given a reproduction.md + report.
+description: Synthesise reproduction.md and the bug report into bug-analysis.md — the architecture.md analogue for the bug loop that plan-tasks decomposes. Consumes docs/bugs/<dated-slug>/reproduction.md plus the bug report body (frontmatter stripped), produces docs/bugs/<dated-slug>/bug-analysis.md. Stage 2 of the fix-bug pipeline; usable standalone given a reproduction.md + report.
 ---
 
 # bug-analysis — synthesise reproduction into a structured fix plan
@@ -21,8 +21,9 @@ does **not** re-derive the reproduction (that is `reproduce-bug`'s role).
   steps, expected vs actual, and the RED evidence from stage 1.
 - Bug report body (frontmatter stripped) — the full original description,
   affected surface, and severity from the report file in `docs/bugs/_reports/`.
-- `docs/bugs/<dated-slug>/STATUS.md` — the bug run's live state; this skill
-  ticks stage 2 here on completion.
+- `docs/bugs/<dated-slug>/STATUS.md` — the bug run's live state. **Standalone**,
+  this skill ticks stage 2 here on completion; **in the `/materia:fix-bug`
+  orchestrator lane it leaves `STATUS.md` to the orchestrator** (see § Rules).
 - (Read-only) The resource/standards docs for the affected files — for naming
   the fix approach and the standards the fix tasks must read. Resolved by
   reading the "Affected surface" in the report and cross-referencing
@@ -43,8 +44,10 @@ does **not** re-derive the reproduction (that is `reproduce-bug`'s role).
   validating tasks — it must list every file the fix will touch, with a
   one-line description of what's wrong or what changes per file.
 
-- `STATUS.md` stage-2 ticked; `Next: plan-tasks` set.
-- Committed + pushed.
+- **Standalone:** `STATUS.md` stage-2 ticked, `Next: plan-tasks` set.
+  **Orchestrator lane:** `STATUS.md` untouched — the orchestrator ticks after
+  this stage returns.
+- `bug-analysis.md` committed + pushed.
 
 ## Procedure
 
@@ -87,8 +90,12 @@ does **not** re-derive the reproduction (that is `reproduce-bug`'s role).
    tasks.
 
 7. **Write `bug-analysis.md`** from the template, populating all six sections.
-   Then in `STATUS.md`: tick stage 2 (`- [x] 2. bug-analysis …`) and set
-   `Next: plan-tasks`. Commit `bug-analysis.md` + `STATUS.md` and push.
+   Commit `bug-analysis.md` and push. **Standalone**, also tick stage 2 in
+   `STATUS.md` (`- [x] 2. bug-analysis …`), set `Next: plan-tasks`, and commit
+   `STATUS.md` in the same push. **Orchestrator-lane exception:** when spawned
+   by `/materia:fix-bug`, do **not** tick or commit `STATUS.md` — the
+   orchestrator owns both (see `ship-spec/SKILL.md` § STATUS.md ownership
+   (orchestrator lane)); commit only `bug-analysis.md`.
 
 ## Scope
 
@@ -116,8 +123,10 @@ This skill:
   section's standards list is the docs-scope floor `plan-tasks` propagates
   to each task. Omitting it means tasks may not read the right standards.
 - **Commit + push before returning.** The orchestrator checks pushed state.
-- **Do not tick stage 2 until `bug-analysis.md` is committed.** The
-  orchestrator reads the stage-2 checkbox to confirm this stage is done.
+- **Standalone, do not tick stage 2 until `bug-analysis.md` is committed; in
+  the `/materia:fix-bug` orchestrator lane, don't touch `STATUS.md` at all** —
+  the orchestrator advances the stage row after this stage returns (see
+  `ship-spec/SKILL.md` § STATUS.md ownership (orchestrator lane)).
 
 ## Standalone use
 

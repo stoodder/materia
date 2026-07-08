@@ -95,9 +95,10 @@ Triage-specific rendering:
   standards.
 - **Tagline** — one sentence derived from the clustered signal.
 - **Link paths** follow `propose-spec` § Link paths: backtick/arrow prose
-  (`visual-language → docs/standards/visual-language.md`) or
-  absolute-from-repo-root — **never** a relative markdown link, which breaks when
-  `intake-spec` adopts the body at a different folder depth.
+  (`visual-language → docs/standards/visual-language.md`) **only** — never a
+  live markdown link, relative or absolute-from-repo-root; both break
+  `check-docs.sh` when `intake-spec` adopts the body at a different folder
+  depth.
 
 ## Authored bug-report body
 

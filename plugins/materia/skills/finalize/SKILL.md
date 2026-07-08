@@ -216,7 +216,7 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
      **absolute raw-content URL** of the form:
 
      ```
-     https://github.com/<owner>/<repo>/raw/<sha>/docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png
+     https://<host>/<owner>/<repo>/raw/<sha>/docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png
      ```
 
      **URL construction (new — no existing precedent in the skills; follow
@@ -239,9 +239,20 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
         the last two segments after stripping `.git`, regardless of the
         remote's host.
 
-     3. Always emit the canonical `https://github.com/<owner>/<repo>/raw/<sha>/…`
-        host in the URL, regardless of the remote's host (the raw URL is for
-        GitHub PR rendering, not for local git transport).
+     3. `<host>` = the git host, resolved from `git remote get-url <remote>` —
+        but used **only** when it is a recognized, non-localhost git host. Parse
+        the host from whichever remote form matches:
+        `git@<host>:<owner>/<repo>.git`, `ssh://git@<host>/<owner>/<repo>`, or
+        `https://<host>/<owner>/<repo>`. Use that parsed host **only when it is a
+        real DNS hostname** — non-empty, not `localhost`/`127.0.0.1`/`::1`, and
+        not a proxy rewrite (e.g. `local_proxy@127.0.0.1:<port>`). Otherwise
+        **fall back to `github.com`**. This keeps the proxy-rewritten remote case
+        (`http://local_proxy@127.0.0.1:41729/git/<owner>/<repo>`) resolving to
+        `github.com` exactly as before: its host is a loopback proxy, so the rule
+        rejects it and falls back. Non-github.com GitHub hosts (GHES /
+        self-hosted) are supported **best-effort** — a recognized host flows
+        through, but the `/raw/<sha>/…` path convention is only guaranteed on
+        `github.com`.
 
      4. **Fallback:** if `<owner>/<repo>` cannot be resolved from the remote
         URL (empty output, unexpected format), attempt

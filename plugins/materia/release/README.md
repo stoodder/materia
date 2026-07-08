@@ -28,7 +28,7 @@ installed plugin cache.
 release/
   latest.json            pointer to the current plugin version + artifact schema
   versions/
-    0.1.0.json           pre-tracking baseline (schema 1, no changes)
+    0.1.0.json           pre-tracking baseline (schema 1; a range of pre-tracking shapes, see its notes)
     0.2.0.json           introduces this contract (schema 2)
 ```
 
@@ -46,8 +46,10 @@ Two independent version axes:
 
 - **`pluginVersion`** — the plugin's own semver, from `plugins/materia/.claude-plugin/plugin.json`.
   It changes whenever the plugin ships.
-- **`artifactSchema`** — an integer describing what a Materia-installed repo is expected to
-  contain. It changes **only** when the installed-project artifact contract actually changes.
+- **`artifactSchema`** — an integer tracking the installed-project *state contract*
+  (`.materia/project.json`), not a full-conformance certificate for the whole scaffold. It
+  changes **only** when that installed-project state contract actually changes; a repo at the
+  latest schema has a current project-state file, not necessarily a fully reconciled scaffold.
 
 Multiple plugin versions may share one `artifactSchema`. Do **not** bump the schema just
 because the plugin shipped. Here `0.1.0` = schema 1 (pre-tracking) and `0.2.0` = schema 2

@@ -26,7 +26,7 @@
 //
 // Usage: node migrate.mjs [targetPath] [--plan|--apply] [--json] [--help]
 // Exit:  0 ok (plan produced / apply done) · 2 tool fault or apply write failure
-import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync } from 'node:fs'
+import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync, readdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { inspect, readLedger, relevantChanges, isInt, MIG } from './lib/materia-contract.mjs'
 
@@ -177,6 +177,13 @@ const buildPlan = (targetRoot, releaseDir) => {
   else if (report.materiaEnabled && !report.missing && report.currentSchema === null)
     out.manual.push({ id: 'artifact-schema-known',
       reason: `${STATE_REL} has an unknown artifactSchema; set a valid integer by hand.` })
+  else if (isInt(report.currentSchema) && report.currentSchema < 1)
+    // Mirror doctor's blocked "not a known integer schema" verdict: a present,
+    // parsed state carrying an integer schema below the 1 floor is a structural
+    // fault, not an adoptable drift — surface it here and skip ledger diffing
+    // (below) so migrate never offers init-project-state against it.
+    out.manual.push({ id: 'artifact-schema-known',
+      reason: `${STATE_REL} records artifactSchema ${report.currentSchema}, not a known integer schema (expected 1..${report.latestSchema}); set a valid integer by hand.` })
   else if (isInt(report.currentSchema) && report.currentSchema > report.latestSchema)
     out.manual.push({ id: 'artifact-schema-known',
       reason: `Project is on artifact schema ${report.currentSchema}, newer than this plugin's latest (${report.latestSchema}) — update the materia plugin.` })
@@ -185,11 +192,12 @@ const buildPlan = (targetRoot, releaseDir) => {
       reason: 'This repo is not Materia-enabled (no MATERIA.md / .materia/) — migrate invents no state. If you expected a Materia repo, run /materia:init.' })
 
   // Ledger-driven candidate discovery with a SAFE fromSchema (never the
-  // 'untracked-legacy' string). Missing/legacy → 1; a known integer schema → it;
-  // malformed/unknown → no ledger diffing (structural manual items cover those).
+  // 'untracked-legacy' string). Missing/legacy → 1; a known integer schema (≥ 1)
+  // → it; malformed/unknown/below-the-1-floor → no ledger diffing (structural
+  // manual items above cover those).
   let fromSchema = null
   if (report.missing || report.currentSchema === 'untracked-legacy') fromSchema = 1
-  else if (isInt(report.currentSchema)) fromSchema = report.currentSchema
+  else if (isInt(report.currentSchema) && report.currentSchema >= 1) fromSchema = report.currentSchema
   const changes = (fromSchema !== null && !report.malformed)
     ? relevantChanges(ledger.versions, fromSchema, report.latestSchema) : []
 
@@ -227,6 +235,17 @@ const runApply = (targetRoot, releaseDir) => {
   const plan = buildPlan(targetRoot, releaseDir)
   const out = { ...plan, mode: 'apply', applied: [], created: [], notChanged: [], projectState: null, nextCommand: null }
   if (plan.toolFault) return out
+
+  // Best-effort sweep of stray atomic-write temp files from a prior interrupted
+  // apply (.materia/.project.json.tmp-<pid>). They never carry state we need and
+  // would otherwise linger; failures here are non-fatal and never touch project.json.
+  const materiaDir = join(targetRoot, '.materia')
+  if (existsSync(materiaDir)) {
+    try {
+      for (const name of readdirSync(materiaDir))
+        if (name.startsWith('.project.json.tmp-')) rmSync(join(materiaDir, name), { force: true })
+    } catch { /* best-effort: a sweep failure must never block a real migration */ }
+  }
 
   // Apply only the migrations classify() marked `applicable`. Everything else
   // (manual, skipped, satisfied) is recorded as NOT changed, with its reason.
@@ -301,6 +320,16 @@ const renderHuman = (r) => {
     block('Applied', r.applied, (x) => `${x.id}: ${x.title}`)
     L.push('')
     L.push(`  Files created/updated: ${r.created.length ? r.created.join(', ') : 'none'}`)
+    // After a legacy adopt, be explicit that this is NOT a full-conformance
+    // certificate — schema tracks only .materia/project.json (mirror of doctor's
+    // honesty caveat + the ledger 0.1.0 reconciliation notes).
+    if (r.applied.some((x) => x.id === 'init-project-state')) {
+      L.push('')
+      L.push('  Note: this adopts artifact tracking only. Schema currency certifies just')
+      L.push('  .materia/project.json, not full scaffold conformance — see the ledger 0.1.0')
+      L.push('  baseline reconciliation notes for legacy items (check-docs.sh, MATERIA.md')
+      L.push('  sections, .materia/review-angles/) an old install may still need by hand.')
+    }
     block('Not changed', r.notChanged, (x) => `${x.id}: ${x.reason}`)
     if (r.projectState) {
       L.push('')

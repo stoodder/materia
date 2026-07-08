@@ -88,7 +88,7 @@ const renderHuman = (r, targetRoot) => {
     for (const m of r.manualActionItems) L.push(`    - ${m}`)
   }
   L.push('')
-  L.push(`  Suggested next: ${r.suggestedNextCommand ?? 'none — project is current.'}`)
+  L.push(`  Suggested next: ${r.suggestedNextCommand ?? 'none — .materia/project.json is at the latest schema. Schema currency certifies only that file, not full scaffold conformance; see the ledger 0.1.0 baseline notes for legacy items an old install may still need.'}`)
   return L.join('\n')
 }
 
