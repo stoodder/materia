@@ -14,7 +14,7 @@ do next.
 Doctor is **non-destructive**: it reads the plugin's bundled release ledger and
 the target repo's `.materia/project.json`, and prints a report. It **writes
 nothing**, changes no files, and **runs no migration** — where a migration would
-help it only *suggests* the (forthcoming) `/materia:migrate --plan`.
+help it only *suggests* `/materia:migrate --plan`.
 
 The health verdict is produced by the deterministic script, not by the model.
 This skill is the orchestration/explanation layer: it runs the script and
