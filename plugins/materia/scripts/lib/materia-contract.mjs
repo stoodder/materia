@@ -94,6 +94,14 @@ export function bucketize (report, changes) {
 // migrate build on. `releaseDir` is passed in (never resolved here) so a caller
 // points it at its own ../release sibling in the plugin cache; `targetRoot` is
 // the separate user-repo root. Reads only; writes nothing.
+//
+// Check ID <-> ledger correspondence: `project-state-present` is the exact id the
+// ledger reserves in `0.2.0-project-state-file`.doctorChecks — inspect implements
+// it as that change's canonical detector. `artifact-schema-current` is a
+// change-agnostic schema-currency check (it also fires on schema-1 repos); by
+// design it is NOT listed in any ledger change's doctorChecks (that would be a
+// ledger-data change). A drift is never reported as MORE severe than the ledger's
+// own `impact` says — per-drift severity derives from that impact (IMPACT_SEV).
 export const inspect = (targetRoot, releaseDir) => {
   const checks = []
   const add = (id, title, severity, detail) => { checks.push({ id, title, severity, detail }) }

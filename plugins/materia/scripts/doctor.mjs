@@ -14,15 +14,9 @@
 // `node "$CLAUDE_PLUGIN_ROOT/scripts/doctor.mjs" [targetPath] [--json]`. The
 // ledger it reads is the script's sibling: ../release (== $CLAUDE_PLUGIN_ROOT/
 // release when installed). The TARGET project is a separate root (positional
-// arg, default cwd) — never the plugin cache.
-//
-// Check ID <-> ledger correspondence: `project-state-present` is the exact id the
-// ledger reserves in `0.2.0-project-state-file`.doctorChecks — doctor implements
-// it as that change's canonical detector. `artifact-schema-current` is a
-// change-agnostic schema-currency check (it also fires on schema-1 repos); by
-// design it is NOT listed in any ledger change's doctorChecks (that would be a
-// ledger-data change). Doctor never reports a drift as MORE severe than the
-// ledger's own `impact` says — per-drift severity derives from that impact.
+// arg, default cwd) — never the plugin cache. (The check-id ↔ ledger
+// correspondence and per-drift severity rules are documented next to inspect()
+// in ./lib/materia-contract.mjs, where that logic now lives.)
 //
 // Usage: node doctor.mjs [targetPath] [--json] [--help]
 // Exit:  0 healthy|warnings|unknown · 1 action-needed · 2 blocked
