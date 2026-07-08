@@ -28,7 +28,7 @@
 // Exit:  0 ok (plan produced / apply done) · 2 tool fault or apply write failure
 import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync } from 'node:fs'
 import { resolve, join } from 'node:path'
-import { inspect, readLedger, relevantChanges, isInt } from './lib/materia-contract.mjs'
+import { inspect, readLedger, relevantChanges, isInt, MIG } from './lib/materia-contract.mjs'
 
 // ---- migration registry -----------------------------------------------------
 // One entry per implemented, stable migration id. Each migration:
@@ -50,7 +50,7 @@ const INIT_STATE_SCHEMA = 2
 const STATE_REL = join('.materia', 'project.json')
 
 const initProjectState = {
-  id: 'init-project-state',
+  id: MIG.INIT_PROJECT_STATE, // shared source of truth (== 'init-project-state'); keeps REGISTRY in sync with KNOWN_MIGRATION_IDS
   title: 'Initialize project-state file (.materia/project.json)',
   touchesExistingFiles: false,
   classify (report) {

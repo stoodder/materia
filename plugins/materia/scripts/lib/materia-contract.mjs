@@ -33,6 +33,28 @@ export const IMPACT_SEV = {
 export const SEV_STATUS = { ok: 'healthy', info: 'healthy', warning: 'warnings', action: 'action-needed', blocked: 'blocked' }
 export const statusFrom = (severity) => SEV_STATUS[severity] ?? 'unknown'
 
+// ---- authoritative id registries --------------------------------------------
+// The exact check ids inspect() emits, in emission order — the authoritative set
+// /materia:doctor reports. A release-ledger change's `doctorChecks` MUST be a subset
+// of this. Its honesty (no missing AND no bogus-extra id) is pinned in
+// scripts/validate-plugin.mjs §7 by set-equality against the ids the tracked-current
+// fixture actually emits (that path exercises all six), so a hand-edit here that drifts
+// from what inspect() emits fails CI.
+export const KNOWN_CHECK_IDS = [
+  'release-ledger-readable',
+  'materia-enabled',
+  'project-state-present',
+  'project-state-parses',
+  'artifact-schema-known',
+  'artifact-schema-current',
+]
+// Shared migration-id source of truth. migrate.mjs builds its REGISTRY handler ids from
+// MIG, so the implemented migration set can never drift from KNOWN_MIGRATION_IDS; and the
+// validator resolves a ledger change's `migrations` against this list by importing it from
+// HERE (a pure module) rather than from migrate.mjs (whose top-level runs a CLI main()).
+export const MIG = { INIT_PROJECT_STATE: 'init-project-state' }
+export const KNOWN_MIGRATION_IDS = Object.values(MIG)
+
 // ---- safe JSON read ---------------------------------------------------------
 export const readJson = (f) => {
   try {
