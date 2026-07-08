@@ -1,0 +1,7 @@
+{
+  "name": "legacy-fixture-app",
+  "private": true,
+  "scripts": {
+    "check:docs": "sh scripts/check-docs.sh"
+  }
+}

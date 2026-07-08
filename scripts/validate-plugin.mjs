@@ -422,6 +422,9 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
   const GATE_CITERS = [
     'implement-task', 'report-bug', 'librarian', 'propose-spec', 'docs-audit',
     'docs-sync', 'fix-bug', 'architecture', 'ui-inspection', 'finalize', 'triage-retros',
+    // migrate joins the citers: its reference sweep re-runs the repo's check:docs gate,
+    // resolved from MATERIA.md § Gate (the pin's own logic — a gate-runner must cite it).
+    'migrate',
   ]
   for (const s of GATE_CITERS) {
     const f = `plugins/materia/skills/${s}/SKILL.md`
@@ -1091,6 +1094,30 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     console.log(`  ✓ release ledger + project-state sanity: ${versionFiles.length} version file(s); latest↔versions↔scaffold coherent; fixtures pinned`)
 }
 
+// ---- 6c. manualMigration reference-sweep content pin -------------------------
+// The 0.3.0 gate + relocation entries' manualMigration texts must carry the
+// consumer-reference-update step migrate's skill automates — so a human adopting by
+// hand (no migrate run) still updates the § Gate row / package scripts / CI / docs, and
+// the skill's sweep instructions and the ledger prose stay in agreement. Pin the STABLE
+// short token `§ Gate row`, not a full sentence, so a reword doesn't false-fail. Both
+// entries are the ones sharing the install-check-docs migration that relocates the gate.
+{
+  const before = failures
+  const v030 = 'plugins/materia/release/versions/0.3.0.json'
+  let obj = null
+  try { obj = JSON.parse(readFileSync(v030, 'utf8')) } catch (e) { fail(`${v030}: not valid JSON — ${e.message}`) }
+  if (obj) {
+    for (const id of ['0.3.0-check-docs-sh-gate', '0.3.0-scripts-relocation']) {
+      const ch = (obj.changes ?? []).find((c) => c && c.id === id)
+      if (!ch) { fail(`manualMigration content pin: ${v030} has no change \`${id}\``); continue }
+      if (!String(ch.manualMigration).includes('§ Gate row'))
+        fail(`manualMigration content pin: ${id}.manualMigration must name the \`§ Gate row\` reference-update step (the consumer-sweep the migrate skill automates)`)
+    }
+  }
+  if (failures === before)
+    console.log('  ✓ manualMigration content pin: 0.3.0 gate + relocation entries carry the `§ Gate row` reference-update step')
+}
+
 // ---- 6b. lintLedger negative coverage ---------------------------------------
 // §6 asserts the SHIPPED ledger lints clean; here we prove each lintLedger rule
 // FAIL-CLOSES on crafted bad input — the coverage a validator that only ever sees good
@@ -1512,6 +1539,24 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     cpSync(join('tests/fixtures/materia', name), dst, { recursive: true })
     return dst
   }
+  // referenceFollowUps hits are contract-sorted (file, then line) — assert reproducibility.
+  const hitsSorted = (hits) => hits.every((h, i) =>
+    i === 0 || hits[i - 1].file < h.file || (hits[i - 1].file === h.file && hits[i - 1].line <= h.line))
+  // A follow-up's field shape: distinct from/to, to under .materia/, boolean autoFix/staleNow,
+  // sorted non-empty hits with {file:string, line:number}.
+  const followUpShapeProblems = (t) => {
+    const p = []
+    if (t.from === t.to) p.push(`follow-up from === to (${t.from})`)
+    if (!String(t.to).startsWith('.materia/')) p.push(`follow-up to=${t.to} (want a .materia/ path)`)
+    if (typeof t.autoFix !== 'boolean') p.push(`follow-up autoFix not boolean (${JSON.stringify(t.autoFix)})`)
+    if (typeof t.staleNow !== 'boolean') p.push(`follow-up staleNow not boolean (${JSON.stringify(t.staleNow)})`)
+    if (!Array.isArray(t.hits) || !t.hits.length) p.push('follow-up hits empty (only hit-bearing tokens are emitted)')
+    else {
+      if (!t.hits.every((h) => typeof h.file === 'string' && typeof h.line === 'number')) p.push('follow-up hit shape wrong (want {file, line})')
+      if (!hitsSorted(t.hits)) p.push(`follow-up hits not sorted: ${JSON.stringify(t.hits)}`)
+    }
+    return p
+  }
   // A synthetic Materia-enabled temp repo carrying the given project.json raw
   // text. Returns the dir; caller rmSync's it.
   const synthState = (label, rawStateText) => {
@@ -1542,7 +1587,28 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
         if (!report.filesToChange.includes('.materia/scripts/check-docs.sh')) problems.push('filesToChange missing .materia/scripts/check-docs.sh')
         if (report.localEditsAffected !== true) problems.push('localEditsAffected should be true (install-check-docs renames a legacy gate script)')
         if (report.nextCommand !== '/materia:migrate --apply') problems.push(`nextCommand=${JSON.stringify(report.nextCommand)}`)
+        // Reference sweep (window-independent): EXACTLY the install-check-docs .sh token
+        // surfaces — init-project-state carries no referenceSweep, proving it contributes
+        // none. The package.json consumer (`sh scripts/check-docs.sh`) is the hit, NOT the
+        // artifact's own header (excluded from the scan). Pre-apply staleNow is false (the
+        // artifact has not yet moved to .materia/scripts/).
+        const fu = report.referenceFollowUps ?? []
+        const ids = [...new Set(fu.map((t) => t.id))]
+        if (ids.length !== 1 || ids[0] !== 'install-check-docs')
+          problems.push(`referenceFollowUps ids=${JSON.stringify(ids)} (want exactly [install-check-docs] — init-project-state contributes none)`)
+        const sh = fu.find((t) => t.from === 'scripts/check-docs.sh')
+        if (!sh) problems.push('referenceFollowUps missing the scripts/check-docs.sh token')
+        else {
+          problems.push(...followUpShapeProblems(sh))
+          if (sh.autoFix !== true) problems.push('scripts/check-docs.sh token autoFix should be true (mechanical path swap)')
+          if (sh.staleNow !== false) problems.push('pre-apply staleNow should be false (artifact not yet relocated)')
+          if (!sh.hits.some((h) => h.file === 'package.json')) problems.push('follow-up hits missing the package.json consumer')
+          if (sh.hits.some((h) => h.file === 'scripts/check-docs.sh')) problems.push('follow-up wrongly includes the from-path artifact\'s own header (should be excluded)')
+        }
       }
+      // Human rendering carries the follow-ups block (plan mode still writes nothing).
+      const rh = spawnSync('node', [MIGRATE, work], { encoding: 'utf8' })
+      if (!rh.stdout.includes('Reference follow-ups')) problems.push('human plan output lacks the Reference follow-ups block')
       const changed = diffKeys(snap, snapshot(work))
       if (changed.length) problems.push(`plan MUTATED the tree: ${changed.join(', ')}`)
       if (existsSync(join(work, '.materia/project.json'))) problems.push('plan created .materia/project.json')
@@ -1562,7 +1628,14 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       if (report) {
         if (report.applicable.length !== 0) problems.push(`applicable=${JSON.stringify(report.applicable.map((m) => m.id))} (want none)`)
         if (report.nextCommand !== null) problems.push(`nextCommand=${JSON.stringify(report.nextCommand)} (want null)`)
+        // Fail-close the other way: a current repo (canonical gate, no stale consumers)
+        // carries NO follow-ups — the scan finds nothing to sweep.
+        if ((report.referenceFollowUps ?? []).length !== 0)
+          problems.push(`referenceFollowUps=${JSON.stringify(report.referenceFollowUps)} (want none for a current repo)`)
       }
+      // …and no follow-ups block in the human rendering either.
+      const rh = spawnSync('node', [MIGRATE, work], { encoding: 'utf8' })
+      if (rh.stdout.includes('Reference follow-ups')) problems.push('human output carries a Reference follow-ups block for a clean repo')
       const changed = diffKeys(snap, snapshot(work))
       if (changed.length) problems.push(`plan MUTATED the tree: ${changed.join(', ')}`)
       problems.push(...exitWant(r, 0))
@@ -1592,6 +1665,15 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
         if (JSON.stringify(report.projectState) !== JSON.stringify(want))
           problems.push(`projectState=${JSON.stringify(report.projectState)} (want ${JSON.stringify(want)})`)
         if (report.status !== 'healthy') problems.push(`post-apply status=${report.status} (want healthy)`)
+        // Post-apply the reference sweep re-scans: the artifact is now at its canonical
+        // location, so the still-stale package.json consumer's staleNow flips to TRUE.
+        const sh = (report.referenceFollowUps ?? []).find((t) => t.from === 'scripts/check-docs.sh')
+        if (!sh) problems.push('post-apply referenceFollowUps missing the scripts/check-docs.sh token')
+        else {
+          if (sh.staleNow !== true) problems.push('post-apply staleNow should be true (artifact relocated; consumer now broken)')
+          if (!sh.hits.some((h) => h.file === 'package.json')) problems.push('post-apply follow-up hits missing package.json')
+          if (sh.hits.some((h) => h.file === '.materia/scripts/check-docs.sh')) problems.push('post-apply follow-up wrongly includes the relocated to-path artifact')
+        }
       }
       // Exactly: project.json created, canonical script created, root script removed.
       const changed = new Set(diffKeys(snap0, snap1))
@@ -1638,7 +1720,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       const { r, report } = runMigrate(work, '--apply')
       const problems = []
       if (!report) problems.push('no parseable JSON')
-      else if (report.applied.length !== 0) problems.push(`applied=${JSON.stringify(report.applied)} (want none — already current)`)
+      else {
+        if (report.applied.length !== 0) problems.push(`applied=${JSON.stringify(report.applied)} (want none — already current)`)
+        if ((report.referenceFollowUps ?? []).length !== 0)
+          problems.push(`referenceFollowUps=${JSON.stringify(report.referenceFollowUps)} (want none — current repo, no stale consumers)`)
+      }
       const changed = diffKeys(snap, snapshot(work))
       if (changed.length) problems.push(`apply MUTATED an already-current tree: ${changed.join(', ')}`)
       problems.push(...exitWant(r, 0))
@@ -1751,6 +1837,16 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
         // The stale .mjs cleanup is surfaced (never auto-deleted).
         if (![...report.manual, ...report.notChanged].some((x) => /check-docs\.mjs/.test(x.reason || '')))
           problems.push('stale scripts/check-docs.mjs cleanup note not surfaced')
+        // Reference sweep on gnarly: its MATERIA.md/CLAUDE.md name BOTH the old .sh and the
+        // superseded .mjs, so both tokens surface. The .mjs token is a command-SHAPE change
+        // (node → sh), never a mechanical path swap — assert autoFix:false (a free pin that
+        // the replaced-artifact token is list-only).
+        const mjs = (report.referenceFollowUps ?? []).find((t) => t.from === 'scripts/check-docs.mjs')
+        if (!mjs) problems.push('referenceFollowUps missing the scripts/check-docs.mjs token (MATERIA.md/CLAUDE.md name it)')
+        else {
+          problems.push(...followUpShapeProblems(mjs))
+          if (mjs.autoFix !== false) problems.push('scripts/check-docs.mjs token autoFix should be false (command-shape judgement, listed not swept)')
+        }
       }
       const changed = new Set(diffKeys(snap0, snapshot(work)))
       const wantChanged = new Set(['.materia/project.json', '.materia/scripts/check-docs.sh'])
@@ -1853,8 +1949,44 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     } finally { rmSync(dir, { recursive: true, force: true }) }
   }
 
+  // 12. PLAN on a synthetic SCHEMA-3 (already-current) repo whose CONSUMER is still stale:
+  //     canonical gate script present, schema 3 stamped, but a Makefile still runs the old
+  //     `sh scripts/check-docs.sh`. This is the literal gymii failure mode — the migration
+  //     window is empty (nothing applicable), yet the WINDOW-INDEPENDENT reference scan must
+  //     STILL surface the stale consumer with staleNow:true (the artifact is at its
+  //     canonical location, so the old-path reference is broken NOW). Plan writes nothing.
+  {
+    const dir = mkdtempSync(join(tmpdir(), 'materia-migrate-schema3-stale-'))
+    try {
+      mkdirSync(join(dir, '.materia', 'scripts'), { recursive: true })
+      writeFileSync(join(dir, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(dir, '.materia', 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
+      writeFileSync(join(dir, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
+      writeFileSync(join(dir, 'Makefile'), 'check:\n\tsh scripts/check-docs.sh\n')
+      const snap = snapshot(dir)
+      const { r, report } = runMigrate(dir)
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else {
+        if (report.applicable.length !== 0) problems.push(`applicable=${JSON.stringify(report.applicable.map((m) => m.id))} (want none — schema 3, nothing in window)`)
+        const sh = (report.referenceFollowUps ?? []).find((t) => t.from === 'scripts/check-docs.sh')
+        if (!sh) problems.push('window-independent scan missed the stale consumer (schema-3-complete repo)')
+        else {
+          problems.push(...followUpShapeProblems(sh))
+          if (sh.staleNow !== true) problems.push('staleNow should be true (canonical gate present; old-path reference broken now)')
+          if (!sh.hits.some((h) => h.file === 'Makefile')) problems.push('follow-up hits missing the Makefile consumer')
+        }
+      }
+      const changed = diffKeys(snap, snapshot(dir))
+      if (changed.length) problems.push(`plan MUTATED the tree: ${changed.join(', ')}`)
+      problems.push(...exitWant(r, 0))
+      if (problems.length) fail(`migrate [plan-schema3-stale-consumer]: ${problems.join('; ')}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+
   if (failures === before)
-    console.log('  ✓ migrate behavior: plan→no-mutate · apply(legacy)→init+install-check-docs(relocate+stamp 3→doctor healthy) · apply(gnarly)→copy-from-scaffold+stamp(stale .mjs untouched) · both-locations→stamp-only(root untouched) · moved-but-unstamped→bridge+stamp · idempotent · never overwrites valid/stale/malformed · tracked-noop · unknown/future/non-materia→no-write')
+    console.log('  ✓ migrate behavior: plan→no-mutate · apply(legacy)→init+install-check-docs(relocate+stamp 3→doctor healthy) · apply(gnarly)→copy-from-scaffold+stamp(stale .mjs untouched) · both-locations→stamp-only(root untouched) · moved-but-unstamped→bridge+stamp · idempotent · never overwrites valid/stale/malformed · tracked-noop · unknown/future/non-materia→no-write · referenceFollowUps: legacy plan/apply(.sh token, staleNow flips) · tracked/current→none · schema-3-stale-consumer(window-independent) · gnarly(.mjs autoFix:false)')
 }
 
 // ---- 9. doctor/migrate skills + script references ---------------------------

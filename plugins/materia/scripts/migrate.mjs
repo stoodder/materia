@@ -31,9 +31,18 @@
 // (a superseded root copy or a stale scripts/check-docs.mjs is surfaced as a manual
 // cleanup item, not removed); nothing auto-runs from startup hooks.
 //
+// It also runs a deterministic, NO-AI consumer REFERENCE SWEEP: for a migration that
+// relocates/renames/replaces an artifact (see the REGISTRY `referenceSweep` field), it
+// walks the target repo and REPORTS every stale reference to the old path (the gymii
+// lesson — a moved gate script leaves the repo's own package.json / CI / § Gate row /
+// docs pointing at the old location, a broken gate behind a healthy doctor). The scan is
+// window-independent (it runs even when the migration is not in the schema window, so a
+// schema-complete-but-stale repo is still surfaced) and emits `referenceFollowUps`; the
+// engine only reports the hits, the migrate SKILL performs the bounded sweep.
+//
 // Usage: node migrate.mjs [targetPath] [--plan|--apply] [--json] [--help]
 // Exit:  0 ok (plan produced / apply done) · 2 tool fault or apply write failure
-import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync, readdirSync, copyFileSync } from 'node:fs'
+import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync, readdirSync, statSync, copyFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { inspect, readLedger, relevantChanges, isInt, readJson, MIG } from './lib/materia-contract.mjs'
 
@@ -52,6 +61,23 @@ import { inspect, readLedger, relevantChanges, isInt, readJson, MIG } from './li
 //        own manual item alongside the (possibly applicable) migration.
 //  - apply(targetRoot) -> { created: string[], state: object|null }  (only call when
 //    classify returned `applicable`)
+//  - referenceSweep?: OPTIONAL array documenting the artifacts this migration
+//    relocates/renames/replaces, so the engine can deterministically SCAN the target
+//    repo for stale CONSUMER references (the gymii lesson: a migration that moves a gate
+//    script leaves the repo's OWN package.json / CI / MATERIA.md § Gate row / docs still
+//    naming the old path — a broken gate behind a healthy doctor). Each token:
+//      { from, to, autoFix }
+//        from: the OLD repo-relative path consumers may still name (the scan token)
+//        to:   the NEW canonical path (excluded from the scan; drives staleNow)
+//        autoFix: true  → a mechanical path swap the skill may apply unattended
+//                 false → needs command-shape judgement (e.g. `node X.mjs` → `sh Y.sh`),
+//                         so the skill LISTS it with a suggested rewrite, never auto-edits
+//    ADD a referenceSweep whenever a migration relocates/renames/replaces an artifact
+//    repos reference. The scan (scanReferences, below) is WINDOW-INDEPENDENT: it runs on
+//    every plan/apply against a Materia-enabled target regardless of whether the migration
+//    is in the schema window, so a schema-complete repo whose consumers are still stale
+//    (the literal gymii failure mode) is still surfaced. The engine only REPORTS the hits
+//    (referenceFollowUps); the migrate SKILL performs the bounded sweep — no AI here.
 
 // `init-project-state` establishes artifact schema 2 — the schema of the change
 // that reserves it (0.2.0-project-state-file). It records THIS literal, not the
@@ -120,6 +146,18 @@ const installCheckDocs = {
   id: MIG.INSTALL_CHECK_DOCS, // shared source of truth (== 'install-check-docs')
   title: 'Install the check:docs gate script at .materia/scripts/check-docs.sh (schema 3)',
   touchesExistingFiles: true, // may RENAME a legacy scripts/check-docs.sh in place
+  // Consumer references this migration's relocate/replace leaves stale (see the REGISTRY
+  // field doc). The .sh is MOVED (same basename, new dir) — a mechanical path swap, so
+  // autoFix. The .mjs is REPLACED (the portable POSIX-sh gate superseded the old Node
+  // checker): consumers say `node scripts/check-docs.mjs`, which must become `sh
+  // .materia/scripts/check-docs.sh` — a command-SHAPE change, not a path swap, so the
+  // engine lists it and the skill judges it (autoFix:false, never rewritten mechanically).
+  // Kept as literal '/'-form paths (matching CHECK_DOCS_ROOT/CANON/MJS) so the scan tokens
+  // are platform-independent — scanReferences compares them against '/'-form rel paths.
+  referenceSweep: [
+    { from: 'scripts/check-docs.sh', to: '.materia/scripts/check-docs.sh', autoFix: true },
+    { from: 'scripts/check-docs.mjs', to: '.materia/scripts/check-docs.sh', autoFix: false },
+  ],
   classify (report, targetRoot) {
     if (!report.materiaEnabled)
       return { disposition: 'not-applicable', files: [],
@@ -250,8 +288,105 @@ and install-check-docs, which puts the check:docs gate script at its canonical
 or copying it from the plugin scaffold) and stamps artifact schema 3. Apply does
 file ops first and the project.json stamp last, never overwrites an existing gate
 script or a non-schema-2 state file, and never deletes anything (a superseded root
-copy or stale scripts/check-docs.mjs is surfaced as a manual cleanup item). Run
-/materia:doctor afterward to confirm health.`
+copy or stale scripts/check-docs.mjs is surfaced as a manual cleanup item).
+
+Both --plan and --apply also run a deterministic, no-AI reference sweep: they scan
+the target repo for stale references to a relocated/replaced artifact (e.g. a
+scripts/check-docs.sh a consumer still names after it moved to
+.materia/scripts/check-docs.sh) and report them as referenceFollowUps — the engine
+only reports the hits; the /materia:migrate skill performs the bounded sweep and
+re-runs the repo's check:docs gate. Run /materia:doctor afterward to confirm health.`
+
+// ---- reference sweep: deterministic consumer scan ---------------------------
+// For a migration carrying `referenceSweep` (see the REGISTRY field doc), walk the TARGET
+// repo and find every stale reference to a relocated/replaced artifact — the gymii failure
+// mode (a moved gate script leaves the repo's own package.json / CI / § Gate row / docs
+// naming the old path). WINDOW-INDEPENDENT and NO-AI: the engine only REPORTS hits
+// (referenceFollowUps); the migrate skill performs the bounded sweep.
+//
+// Scan contract (deterministic, reproducible):
+//  - ONE walk for all tokens. Skip .git, node_modules, and the FROZEN dated run folders
+//    (docs/specs/<dated-slug>/**, docs/bugs/_reports/<dated-slug>/**) — historical run
+//    artifacts are never rewritten. The sibling index README.md / _proposed/ / _templates/
+//    are present-state and ARE scanned (they are genuine consumers).
+//  - Per token, EXCLUDE the from-path artifact itself and the to-path: the artifact is not
+//    its own consumer (its header self-reference is a false positive that post-move
+//    dangles), and the relocated file at `to` is the destination, not a stale consumer.
+//  - utf8-readable, size-capped files only; a null byte skips the file as binary.
+//  - The match is the from-path with regex metacharacters ESCAPED (a raw `.` would
+//    wildcard), wrapped in the fixed-length lookbehind (?<!\.materia\/) — the same idiom as
+//    validator §1e's BADPATH — so a canonical `.materia/scripts/check-docs.sh` never
+//    matches, while `scripts/check-docs.sh.bak` (a real stale consumer) deliberately does.
+//  - hits[] sorted (file, then line) for stable, reproducible output.
+//  - staleNow per token: the artifact is at its canonical `to` location now, so consumers
+//    still naming `from` are stale THIS INSTANT (a MOVED artifact's refs are broken; a
+//    REPLACED artifact's refs point at a superseded checker the canonical gate replaced).
+//    Pre-move (to absent) it is false — the refs only go stale once apply relocates.
+//  - Emit only tokens WITH hits (a token with no stale consumer has nothing to surface).
+const REF_SCAN_MAX_BYTES = 512 * 1024
+const DATED_SLUG = /^\d{4}-\d{2}-\d{2}-/
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const scanReferences = (targetRoot, mig) => {
+  const sweeps = Array.isArray(mig.referenceSweep) ? mig.referenceSweep : []
+  if (!sweeps.length) return []
+  const tokens = sweeps.map((s) => ({
+    id: mig.id, from: s.from, to: s.to, autoFix: s.autoFix,
+    re: new RegExp(`(?<!\\.materia\\/)${escapeRegExp(s.from)}`),
+    exclude: new Set([s.from, s.to]), // from-path artifact + to-path, in '/'-form
+    hits: [],
+  }))
+  // ONE bounded walk. `rel` is kept in '/'-form (platform-independent) so it compares
+  // directly against the '/'-form sweep tokens; `abs` uses the OS separator for fs reads.
+  const walk = (abs, rel) => {
+    let entries
+    try { entries = readdirSync(abs, { withFileTypes: true }) } catch { return }
+    for (const e of entries) {
+      const childAbs = join(abs, e.name)
+      const childRel = rel ? `${rel}/${e.name}` : e.name
+      if (e.isDirectory()) {
+        if (e.name === '.git' || e.name === 'node_modules') continue
+        // Frozen dated run folders: only a DATED-slug dir directly under docs/specs/ or
+        // docs/bugs/_reports/ is exempt — not the sibling README.md / _proposed/ /
+        // _templates/, which are present-state and stay in the scan.
+        if ((rel === 'docs/specs' || rel === 'docs/bugs/_reports') && DATED_SLUG.test(e.name)) continue
+        walk(childAbs, childRel)
+      } else if (e.isFile()) {
+        let content
+        try {
+          if (statSync(childAbs).size > REF_SCAN_MAX_BYTES) continue
+          content = readFileSync(childAbs, 'utf8')
+        } catch { continue }
+        if (content.includes('\0')) continue // binary skip
+        const lines = content.split('\n')
+        for (const t of tokens) {
+          if (t.exclude.has(childRel)) continue
+          for (let i = 0; i < lines.length; i++)
+            if (t.re.test(lines[i])) t.hits.push({ file: childRel, line: i + 1 })
+        }
+      }
+    }
+  }
+  walk(targetRoot, '')
+  for (const t of tokens)
+    t.hits.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line))
+  return tokens
+    .filter((t) => t.hits.length)
+    .map((t) => ({
+      id: t.id, from: t.from, to: t.to, autoFix: t.autoFix,
+      staleNow: existsSync(join(targetRoot, ...t.to.split('/'))),
+      hits: t.hits,
+    }))
+}
+
+// Run the sweep across every REGISTRY migration that declares one, for a target already
+// known Materia-enabled. Order follows REGISTRY insertion (deterministic).
+const collectReferenceFollowUps = (targetRoot) => {
+  const out = []
+  for (const mig of Object.values(REGISTRY))
+    if (Array.isArray(mig.referenceSweep) && mig.referenceSweep.length)
+      out.push(...scanReferences(targetRoot, mig))
+  return out
+}
 
 // ---- planning ---------------------------------------------------------------
 // Registry-driven: apply decisions come from each migration's classify(), NEVER
@@ -281,6 +416,7 @@ const buildPlan = (targetRoot, releaseDir) => {
     skipped: [],      // not-applicable, or a ledger id with no handler yet
     filesToChange: [],
     localEditsAffected: false,
+    referenceFollowUps: [], // stale consumer references a referenceSweep migration surfaces
     nextCommand: null,
   }
 
@@ -357,6 +493,13 @@ const buildPlan = (targetRoot, releaseDir) => {
   // Dedup filesToChange: two migrations (init-project-state + install-check-docs) may both
   // name .materia/project.json in one legacy adopt — report each path once.
   out.filesToChange = [...new Set(out.filesToChange)]
+
+  // Window-independent consumer reference sweep (see scanReferences). Runs on every plan
+  // against a Materia-enabled target regardless of whether install-check-docs is in-window
+  // — the schema-complete-but-stale repo (gymii) must still be surfaced. Plan REPORTS only,
+  // writes nothing. A non-Materia repo has nothing to sweep (and toolFault returned above).
+  if (report.materiaEnabled) out.referenceFollowUps = collectReferenceFollowUps(targetRoot)
+
   out.nextCommand = out.applicable.length ? '/materia:migrate --apply' : null
   return out
 }
@@ -412,11 +555,48 @@ const runApply = (targetRoot, releaseDir) => {
   if (existsSync(statePath)) {
     try { out.projectState = JSON.parse(readFileSync(statePath, 'utf8')) } catch { out.projectState = null }
   }
+
+  // Re-scan consumer references against the POST-apply tree: the relocate/replace has run,
+  // so the artifact now sits at its canonical location and staleNow flips TRUE for the refs
+  // that still name the old path (the skill's sweep targets exactly these). Guarded on the
+  // re-inspected Materia-enabled result; on tool fault we returned earlier without a rescan
+  // (so the human render's !toolFault early-return never reaches the follow-ups block).
+  out.referenceFollowUps = after.materiaEnabled ? collectReferenceFollowUps(targetRoot) : []
+
   out.nextCommand = '/materia:doctor'
   return out
 }
 
 // ---- human-readable rendering ----------------------------------------------
+// Reference follow-ups block — stale consumer references the migrate SKILL sweeps (autoFix
+// true tokens) or lists for judgement (false). Rendered in BOTH plan and apply (apply is
+// guarded on !toolFault by renderHuman's early return). Per-token wording honors the
+// moved-vs-replaced distinction: a REPLACED artifact is never described as "moved" (the
+// same basename ⇒ moved, a different basename ⇒ replaced). Apply mode closes with the gate
+// re-run so the bare-CLI fallback is complete instructions.
+const followUpLines = (r) => {
+  const fu = (r.referenceFollowUps ?? []).filter((t) => t.hits.length)
+  if (!fu.length) return []
+  const L = ['', '  Reference follow-ups (stale consumer references — /materia:migrate\'s skill sweeps them):']
+  for (const t of fu) {
+    const moved = t.from.split('/').pop() === t.to.split('/').pop()
+    const shape = t.autoFix ? 'auto-fixable path swap' : 'needs command-shape judgement — listed, not auto-edited'
+    L.push(`    ${t.id}: ${t.from} → ${t.to} (${shape})`)
+    let intro
+    if (t.staleNow)
+      intro = moved
+        ? 'These references are stale NOW (the artifact already moved to its canonical location) — update them or let /materia:migrate\'s skill sweep them:'
+        : `These references are stale NOW (the canonical gate exists; they still name the superseded ${t.from}) — update them or let /materia:migrate's skill sweep them:`
+    else
+      intro = 'After apply, these references will need updating (the skill sweeps them):'
+    L.push(`      ${intro}`)
+    for (const h of t.hits) L.push(`        - ${h.file}:${h.line}`)
+  }
+  if (r.mode === 'apply')
+    L.push('    Then re-run your check:docs gate (MATERIA.md § Gate) to confirm it passes.')
+  return L
+}
+
 const renderHuman = (r) => {
   const L = []
   L.push(`materia migrate (${r.mode}) — ${r.target}`)
@@ -475,6 +655,8 @@ const renderHuman = (r) => {
     L.push(`  Status: ${r.status.toUpperCase()}`)
     L.push(`  Next: run ${r.nextCommand ?? '/materia:doctor'} to confirm health.`)
   }
+  // Follow-ups render for plan + apply (the toolFault branch returned above).
+  L.push(...followUpLines(r))
   return L.join('\n')
 }
 
