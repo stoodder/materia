@@ -223,7 +223,7 @@ const fail = (msg) => { console.error(`  ✗ ${msg}`); failures++ }
 }
 
 // ---- 1b. direct skills link/anchor check ------------------------------------
-// The skill-free sim (above) no longer covers skill-internal markdown links or
+// The skill-free parity harness (above) no longer covers skill-internal markdown links or
 // anchors. Restore that coverage HONESTLY: resolve every relative link + #anchor
 // in plugins/materia/skills/** exactly as the files sit in the repo — no temp
 // reconstruction. Valid skill links stay inside the skills subtree: sibling
@@ -772,10 +772,10 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
   const before = failures
   const MKT = '.claude-plugin/marketplace.json'
   const isDir = (p) => existsSync(p) && statSync(p).isDirectory()
-  let mkt = null
+  let mkt
   try { mkt = JSON.parse(readFileSync(MKT, 'utf8')) }
-  catch (e) { fail(`${MKT}: not valid JSON — ${e.message}`) }
-  if (mkt !== null && (typeof mkt !== 'object' || Array.isArray(mkt)))
+  catch (e) { mkt = undefined; fail(`${MKT}: not valid JSON — ${e.message}`) }
+  if (mkt !== undefined && (mkt === null || typeof mkt !== 'object' || Array.isArray(mkt)))
     fail(`${MKT}: must be a JSON object`)
   else if (mkt) {
     if (!Array.isArray(mkt.plugins) || mkt.plugins.length === 0) {
@@ -792,7 +792,7 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
       if (!materiaEntry) {
         fail(`${MKT}: no plugins[] entry named "materia"`)
       } else {
-        const pluginManifest = 'plugins/materia/.claude-plugin/plugin.json'
+        const pluginManifest = join(resolve(materiaEntry.source ?? 'plugins/materia'), '.claude-plugin/plugin.json')
         if (!existsSync(pluginManifest)) {
           fail(`${MKT}: materia entry's source has no manifest at ${pluginManifest}`)
         } else {
@@ -1291,7 +1291,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       // exported, so mirror it here AND textually pin that doctor.mjs's source still
       // maps action-needed -> 1 — a drift in either the mirror or the real map fails.
       const EXIT = { healthy: 0, warnings: 0, unknown: 0, 'action-needed': 1, blocked: 2 }
-      if (!/'action-needed':\s*1/.test(readFileSync(DOCTOR, 'utf8')))
+      if (!/['"]action-needed['"]:\s*1/.test(readFileSync(DOCTOR, 'utf8')))
         problems.push('doctor.mjs EXIT map no longer maps action-needed -> 1 (this test\'s mirror of it is stale)')
       if (EXIT[rep.status] !== 1)
         problems.push(`mirrored EXIT[${rep.status}]=${EXIT[rep.status]} (want 1)`)
