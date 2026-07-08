@@ -244,8 +244,8 @@ abandoned Q&A above this step leaves no stray branch behind.
 
 3. **Verify link integrity, then commit** the proposal file(s):
 
-   Verify link integrity per the lifecycle invariant (`sh scripts/check-docs.sh`;
-   fix any links the new files introduce), then commit:
+   Verify link integrity per the lifecycle invariant (run the `check:docs` gate —
+   the command in `MATERIA.md § Gate`; fix any links the new files introduce), then commit:
 
    ```bash
    git add docs/specs/_proposed/<filename-1>[ <filename-2> ...]

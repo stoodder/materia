@@ -48,7 +48,7 @@ ambiguous fix is skipped and noted, never guessed at (§ Rules).
 - `docs/standards/docs.md` (the authoring standard) and
   `docs/contributing.md` (the touch-X→update-Y map, read in reverse: which
   code would have demanded which doc).
-- `scripts/check-docs.sh` via `sh scripts/check-docs.sh` (the mechanical gate).
+- the `check:docs` gate — its command in `MATERIA.md § Gate` (the mechanical gate).
 
 **Not inputs, never edited:** `docs/specs/**`, `docs/bugs/**`,
 `docs/epics/**`, `docs/research/**` — historical run artifacts, exempt by the
@@ -73,7 +73,7 @@ blocked by local changes; `<trunk>`/`<remote>` per `MATERIA.md` § Version
 control). Confirm the forge is reachable — `gh auth status` when `gh` is on
 PATH, else that the GitHub-MCP twin tooling responds, and skip the check
 entirely when the forge is `none` (`MATERIA.md` § Version control § Forge).
-Verify that `sh scripts/check-docs.sh` is runnable — apply
+Verify that the `check:docs` gate command (`MATERIA.md § Gate`) is runnable — apply
 `${CLAUDE_PLUGIN_ROOT}/skills/ship-spec/resources/env-preflight.md` (and
 `MATERIA.md` § Environment preflight) recipes if not.
 Read `docs/standards/docs.md` and the doc indexes into context.
@@ -109,7 +109,7 @@ that proves the doc wrong).
    supports…", change-log-shaped sections), facts duplicated across docs
    instead of linked to their one home, table-cell bloat, multi-sentence
    glossary entries. Fix by rewriting to present-state.
-5. **Mechanical gate.** Run `sh scripts/check-docs.sh`; any failure on the trunk is a
+5. **Mechanical gate.** Run the `check:docs` gate (`MATERIA.md § Gate`); any failure on the trunk is a
    finding to fix (narration phrases, over-long lines, duplicate lines,
    glossary order, broken links, unresolvable `#anchor` fragments).
 
@@ -144,7 +144,7 @@ alphabetical position). Commit in small scoped commits
 ### 5. Gate locally, then PR
 
 ```bash
-sh scripts/check-docs.sh && <lint — MATERIA.md § Gate>   # links/style + formatting over the .md diff
+<check:docs — MATERIA.md § Gate> && <lint — MATERIA.md § Gate>   # links/style + formatting over the .md diff
 git diff <baseline>...HEAD --name-only     # § The docs-only envelope — assert now
 git push -u <remote> librarian/sweep-<YYYY-MM-DD>
 # open the PR — MATERIA.md § Version control § Forge (open-PR op)

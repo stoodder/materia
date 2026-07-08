@@ -10,8 +10,8 @@
 #      wraps), no over-long lines, no duplicated long lines, glossary stays
 #      alphabetical.
 # Exits non-zero (with the offending file:line) on any failure.
-# Run: `sh scripts/check-docs.sh`. Override awk with AWK env var (e.g.
-# `AWK='busybox awk' sh scripts/check-docs.sh`).
+# Run: `sh .materia/scripts/check-docs.sh`. Override awk with AWK env var (e.g.
+# `AWK='busybox awk' sh .materia/scripts/check-docs.sh`).
 #
 # Portability floor: strict POSIX sh (dash) + POSIX awk. Runs unmodified under
 # mawk 1.3.4, busybox awk 1.36.1, and gawk 5.x (no gawk gensub/IGNORECASE, no

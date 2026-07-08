@@ -20,4 +20,4 @@ evidence was gathered (method + source quality), then organize findings so a
 reader can act on them. Cite primary sources (papers, official docs, engineering
 blogs) over listicles; prefer bare URLs or `<url>` over markdown links so the
 doc link-check stays focused on in-repo paths. Add a row to the table above and
-run `sh scripts/check-docs.sh`.
+run `sh .materia/scripts/check-docs.sh`.

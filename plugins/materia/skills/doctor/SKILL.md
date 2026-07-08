@@ -72,12 +72,27 @@ action-needed, `2` blocked).
    Rules). Lead with the overall status and whether the repo is Materia-enabled,
    then the current vs latest artifact schema, the project-state location (or
    that it is missing/malformed), and any required/recommended/optional changes
-   plus manual action items the script listed.
+   plus manual action items the script listed. Two of the per-check results
+   concern the binding check:docs gate script: `check-docs-sh-present` is `ok`
+   when it sits at EITHER the canonical `.materia/scripts/check-docs.sh` OR a
+   legacy `scripts/check-docs.sh` a not-yet-relocated install still carries (and
+   `warning` at neither), while `check-docs-sh-location` is `ok` only at the
+   canonical location and `warning` when it is root-only. Relay the script's own
+   remediation wording — it is schema-aware (it points at `/materia:migrate
+   --plan` for a behind repo, or "move it by hand" for one already at the latest
+   schema).
 
 3. **Recommend the next step the script named** — no more. Common cases:
    - **`healthy`** — schema is current; nothing required. Note that a healthy
      report can still list *optional* changes (an `optional`-impact drift does
-     not demote the status) — relay them as available, not needed.
+     not demote the status) — relay them as available, not needed. A healthy
+     report can ALSO carry a `/materia:migrate --plan` suggestion in one
+     bookkeeping case: an **adopted-but-unstamped** repo (it already carries a
+     change's artifact — e.g. the gate script at the canonical
+     `.materia/scripts/check-docs.sh` — but the project-state still records the
+     older schema). The drift is adopted, so status stays healthy; migrate has a
+     stamp-only step left to record. Relay the suggestion as bookkeeping, not a
+     problem.
    - **`warnings`** — e.g. an untracked pre-tracking (legacy) install, or a stale
      schema whose adoptable changes are *recommended*. Relay the script's
      suggested next step, `/materia:migrate --plan` — the operator runs that to

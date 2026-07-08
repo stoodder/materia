@@ -190,7 +190,8 @@ your returned retro block:
   a broken link and fails the gate. Write it in arrow/prose form instead
   (`text → path`).
 - **Read the gate verdict from the exit code, not the display line.** Treat
-  `sh scripts/check-docs.sh` (and every gate command) as passing **iff its exit code
+  the `check:docs` gate command (`MATERIA.md § Gate`) — and every gate command —
+  as passing **iff its exit code
   is 0** — do not judge it by the trailing summary/display line it prints, which
   can read as success while the command exits non-zero.
 

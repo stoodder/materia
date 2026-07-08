@@ -51,7 +51,7 @@ the skip).
 | `typecheck` | {{command or none}} | |
 | `test` | {{unit/integration suite command}} | |
 | `test:e2e` | {{browser/e2e suite command, or none}} | |
-| `check:docs` | {{e.g. sh scripts/check-docs.sh}} | ships with materia; portable |
+| `check:docs` | {{e.g. sh .materia/scripts/check-docs.sh}} | ships with materia; portable |
 
 **The full gate** (what `finalize` and CI run): every non-`none` row above,
 in table order, all green.
@@ -421,7 +421,7 @@ adapts deliberately, not by surprise — the first has a config home in
   left at `per-skill default` or absent, each skill falls back to its own default
   — librarian `squash`, ship-spec `merge`.)
 - **`check:docs` needs POSIX `sh`+`awk`.** The one unconditionally-binding gate
-  (§ Gate) ships as `sh scripts/check-docs.sh`. It travels with the harness and
+  (§ Gate) ships as `sh .materia/scripts/check-docs.sh`. It travels with the harness and
   needs only a **POSIX shell and `awk`** — present on essentially any Unix
   (Linux, macOS, BSD) and in Alpine/distroless images (busybox), with nothing to
   install, so a Rust/Go/Python project needs no extra runtime; native Windows

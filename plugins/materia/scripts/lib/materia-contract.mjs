@@ -44,6 +44,7 @@ export const KNOWN_CHECK_IDS = [
   'release-ledger-readable',
   'materia-enabled',
   'check-docs-sh-present',
+  'check-docs-sh-location',
   'project-state-present',
   'project-state-parses',
   'artifact-schema-known',
@@ -53,7 +54,7 @@ export const KNOWN_CHECK_IDS = [
 // MIG, so the implemented migration set can never drift from KNOWN_MIGRATION_IDS; and the
 // validator resolves a ledger change's `migrations` against this list by importing it from
 // HERE (a pure module) rather than from migrate.mjs (whose top-level runs a CLI main()).
-export const MIG = { INIT_PROJECT_STATE: 'init-project-state' }
+export const MIG = { INIT_PROJECT_STATE: 'init-project-state', INSTALL_CHECK_DOCS: 'install-check-docs' }
 export const KNOWN_MIGRATION_IDS = Object.values(MIG)
 
 // ---- safe JSON read ---------------------------------------------------------
@@ -112,24 +113,51 @@ export function bucketize (report, changes) {
   }
 }
 
+// Adopted-drift filter. A ledger change is "adopted" — already satisfied by the
+// repo despite an untracked/schema-behind project-state — when it is `detectable`,
+// names a NON-EMPTY set of `doctorChecks`, and EVERY one of those checks was already
+// emitted `ok` in the checks array BY THE TIME this runs. Adopted changes are excluded
+// from the adoption buckets AND the severity reduce, so a repo that already carries a
+// change's artifact isn't nagged to re-adopt it.
+//   - Non-empty guard: a change with `doctorChecks: []` (or none) is never vacuously
+//     adopted — it stays in the buckets and drives severity as declared.
+//   - Reads the EMITTED checks (not KNOWN_CHECK_IDS): a change's own detector emitted
+//     LATER in the same run can't adopt it — e.g. `project-state-present` is added
+//     after the untracked bucketing site, so `0.2.0-project-state-file` is unfilterable
+//     there and the recommended untracked-legacy adoption always surfaces.
+// The doctor↔migrate bridge (see inspect's schema-behind branch) still points at migrate
+// to record the stamp when a change is adopted-but-unstamped AND the state is one migrate
+// will actually stamp (schema >= 2) — so doctor never says "nothing to do" while migrate
+// has an applicable stamp, and never promises a stamp migrate would refuse (a
+// hand-authored schema-1 state is manual on both sides).
+const isAdopted = (ch, emittedChecks) => {
+  if (ch.detectable !== true) return false
+  const dc = Array.isArray(ch.doctorChecks) ? ch.doctorChecks : []
+  if (dc.length === 0) return false
+  return dc.every((id) => emittedChecks.some((c) => c.id === id && c.severity === 'ok'))
+}
+
 // ---- core inspection --------------------------------------------------------
 // Deterministic state detector. Returns the canonical report both doctor and
 // migrate build on. `releaseDir` is passed in (never resolved here) so a caller
 // points it at its own ../release sibling in the plugin cache; `targetRoot` is
 // the separate user-repo root. Reads only; writes nothing.
 //
-// Check ID <-> ledger correspondence: `project-state-present` is the exact id the
-// ledger reserves in `0.2.0-project-state-file`.doctorChecks — inspect implements
-// it as that change's canonical detector. `artifact-schema-current` and
-// `check-docs-sh-present` are change-agnostic checks (the former fires on schema-1
-// repos too; the latter inspects the scaffold gate script directly); by design
-// NEITHER is listed in any ledger change's doctorChecks (that would be a
-// ledger-data change). `check-docs-sh-present` guards the binding check:docs gate
-// (`sh scripts/check-docs.sh`): schema currency certifies ONLY .materia/project.json,
-// never full scaffold conformance, so this separate presence check catches a real
-// dogfood gap schema currency would otherwise hide. A drift is never reported as
-// MORE severe than the ledger's own `impact` says — per-drift severity derives from
-// that impact (IMPACT_SEV).
+// Check ID <-> ledger correspondence: three checks are the canonical detectors the
+// ledger reserves in a change's `doctorChecks` — `project-state-present` for
+// `0.2.0-project-state-file`, `check-docs-sh-present` for `0.3.0-check-docs-sh-gate`,
+// and `check-docs-sh-location` for `0.3.0-scripts-relocation`. The adopted-drift filter
+// (isAdopted) keys on each firing `ok` to spare a repo that already carries the change.
+// `artifact-schema-current` REMAINS change-agnostic (it fires on schema-1 repos too and
+// is listed in NO ledger change's doctorChecks — that would be a ledger-data change; the
+// schema-behind branch reuses it to carry the doctor↔migrate adopted-but-unstamped bridge
+// note). `check-docs-sh-present` guards the binding check:docs gate at EITHER the legacy
+// `scripts/check-docs.sh` (a not-yet-relocated install) or the canonical
+// `.materia/scripts/check-docs.sh`; `check-docs-sh-location` reports whether it sits at
+// that canonical location. Schema currency certifies ONLY .materia/project.json, never
+// full scaffold conformance, so these separate checks catch a real dogfood gap schema
+// currency would otherwise hide. A drift is never reported as MORE severe than the
+// ledger's own `impact` says — per-drift severity derives from that impact (IMPACT_SEV).
 export const inspect = (targetRoot, releaseDir) => {
   const checks = []
   const add = (id, title, severity, detail) => { checks.push({ id, title, severity, detail }) }
@@ -178,19 +206,60 @@ export const inspect = (targetRoot, releaseDir) => {
 
   let overall = 'ok'
 
-  // 3. check-docs-sh-present — change-agnostic: a SINGLE emission on the shared
-  //    path (before any later branch return), so every Materia-enabled repo is
-  //    checked for the binding check:docs gate script. Schema currency certifies
-  //    ONLY .materia/project.json; this catches an old dogfood repo that predates
-  //    scripts/check-docs.sh (it replaced scripts/check-docs.mjs) — a gap the
-  //    project-state schema check cannot see.
-  if (existsSync(join(targetRoot, 'scripts', 'check-docs.sh'))) {
+  // 3. check-docs-sh-present + check-docs-sh-location — change-agnostic gate-script
+  //    detectors, both emitted on the shared path (before any later branch return) so
+  //    (a) every Materia-enabled repo is checked, and (b) BOTH are in the checks array
+  //    before the adopted-drift filter runs at either bucketing site below (the filter
+  //    reads the emitted checks). Schema currency certifies ONLY .materia/project.json;
+  //    these catch an old dogfood repo that predates the gate script (it replaced
+  //    scripts/check-docs.mjs) or has not yet relocated it to the canonical
+  //    .materia/scripts/ — gaps the project-state schema check cannot see.
+  const atCanonSh = existsSync(join(targetRoot, '.materia', 'scripts', 'check-docs.sh'))
+  const atRootSh = existsSync(join(targetRoot, 'scripts', 'check-docs.sh'))
+  if (atCanonSh || atRootSh) {
     add('check-docs-sh-present', 'check:docs gate script present', 'ok',
-      'scripts/check-docs.sh present — the binding check:docs gate script is present.')
+      'the binding check:docs gate script is present (canonical location .materia/scripts/check-docs.sh; the plugin ships it at scaffold/.materia/scripts/check-docs.sh).')
   } else {
     overall = worst(overall, 'warning')
     add('check-docs-sh-present', 'check:docs gate script present', 'warning',
-      'scripts/check-docs.sh is missing — this repo predates the check-docs.sh gate script (it replaced scripts/check-docs.mjs) or has moved it; the binding gate `sh scripts/check-docs.sh` will fail. Copy it from the installed plugin scaffold (scaffold/scripts/check-docs.sh).')
+      'the binding check:docs gate script is missing from both .materia/scripts/check-docs.sh and scripts/check-docs.sh — this repo predates the gate script (it replaced scripts/check-docs.mjs) or has moved it; the binding check:docs gate will fail. Copy it from the installed plugin scaffold (scaffold/.materia/scripts/check-docs.sh).')
+  }
+  // Location detector for the 0.3.0 relocation change. The warning detail only points
+  // at /materia:migrate when install-check-docs would actually be APPLICABLE there:
+  // a MISSING state file (untracked-legacy — migrate relocates, disposition 4) or a
+  // recorded schema of exactly 2 (the one behind-schema migrate will stamp). Everything
+  // else — at/above the latest schema (migrate discovers nothing), or a present
+  // schema<2 / unknown / unparseable state (migrate's classify says manual, the
+  // never-overwrite guarantee) — gets move-by-hand wording, so doctor never points at
+  // a command migrate would refuse. Peek the recorded state for that wording only —
+  // the authoritative parse/known/current checks run in the branches below. (This is a
+  // read-only peek; the canonical parse still happens once, gated, at step 5.)
+  let recordedSchema = null
+  let statePeekPresent = false
+  {
+    const sp = join(targetRoot, '.materia', 'project.json')
+    if (existsSync(sp)) {
+      statePeekPresent = true
+      const p = readJson(sp)
+      if (!p.error && isInt(p.value.artifactSchema)) recordedSchema = p.value.artifactSchema
+    }
+  }
+  if (atCanonSh) {
+    add('check-docs-sh-location', 'check:docs gate script at canonical location', 'ok',
+      'the gate script is at the canonical .materia/scripts/check-docs.sh.')
+  } else if (atRootSh) {
+    overall = worst(overall, 'warning')
+    // 2 mirrors migrate's INIT_STATE_SCHEMA stamp floor (install-check-docs stamps
+    // only a schema-2 state; see migrate.mjs).
+    const migrateApplicable = !statePeekPresent || recordedSchema === 2
+    const fix = migrateApplicable
+      ? 'run /materia:migrate --plan to relocate it to .materia/scripts/check-docs.sh.'
+      : 'move it by hand to .materia/scripts/check-docs.sh (this repo\'s recorded state is not one migrate will modify — see /materia:migrate --plan\'s manual items).'
+    add('check-docs-sh-location', 'check:docs gate script at canonical location', 'warning',
+      `the gate script is at the legacy scripts/check-docs.sh, not the canonical .materia/scripts/check-docs.sh — ${fix}`)
+  } else {
+    add('check-docs-sh-location', 'check:docs gate script at canonical location', 'info',
+      'absent — see check-docs-sh-present.')
   }
 
   // 4. project-state-present — .materia/project.json.
@@ -202,7 +271,12 @@ export const inspect = (targetRoot, releaseDir) => {
     // drift to adopt = changes in (1, latest]; its severity = worst ledger impact.
     report.missing = true
     report.currentSchema = 'untracked-legacy'
+    // Filter out changes this untracked repo has ALREADY adopted (their doctorChecks
+    // fired `ok` above) — e.g. a legacy repo that already carries the gate script needn't
+    // re-adopt 0.3.0-check-docs-sh-gate. project-state-present is emitted BELOW, so the
+    // recommended untracked-legacy adoption (0.2.0-project-state-file) is never filtered.
     const changes = relevantChanges(ledger.versions, 1, ledger.latestSchema)
+      .filter((ch) => !isAdopted(ch, checks))
     bucketize(report, changes)
     const sev = changes.reduce((s, ch) => worst(s, IMPACT_SEV[ch.impact] ?? 'info'), 'info')
     overall = worst(overall, sev)
@@ -210,9 +284,10 @@ export const inspect = (targetRoot, releaseDir) => {
       changes.length
         ? 'Materia appears installed, but no .materia/project.json was found. This likely predates artifact tracking (untracked legacy). Adopting tracking certifies only .materia/project.json, not full scaffold conformance — see the ledger 0.1.0 baseline reconciliation notes for legacy items (check-docs.sh, MATERIA.md sections, review-angles/) an old install may still need by hand.'
         : 'No .materia/project.json, but the ledger declares no adoptable changes — nothing to migrate.')
-    // Suggest migrate only for warning-or-worse adoptable drift; optional-only
-    // (info) drift keeps the report `healthy` with an optional-changes list and
-    // no suggestion, matching the skill's "healthy → nothing required" contract.
+    // Suggest migrate for warning-or-worse adoptable drift. The untracked branch always
+    // carries the recommended untracked-legacy adoption (never filtered — see above), so
+    // this is effectively always set here; the info-severity adopted-but-unstamped bridge
+    // that keeps a stamp discoverable lives in the schema-behind branch below.
     if (sevRank(sev) >= sevRank('warning')) report.suggestedNextCommand = '/materia:migrate --plan'
     report.status = statusFrom(overall)
     return report
@@ -261,16 +336,32 @@ export const inspect = (targetRoot, releaseDir) => {
     add('artifact-schema-current', 'Artifact schema is current', 'ok',
       `schema ${schema} == latest — certifies only .materia/project.json, not full scaffold conformance.`)
   } else {
-    const changes = relevantChanges(ledger.versions, schema, ledger.latestSchema)
+    // Filter out already-adopted changes (their doctorChecks fired `ok` above), then
+    // bucket + score only what's genuinely unadopted. `adoptedCount` drives the
+    // doctor↔migrate bridge below.
+    const all = relevantChanges(ledger.versions, schema, ledger.latestSchema)
+    const changes = all.filter((ch) => !isAdopted(ch, checks))
+    const adoptedCount = all.length - changes.length
+    // The bridge only fires when migrate can actually record the adoption: the stamp
+    // (install-check-docs) touches only a schema >= 2 state — a hand-authored schema-1
+    // file is one migrate refuses to modify (its classify says manual, mirroring
+    // init-project-state), so pointing "run migrate to record adoption" at it would be
+    // an unfulfillable promise. Below 2, the filtered changes still stay out of the
+    // buckets (they ARE adopted); only the record-it suggestion is withheld.
+    const bridgeStampable = schema >= 2
     bucketize(report, changes)
     const sev = changes.reduce((s, ch) => worst(s, IMPACT_SEV[ch.impact] ?? 'info'), 'info')
     overall = worst(overall, sev)
     add('artifact-schema-current', 'Artifact schema is current', sev,
-      `schema ${schema} is behind latest ${ledger.latestSchema} — ${changes.length} change(s) to adopt.`)
-    // Suggest migrate only for warning-or-worse adoptable drift; optional-only
-    // (info) drift keeps the report `healthy` with an optional-changes list and
-    // no suggestion, matching the skill's "healthy → nothing required" contract.
-    if (sevRank(sev) >= sevRank('warning')) report.suggestedNextCommand = '/materia:migrate --plan'
+      `schema ${schema} is behind latest ${ledger.latestSchema} — ${changes.length} change(s) to adopt.` +
+      (adoptedCount && bridgeStampable ? ` (${adoptedCount} change(s) already adopted but unstamped — run /materia:migrate --plan to record adoption.)`
+        : adoptedCount ? ` (${adoptedCount} change(s) already adopted; the schema-${schema} state file needs by-hand review before migrate will stamp it — see /materia:migrate --plan's manual items.)` : ''))
+    // Suggest migrate for warning-or-worse adoptable drift OR when a change was filtered
+    // as adopted-but-unstamped AND migrate can stamp it — the doctor↔migrate bridge.
+    // In that case migrate has an applicable stamp to record (schema 2, behind), so
+    // doctor must not say "nothing to do"; the remaining severity is only info, so the
+    // STATUS stays healthy (exit 0) while suggestedNextCommand points at the stamp.
+    if (sevRank(sev) >= sevRank('warning') || (adoptedCount > 0 && bridgeStampable)) report.suggestedNextCommand = '/materia:migrate --plan'
   }
 
   report.status = statusFrom(overall)

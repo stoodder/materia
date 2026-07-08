@@ -75,6 +75,11 @@ bug-lane stage ids `reproduce-bug` and `bug-analysis` (see `fix-bug/SKILL.md`
 > `STATUS.md`, the implementer-edited copies of docs (for regression
 > checks read code at `<baseline>`), other reviewers' outputs, or
 > anything under `.claude/review-logs/`.
+>
+> Verify every finding against the actual code, diff, or repo state before
+> reporting it — a finding must carry its evidence (file:line and why it's
+> wrong) in the structured finding schema, and one you could not verify
+> must say so explicitly rather than being reported as fact.
 
 ### Round-2+ additions (both fresh-context-allowed — they are the
 orchestrator's brief, not other reviewers' raw outputs)

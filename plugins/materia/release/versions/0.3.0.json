@@ -1,0 +1,59 @@
+{
+  "pluginVersion": "0.3.0",
+  "artifactSchema": 3,
+  "summary": "Relocates the check:docs gate script to its canonical .materia/scripts/check-docs.sh, widens artifactSchema to track the installed-artifact contract (canonical file locations, not just project.json), and settles the deferred PR #17 ledger entries.",
+  "changes": [
+    {
+      "id": "0.3.0-check-docs-sh-gate",
+      "summary": "The binding check:docs gate script (.materia/scripts/check-docs.sh) must be present; a repo predating it fails the gate.",
+      "impact": "required",
+      "surfaces": ["scaffold", "doctor", "migrate"],
+      "detectable": true,
+      "migratable": true,
+      "doctorChecks": ["check-docs-sh-present"],
+      "migrations": ["install-check-docs"],
+      "manualMigration": "Copy the gate script from the installed plugin scaffold (scaffold/.materia/scripts/check-docs.sh) to .materia/scripts/check-docs.sh, and remove any stale scripts/check-docs.mjs (the artifact the .sh replaced) if present. Or run /materia:migrate --apply, which installs it via the install-check-docs migration.",
+      "notes": "Historical drift, recorded now at release time: the check:docs gate script originated before PR #10 as scripts/check-docs.mjs, which the portable POSIX-sh check-docs.sh later replaced; a pre-#10 dogfood repo has neither at the canonical location and fails the binding gate. Classified required (operator decision): the fix is mechanical and one-command. This entry's schema-3 window (1,3] reaches BOTH untracked-legacy and schema-2 installs, so a missing gate yields action-needed uniformly regardless of tracking vintage; the adopted-drift filter spares any repo that already carries the script (check-docs-sh-present ok). Renamed from PR #17's suggested id 0.2.0-check-docs-sh: it lives in 0.3.0.json (0.2.0.json, a shipped file, is never retro-edited) so the window reaches untracked repos too."
+    },
+    {
+      "id": "0.3.0-scripts-relocation",
+      "summary": "The check:docs gate script's canonical location moved from scripts/check-docs.sh to .materia/scripts/check-docs.sh.",
+      "impact": "recommended",
+      "surfaces": ["scaffold", "ledger", "validator", "doctor", "migrate"],
+      "detectable": true,
+      "migratable": true,
+      "doctorChecks": ["check-docs-sh-location"],
+      "migrations": ["install-check-docs"],
+      "manualMigration": "Move scripts/check-docs.sh to .materia/scripts/check-docs.sh by hand (git mv preserves history and any local edits), then stamp artifact schema 3 in .materia/project.json. Or run /materia:migrate --apply, which relocates via the install-check-docs migration (rename in place, then stamp). If the script is absent at BOTH locations, this item does not apply — 0.3.0-check-docs-sh-gate covers installing it (same migration).",
+      "notes": "The old root scripts/check-docs.sh location keeps working: skills no longer hardcode the gate path — they resolve check:docs from the installed repo's own MATERIA.md § Gate row, so a mixed-vintage install whose § Gate still names the root path runs fine. Relocation is recommended (tidiness + the canonical-layout contract), not required. Shares the install-check-docs migration with 0.3.0-check-docs-sh-gate (buildPlan dedups it)."
+    },
+    {
+      "id": "0.3.0-forge-merge-strategy",
+      "summary": "MATERIA.md § Forge gains a merge-strategy knob (the PR-merge method the pipelines use).",
+      "impact": "optional",
+      "surfaces": ["scaffold"],
+      "detectable": false,
+      "detectionNotes": "The knob is optional prose inside MATERIA.md § Forge; its absence is indistinguishable from a repo that deliberately omits it, and no default is wrong — so no doctor check can honestly flag it as drift.",
+      "migratable": false,
+      "manualMigration": "Add the merge-strategy knob to MATERIA.md § Forge by hand, matching the current scaffold's § Forge subsection."
+    },
+    {
+      "id": "0.3.0-queue-readme-prose",
+      "summary": "The bundled scaffold queue READMEs (proposed-specs / bug-reports) gained clarifying prose.",
+      "impact": "optional",
+      "surfaces": ["scaffold"],
+      "detectable": false,
+      "detectionNotes": "A prose refinement inside materialized queue README docs, which the user repo freely edits; there is no canonical byte-string to diff against, so no doctor check can detect it without false positives.",
+      "migratable": false
+    },
+    {
+      "id": "0.3.0-review-angles-calibration-xref",
+      "summary": "The scaffold review-angles README gained a short cross-reference to the reviewer-calibration guidance the ship-spec review machinery provides centrally (severity rubric, structured finding shape, verify-before-reporting).",
+      "impact": "optional",
+      "surfaces": ["scaffold"],
+      "detectable": false,
+      "detectionNotes": "A single cross-reference line in a materialized doc the user repo may edit; its absence is not mechanically distinguishable from an intentional local edit, so no doctor check can flag it honestly.",
+      "migratable": false
+    }
+  ]
+}
