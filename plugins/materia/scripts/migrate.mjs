@@ -16,30 +16,41 @@
 // The ledger is the script's sibling ../release; the TARGET project is a separate
 // root (positional arg, default cwd) — never the plugin cache.
 //
-// v0 / dogfood-grade: the ONLY implemented migration is `init-project-state`
-// (the stable id the ledger reserves in `0.2.0-project-state-file`.migrations),
-// which initializes .materia/project.json for a detectable pre-tracking
-// ("untracked-legacy") install. Every other ledger-declared migration is
-// reported as skipped/manual until a handler exists. Guardrails: plan writes
-// nothing; apply writes ONLY .materia/project.json, atomically, and NEVER
-// overwrites an existing or malformed file; nothing auto-runs from startup hooks.
+// v0 / dogfood-grade: TWO implemented migrations. `init-project-state` (reserved in
+// `0.2.0-project-state-file`.migrations) initializes .materia/project.json for a
+// detectable pre-tracking ("untracked-legacy") install. `install-check-docs` (reserved
+// in `0.3.0-check-docs-sh-gate` + `0.3.0-scripts-relocation`.migrations) puts the binding
+// check:docs gate script at its canonical .materia/scripts/check-docs.sh — renaming a
+// legacy scripts/check-docs.sh in place (preserving any local edits) or copying it from
+// the plugin scaffold when absent — then stamps artifact schema 3 in the project-state
+// file. Every other ledger-declared migration is reported as skipped/manual until a
+// handler exists. Guardrails: plan writes nothing; apply performs file ops FIRST and the
+// project.json stamp LAST (an interrupted apply leaves a recoverable schema-behind state,
+// never a stamped-but-unmoved orphan), writes project.json atomically, NEVER overwrites an
+// existing gate script or a non-schema-2 project-state file, and never DELETES anything
+// (a superseded root copy or a stale scripts/check-docs.mjs is surfaced as a manual
+// cleanup item, not removed); nothing auto-runs from startup hooks.
 //
 // Usage: node migrate.mjs [targetPath] [--plan|--apply] [--json] [--help]
 // Exit:  0 ok (plan produced / apply done) · 2 tool fault or apply write failure
-import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync, readdirSync } from 'node:fs'
+import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync, readdirSync, copyFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
-import { inspect, readLedger, relevantChanges, isInt, MIG } from './lib/materia-contract.mjs'
+import { inspect, readLedger, relevantChanges, isInt, readJson, MIG } from './lib/materia-contract.mjs'
 
 // ---- migration registry -----------------------------------------------------
 // One entry per implemented, stable migration id. Each migration:
 //  - id / title
-//  - touchesExistingFiles: whether apply could modify a file the user may have
-//    edited (drives the plan's "local edits may be affected" flag). v0's sole
-//    migration only ever CREATES a missing file, so this is false.
-//  - classify(report, targetRoot) -> { disposition, reason, files }
+//  - touchesExistingFiles: whether apply could modify/move a file the user may have
+//    edited (drives the plan's "local edits may be affected" flag). init-project-state
+//    only ever CREATES a missing file → false; install-check-docs may RENAME a legacy
+//    gate script (preserving edits) → true.
+//  - classify(report, targetRoot) -> { disposition, reason, files, manualNote? }
 //      disposition ∈ applicable | satisfied | manual | not-applicable
-//      files: repo-relative paths apply would create (only for `applicable`)
-//  - apply(targetRoot) -> { created: string[], state: object }  (only call when
+//      files: repo-relative paths apply would create/change (only for `applicable`)
+//      manualNote: an optional by-hand cleanup the migration will NOT perform (a
+//        superseded root copy, or a stale scripts/check-docs.mjs) — surfaced as its
+//        own manual item alongside the (possibly applicable) migration.
+//  - apply(targetRoot) -> { created: string[], state: object|null }  (only call when
 //    classify returned `applicable`)
 
 // `init-project-state` establishes artifact schema 2 — the schema of the change
@@ -48,6 +59,14 @@ import { inspect, readLedger, relevantChanges, isInt, MIG } from './lib/materia-
 // and hide a future schema-N drift this migration does not adopt.
 const INIT_STATE_SCHEMA = 2
 const STATE_REL = join('.materia', 'project.json')
+// `install-check-docs` stamps schema 3 — the schema of the changes that reserve it
+// (0.3.0-check-docs-sh-gate + 0.3.0-scripts-relocation). Its gate script lives at the
+// canonical CHECK_DOCS_CANON; a legacy install may still carry it at CHECK_DOCS_ROOT, and
+// the artifact the .sh replaced is CHECK_DOCS_MJS (never deleted — surfaced as manual).
+const CHECK_DOCS_SCHEMA = 3
+const CHECK_DOCS_CANON = join('.materia', 'scripts', 'check-docs.sh')
+const CHECK_DOCS_ROOT = join('scripts', 'check-docs.sh')
+const CHECK_DOCS_MJS = join('scripts', 'check-docs.mjs')
 
 const initProjectState = {
   id: MIG.INIT_PROJECT_STATE, // shared source of truth (== 'init-project-state'); keeps REGISTRY in sync with KNOWN_MIGRATION_IDS
@@ -97,7 +116,108 @@ const initProjectState = {
   },
 }
 
-const REGISTRY = { [initProjectState.id]: initProjectState }
+const installCheckDocs = {
+  id: MIG.INSTALL_CHECK_DOCS, // shared source of truth (== 'install-check-docs')
+  title: 'Install the check:docs gate script at .materia/scripts/check-docs.sh (schema 3)',
+  touchesExistingFiles: true, // may RENAME a legacy scripts/check-docs.sh in place
+  classify (report, targetRoot) {
+    if (!report.materiaEnabled)
+      return { disposition: 'not-applicable', files: [],
+        reason: 'repo is not Materia-enabled (no MATERIA.md / .materia/) — nothing to install. If you expected a Materia repo, run /materia:init.' }
+    const atCanon = existsSync(join(targetRoot, CHECK_DOCS_CANON))
+    const atRoot = existsSync(join(targetRoot, CHECK_DOCS_ROOT))
+    const staleMjs = existsSync(join(targetRoot, CHECK_DOCS_MJS))
+    // Compose a manual cleanup note the migration will NOT perform (never deletes a file).
+    const cleanup = (extra) => {
+      const parts = []
+      if (extra) parts.push(extra)
+      if (staleMjs) parts.push(`a stale ${CHECK_DOCS_MJS} (the artifact ${CHECK_DOCS_CANON} replaced) is present — remove it by hand; migrate never deletes it`)
+      return parts.length ? `${MIG.INSTALL_CHECK_DOCS} manual cleanup: ${parts.join('; ')}.` : undefined
+    }
+    // Disposition table (first match wins) — evaluated in the plan's ordered form:
+    // 1. present-and-parsed state with integer schema < 2, or an unknown/null schema →
+    //    MANUAL (mirrors init-project-state's refusal — never stamp a hand-authored
+    //    stale state; this is the never-overwrite guarantee for the project-state file).
+    if (!report.missing && !report.malformed &&
+        (report.currentSchema === null || (isInt(report.currentSchema) && report.currentSchema < INIT_STATE_SCHEMA)))
+      return { disposition: 'manual', files: [],
+        reason: `${STATE_REL} records ${report.currentSchema === null ? 'an unknown schema' : `schema ${report.currentSchema}`} (expected >= ${INIT_STATE_SCHEMA}) — review by hand; migrate will not stamp a hand-authored stale state.`,
+        manualNote: cleanup() }
+    // 2. script already canonical ∧ schema already >= 3 → SATISFIED (defensive: at the
+    //    latest schema install-check-docs isn't even discovered, so this is only reached
+    //    by a direct classify() caller; a superseded root copy is named for removal).
+    if (atCanon && isInt(report.currentSchema) && report.currentSchema >= CHECK_DOCS_SCHEMA)
+      return { disposition: 'satisfied', files: [],
+        reason: atRoot
+          ? `${CHECK_DOCS_CANON} present and schema ${report.currentSchema} — current; a superseded ${CHECK_DOCS_ROOT} also exists (remove it by hand).`
+          : `${CHECK_DOCS_CANON} present and schema ${report.currentSchema} — current.`,
+        manualNote: cleanup(atRoot ? `a superseded ${CHECK_DOCS_ROOT} is present — remove it by hand` : undefined) }
+    // 3. script already canonical (incl. both-locations) ∧ (missing state or schema 2) →
+    //    APPLICABLE, stamp only (no file op — never overwrite the canonical script).
+    if (atCanon && (report.missing || report.currentSchema === INIT_STATE_SCHEMA))
+      return { disposition: 'applicable', files: [STATE_REL],
+        reason: atRoot
+          ? `${CHECK_DOCS_CANON} present; will stamp artifact schema ${CHECK_DOCS_SCHEMA}. A superseded ${CHECK_DOCS_ROOT} also exists — remove it by hand (migrate leaves it untouched).`
+          : `${CHECK_DOCS_CANON} present; will stamp artifact schema ${CHECK_DOCS_SCHEMA}.`,
+        manualNote: cleanup(atRoot ? `a superseded ${CHECK_DOCS_ROOT} is present — remove it by hand` : undefined) }
+    // 4. script at root only ∧ (missing state or schema 2) → APPLICABLE, rename in place
+    //    (preserves local edits) then stamp.
+    if (atRoot && (report.missing || report.currentSchema === INIT_STATE_SCHEMA))
+      return { disposition: 'applicable', files: [CHECK_DOCS_CANON, STATE_REL],
+        reason: `${CHECK_DOCS_ROOT} will be relocated to ${CHECK_DOCS_CANON} (rename in place — preserves local edits), then artifact schema ${CHECK_DOCS_SCHEMA} stamped.`,
+        manualNote: cleanup() }
+    // 5. script at neither ∧ (missing state or schema 2) → APPLICABLE, copy from the
+    //    plugin scaffold then stamp.
+    if (report.missing || report.currentSchema === INIT_STATE_SCHEMA)
+      return { disposition: 'applicable', files: [CHECK_DOCS_CANON, STATE_REL],
+        reason: `no check:docs gate script — will copy it from the plugin scaffold to ${CHECK_DOCS_CANON}, then stamp artifact schema ${CHECK_DOCS_SCHEMA}.`,
+        manualNote: cleanup() }
+    // Defensive fallback: no reachable input lands here (schema >= 3 is not discovered;
+    // schema < 2 / unknown handled above), but never offer an unclassified write.
+    return { disposition: 'not-applicable', files: [],
+      reason: `${CHECK_DOCS_CANON}: nothing applicable for schema ${report.currentSchema}.`, manualNote: cleanup() }
+  },
+  apply (targetRoot) {
+    const created = []
+    // FILE OP FIRST — never overwrite an existing canonical script.
+    const canonAbs = join(targetRoot, CHECK_DOCS_CANON)
+    if (!existsSync(canonAbs)) {
+      const scriptsDir = join(targetRoot, '.materia', 'scripts')
+      if (!existsSync(scriptsDir)) mkdirSync(scriptsDir, { recursive: true })
+      const rootAbs = join(targetRoot, CHECK_DOCS_ROOT)
+      if (existsSync(rootAbs)) renameSync(rootAbs, canonAbs) // rename preserves local edits
+      else copyFileSync(resolve(import.meta.dirname, '../scaffold/.materia/scripts/check-docs.sh'), canonAbs)
+      created.push(CHECK_DOCS_CANON)
+    }
+    // STAMP LAST — re-read project.json from DISK (init-project-state may have created it
+    // seconds earlier in the SAME apply run; version files sort 0.2.0 < 0.3.0, so its
+    // migration is discovered and applied before this one). Stamp ONLY a parsed, integer,
+    // 2 <= schema < 3 state; append the id only if absent (idempotent re-apply is byte-
+    // stable). An interrupted apply that stopped before this leaves a recoverable
+    // schema-behind state (doctor suggests migrate; a stamp-only re-apply finishes it).
+    let state = null
+    const statePath = join(targetRoot, STATE_REL)
+    if (existsSync(statePath)) {
+      const p = readJson(statePath)
+      if (!p.error && isInt(p.value.artifactSchema) &&
+          p.value.artifactSchema >= INIT_STATE_SCHEMA && p.value.artifactSchema < CHECK_DOCS_SCHEMA) {
+        state = { ...p.value, artifactSchema: CHECK_DOCS_SCHEMA }
+        const applied = Array.isArray(p.value.appliedMigrations) ? p.value.appliedMigrations.slice() : []
+        if (!applied.includes(this.id)) applied.push(this.id)
+        state.appliedMigrations = applied
+        const dir = join(targetRoot, '.materia')
+        const tmp = join(dir, `.project.json.tmp-${process.pid}`)
+        writeFileSync(tmp, JSON.stringify(state, null, 2) + '\n')
+        try { renameSync(tmp, statePath) }
+        catch (e) { rmSync(tmp, { force: true }); throw e }
+        created.push(STATE_REL)
+      }
+    }
+    return { created, state }
+  },
+}
+
+const REGISTRY = { [initProjectState.id]: initProjectState, [installCheckDocs.id]: installCheckDocs }
 
 // ---- arg parsing ------------------------------------------------------------
 const parseArgs = (argv) => {
@@ -123,10 +243,15 @@ Usage: node migrate.mjs [targetPath] [--plan|--apply] [--json] [--help]
   --json       emit the structured report as JSON
   --help, -h   show this help
 
-Default is --plan. Apply currently implements one migration, init-project-state,
-which initializes .materia/project.json for a pre-tracking (untracked-legacy)
-install; it never overwrites an existing or malformed file. Run /materia:doctor
-afterward to confirm health.`
+Default is --plan. Apply implements two migrations: init-project-state, which
+initializes .materia/project.json for a pre-tracking (untracked-legacy) install;
+and install-check-docs, which puts the check:docs gate script at its canonical
+.materia/scripts/check-docs.sh (renaming a legacy scripts/check-docs.sh in place,
+or copying it from the plugin scaffold) and stamps artifact schema 3. Apply does
+file ops first and the project.json stamp last, never overwrites an existing gate
+script or a non-schema-2 state file, and never deletes anything (a superseded root
+copy or stale scripts/check-docs.mjs is surfaced as a manual cleanup item). Run
+/materia:doctor afterward to confirm health.`
 
 // ---- planning ---------------------------------------------------------------
 // Registry-driven: apply decisions come from each migration's classify(), NEVER
@@ -223,9 +348,15 @@ const buildPlan = (targetRoot, releaseDir) => {
       } else if (c.disposition === 'satisfied') out.satisfied.push(item)
       else if (c.disposition === 'manual') out.manual.push(item)
       else out.skipped.push(item) // not-applicable
+      // A by-hand cleanup the migration will NOT perform (superseded root copy, stale
+      // .mjs) rides alongside the (possibly applicable) migration as its own manual item.
+      if (c.manualNote) out.manual.push({ id: `${migId}-cleanup`, change: ch.id, reason: c.manualNote })
     }
   }
 
+  // Dedup filesToChange: two migrations (init-project-state + install-check-docs) may both
+  // name .materia/project.json in one legacy adopt — report each path once.
+  out.filesToChange = [...new Set(out.filesToChange)]
   out.nextCommand = out.applicable.length ? '/materia:migrate --apply' : null
   return out
 }
@@ -266,6 +397,10 @@ const runApply = (targetRoot, releaseDir) => {
       return out
     }
   }
+
+  // Dedup created: two migrations may both write .materia/project.json in one adopt
+  // (init-project-state creates it, install-check-docs stamps it) — report it once.
+  out.created = [...new Set(out.created)]
 
   // Re-inspect for the post-migration truth + read back the project state.
   const after = inspect(targetRoot, releaseDir)

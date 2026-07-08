@@ -1079,11 +1079,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       fail(`release: scaffold .materia/project.json artifactSchema (${scaffoldState.artifactSchema}) != latest.artifactSchema (${latest.artifactSchema})`)
   }
 
-  // Fixture pins: tracked carries a schema-2 project.json; legacy carries none
-  // (its defining trait — the absence a future doctor keys on).
+  // Fixture pins: tracked carries a schema-3 project.json (the current tracked shape);
+  // legacy carries none (its defining trait — the absence a future doctor keys on).
   const trackedState = 'tests/fixtures/materia/tracked-current-project/.materia/project.json'
   if (!existsSync(trackedState)) fail(`fixture: ${trackedState} must exist (tracked shape)`)
-  else { const t = parseJson(trackedState); if (t && t.artifactSchema !== 2) fail(`fixture: ${trackedState} artifactSchema must be 2 (schema-2 tracked shape)`) }
+  else { const t = parseJson(trackedState); if (t && t.artifactSchema !== 3) fail(`fixture: ${trackedState} artifactSchema must be 3 (current tracked shape)`) }
   const legacyState = 'tests/fixtures/materia/legacy-0.1.0-project/.materia/project.json'
   if (existsSync(legacyState)) fail(`fixture: ${legacyState} must NOT exist — the legacy fixture's defining trait is the absence of project state`)
 
@@ -1195,13 +1195,16 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     if (problems.length) fail(`doctor [${label}]: ${problems.join('; ')}`)
   }
 
-  // tracked-current fixture -> healthy, schema 2, nothing outstanding
+  // tracked-current fixture -> healthy, schema 3, gate script at canonical location,
+  // nothing outstanding
   check('tracked-current', resolve('tests/fixtures/materia/tracked-current-project'), (rep, r) => [
     ...want(rep, 'status', 'healthy'),
     ...want(rep, 'materiaEnabled', true),
-    ...want(rep, 'currentSchema', 2),
+    ...want(rep, 'currentSchema', 3),
     ...want(rep, 'suggestedNextCommand', null),
-    ...sevWant(rep, 'check-docs-sh-present', 'ok'), // fixture ships the gate-script stub
+    ...sevWant(rep, 'check-docs-sh-present', 'ok'),  // fixture ships the gate-script stub…
+    ...sevWant(rep, 'check-docs-sh-location', 'ok'), // …at the canonical .materia/scripts/ location
+    ...detailWant(rep, 'check-docs-sh-location', '.materia/scripts/check-docs.sh'),
     // Healthy-path honesty: even a green report must say what "current" certifies.
     ...detailWant(rep, 'artifact-schema-current', 'certifies only .materia/project.json'),
     ...exitWant(r, 0),
@@ -1229,38 +1232,78 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       fail(`KNOWN_CHECK_IDS drift vs doctor's emitted ids (tracked-current) — missing: [${missing}], extra: [${extra}]`)
   }
 
-  // legacy 0.1.0 fixture -> warnings (untracked-legacy, recommended drift, migrate).
-  // It carries the check-docs.sh stub, so that check is `ok`; the sole drift is the
-  // recommended untracked-legacy adoption.
+  // legacy 0.1.0 fixture -> warnings (the adopted-drift-filter carrier). It carries a
+  // ROOT check-docs.sh stub, so check-docs-sh-present is `ok` and the required
+  // 0.3.0-check-docs-sh-gate entry is FILTERED as already-adopted -> requiredChanges is
+  // EMPTY. check-docs-sh-location is `warning` (root-only), so the recommended
+  // 0.3.0-scripts-relocation entry stays, alongside the recommended untracked-legacy
+  // adoption. Nothing escalates past `warnings`.
   check('legacy-0.1.0', resolve('tests/fixtures/materia/legacy-0.1.0-project'), (rep, r) => [
     ...want(rep, 'status', 'warnings'),
     ...want(rep, 'materiaEnabled', true),
     ...want(rep, 'currentSchema', 'untracked-legacy'),
     ...want(rep, 'missing', true),
     ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'),
-    ...sevWant(rep, 'check-docs-sh-present', 'ok'), // fixture ships the gate-script stub
+    ...sevWant(rep, 'check-docs-sh-present', 'ok'),       // fixture ships a ROOT gate-script stub
+    ...sevWant(rep, 'check-docs-sh-location', 'warning'), // …but at the legacy root location
+    // Adopted-drift filter: the required gate entry is filtered (presence ok) -> EMPTY.
+    ...(rep.requiredChanges.length === 0 ? [] : [`requiredChanges must be empty (gate entry adopted-away), got ${JSON.stringify(rep.requiredChanges.map((c) => c.id))}`]),
     ...(rep.recommendedChanges.some((c) => c.id === '0.2.0-project-state-file')
       ? [] : ['recommendedChanges missing 0.2.0-project-state-file']),
+    ...(rep.recommendedChanges.some((c) => c.id === '0.3.0-scripts-relocation')
+      ? [] : ['recommendedChanges missing 0.3.0-scripts-relocation (location warning -> not filtered)']),
     ...exitWant(r, 0),
   ])
 
   // gnarly legacy fixture -> a REAL early dogfood repo: untracked-legacy AND missing
-  // the check-docs.sh gate. Proves (1) status stays `warnings` — the missing-gate
-  // warning does NOT escalate past the recommended untracked-legacy drift; (2)
-  // check-docs-sh-present is `warning`; (3) the honest caveat that schema currency
-  // certifies ONLY .materia/project.json is surfaced in the human rendering (pinned
-  // via the project-state-present check detail, the stable short pin below).
+  // the check-docs gate at BOTH locations (the required-drift carrier). Proves (1)
+  // status is `action-needed` (exit 1) — the required 0.3.0-check-docs-sh-gate drift
+  // (NOT filtered, since check-docs-sh-present is `warning`) escalates past the
+  // recommended untracked-legacy adoption; (2) the gate entry lands in requiredChanges;
+  // (3) the honest caveat that schema currency certifies ONLY .materia/project.json is
+  // surfaced (pinned via the project-state-present check detail, the stable short pin).
   check('gnarly-legacy', resolve('tests/fixtures/materia/gnarly-legacy-project'), (rep, r) => [
-    ...want(rep, 'status', 'warnings'),
+    ...want(rep, 'status', 'action-needed'),
     ...want(rep, 'materiaEnabled', true),
     ...want(rep, 'currentSchema', 'untracked-legacy'),
     ...want(rep, 'missing', true),
     ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'),
-    ...sevWant(rep, 'check-docs-sh-present', 'warning'), // no scripts/check-docs.sh
+    ...sevWant(rep, 'check-docs-sh-present', 'warning'), // no check-docs.sh at either location
+    ...(rep.requiredChanges.some((c) => c.id === '0.3.0-check-docs-sh-gate')
+      ? [] : ['requiredChanges missing 0.3.0-check-docs-sh-gate (required gate drift not filtered)']),
     ...((checkOf(rep, 'project-state-present')?.detail ?? '').includes('only .materia/project.json')
       ? [] : ['honesty caveat "only .materia/project.json" missing from project-state-present detail']),
-    ...exitWant(r, 0),
+    ...exitWant(r, 1),
   ])
+
+  // synthetic moved-but-unstamped repo -> the doctor↔migrate adopted-but-unstamped
+  // bridge. Schema 2 in project.json but the gate script ALREADY at its canonical
+  // .materia/scripts/check-docs.sh: both check-docs checks report `ok`, so the gate +
+  // relocation changes are filtered as adopted, leaving only optional drift (sev info).
+  // Doctor must stay `healthy` (exit 0) YET still suggest /materia:migrate --plan (the
+  // stamp-only step migrate has left), and say so in the artifact-schema-current detail.
+  // Runs against the REAL shipped ledger via the doctor CLI.
+  {
+    const mu = mkdtempSync(join(tmpdir(), 'materia-doctor-moved-'))
+    try {
+      mkdirSync(join(mu, '.materia', 'scripts'), { recursive: true })
+      writeFileSync(join(mu, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(mu, '.materia', 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
+      writeFileSync(join(mu, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: 2, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
+      check('moved-but-unstamped', mu, (rep, r) => [
+        ...want(rep, 'status', 'healthy'),
+        ...want(rep, 'currentSchema', 2),
+        ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'), // the bridge
+        ...sevWant(rep, 'check-docs-sh-present', 'ok'),
+        ...sevWant(rep, 'check-docs-sh-location', 'ok'),
+        ...detailWant(rep, 'artifact-schema-current', 'adopted but unstamped'),
+        ...(rep.requiredChanges.length === 0 && rep.recommendedChanges.length === 0
+          ? [] : ['gate/relocation not filtered as adopted']),
+        ...exitWant(r, 0),
+      ])
+    } finally { rmSync(mu, { recursive: true, force: true }) }
+  }
 
   // synthetic non-Materia repo -> unknown, no invented state
   const nm = mkdtempSync(join(tmpdir(), 'materia-doctor-nm-'))
@@ -1362,7 +1405,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   }
 
   if (failures === before)
-    console.log('  ✓ doctor behavior: tracked→healthy · legacy→warnings(untracked-legacy) · gnarly→warnings(+check-docs.sh warning, honesty caveat) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
+    console.log('  ✓ doctor behavior: tracked→healthy(schema 3, location ok) · legacy→warnings(gate adopted-away→requiredChanges empty, relocation recommended) · gnarly→action-needed(exit 1, required gate drift) · moved-but-unstamped→healthy(+bridge suggests migrate) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
 }
 
 // ---- 8. /materia:migrate deterministic behavior -----------------------------
@@ -1430,10 +1473,12 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     return dir
   }
 
-  // 1. PLAN on a COPY of the legacy fixture -> init-project-state applicable,
-  //    would create .materia/project.json, and writes NOTHING (snapshot diff).
-  //    Runs on a copy (not the committed fixture) so a plan-mode write regression
-  //    can never dirty the tracked tree, matching every other case here.
+  // 1. PLAN on a COPY of the legacy fixture -> init-project-state AND install-check-docs
+  //    both applicable; would create .materia/project.json + relocate the gate script;
+  //    localEditsAffected is now TRUE (install-check-docs renames a legacy gate script —
+  //    the first touchesExistingFiles exercise); writes NOTHING (snapshot diff). Runs on a
+  //    copy (not the committed fixture) so a plan-mode write regression can never dirty
+  //    the tracked tree, matching every other case here.
   {
     const work = copyFixture('legacy-0.1.0-project')
     try {
@@ -1443,8 +1488,10 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       if (report) {
         if (report.mode !== 'plan') problems.push(`mode=${report.mode} (want plan)`)
         if (!report.applicable.some((m) => m.id === 'init-project-state')) problems.push('init-project-state not applicable')
+        if (!report.applicable.some((m) => m.id === 'install-check-docs')) problems.push('install-check-docs not applicable')
         if (!report.filesToChange.includes('.materia/project.json')) problems.push('filesToChange missing .materia/project.json')
-        if (report.localEditsAffected !== false) problems.push('localEditsAffected should be false')
+        if (!report.filesToChange.includes('.materia/scripts/check-docs.sh')) problems.push('filesToChange missing .materia/scripts/check-docs.sh')
+        if (report.localEditsAffected !== true) problems.push('localEditsAffected should be true (install-check-docs renames a legacy gate script)')
         if (report.nextCommand !== '/materia:migrate --apply') problems.push(`nextCommand=${JSON.stringify(report.nextCommand)}`)
       }
       const changed = diffKeys(snap, snapshot(work))
@@ -1474,9 +1521,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     } finally { rmSync(work, { recursive: true, force: true }) }
   }
 
-  // 3. APPLY on a COPY of legacy -> creates EXACTLY .materia/project.json with the
-  //    ledger-consistent state; re-apply idempotent (byte-identical); doctor
-  //    then reports healthy.
+  // 3. APPLY on a COPY of legacy -> BOTH migrations run (init-project-state creates the
+  //    state at schema 2, install-check-docs relocates the root gate script and stamps
+  //    schema 3). Snapshot diff is EXACTLY {project.json created, root script removed,
+  //    canonical script created}; appliedMigrations carries BOTH ids once; re-apply
+  //    idempotent (byte-identical); doctor then reports healthy.
   {
     const work = copyFixture('legacy-0.1.0-project')
     try {
@@ -1487,20 +1536,23 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       if (!report) problems.push('apply emitted no parseable JSON')
       else {
         if (!report.applied.some((m) => m.id === 'init-project-state')) problems.push('init-project-state not in applied')
+        if (!report.applied.some((m) => m.id === 'install-check-docs')) problems.push('install-check-docs not in applied')
         if (!report.created.includes('.materia/project.json')) problems.push('created missing .materia/project.json')
-        const want = { artifactSchema: 2, pluginVersion: null, source: 'legacy-0.1.0', appliedMigrations: ['init-project-state'] }
+        if (!report.created.includes('.materia/scripts/check-docs.sh')) problems.push('created missing .materia/scripts/check-docs.sh')
+        const want = { artifactSchema: 3, pluginVersion: null, source: 'legacy-0.1.0', appliedMigrations: ['init-project-state', 'install-check-docs'] }
         if (JSON.stringify(report.projectState) !== JSON.stringify(want))
           problems.push(`projectState=${JSON.stringify(report.projectState)} (want ${JSON.stringify(want)})`)
         if (report.status !== 'healthy') problems.push(`post-apply status=${report.status} (want healthy)`)
       }
-      // ONLY .materia/project.json may be new; nothing else changed/removed.
-      const changed = diffKeys(snap0, snap1)
-      if (changed.length !== 1 || changed[0] !== '.materia/project.json')
-        problems.push(`apply changed files other than .materia/project.json: ${changed.join(', ')}`)
+      // Exactly: project.json created, canonical script created, root script removed.
+      const changed = new Set(diffKeys(snap0, snap1))
+      const wantChanged = new Set(['.materia/project.json', '.materia/scripts/check-docs.sh', '-scripts/check-docs.sh'])
+      if (changed.size !== wantChanged.size || [...wantChanged].some((k) => !changed.has(k)))
+        problems.push(`apply diff = ${JSON.stringify([...changed])} (want ${JSON.stringify([...wantChanged])})`)
       // Written file parses to the exact state (independent of the report echo).
       const onDisk = JSON.parse(readFileSync(join(work, '.materia/project.json'), 'utf8'))
-      if (onDisk.artifactSchema !== 2 || onDisk.source !== 'legacy-0.1.0' ||
-          JSON.stringify(onDisk.appliedMigrations) !== JSON.stringify(['init-project-state']))
+      if (onDisk.artifactSchema !== 3 || onDisk.source !== 'legacy-0.1.0' ||
+          JSON.stringify(onDisk.appliedMigrations) !== JSON.stringify(['init-project-state', 'install-check-docs']))
         problems.push(`on-disk state wrong: ${JSON.stringify(onDisk)}`)
       problems.push(...exitWant(r, 0))
       // Idempotent re-apply: nothing applied AND the tree is byte-identical.
@@ -1545,9 +1597,12 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     } finally { rmSync(work, { recursive: true, force: true }) }
   }
 
-  // 5. APPLY on a VALID but stale (schema 1) hand-authored state -> reported
-  //    manual ("expected >= 2"), and the file is NEVER overwritten. This is the
-  //    valid-state half of the never-overwrite guarantee (case 6 covers malformed).
+  // 5. APPLY on a VALID but stale (schema 1) hand-authored state -> BOTH migrations
+  //    are guarded by the manual disposition ("expected >= 2"), nothing applies, and the
+  //    file is NEVER overwritten/stamped. This is the valid-state half of the
+  //    never-overwrite guarantee (case 6 covers malformed). install-check-docs's
+  //    disposition 1 (schema < 2 -> manual) is the pin that a hand-authored stale state
+  //    is never stamped to schema 3.
   {
     const raw = '{ "artifactSchema": 1, "pluginVersion": null, "source": "hand", "appliedMigrations": [] }'
     const s1 = synthState('s1', raw)
@@ -1557,8 +1612,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       if (!report) problems.push('no parseable JSON')
       else {
         if (report.applied.length !== 0) problems.push(`applied=${JSON.stringify(report.applied)} (want none)`)
-        const hit = [...report.manual, ...report.notChanged].some((x) => /expected >= 2/.test(x.reason || ''))
-        if (!hit) problems.push('no manual/notChanged item explains the stale schema ("expected >= 2")')
+        const both = [...report.manual, ...report.notChanged]
+        if (!both.some((x) => /expected >= 2/.test(x.reason || '')))
+          problems.push('no manual/notChanged item explains the stale schema ("expected >= 2")')
+        if (!both.some((x) => x.id === 'install-check-docs' && /expected >= 2/.test(x.reason || '')))
+          problems.push('install-check-docs not classified manual for the schema-1 stale state')
       }
       if (readFileSync(join(s1, '.materia', 'project.json'), 'utf8') !== raw) problems.push('valid stale project.json was OVERWRITTEN')
       problems.push(...exitWant(r, 0))
@@ -1622,8 +1680,132 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     } finally { rmSync(nm, { recursive: true, force: true }) }
   }
 
+  // 9. APPLY on a COPY of gnarly (untracked, NO gate script at either location, still
+  //    carries a stale scripts/check-docs.mjs) -> init-project-state creates the state,
+  //    install-check-docs COPIES the gate from the plugin scaffold to the canonical
+  //    location and stamps schema 3. Snapshot diff = {project.json created, canonical
+  //    script created}; the stale .mjs is UNTOUCHED and surfaced as a manual cleanup
+  //    item; doctor-after is healthy.
+  {
+    const work = copyFixture('gnarly-legacy-project')
+    try {
+      const snap0 = snapshot(work)
+      const { r, report } = runMigrate(work, '--apply')
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else {
+        if (!report.applied.some((m) => m.id === 'init-project-state')) problems.push('init-project-state not applied')
+        if (!report.applied.some((m) => m.id === 'install-check-docs')) problems.push('install-check-docs not applied')
+        if (report.status !== 'healthy') problems.push(`post-apply status=${report.status} (want healthy)`)
+        const onDisk = JSON.parse(readFileSync(join(work, '.materia/project.json'), 'utf8'))
+        if (onDisk.artifactSchema !== 3) problems.push(`stamped schema=${onDisk.artifactSchema} (want 3)`)
+        // The stale .mjs cleanup is surfaced (never auto-deleted).
+        if (![...report.manual, ...report.notChanged].some((x) => /check-docs\.mjs/.test(x.reason || '')))
+          problems.push('stale scripts/check-docs.mjs cleanup note not surfaced')
+      }
+      const changed = new Set(diffKeys(snap0, snapshot(work)))
+      const wantChanged = new Set(['.materia/project.json', '.materia/scripts/check-docs.sh'])
+      if (changed.size !== wantChanged.size || [...wantChanged].some((k) => !changed.has(k)))
+        problems.push(`apply diff = ${JSON.stringify([...changed])} (want ${JSON.stringify([...wantChanged])})`)
+      // Stale .mjs still present, byte-identical.
+      if (!existsSync(join(work, 'scripts/check-docs.mjs'))) problems.push('stale scripts/check-docs.mjs was deleted')
+      // Gate script actually installed at the canonical location.
+      if (!existsSync(join(work, '.materia/scripts/check-docs.sh'))) problems.push('gate script not installed at .materia/scripts/check-docs.sh')
+      problems.push(...exitWant(r, 0))
+      const dr = spawnSync('node', [DOCTOR, work, '--json'], { encoding: 'utf8' })
+      let drep = null; try { drep = JSON.parse(dr.stdout) } catch { /* below */ }
+      if (!drep || drep.status !== 'healthy') problems.push(`doctor on migrated gnarly status=${drep && drep.status} (want healthy)`)
+      if (problems.length) fail(`migrate [apply-gnarly-copy]: ${problems.join('; ')}`)
+    } finally { rmSync(work, { recursive: true, force: true }) }
+  }
+
+  // 10. APPLY on a synthetic BOTH-LOCATIONS repo (schema 2, gate script at BOTH
+  //     .materia/scripts/ AND root scripts/) -> install-check-docs is stamp-only
+  //     (disposition 3): the canonical script is never overwritten, the root copy is left
+  //     UNTOUCHED and surfaced as a superseded-copy manual item, and only project.json
+  //     changes (stamped to schema 3).
+  {
+    const dir = mkdtempSync(join(tmpdir(), 'materia-migrate-both-'))
+    try {
+      mkdirSync(join(dir, '.materia', 'scripts'), { recursive: true })
+      mkdirSync(join(dir, 'scripts'), { recursive: true })
+      writeFileSync(join(dir, 'MATERIA.md'), '# m\n')
+      const canonBody = '#!/bin/sh\n# canonical\nexit 0\n', rootBody = '#!/bin/sh\n# superseded root\nexit 0\n'
+      writeFileSync(join(dir, '.materia', 'scripts', 'check-docs.sh'), canonBody)
+      writeFileSync(join(dir, 'scripts', 'check-docs.sh'), rootBody)
+      writeFileSync(join(dir, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: 2, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
+      const snap0 = snapshot(dir)
+      const { r, report } = runMigrate(dir, '--apply')
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else {
+        if (!report.applied.some((m) => m.id === 'install-check-docs')) problems.push('install-check-docs not applied (stamp-only expected)')
+        if (![...report.manual, ...report.notChanged].some((x) => /superseded/.test(x.reason || '') && /scripts\/check-docs\.sh/.test(x.reason || '')))
+          problems.push('superseded root-copy manual item not surfaced')
+        const onDisk = JSON.parse(readFileSync(join(dir, '.materia/project.json'), 'utf8'))
+        if (onDisk.artifactSchema !== 3) problems.push(`stamped schema=${onDisk.artifactSchema} (want 3)`)
+      }
+      // Stamp only: EXACTLY project.json changed; both scripts byte-identical.
+      const changed = diffKeys(snap0, snapshot(dir))
+      if (changed.length !== 1 || changed[0] !== '.materia/project.json')
+        problems.push(`apply changed more than project.json: ${JSON.stringify(changed)}`)
+      if (readFileSync(join(dir, 'scripts', 'check-docs.sh'), 'utf8') !== rootBody) problems.push('root copy was mutated')
+      if (readFileSync(join(dir, '.materia', 'scripts', 'check-docs.sh'), 'utf8') !== canonBody) problems.push('canonical copy was overwritten')
+      problems.push(...exitWant(r, 0))
+      if (problems.length) fail(`migrate [apply-both-locations]: ${problems.join('; ')}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+
+  // 11. Synthetic MOVED-BUT-UNSTAMPED repo (schema 2, gate script at the canonical
+  //     location only): the doctor↔migrate bridge. doctor is healthy yet suggests
+  //     /materia:migrate --plan; migrate has a stamp-only install-check-docs applicable;
+  //     apply stamps schema 3; re-apply is idempotent (byte-identical).
+  {
+    const mk = () => {
+      const dir = mkdtempSync(join(tmpdir(), 'materia-migrate-moved-'))
+      mkdirSync(join(dir, '.materia', 'scripts'), { recursive: true })
+      writeFileSync(join(dir, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(dir, '.materia', 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
+      writeFileSync(join(dir, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: 2, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
+      return dir
+    }
+    const dir = mk()
+    try {
+      const problems = []
+      // doctor: healthy + bridge suggestion.
+      const dr0 = spawnSync('node', [DOCTOR, dir, '--json'], { encoding: 'utf8' })
+      let d0 = null; try { d0 = JSON.parse(dr0.stdout) } catch { /* below */ }
+      if (!d0 || d0.status !== 'healthy') problems.push(`pre-apply doctor status=${d0 && d0.status} (want healthy)`)
+      if (!d0 || d0.suggestedNextCommand !== '/materia:migrate --plan') problems.push(`pre-apply doctor suggestedNextCommand=${d0 && d0.suggestedNextCommand} (want the bridge)`)
+      // migrate plan: install-check-docs stamp-only applicable, files = project.json only.
+      const { report: plan } = runMigrate(dir)
+      if (!plan || !plan.applicable.some((m) => m.id === 'install-check-docs')) problems.push('install-check-docs not applicable (stamp-only)')
+      if (plan && plan.applicable.some((m) => m.id === 'init-project-state')) problems.push('init-project-state wrongly applicable (state already present)')
+      // apply: stamps schema 3, nothing else changes.
+      const snap0 = snapshot(dir)
+      const { r, report } = runMigrate(dir, '--apply')
+      const changed = diffKeys(snap0, snapshot(dir))
+      if (changed.length !== 1 || changed[0] !== '.materia/project.json') problems.push(`apply changed more than project.json: ${JSON.stringify(changed)}`)
+      if (report) {
+        const onDisk = JSON.parse(readFileSync(join(dir, '.materia/project.json'), 'utf8'))
+        if (onDisk.artifactSchema !== 3) problems.push(`post-apply schema=${onDisk.artifactSchema} (want 3)`)
+        if (!onDisk.appliedMigrations.includes('install-check-docs')) problems.push('appliedMigrations missing install-check-docs')
+      }
+      problems.push(...exitWant(r, 0))
+      // re-apply idempotent.
+      const snap1 = snapshot(dir)
+      const { r: r2, report: again } = runMigrate(dir, '--apply')
+      if (!again || again.applied.length !== 0) problems.push(`re-apply not idempotent: applied=${JSON.stringify(again && again.applied)}`)
+      if (diffKeys(snap1, snapshot(dir)).length) problems.push('re-apply mutated the tree')
+      problems.push(...exitWant(r2, 0))
+      if (problems.length) fail(`migrate [moved-but-unstamped]: ${problems.join('; ')}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+
   if (failures === before)
-    console.log('  ✓ migrate behavior: plan→no-mutate · apply(legacy)→state(→doctor healthy) · idempotent · never overwrites valid/stale/malformed · tracked-noop · unknown/future/non-materia→no-write')
+    console.log('  ✓ migrate behavior: plan→no-mutate · apply(legacy)→init+install-check-docs(relocate+stamp 3→doctor healthy) · apply(gnarly)→copy-from-scaffold+stamp(stale .mjs untouched) · both-locations→stamp-only(root untouched) · moved-but-unstamped→bridge+stamp · idempotent · never overwrites valid/stale/malformed · tracked-noop · unknown/future/non-materia→no-write')
 }
 
 // ---- 9. doctor/migrate skills + script references ---------------------------

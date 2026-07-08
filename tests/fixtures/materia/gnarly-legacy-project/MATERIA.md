@@ -18,5 +18,6 @@ notes have teeth):
 
 - **App:** Gnarly legacy fixture app
 - **What it is:** An early pre-tracking Materia-installed project, used to prove
-  doctor reports `warnings` (untracked-legacy drift) AND flags the missing
-  check-docs.sh gate — without either escalating past `warnings`.
+  doctor reports `action-needed` (exit 1): the required `0.3.0-check-docs-sh-gate`
+  drift — the binding check:docs gate script is absent — escalates past the
+  recommended untracked-legacy adoption. The required-drift carrier fixture.

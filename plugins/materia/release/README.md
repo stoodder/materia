@@ -15,12 +15,15 @@ repos: `/materia:init` copies `scaffold/`, never `release/`. Doctor/migrate read
 installed plugin cache.
 
 > **Status: v0, dogfood-grade.** `/materia:doctor` ships and reads this ledger to report
-> drift **read-only** (it consumes the `doctorChecks` IDs, starting with
-> `project-state-present`); it writes nothing and runs no migration. `/materia:migrate` now
-> ships too — **plan-first** — and consumes the `migrations` IDs: v0 implements one,
-> `init-project-state` (reserved in `0.2.0-project-state-file`), which initializes
-> `.materia/project.json` for a pre-tracking install. Any other `migrations` ID below is
-> still a reserved identifier no handler consumes yet; migrate reports it as manual/skipped.
+> drift **read-only** (it consumes the `doctorChecks` IDs — `project-state-present`,
+> `check-docs-sh-present`, `check-docs-sh-location`); it writes nothing and runs no
+> migration. `/materia:migrate` ships too — **plan-first** — and consumes the `migrations`
+> IDs: v0 implements two, `init-project-state` (reserved in `0.2.0-project-state-file`),
+> which initializes `.materia/project.json` for a pre-tracking install, and
+> `install-check-docs` (reserved in `0.3.0-check-docs-sh-gate` + `0.3.0-scripts-relocation`),
+> which puts the check:docs gate script at its canonical `.materia/scripts/check-docs.sh` and
+> stamps schema 3. Any other `migrations` ID below is a reserved identifier no handler
+> consumes yet; migrate reports it as manual/skipped.
 
 ## Files
 
@@ -30,6 +33,7 @@ release/
   versions/
     0.1.0.json           pre-tracking baseline (schema 1; a range of pre-tracking shapes, see its notes)
     0.2.0.json           introduces this contract (schema 2)
+    0.3.0.json           relocates the gate script to .materia/scripts/ (schema 3)
 ```
 
 - `latest.json` — `{ pluginVersion, artifactSchema, latestVersionFile }`. Its
@@ -46,15 +50,38 @@ Two independent version axes:
 
 - **`pluginVersion`** — the plugin's own semver, from `plugins/materia/.claude-plugin/plugin.json`.
   It changes whenever the plugin ships.
-- **`artifactSchema`** — an integer tracking the installed-project *state contract*
-  (`.materia/project.json`), not a full-conformance certificate for the whole scaffold. It
-  changes **only** when that installed-project state contract actually changes; a repo at the
-  latest schema has a current project-state file, not necessarily a fully reconciled scaffold.
+- **`artifactSchema`** — an integer tracking the **installed-artifact contract**: the
+  canonical set of installed artifacts, their canonical file locations, and the shape of
+  `.materia/project.json`. It is **not** a full-conformance certificate for the whole
+  scaffold — a repo at the latest schema has the tracked artifacts in their canonical places
+  and a current project-state file, not necessarily a fully reconciled scaffold (MATERIA.md
+  sections, the review-angle library, and other prose are still reconciled by hand). The
+  schema changes **only** when that installed-artifact contract actually changes.
 
 Multiple plugin versions may share one `artifactSchema`. Do **not** bump the schema just
-because the plugin shipped. Here `0.1.0` = schema 1 (pre-tracking) and `0.2.0` = schema 2
-because `0.2.0` genuinely adds a new installed artifact (`.materia/project.json`) — a real
-contract change, not a version coincidence.
+because the plugin shipped — bump it when the installed-artifact contract moves:
+
+- `0.1.0` = schema 1 (pre-tracking — a range of untracked shapes).
+- `0.2.0` = schema 2 because it adds a new installed artifact (`.materia/project.json`) — a
+  real contract change, not a version coincidence.
+- `0.3.0` = schema 3 because the check:docs gate script's **canonical location** changed
+  (from `scripts/check-docs.sh` to `.materia/scripts/check-docs.sh`). No file *content*
+  changed, but the canonical location is part of the installed-artifact contract, so the
+  schema moves — which is what lets the ledger's schema-window machinery surface the
+  relocation to a behind repo at all.
+
+### doctorChecks double as adoption signals
+
+Because `artifactSchema` tracks canonical locations (not just the project-state file), a
+schema-behind repo may **already carry** a change's artifact — e.g. the gate script sits at
+`.materia/scripts/check-docs.sh` but the project-state still records schema 2. Doctor's
+**adopted-drift filter** keys on exactly this: a `detectable` change whose `doctorChecks`
+all report `ok` is treated as already adopted and dropped from the drift buckets, so the
+repo isn't nagged to re-adopt what it already has. (Migrate still offers a stamp-only step
+to record the adoption in `.materia/project.json`; doctor points at it while staying
+`healthy` — the adopted-but-unstamped bridge.) This is why a change's `doctorChecks` must
+honestly detect the presence of its artifact: they are read both as drift detectors and as
+adoption signals.
 
 ## Version file schema
 

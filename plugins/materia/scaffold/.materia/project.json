@@ -1,5 +1,5 @@
 {
-  "artifactSchema": 2,
+  "artifactSchema": 3,
   "pluginVersion": null,
   "source": "scaffold",
   "appliedMigrations": []
