@@ -11,16 +11,11 @@ state, is its artifact schema current / stale / legacy-untracked / malformed /
 unknown, which release-ledger changes are relevant, and what should the operator
 do next.
 
-Doctor is **non-destructive**: it reads the plugin's bundled release ledger and
-the target repo's `.materia/project.json`, and prints a report. It **writes
-nothing**, changes no files, and **runs no migration** — where a migration would
-help it only *suggests* `/materia:migrate --plan`.
-
-The health verdict is produced by the deterministic script, not by the model.
-This skill is the orchestration/explanation layer: it runs the script and
-summarizes the result. When the script cannot determine state, doctor reports
-that plainly (`unknown` / `blocked`) and **does not guess** — it never invents
-project state a non-Materia repo doesn't have.
+Doctor reads the plugin's bundled release ledger and the target repo's
+`.materia/project.json`, and prints a report — see Scope below for the full
+read-only contract. The health verdict is produced by the deterministic
+script, not the model; this skill runs it and summarizes the result (see
+Rules) rather than re-deriving or guessing at state.
 
 ## Invocation
 
@@ -46,7 +41,8 @@ Doctor reads no other repo state and needs no network or AI.
 
 ## Outputs
 
-Doctor writes **nothing to the repo**. Its only output is the report it prints:
+Doctor's only output is the report it prints — it writes nothing to the repo
+(see Scope):
 
 - **Default** — a human-readable summary: overall status, whether the repo is
   Materia-enabled, current vs latest artifact schema, the project-state location
@@ -57,8 +53,7 @@ Doctor writes **nothing to the repo**. Its only output is the report it prints:
   other tooling).
 
 The script's exit code encodes the status (`0` healthy/warnings/unknown, `1`
-action-needed, `2` blocked). No branch, commit, PR, or file change is ever
-produced.
+action-needed, `2` blocked).
 
 ## Procedure
 
@@ -73,12 +68,11 @@ produced.
    `healthy`/`warnings`/`unknown`, `1` for `action-needed`, `2` for `blocked` —
    a non-zero exit is a normal report outcome here, not a skill failure.
 
-2. **Summarize the result** for the operator from the script's own output — do
-   not re-derive or second-guess it. Lead with the overall status and whether the
-   repo is Materia-enabled, then the current vs latest artifact schema, the
-   project-state location (or that it is missing/malformed), and any
-   required/recommended/optional changes plus manual action items the script
-   listed.
+2. **Summarize the result** for the operator from the script's own output (see
+   Rules). Lead with the overall status and whether the repo is Materia-enabled,
+   then the current vs latest artifact schema, the project-state location (or
+   that it is missing/malformed), and any required/recommended/optional changes
+   plus manual action items the script listed.
 
 3. **Recommend the next step the script named** — no more. Common cases:
    - **`healthy`** — schema is current; nothing required. Note that a healthy
@@ -102,7 +96,8 @@ produced.
 
 ## Scope
 
-- **Reads only.** Doctor never writes, edits, migrates, or regenerates anything.
+- **Reads only.** Doctor never writes, edits, migrates, or regenerates
+  anything — no branch, commit, PR, or file change is ever produced.
 - **Does not implement `/materia:migrate`.** It only *suggests* it (and its
   `--plan` mode) where the report calls for it.
 - **Does not auto-run.** It is operator-invoked; nothing triggers it from plugin
@@ -114,8 +109,8 @@ produced.
 
 - The **script owns the verdict.** The skill relays it; it does not override the
   status or fabricate state the script marked `unknown`/`blocked`.
-- **No destructive or mutating action** is ever taken — not even the fixes the
-  report suggests. Doctor diagnoses; the operator (or `/materia:migrate`) acts.
+- **No destructive or mutating action** is ever taken (see Scope) — not even
+  the fixes the report suggests. Doctor diagnoses; the operator (or
+  `/materia:migrate`) acts.
 - When the report suggests `/materia:migrate --plan`, present it as the next
-  step; migrate is the plan-first command that proposes the change (and applies
-  the safe migrations on `--apply`). Doctor itself stays read-only.
+  step; migrate is the separate plan-first command that acts.

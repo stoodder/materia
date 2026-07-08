@@ -12,21 +12,12 @@ plugin. It is the acting counterpart to the read-only `/materia:doctor`:
 /materia:doctor reports  →  /materia:migrate --plan plans  →  operator applies (--apply)
 ```
 
-migrate is **plan-first**. The default mode inspects the repo against this
-plugin's release/artifact ledger and prints the proposed plan **without editing
-any file**. Only `--apply` changes anything, and only for migrations that are
-safe, deterministic, and idempotent. The plan/apply verdict is produced by the
-deterministic script `plugins/materia/scripts/migrate.mjs`, not by the model —
-this skill is the orchestration/explanation layer that runs the script and
-summarizes the result. Where the script cannot act safely, migrate reports the
-change as **manual** and does **not** guess.
-
-This is **v0, dogfood-grade**: the only implemented apply-mode migration is
-`init-project-state` (the stable id the ledger reserves in
-`0.2.0-project-state-file`), which initializes `.materia/project.json` for a
-detectable pre-tracking (untracked-legacy) install. Every other ledger change is
-reported as manual or skipped until a handler ships. migrate does **not** move
-files, rewrite templates, or normalize scaffold in this version.
+migrate is **plan-first** and **v0, dogfood-grade** — see Scope below for the
+exact contract (what `--plan`/`--apply` do, and the single v0 migration). The
+plan/apply verdict is produced by the deterministic script
+`plugins/materia/scripts/migrate.mjs`, not the model; this skill runs it and
+summarizes the result (see Rules) rather than re-deriving or guessing at
+state.
 
 ## Invocation
 
@@ -59,11 +50,10 @@ migrate reads no other repo state and needs no network or AI.
   already-satisfied items, the manual items (needing operator judgement), the
   skipped items and why, the files that would change, whether local edits may be
   affected, and — if anything is applicable — the exact `--apply` command to run.
-- **Apply mode (`--apply`)** — applies only the safe migrations, then prints what
+- **Apply mode (`--apply`)** — applies only the safe migrations, writing
+  atomically (see Rules for the never-overwrite contract), then prints what
   changed, what did not (and why), the project state after migration, and the
-  suggestion to run `/materia:doctor` to confirm health. Apply mutates **only**
-  `.materia/project.json`, writes it **atomically**, and **never** overwrites an
-  existing or malformed file.
+  suggestion to run `/materia:doctor` to confirm health.
 - **`--json`** — the same report as a structured JSON object (for other tooling).
 
 No branch, commit, or PR is ever produced.
@@ -78,15 +68,14 @@ No branch, commit, or PR is ever produced.
    ```
 
    Default to **plan** (`--apply` omitted) unless the operator has explicitly
-   asked to apply. Never run `--apply` on your own initiative — apply is an
-   operator decision.
+   asked to apply (see Rules).
 
-2. **Summarize the plan** for the operator from the script's own output — do not
-   re-derive or second-guess it. Lead with the current state and target schema,
-   then the migrations that can be safely applied (and the files they touch), the
-   manual items, and the skipped items with their reasons. State plainly whether
-   any local edits could be affected (for v0's `init-project-state`: no — it only
-   ever creates a missing file).
+2. **Summarize the plan** for the operator from the script's own output (see
+   Rules). Lead with the current state and target schema, then the migrations
+   that can be safely applied (and the files they touch), the manual items,
+   and the skipped items with their reasons. State plainly whether any local
+   edits could be affected (see Rules — v0's `init-project-state` only ever
+   creates a missing file).
 
 3. **Recommend the next step the script named** — no more:
    - **Something applicable** — relay the script's `/materia:migrate --apply`
@@ -99,8 +88,7 @@ No branch, commit, or PR is ever produced.
 
 4. **On `--apply`,** run the engine, then summarize what changed, what did not
    and why, and the resulting project state. Close by suggesting `/materia:doctor`
-   to confirm the result (a legacy repo may still carry warnings from
-   change-agnostic checks migrate does not adopt).
+   to confirm the result (see Relationship to doctor).
 
 ## Relationship to doctor
 
@@ -114,10 +102,15 @@ can still warn; migrate adopts only the ledger's migrations, never those.
 
 ## Scope
 
-- **Plan-first.** The default never edits files; only `--apply` changes anything.
-- **One migration in v0.** `init-project-state` initializes the project-state
-  file for a detectable legacy install. No file moves, template rewrites, scaffold
-  normalization, or conflict resolution — those are reported manual/future.
+- **Plan-first.** The default (`--plan`) never edits files; only `--apply`
+  changes anything, and only for migrations that are safe, deterministic, and
+  idempotent.
+- **One migration in v0.** `init-project-state` (the id the release ledger
+  reserves in `0.2.0-project-state-file`) initializes `.materia/project.json`
+  for a detectable pre-tracking (untracked-legacy) install; every other ledger
+  change is reported as manual or skipped until a handler ships. No file
+  moves, template rewrites, scaffold normalization, or conflict resolution in
+  this version.
 - **Does not auto-run.** It is operator-invoked; nothing triggers it from plugin
   startup or update hooks. Migration is always explicit.
 - Runs in the **operator's own session** — it is never spawned as a pipeline

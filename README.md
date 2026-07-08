@@ -91,8 +91,9 @@ upgrading the plugin upgrades every repo it's installed in.
 plugins/materia/
   .claude-plugin/plugin.json         the plugin manifest
   skills/                            the pipeline skills (stack-agnostic), invoked /materia:<name>
-  scaffold/                          the bundled MATERIA.md/CLAUDE.md/docs templates + check-docs.sh
-                                      that /materia:init materializes into your repo
+  scaffold/                          the bundled MATERIA.md/CLAUDE.md/docs templates,
+                                      check-docs.sh, and .materia/ (review-angles library +
+                                      project.json) that /materia:init materializes into your repo
   release/                           the plugin's own release/migration ledger (semver +
                                       artifact-schema contract; not materialized into repos)
 scripts/validate-plugin.mjs          validates the marketplace + plugin manifests and the scaffold
@@ -124,14 +125,12 @@ your repo).
 
 **Plugin version ≠ artifact schema.** The plugin's semver changes whenever it ships; the
 **artifact schema** — an integer tracking the installed-project *state contract*
-(`.materia/project.json`) — changes only when that contract actually changes. It is **not**
-a full-conformance certificate: a repo at the latest schema has an up-to-date project-state
-file, not necessarily an up-to-date scaffold. Multiple plugin versions can share one schema,
-so a plugin upgrade does **not** imply a project migration. `0.1.0` is the **pre-tracking
-baseline** (schema 1): installs from before this system existed had no project-state file and
-no ledger — a *range* of evolving dogfood shapes, not one stable contract (see the ledger's
-`0.1.0` reconciliation notes for legacy items an old install may still need by hand). The
-**first tracked schema (2)** begins with this compatibility system itself.
+(`.materia/project.json`) — changes only when that contract actually changes, so a plugin
+upgrade does **not** imply a project migration. `0.1.0` is the pre-tracking baseline (schema
+1); the first tracked schema (2) begins with this compatibility system itself. See
+[`plugins/materia/release/README.md`](plugins/materia/release/README.md) for the normative
+definition — the full schema/semver contract and the impact classifications (`none` through
+`breaking`) doctor and migrate act on.
 
 **Project state — new vs existing repos.** New repos get their state for free:
 `/materia:init` materializes `.materia/project.json` (schema 2) from the bundled scaffold,
@@ -153,9 +152,13 @@ overwrites an existing or hand-edited state file.
   redraft contracts.
 - **One home per fact.** Stack specifics live in `MATERIA.md` and the
   generated `docs/standards/*`; skills point at them instead of restating.
-- **The PR is the review gate.** Every skill ends at exactly one PR; nothing
-  auto-merges except the librarian's mechanically docs-only diff and an
-  explicit `--auto` autopilot run.
+- **The PR is the review gate.** Every repo-changing pipeline run ends at
+  exactly one PR — the named exceptions are the read-only/operator tools
+  (`/materia:doctor`, which writes nothing; `/materia:migrate --apply`, which
+  writes the working tree directly with no PR), `/materia:init`'s bootstrap
+  commit to the default branch, and a pipeline's internal sub-stages (which
+  don't each open their own PR). Nothing auto-merges except the librarian's
+  mechanically docs-only diff and an explicit `--auto` autopilot run.
 - **The harness is a versioned plugin, not a self-editing one.** Every repo
   it's installed in runs the same skills from the same plugin cache; there is
   no per-repo fork to diverge. What *is* yours is the signal: retros feed

@@ -587,10 +587,12 @@ defines — H1 + tagline blockquote + `## Problem`, `## Goals`, `## Non-goals`,
 `## Open questions`. **Every required H2 must be present verbatim and in order,
 even when thin** — `intake-spec`'s detector matches on the H1 plus `## Problem`,
 `## Goals`, `## User stories & acceptance criteria`, and `## Open questions`.
-Link paths follow `propose-spec` § Link paths (backtick/arrow prose, e.g.
-`visual-language → docs/standards/visual-language.md`, or absolute-from-repo-root
-— never a relative link that breaks when `intake-spec` adopts the body at a
-different folder depth).
+Link paths follow `propose-spec` § Link paths: backtick/arrow prose only, e.g.
+`visual-language → docs/standards/visual-language.md` — never a relative link
+(breaks when `intake-spec` adopts the body at a different folder depth) and
+never an absolute-from-repo-root path (`check-docs.sh` resolves links against
+the containing file's own directory, so a repo-root path doesn't resolve from
+either location either).
 
 **Filename:** `<YYYY-MM-DD-HHMMSS>-<id>-<slug>.md`.
 

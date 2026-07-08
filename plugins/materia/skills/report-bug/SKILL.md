@@ -355,7 +355,7 @@ different algorithm.
 ## Scope (what this skill does NOT do)
 
 - Does NOT fix the bug or run any pipeline. After the PR lands, the operator
-  runs `/materia:fix-bug <id>` (proposal `5356b`) to begin a fix run.
+  runs `/materia:fix-bug <id>` to begin a fix run.
 - Does NOT branch, commit, push, or open a PR **before** the operator confirms
   the draft. The Q&A is in-memory; the git workflow only fires on `approve`
   (step 7).
