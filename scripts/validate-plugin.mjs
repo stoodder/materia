@@ -1964,6 +1964,13 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       writeFileSync(join(dir, '.materia', 'project.json'),
         JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
       writeFileSync(join(dir, 'Makefile'), 'check:\n\tsh scripts/check-docs.sh\n')
+      // Left-boundary pins: a NESTED path is a DIFFERENT file (never a hit — an
+      // autoFix:true false positive would drive the skill to corrupt it, worst in
+      // monorepos), while the relative-dot spelling is a genuine consumer (must hit).
+      mkdirSync(join(dir, 'tools', 'scripts'), { recursive: true })
+      writeFileSync(join(dir, 'tools', 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
+      writeFileSync(join(dir, 'tools', 'run.md'), 'Run `sh tools/scripts/check-docs.sh` here.\n')
+      writeFileSync(join(dir, 'run-docs.md'), 'Run `./scripts/check-docs.sh` here.\n')
       const snap = snapshot(dir)
       const { r, report } = runMigrate(dir)
       const problems = []
@@ -1976,6 +1983,8 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
           problems.push(...followUpShapeProblems(sh))
           if (sh.staleNow !== true) problems.push('staleNow should be true (canonical gate present; old-path reference broken now)')
           if (!sh.hits.some((h) => h.file === 'Makefile')) problems.push('follow-up hits missing the Makefile consumer')
+          if (sh.hits.some((h) => h.file === 'tools/run.md')) problems.push('nested tools/scripts/check-docs.sh reference wrongly matched — the left boundary regressed (autoFix would corrupt a different file)')
+          if (!sh.hits.some((h) => h.file === 'run-docs.md')) problems.push('relative-dot ./scripts/check-docs.sh consumer missed — the optional ./ group regressed')
         }
       }
       const changed = diffKeys(snap, snapshot(dir))

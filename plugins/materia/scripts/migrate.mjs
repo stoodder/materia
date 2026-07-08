@@ -314,9 +314,16 @@ re-runs the repo's check:docs gate. Run /materia:doctor afterward to confirm hea
 //    dangles), and the relocated file at `to` is the destination, not a stale consumer.
 //  - utf8-readable, size-capped files only; a null byte skips the file as binary.
 //  - The match is the from-path with regex metacharacters ESCAPED (a raw `.` would
-//    wildcard), wrapped in the fixed-length lookbehind (?<!\.materia\/) — the same idiom as
-//    validator §1e's BADPATH — so a canonical `.materia/scripts/check-docs.sh` never
-//    matches, while `scripts/check-docs.sh.bak` (a real stale consumer) deliberately does.
+//    wildcard), left-anchored at a PATH-SEGMENT boundary: a preceding word char, dot,
+//    slash, backslash, or hyphen means the occurrence sits inside a LONGER path
+//    (tools/scripts/check-docs.sh, .materia/scripts/check-docs.sh, myscripts/check-docs.sh)
+//    — a DIFFERENT file, never a hit. autoFix hits drive mechanical rewrites in consumer
+//    repos, so a false positive here corrupts a path (worst in monorepos whose packages
+//    carry their own scripts/ dirs). The one legitimate prefixed spelling, relative-dot
+//    `./scripts/check-docs.sh`, is matched by the optional leading group. A trailing
+//    continuation like `scripts/check-docs.sh.bak` (a real stale consumer) deliberately
+//    still matches. (Deliberately NOT validator §1e's BADPATH pattern: that lint scans
+//    controlled skill docs and must catch nested scaffold paths — a different domain.)
 //  - hits[] sorted (file, then line) for stable, reproducible output.
 //  - staleNow per token: the artifact is at its canonical `to` location now, so consumers
 //    still naming `from` are stale THIS INSTANT (a MOVED artifact's refs are broken; a
@@ -331,7 +338,7 @@ const scanReferences = (targetRoot, mig) => {
   if (!sweeps.length) return []
   const tokens = sweeps.map((s) => ({
     id: mig.id, from: s.from, to: s.to, autoFix: s.autoFix,
-    re: new RegExp(`(?<!\\.materia\\/)${escapeRegExp(s.from)}`),
+    re: new RegExp(`(?<![\\w./\\\\-])(?:\\./)?${escapeRegExp(s.from)}`),
     exclude: new Set([s.from, s.to]), // from-path artifact + to-path, in '/'-form
     hits: [],
   }))
@@ -347,7 +354,10 @@ const scanReferences = (targetRoot, mig) => {
         if (e.name === '.git' || e.name === 'node_modules') continue
         // Frozen dated run folders: only a DATED-slug dir directly under docs/specs/ or
         // docs/bugs/_reports/ is exempt — not the sibling README.md / _proposed/ /
-        // _templates/, which are present-state and stay in the scan.
+        // _templates/, which are present-state and stay in the scan. Canonical
+        // single-repo layout assumed: a nested packages/x/docs/specs/<slug>/ (monorepo)
+        // or a bare-date folder (no trailing slug hyphen) is NOT exempt — Materia's
+        // docs tree is repo-root-rooted, so those shapes are not run artifacts it wrote.
         if ((rel === 'docs/specs' || rel === 'docs/bugs/_reports') && DATED_SLUG.test(e.name)) continue
         walk(childAbs, childRel)
       } else if (e.isFile()) {
@@ -395,7 +405,7 @@ const collectReferenceFollowUps = (targetRoot) => {
 // the one repo migrate exists to fix). The ledger is read only for REPORTING:
 // the target schema, and to surface ledger-declared migration ids that have no
 // implemented handler yet (skipped) with their manual instructions.
-const buildPlan = (targetRoot, releaseDir) => {
+const buildPlan = (targetRoot, releaseDir, opts = {}) => {
   const report = inspect(targetRoot, releaseDir)
   const ledger = readLedger(releaseDir)
 
@@ -498,7 +508,11 @@ const buildPlan = (targetRoot, releaseDir) => {
   // against a Materia-enabled target regardless of whether install-check-docs is in-window
   // — the schema-complete-but-stale repo (gymii) must still be surfaced. Plan REPORTS only,
   // writes nothing. A non-Materia repo has nothing to sweep (and toolFault returned above).
-  if (report.materiaEnabled) out.referenceFollowUps = collectReferenceFollowUps(targetRoot)
+  // runApply passes skipReferenceScan: its post-apply re-scan is the one that matters
+  // (staleNow must reflect the post-move truth), so the pre-apply walk is skipped rather
+  // than computed and discarded.
+  if (report.materiaEnabled && !opts.skipReferenceScan)
+    out.referenceFollowUps = collectReferenceFollowUps(targetRoot)
 
   out.nextCommand = out.applicable.length ? '/materia:migrate --apply' : null
   return out
@@ -506,7 +520,7 @@ const buildPlan = (targetRoot, releaseDir) => {
 
 // ---- apply ------------------------------------------------------------------
 const runApply = (targetRoot, releaseDir) => {
-  const plan = buildPlan(targetRoot, releaseDir)
+  const plan = buildPlan(targetRoot, releaseDir, { skipReferenceScan: true })
   const out = { ...plan, mode: 'apply', applied: [], created: [], notChanged: [], projectState: null, nextCommand: null }
   if (plan.toolFault) return out
 
