@@ -74,22 +74,21 @@ Pick exactly one per change — and per planned task (Phase 1):
 ### Release surfaces
 
 When impact is anything other than `none`, the plan names which of these the change
-touches. Some are **forthcoming** — the machinery that consumes them lands in later PRs;
-classify against them *now* so the record is ready when they exist:
+touches. The v0 machinery that consumes them has now landed; classify against every
+surface a change touches, including any that a later PR deepens:
 
-- **release/migration ledger** — the machine-readable compatibility contract *(planned)*.
-- **`/materia:doctor` detection behavior** — how drift is detected/reported *(planned)*.
-- **`/materia:migrate` behavior, or manual migration instructions** — *(migrate command
-  planned; manual instructions usable today)*.
+- **release/migration ledger** — the machine-readable compatibility contract *(exists)*.
+- **`/materia:doctor` detection behavior** — how drift is detected/reported *(exists)*.
+- **`/materia:migrate` behavior, or manual migration instructions** — *(exists — v0: one
+  migration, `init-project-state`; other ledger changes carry manual instructions)*.
 - **validator coverage** — `scripts/validate-plugin.mjs` expectations *(exists)*.
 - **scaffold/template updates** — `plugins/materia/scaffold/` *(exists)*.
 - **human changelog / release notes** — the human-readable summary *(exists as authored)*.
 
 **Precedence — the ledger is the contract, not the changelog.** PR-body notes and human
-changelogs are **not** the source of truth. The (forthcoming) machine-readable
-release/migration ledger is the contract that `/materia:doctor` and `/materia:migrate`
-consume; human release notes *summarize* that contract for people. When they disagree, the
-ledger governs.
+changelogs are **not** the source of truth. The machine-readable release/migration ledger
+is the contract that `/materia:doctor` and `/materia:migrate` consume; human release notes
+*summarize* that contract for people. When they disagree, the ledger governs.
 
 ### Plugin semver ≠ artifact schema
 
@@ -245,7 +244,7 @@ For each task, in order:
     - any **operator-veto compatibility calls** the run flagged (Phase 5);
     - **what the review rounds hardened about compatibility**.
 
-    This section summarizes the contract for humans; the (forthcoming) machine-readable
+    This section summarizes the contract for humans; the machine-readable
     release/migration ledger — not this section — is the source of truth doctor/migrate
     consume. End the turn with the PR link; the operator merges.
 
