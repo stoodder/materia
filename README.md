@@ -124,10 +124,12 @@ migrate actually read (from the installed plugin cache; the ledger is never copi
 your repo).
 
 **Plugin version ≠ artifact schema.** The plugin's semver changes whenever it ships; the
-**artifact schema** — an integer tracking the installed-project *state contract*
-(`.materia/project.json`) — changes only when that contract actually changes, so a plugin
-upgrade does **not** imply a project migration. `0.1.0` is the pre-tracking baseline (schema
-1); the first tracked schema (2) begins with this compatibility system itself. See
+**artifact schema** — an integer tracking the **installed-artifact contract** (the canonical
+set of installed artifacts, their canonical locations, and the `.materia/project.json`
+shape) — changes only when that contract actually changes, so a plugin upgrade does **not**
+imply a project migration. `0.1.0` is the pre-tracking baseline (schema 1); the first
+tracked schema (2) begins with this compatibility system itself; schema 3 moves the
+check:docs gate script to its canonical `.materia/scripts/` home. See
 [`plugins/materia/release/README.md`](plugins/materia/release/README.md) for the normative
 definition — the full schema/semver contract and the impact classifications (`none` through
 `breaking`) doctor and migrate act on.
@@ -137,12 +139,15 @@ definition — the full schema/semver contract and the impact classifications (`
 so a fresh install is born tracked. Existing pre-tracking (dogfood) repos — created before
 schema 2 — have no `.materia/project.json`; `/materia:doctor` detects them as *untracked
 legacy* and points at `/materia:migrate --plan`, and `/materia:migrate --apply` then runs
-the one v0 migration, `init-project-state`, which writes the project-state file without
-touching anything else.
+the two v0 migrations: `init-project-state` writes the project-state file, and
+`install-check-docs` puts the check:docs gate script at its canonical
+`.materia/scripts/check-docs.sh` (relocating a root copy or installing from the plugin
+scaffold) and stamps the adopted schema.
 
 This is a deliberately **conservative, dogfood-grade v0 foundation**, not a public-grade
-migration framework: one automated migration, plan-first, no auto-run, and it never
-overwrites an existing or hand-edited state file.
+migration framework: two automated migrations, plan-first, no auto-run, and it refuses to
+touch a malformed or hand-authored stale state file — those are surfaced as manual items,
+never overwritten.
 
 ## Design values
 

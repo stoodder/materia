@@ -48,7 +48,7 @@
     },
     {
       "id": "0.3.0-review-angles-calibration-xref",
-      "summary": "The scaffold review-angles README gained a one-line cross-reference to the reviewer-calibration guidance injected via the ship-spec spawn contract.",
+      "summary": "The scaffold review-angles README gained a short cross-reference to the reviewer-calibration guidance the ship-spec review machinery provides centrally (severity rubric, structured finding shape, verify-before-reporting).",
       "impact": "optional",
       "surfaces": ["scaffold"],
       "detectable": false,
