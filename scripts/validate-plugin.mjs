@@ -7,18 +7,21 @@
 // user repo). The shipped checker is the portable POSIX-sh check-docs.sh; its
 // parity oracle (the Node reference implementation, repo-local, never bundled)
 // lives at scripts/check-docs-oracle.mjs and is exercised by the check-docs
-// parity harness (§1d). Layers:
-//  1. Materialization sim: copy plugins/materia/scaffold/ into the post-init
-//     user-repo layout (docs/ + root CLAUDE.md/MATERIA.md + the standards stubs
-//     /materia:init generates) and run check-docs.sh over it. Skills are NOT
-//     copied — installed plugins run from the read-only cache, not from
-//     .claude/skills/ in the user repo — so a scaffold doc that still LINKS into
-//     a skill file now fails here honestly (nothing masks it).
-//  1c. Direct skills link/anchor check: resolves every relative link + #anchor
+// parity harness (§1). Layers:
+//  1. check-docs parity harness: materialize the two real scaffold profiles
+//     exactly as /materia:init would (docs/ + root CLAUDE.md/MATERIA.md + the
+//     standards stubs init generates; skills are NOT copied — installed
+//     plugins run from the read-only cache, not from .claude/skills/ in the
+//     user repo, so a scaffold doc that still LINKS into a skill file fails
+//     here honestly) plus a synthetic fixture corpus, and prove
+//     `node check-docs-oracle.mjs` (ground truth) == `sh check-docs.sh` on
+//     host awk == busybox awk == gawk/C.UTF-8 on every one of them.
+//  1b. Direct skills link/anchor check: resolves every relative link + #anchor
 //     in plugins/materia/skills/** as the files sit in the repo (the coverage
-//     the skill-free sim gives up), skipping ${CLAUDE_PLUGIN_ROOT} runtime paths
-//     and http(s)/mailto links (not repo-relative). A link that escapes the
-//     skills subtree fails — such refs must be repo-relative backtick prose.
+//     the skill-free parity harness gives up), skipping ${CLAUDE_PLUGIN_ROOT}
+//     runtime paths and http(s)/mailto links (not repo-relative). A link that
+//     escapes the skills subtree fails — such refs must be repo-relative
+//     backtick prose.
 //  2. § audit: every segment of every `MATERIA.md § A § B` reference chain
 //     across plugins/materia/ names a real heading in MATERIA.md, plus mirror
 //     pins (§ Skill routing rows that must carry an equal tier).
@@ -29,54 +32,18 @@ import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, re
 import { join, resolve, dirname, relative, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import { spawnSync } from 'node:child_process'
-// Authoritative id lists from the PURE contract lib (no CLI main() runs on import), so §6
-// can resolve a ledger change's doctorChecks/migrations against the real doctor checks +
-// migrate handlers, and §7 can pin KNOWN_CHECK_IDS against what doctor actually emits.
-import { KNOWN_CHECK_IDS, KNOWN_MIGRATION_IDS } from '../plugins/materia/scripts/lib/materia-contract.mjs'
+// Authoritative id lists + the pure inspector from the PURE contract lib (no CLI main()
+// runs on import), so §6 can resolve a ledger change's doctorChecks/migrations against the
+// real doctor checks + migrate handlers, and §7 can pin KNOWN_CHECK_IDS against what doctor
+// actually emits AND (for the doctor releaseDir-isn't-CLI-overridable case) call inspect()
+// directly against a synthetic ledger the same way doctor.mjs/migrate.mjs do.
+import { KNOWN_CHECK_IDS, KNOWN_MIGRATION_IDS, inspect } from '../plugins/materia/scripts/lib/materia-contract.mjs'
 
 process.chdir(join(import.meta.dirname, '..'))
 let failures = 0
 const fail = (msg) => { console.error(`  ✗ ${msg}`); failures++ }
 
-// ---- 1. materialization sims + check-docs ----------------------------------
-// Model the REAL /materia:init output: copy plugins/materia/scaffold/ into a
-// user-repo layout (docs/ + check-docs.sh + root CLAUDE.md/MATERIA.md, plus the
-// standards stubs init always generates), then run the shipped `sh check-docs.sh`
-// over it. Skills are NOT copied and init no longer prunes — installed plugins run from the
-// read-only cache, so the user repo has no .claude/skills/ at all. That makes
-// the green signal HONEST: a scaffold doc that still links into a skill file
-// dangles here (Part B mask removed). The two profiles differ only in which
-// standards stubs get written (a UI repo adds visual-language + ui-components).
-const runSim = (label, { standards }) => {
-  const sim = mkdtempSync(join(tmpdir(), 'materia-sim-'))
-  try {
-    mkdirSync(join(sim, 'scripts'), { recursive: true })
-    cpSync('plugins/materia/scaffold/docs', join(sim, 'docs'), { recursive: true })
-    cpSync('plugins/materia/scaffold/scripts/check-docs.sh', join(sim, 'scripts/check-docs.sh'))
-    cpSync('plugins/materia/scaffold/CLAUDE.md', join(sim, 'CLAUDE.md'))
-    cpSync('plugins/materia/scaffold/MATERIA.md', join(sim, 'MATERIA.md'))
-    // .materia/ (review-angles etc.) is intentionally NOT copied into the sim:
-    // check-docs' ROOTS (['CLAUDE.md','docs']) exclude it by design, so leaving
-    // it out keeps this block an honest model of what init materializes + what
-    // check-docs actually scans. Registry↔angle-file drift is guarded by the
-    // dedicated review-angle checks below, not by this sim.
-    for (const f of standards)
-      writeFileSync(join(sim, `docs/standards/${f}.md`), '# stub — generated by /materia:init\n')
-    const r = spawnSync('sh', ['scripts/check-docs.sh'], { cwd: sim, encoding: 'utf8' })
-    if (r.status !== 0) {
-      fail(`materialization sim (${label}) failed check-docs:`)
-      console.error(r.stdout + r.stderr)
-    } else {
-      console.log(`  ✓ materialization sim (${label}): ` + (r.stdout.trim().split('\n').pop() ?? 'clean'))
-    }
-  } finally {
-    rmSync(sim, { recursive: true, force: true })
-  }
-}
-runSim('UI repo', { standards: ['architecture', 'testing', 'workflow', 'visual-language', 'ui-components'] })
-runSim('non-UI repo', { standards: ['architecture', 'testing', 'workflow'] })
-
-// ---- 1d. check-docs parity harness ------------------------------------------
+// ---- 1. check-docs parity harness -------------------------------------------
 // The shipped checker is a portable POSIX-sh reimplementation
 // (plugins/materia/scaffold/scripts/check-docs.sh) of the Node reference
 // implementation (scripts/check-docs-oracle.mjs). "Byte-for-byte identical
@@ -107,15 +74,23 @@ runSim('non-UI repo', { standards: ['architecture', 'testing', 'workflow'] })
   }
   // gawk lane under a UTF-8 locale (C.UTF-8): gawk is multibyte-aware, so under a
   // UTF-8 locale it uses CHARACTER semantics and would diverge on non-ASCII
-  // slugs/glossary sorts — exactly what broke on GitHub Actions (default awk =
-  // gawk, LANG=C.UTF-8). check-docs.sh pins LC_ALL=C internally to force byte
-  // semantics; this lane runs the CI-failure environment so a future removal of
-  // that pin fails here, not just in CI. Gated on gawk's presence (skip locally
-  // if absent — the CI host-awk lane already IS gawk).
+  // slugs/glossary sorts — exactly what broke on GitHub Actions when this lane
+  // ran under an explicit AWK=gawk override with LC_ALL=C.UTF-8. check-docs.sh
+  // pins LC_ALL=C internally to force byte semantics; this lane runs that
+  // failure environment so a future removal of the pin fails here, not just in
+  // CI. IMPORTANT: Ubuntu's DEFAULT `awk` is mawk, not gawk — the host-awk lane
+  // above does NOT exercise gawk at all, so gawk must be explicitly apt-installed
+  // for this lane to run anywhere. In CI it is therefore a HARD requirement,
+  // symmetric with busybox above (never silently skip it there); locally, warn +
+  // skip rather than blocking the dev loop.
   const gawkProbe = spawnSync('gawk', ['--version'], { encoding: 'utf8' })
   const haveGawk = !gawkProbe.error && gawkProbe.status === 0
-  if (!haveGawk && !process.env.CI)
-    console.log('  ⚠ SKIP gawk lane: gawk not found on PATH — the CI host-awk lane covers gawk. Install gawk to run it locally.')
+  if (!haveGawk) {
+    if (process.env.CI)
+      fail('gawk required in CI for the check-docs gawk/C.UTF-8 parity lane but not found — install gawk on the runner (Ubuntu\'s default awk is mawk, not gawk)')
+    else
+      console.log('  ⚠ SKIP gawk lane: gawk not found on PATH — running without it (other lanes still assert oracle==sh parity). Install gawk locally, or set CI=1 to make this a hard failure.')
+  }
 
   const snippet = (s) => { s = s ?? ''; return s.length > 700 ? s.slice(0, 700) + '\n…[truncated]' : s }
   // Run all lanes over `cwd` and assert three-way (or two-way, no-busybox)
@@ -215,9 +190,12 @@ runSim('non-UI repo', { standards: ['architecture', 'testing', 'workflow'] })
     }
 
     // ---- the two real scaffold profiles through the same three-way parity ----
-    // Re-materialize UI + non-UI profiles exactly like runSim (minus copying a
-    // checker — invoked by absolute path) and assert cross-lane parity on the
-    // real bundled docs, not just synthetic fixtures. Both must be clean.
+    // Re-materialize UI + non-UI profiles exactly as /materia:init would write
+    // them (minus copying a checker — invoked by absolute path) and assert
+    // cross-lane parity on the real bundled docs, not just synthetic fixtures.
+    // Both must be clean. This is the sole coverage of the real scaffold
+    // profiles through check-docs — it fully absorbs what a separate
+    // materialization-sim-plus-check-docs-exit-0 pass would give.
     const profiles = [
       ['UI repo', ['architecture', 'testing', 'workflow', 'visual-language', 'ui-components']],
       ['non-UI repo', ['architecture', 'testing', 'workflow']],
@@ -244,7 +222,7 @@ runSim('non-UI repo', { standards: ['architecture', 'testing', 'workflow'] })
   }
 }
 
-// ---- 1c. direct skills link/anchor check ------------------------------------
+// ---- 1b. direct skills link/anchor check ------------------------------------
 // The skill-free sim (above) no longer covers skill-internal markdown links or
 // anchors. Restore that coverage HONESTLY: resolve every relative link + #anchor
 // in plugins/materia/skills/** exactly as the files sit in the repo — no temp
@@ -318,7 +296,7 @@ runSim('non-UI repo', { standards: ['architecture', 'testing', 'workflow'] })
     console.log(`  ✓ direct skills link/anchor check: ${checked} links/anchors across ${skillDocs.length} skill docs resolve (natural repo layout)`)
 }
 
-// ---- 1b. stage-numbering canon ----------------------------------------------
+// ---- 1c. stage-numbering canon ----------------------------------------------
 // The status templates are the source of truth; skills that hard-code a row
 // number must agree. Both sides are pinned here so drift fails CI.
 const canon = [
@@ -738,12 +716,12 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
 }
 
 // ---- 5. review-angle slot + link hygiene ------------------------------------
-// The skills-only slot scan (§3) and direct-skills link check (§1c) both filter
+// The skills-only slot scan (§3) and direct-skills link check (§1b) both filter
 // to plugins/materia/skills/, so a {{slot}} or a live [text](path) link in a
 // verbatim-shipped angle file went uncaught. Angle files ship byte-for-byte via
 // /materia:init, so hold them to the same hygiene: no unquoted {{slot}} markers,
 // no live markdown links to repo-relative paths (backtick prose only; http(s)/
-// mailto and ${CLAUDE_PLUGIN_ROOT} are exempt, mirroring §1c). Live-link syntax
+// mailto and ${CLAUDE_PLUGIN_ROOT} are exempt, mirroring §1b). Live-link syntax
 // inside code fences or inline code is illustrative — blanked before the link
 // scan. The {{slot}} scan follows §3's rule instead (a bare {{ fails unless
 // backtick-adjacent; fences are NOT exempt), so it runs over the raw text.
@@ -775,6 +753,60 @@ const ANGLE_DIR = 'plugins/materia/scaffold/.materia/review-angles'
   }
   if (failures === before)
     console.log(`  ✓ review-angle hygiene: no unquoted {{slot}} markers or live repo-relative links in ${files.length} angle-dir files`)
+}
+
+// ---- 5b. marketplace.json shape check ---------------------------------------
+// .claude-plugin/marketplace.json is the install-critical catalog `/plugin
+// marketplace add` reads to resolve `materia@materia` — nothing on stock CI
+// actually parses it today: the `claude plugin validate` step in
+// .github/workflows/validate.yml only runs if the `claude` CLI happens to be on
+// the runner (it usually isn't) and is continue-on-error even when it does. Give
+// it a small fail-close shape check here instead: it parses as a JSON object,
+// `plugins` is a non-empty array, every entry's `source` resolves to a real
+// directory on disk (relative to the repo root, matching how `/plugin
+// marketplace add` resolves it), and the `materia` entry exists with a `name`
+// that agrees with the plugin manifest its `source` points at — so a broken/
+// renamed source or a name drift between the two manifests fails CI instead of
+// only surfacing at install time.
+{
+  const before = failures
+  const MKT = '.claude-plugin/marketplace.json'
+  const isDir = (p) => existsSync(p) && statSync(p).isDirectory()
+  let mkt = null
+  try { mkt = JSON.parse(readFileSync(MKT, 'utf8')) }
+  catch (e) { fail(`${MKT}: not valid JSON — ${e.message}`) }
+  if (mkt !== null && (typeof mkt !== 'object' || Array.isArray(mkt)))
+    fail(`${MKT}: must be a JSON object`)
+  else if (mkt) {
+    if (!Array.isArray(mkt.plugins) || mkt.plugins.length === 0) {
+      fail(`${MKT}: plugins must be a non-empty array`)
+    } else {
+      for (const [i, p] of mkt.plugins.entries()) {
+        const where = `${MKT}: plugins[${i}]`
+        if (!p || typeof p !== 'object' || Array.isArray(p)) { fail(`${where}: must be an object`); continue }
+        if (typeof p.source !== 'string' || !p.source) { fail(`${where}: source must be a non-empty string`); continue }
+        if (!isDir(resolve(p.source)))
+          fail(`${where}: source "${p.source}" does not resolve to an existing directory (resolved: ${resolve(p.source)})`)
+      }
+      const materiaEntry = mkt.plugins.find((p) => p && p.name === 'materia')
+      if (!materiaEntry) {
+        fail(`${MKT}: no plugins[] entry named "materia"`)
+      } else {
+        const pluginManifest = 'plugins/materia/.claude-plugin/plugin.json'
+        if (!existsSync(pluginManifest)) {
+          fail(`${MKT}: materia entry's source has no manifest at ${pluginManifest}`)
+        } else {
+          let pm = null
+          try { pm = JSON.parse(readFileSync(pluginManifest, 'utf8')) }
+          catch (e) { fail(`${pluginManifest}: not valid JSON — ${e.message}`) }
+          if (pm && pm.name !== materiaEntry.name)
+            fail(`${MKT}: materia entry name "${materiaEntry.name}" != ${pluginManifest} name "${pm.name}"`)
+        }
+      }
+    }
+  }
+  if (failures === before)
+    console.log('  ✓ marketplace.json shape: parses; plugins non-empty; sources resolve to real directories; materia entry name agrees with plugin.json')
 }
 
 // ---- pure release-ledger linter (shared by §6 and its §6b negative tests) ---
@@ -872,6 +904,28 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   for (let i = 1; i < ordered.length; i++)
     if (ordered[i].obj.artifactSchema < ordered[i - 1].obj.artifactSchema)
       push(`release: artifactSchema is non-monotonic — ${ordered[i - 1].obj.pluginVersion} has ${ordered[i - 1].obj.artifactSchema} but later ${ordered[i].obj.pluginVersion} has ${ordered[i].obj.artifactSchema} (must be non-decreasing by plugin semver)`)
+
+  // latest.json must point at the NEWEST release, and its artifactSchema must be the
+  // MAX across all versions/*.json — a lagging pointer/schema would pass every check
+  // above yet make doctor/migrate misjudge a genuinely-current repo as behind (or, if
+  // the drift ran the other way, "from the future"/blocked). Derive "newest" via REAL
+  // semver order (semverCmp on semverCore), never lexical sort — 0.10.0 must sort after
+  // 0.2.0, exactly the bug lexical `versionFiles.sort()` would reintroduce here.
+  const bySemver = versions
+    .filter((v) => semverCore(v.obj.pluginVersion))
+    .sort((a, b) => semverCmp(a.obj.pluginVersion, b.obj.pluginVersion))
+  if (latest && bySemver.length) {
+    const newest = bySemver[bySemver.length - 1]
+    const wantFile = `versions/${newest.stem}.json`
+    if (isStr(latest.latestVersionFile) && latest.latestVersionFile !== wantFile)
+      push(`latest.json: latestVersionFile "${latest.latestVersionFile}" does not point at the newest version by semver (${newest.obj.pluginVersion}, expected "${wantFile}")`)
+    const schemaInts = versions.map((v) => v.obj.artifactSchema).filter(isInt)
+    if (isInt(latest.artifactSchema) && schemaInts.length) {
+      const maxSchema = Math.max(...schemaInts)
+      if (latest.artifactSchema !== maxSchema)
+        push(`latest.json: artifactSchema ${latest.artifactSchema} != max artifactSchema across versions/*.json (${maxSchema})`)
+    }
+  }
 
   return errs
 }
@@ -1019,9 +1073,23 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   expect('required-nonmigratable-no-manual', ledger([{ ...goodChange(), impact: 'required', migratable: false, migrations: [], manualMigration: undefined }]), 'must include manualMigration')
   expect('surfaces-empty', ledger([{ ...goodChange(), surfaces: [] }]), 'surfaces must be non-empty')
   expect('dup-change-id', ledger([goodChange(), goodChange()]), 'duplicate change id')
+  // latest.json must point at the semver-NEWEST version file — a lagging pointer (here,
+  // latest points at 0.2.0 while a newer 0.3.0 exists) must fail even though 0.2.0.json
+  // itself resolves fine and schemas stay monotonic.
+  expect('latest-not-newest', ledger([goodChange()], {
+    latest: { pluginVersion: '0.2.0', artifactSchema: 2, latestVersionFile: 'versions/0.2.0.json' },
+    extraVersions: [{ stem: '0.3.0', obj: { pluginVersion: '0.3.0', artifactSchema: 2, changes: [] } }],
+  }), 'does not point at the newest version')
+  // latest.json points at the newest version file (0.3.0) but understates its
+  // artifactSchema (2 instead of the true max, 3) — must fail even though the
+  // "points at newest" rule above is satisfied.
+  expect('artifact-schema-not-max', ledger([goodChange()], {
+    latest: { pluginVersion: '0.3.0', artifactSchema: 2, latestVersionFile: 'versions/0.3.0.json' },
+    extraVersions: [{ stem: '0.3.0', obj: { pluginVersion: '0.3.0', artifactSchema: 3, changes: [] } }],
+  }), '!= max artifactSchema')
 
   if (failures === before)
-    console.log('  ✓ lintLedger negatives: 12 rule violations each fail-close (baseline good ledger lints clean)')
+    console.log('  ✓ lintLedger negatives: 14 rule violations each fail-close (baseline good ledger lints clean)')
 }
 
 // ---- 7. /materia:doctor deterministic behavior ------------------------------
@@ -1163,8 +1231,79 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     ])
   } finally { rmSync(mf, { recursive: true, force: true }) }
 
+  // future/zero/negative schema -> blocked, exit 2. All three land in the same
+  // artifact-schema-known structural branch of inspect() ("not a known integer"
+  // for schema <= 0, "from the future" for schema > latest) — real CLI + a
+  // synthetic temp target is enough; both branches read only the real shipped
+  // ledger's latestSchema, so no synthetic ledger is needed here.
+  for (const [label, schema] of [['future-schema', 99], ['zero-schema', 0], ['negative-schema', -1]]) {
+    const dir = mkdtempSync(join(tmpdir(), `materia-doctor-${label}-`))
+    try {
+      mkdirSync(join(dir, '.materia'), { recursive: true })
+      writeFileSync(join(dir, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(dir, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: schema, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
+      check(label, dir, (rep, r) => [
+        ...want(rep, 'status', 'blocked'),
+        ...want(rep, 'materiaEnabled', true),
+        ...sevWant(rep, 'artifact-schema-known', 'blocked'),
+        ...exitWant(r, 2),
+      ])
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+
+  // action-needed/exit-1 coverage: doctor.mjs resolves its ledger as the fixed
+  // sibling ../release relative to the SCRIPT (`resolve(import.meta.dirname,
+  // '../release')`, see doctor.mjs) — not CLI-overridable — so a synthetic
+  // ledger can't be driven through the CLI the way the schema cases above are.
+  // Import inspect() directly instead (the same pure function doctor.mjs and
+  // migrate.mjs both call): point it at a synthetic releaseDir declaring a
+  // `required`-impact change, and a synthetic stale tracked target whose schema
+  // sits below it, and assert on the report + doctor.mjs's own status->exit map.
+  {
+    const relDir = mkdtempSync(join(tmpdir(), 'materia-doctor-ledger-'))
+    const tgtDir = mkdtempSync(join(tmpdir(), 'materia-doctor-tgt-'))
+    try {
+      mkdirSync(join(relDir, 'versions'), { recursive: true })
+      writeFileSync(join(relDir, 'latest.json'),
+        JSON.stringify({ pluginVersion: '0.3.0', artifactSchema: 3, latestVersionFile: 'versions/0.3.0.json' }))
+      writeFileSync(join(relDir, 'versions', '0.2.0.json'),
+        JSON.stringify({ pluginVersion: '0.2.0', artifactSchema: 2, changes: [] }))
+      writeFileSync(join(relDir, 'versions', '0.3.0.json'), JSON.stringify({
+        pluginVersion: '0.3.0', artifactSchema: 3,
+        changes: [{
+          id: 'synthetic-required-change', summary: 'a required change', impact: 'required',
+          surfaces: ['scaffold'], detectable: true, migratable: false, doctorChecks: [], manualMigration: 'do it by hand',
+        }],
+      }))
+      mkdirSync(join(tgtDir, '.materia'), { recursive: true })
+      writeFileSync(join(tgtDir, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(tgtDir, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: 2, pluginVersion: '0.2.0', source: 'synthetic', appliedMigrations: [] }))
+
+      const rep = inspect(tgtDir, relDir)
+      const problems = [
+        ...want(rep, 'status', 'action-needed'),
+        ...(rep.requiredChanges.some((c) => c.id === 'synthetic-required-change')
+          ? [] : ['requiredChanges missing synthetic-required-change']),
+      ]
+      // doctor.mjs's own status->exit map (`const EXIT = {...}` in doctor.mjs) is not
+      // exported, so mirror it here AND textually pin that doctor.mjs's source still
+      // maps action-needed -> 1 — a drift in either the mirror or the real map fails.
+      const EXIT = { healthy: 0, warnings: 0, unknown: 0, 'action-needed': 1, blocked: 2 }
+      if (!/'action-needed':\s*1/.test(readFileSync(DOCTOR, 'utf8')))
+        problems.push('doctor.mjs EXIT map no longer maps action-needed -> 1 (this test\'s mirror of it is stale)')
+      if (EXIT[rep.status] !== 1)
+        problems.push(`mirrored EXIT[${rep.status}]=${EXIT[rep.status]} (want 1)`)
+      if (problems.length) fail(`doctor [synthetic-action-needed, via inspect()]: ${problems.join('; ')}`)
+    } finally {
+      rmSync(relDir, { recursive: true, force: true })
+      rmSync(tgtDir, { recursive: true, force: true })
+    }
+  }
+
   if (failures === before)
-    console.log('  ✓ doctor behavior: tracked→healthy · legacy→warnings(untracked-legacy) · gnarly→warnings(+check-docs.sh warning, honesty caveat) · non-materia→unknown · malformed→blocked')
+    console.log('  ✓ doctor behavior: tracked→healthy · legacy→warnings(untracked-legacy) · gnarly→warnings(+check-docs.sh warning, honesty caveat) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
 }
 
 // ---- 8. /materia:migrate deterministic behavior -----------------------------
