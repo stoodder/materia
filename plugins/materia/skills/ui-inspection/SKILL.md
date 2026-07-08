@@ -121,14 +121,14 @@ outermost guard — nothing upstream has already filtered by UI.)
    always the first action of this phase, never skipped even if the
    environment looks already provisioned (the recipe must be idempotent).
 2. **Export the service environment variables the recipe names** before
-   driving the browser, in the same command as the drive (shell state does not
+   driving the app (the § Eyes drive), in the same command as the drive (shell state does not
    persist between tool calls).
 3. **Authenticate** using the dev credentials from `MATERIA.md` § Run it to
    reach any authenticated surfaces. (If the operator has changed the
    credentials they pass them; the § Run it values are the default. Skip when
    the app has no auth.)
 4. **Provisioning failure / instability degrade path.** If provisioning fails
-   or the browser drive exits with a signature `MATERIA.md` § Eyes lists as
+   or the § Eyes drive exits with a signature `MATERIA.md` § Eyes lists as
    known environment instability (not a product bug), follow the
    degrade path: print "Eyes provisioning failed (known instability).
    Recording a note and stopping.", **write a stub report** (`source:

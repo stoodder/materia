@@ -196,11 +196,12 @@ Repeat until merged, **bounded at 3 rounds**:
 
    If the merge is rejected by branch protection (required review), fall back
    to the distinct **auto-merge op** (twin `enable_pr_auto_merge`, same
-   § Forge) — still `--squash` — and report the PR URL; the merge then
-   completes on approval:
+   § Forge) — at the same resolved `<strategy>` as the direct merge (the
+   § Forge Merge-strategy knob when concrete, else librarian's default
+   `squash`) — and report the PR URL; the merge then completes on approval:
 
    ```bash
-   gh pr merge <n> --auto --squash
+   gh pr merge <n> --auto --<strategy>
    ```
 
    `--no-merge` runs stop here either way and report the green PR URL.
