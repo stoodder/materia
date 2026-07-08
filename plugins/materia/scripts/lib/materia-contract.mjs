@@ -126,8 +126,10 @@ export function bucketize (report, changes) {
 //     after the untracked bucketing site, so `0.2.0-project-state-file` is unfilterable
 //     there and the recommended untracked-legacy adoption always surfaces.
 // The doctor↔migrate bridge (see inspect's schema-behind branch) still points at migrate
-// to record the stamp when a change is adopted-but-unstamped, so doctor never says
-// "nothing to do" while migrate has an applicable stamp.
+// to record the stamp when a change is adopted-but-unstamped AND the state is one migrate
+// will actually stamp (schema >= 2) — so doctor never says "nothing to do" while migrate
+// has an applicable stamp, and never promises a stamp migrate would refuse (a
+// hand-authored schema-1 state is manual on both sides).
 const isAdopted = (ch, emittedChecks) => {
   if (ch.detectable !== true) return false
   const dc = Array.isArray(ch.doctorChecks) ? ch.doctorChecks : []
@@ -239,8 +241,8 @@ export const inspect = (targetRoot, releaseDir) => {
       'the gate script is at the canonical .materia/scripts/check-docs.sh.')
   } else if (atRootSh) {
     overall = worst(overall, 'warning')
-    const fix = recordedSchema === ledger.latestSchema
-      ? 'move it by hand to .materia/scripts/check-docs.sh (this repo is already at the latest schema — migrate has nothing to apply).'
+    const fix = isInt(recordedSchema) && recordedSchema >= ledger.latestSchema
+      ? 'move it by hand to .materia/scripts/check-docs.sh (this repo is not behind this plugin\'s schema — migrate has nothing to apply).'
       : 'run /materia:migrate --plan to relocate it to .materia/scripts/check-docs.sh.'
     add('check-docs-sh-location', 'check:docs gate script at canonical location', 'warning',
       `the gate script is at the legacy scripts/check-docs.sh, not the canonical .materia/scripts/check-docs.sh — ${fix}`)
@@ -329,18 +331,26 @@ export const inspect = (targetRoot, releaseDir) => {
     const all = relevantChanges(ledger.versions, schema, ledger.latestSchema)
     const changes = all.filter((ch) => !isAdopted(ch, checks))
     const adoptedCount = all.length - changes.length
+    // The bridge only fires when migrate can actually record the adoption: the stamp
+    // (install-check-docs) touches only a schema >= 2 state — a hand-authored schema-1
+    // file is one migrate refuses to modify (its classify says manual, mirroring
+    // init-project-state), so pointing "run migrate to record adoption" at it would be
+    // an unfulfillable promise. Below 2, the filtered changes still stay out of the
+    // buckets (they ARE adopted); only the record-it suggestion is withheld.
+    const bridgeStampable = schema >= 2
     bucketize(report, changes)
     const sev = changes.reduce((s, ch) => worst(s, IMPACT_SEV[ch.impact] ?? 'info'), 'info')
     overall = worst(overall, sev)
     add('artifact-schema-current', 'Artifact schema is current', sev,
       `schema ${schema} is behind latest ${ledger.latestSchema} — ${changes.length} change(s) to adopt.` +
-      (adoptedCount ? ` (${adoptedCount} change(s) already adopted but unstamped — run /materia:migrate --plan to record adoption.)` : ''))
+      (adoptedCount && bridgeStampable ? ` (${adoptedCount} change(s) already adopted but unstamped — run /materia:migrate --plan to record adoption.)`
+        : adoptedCount ? ` (${adoptedCount} change(s) already adopted; the schema-${schema} state file needs by-hand review before migrate will stamp it — see /materia:migrate --plan's manual items.)` : ''))
     // Suggest migrate for warning-or-worse adoptable drift OR when a change was filtered
-    // as adopted-but-unstamped — the doctor↔migrate bridge. In the latter case migrate
-    // still has an applicable stamp to record (schema is behind), so doctor must not say
-    // "nothing to do"; the remaining severity is only info, so the STATUS stays healthy
-    // (exit 0) while suggestedNextCommand points at the stamp.
-    if (sevRank(sev) >= sevRank('warning') || adoptedCount > 0) report.suggestedNextCommand = '/materia:migrate --plan'
+    // as adopted-but-unstamped AND migrate can stamp it — the doctor↔migrate bridge.
+    // In that case migrate has an applicable stamp to record (schema 2, behind), so
+    // doctor must not say "nothing to do"; the remaining severity is only info, so the
+    // STATUS stays healthy (exit 0) while suggestedNextCommand points at the stamp.
+    if (sevRank(sev) >= sevRank('warning') || (adoptedCount > 0 && bridgeStampable)) report.suggestedNextCommand = '/materia:migrate --plan'
   }
 
   report.status = statusFrom(overall)

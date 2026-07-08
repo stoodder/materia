@@ -24,7 +24,7 @@
       "migratable": true,
       "doctorChecks": ["check-docs-sh-location"],
       "migrations": ["install-check-docs"],
-      "manualMigration": "Move scripts/check-docs.sh to .materia/scripts/check-docs.sh by hand (git mv preserves history and any local edits), then stamp artifact schema 3 in .materia/project.json. Or run /materia:migrate --apply, which relocates via the install-check-docs migration (rename in place, then stamp).",
+      "manualMigration": "Move scripts/check-docs.sh to .materia/scripts/check-docs.sh by hand (git mv preserves history and any local edits), then stamp artifact schema 3 in .materia/project.json. Or run /materia:migrate --apply, which relocates via the install-check-docs migration (rename in place, then stamp). If the script is absent at BOTH locations, this item does not apply — 0.3.0-check-docs-sh-gate covers installing it (same migration).",
       "notes": "The old root scripts/check-docs.sh location keeps working: skills no longer hardcode the gate path — they resolve check:docs from the installed repo's own MATERIA.md § Gate row, so a mixed-vintage install whose § Gate still names the root path runs fine. Relocation is recommended (tidiness + the canonical-layout contract), not required. Shares the install-check-docs migration with 0.3.0-check-docs-sh-gate (buildPlan dedups it)."
     },
     {

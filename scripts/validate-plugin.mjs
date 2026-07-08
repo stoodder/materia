@@ -1305,6 +1305,31 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     } finally { rmSync(mu, { recursive: true, force: true }) }
   }
 
+  // synthetic hand-authored schema-1 state + canonical script -> the bridge must NOT
+  // fire. The adopted-drift filter still empties the buckets (the artifacts ARE
+  // present), but migrate refuses to stamp a schema<2 hand-authored state
+  // (install-check-docs disposition 1 = manual, the never-overwrite guarantee), so
+  // doctor promising "run migrate to record adoption" would be unfulfillable. Pin:
+  // healthy, NO suggested command, and the detail says the state needs by-hand review
+  // — doctor and migrate agree the stamp is manual on both sides.
+  {
+    const s1 = mkdtempSync(join(tmpdir(), 'materia-doctor-schema1-'))
+    try {
+      mkdirSync(join(s1, '.materia', 'scripts'), { recursive: true })
+      writeFileSync(join(s1, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(s1, '.materia', 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
+      writeFileSync(join(s1, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: 1, pluginVersion: null, source: 'hand-authored', appliedMigrations: [] }))
+      check('schema1-no-bridge', s1, (rep, r) => [
+        ...want(rep, 'status', 'healthy'),
+        ...want(rep, 'currentSchema', 1),
+        ...want(rep, 'suggestedNextCommand', null), // bridge withheld — migrate would refuse the stamp
+        ...detailWant(rep, 'artifact-schema-current', 'needs by-hand review'),
+        ...exitWant(r, 0),
+      ])
+    } finally { rmSync(s1, { recursive: true, force: true }) }
+  }
+
   // synthetic non-Materia repo -> unknown, no invented state
   const nm = mkdtempSync(join(tmpdir(), 'materia-doctor-nm-'))
   try {
@@ -1405,7 +1430,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   }
 
   if (failures === before)
-    console.log('  ✓ doctor behavior: tracked→healthy(schema 3, location ok) · legacy→warnings(gate adopted-away→requiredChanges empty, relocation recommended) · gnarly→action-needed(exit 1, required gate drift) · moved-but-unstamped→healthy(+bridge suggests migrate) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
+    console.log('  ✓ doctor behavior: tracked→healthy(schema 3, location ok) · legacy→warnings(gate adopted-away→requiredChanges empty, relocation recommended) · gnarly→action-needed(exit 1, required gate drift) · moved-but-unstamped→healthy(+bridge suggests migrate) · schema1+script→healthy(bridge withheld) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
 }
 
 // ---- 8. /materia:migrate deterministic behavior -----------------------------
