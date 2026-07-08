@@ -99,7 +99,8 @@ No branch, commit, or PR is ever produced.
 
 4. **On `--apply`,** run the engine, then summarize what changed, what did not
    and why, and the resulting project state. Close by suggesting `/materia:doctor`
-   to confirm the repo is now healthy.
+   to confirm the result (a legacy repo may still carry warnings from
+   change-agnostic checks migrate does not adopt).
 
 ## Relationship to doctor
 
@@ -107,7 +108,9 @@ No branch, commit, or PR is ever produced.
 or legacy project, suggests `/materia:migrate --plan`. migrate is the command
 that **plans and (on `--apply`) acts**. The two share one deterministic detector,
 so their view of a project agrees: after a successful `init-project-state` apply,
-doctor reports the repo `healthy`.
+doctor no longer flags the untracked-legacy drift. It does not follow that the
+repo is `healthy` — change-agnostic checks (e.g. a missing `scripts/check-docs.sh`)
+can still warn; migrate adopts only the ledger's migrations, never those.
 
 ## Scope
 

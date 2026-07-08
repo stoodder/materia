@@ -1053,6 +1053,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     const c = checkOf(rep, id)
     return c && c.severity === sev ? [] : [`check ${id} severity=${JSON.stringify(c && c.severity)} (want ${JSON.stringify(sev)})`]
   }
+  // Assert a named check's detail carries a substring (pins honesty wording).
+  const detailWant = (rep, id, substr) => {
+    const c = checkOf(rep, id)
+    return c && String(c.detail).includes(substr) ? [] : [`check ${id} detail lacks ${JSON.stringify(substr)}`]
+  }
   const check = (label, target, assertFn) => {
     const { r, report } = runDoctor(target)
     if (!report) {
@@ -1070,8 +1075,18 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     ...want(rep, 'currentSchema', 2),
     ...want(rep, 'suggestedNextCommand', null),
     ...sevWant(rep, 'check-docs-sh-present', 'ok'), // fixture ships the gate-script stub
+    // Healthy-path honesty: even a green report must say what "current" certifies.
+    ...detailWant(rep, 'artifact-schema-current', 'certifies only .materia/project.json'),
     ...exitWant(r, 0),
   ])
+
+  // Healthy-path honesty in the HUMAN rendering too: the "Suggested next: none"
+  // default must carry the certifies-only-project.json caveat (doctor.mjs).
+  {
+    const r = spawnSync('node', [DOCTOR, resolve('tests/fixtures/materia/tracked-current-project')], { encoding: 'utf8' })
+    if (!r.stdout.includes('Schema currency certifies only that file'))
+      fail('doctor [tracked-current, human]: healthy rendering lacks the schema-currency honesty caveat')
+  }
 
   // KNOWN_CHECK_IDS honesty pin (bidirectional). The tracked-current path emits ALL
   // KNOWN_CHECK_IDS checks in one run (present ∧ parsed ∧ known ∧ current), so the ids it
@@ -1301,6 +1316,17 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       let drep = null; try { drep = JSON.parse(dr.stdout) } catch { /* below */ }
       if (!drep || drep.status !== 'healthy') problems.push(`doctor on migrated repo status=${drep && drep.status} (want healthy)`)
       if (problems.length) fail(`migrate [apply-legacy-copy]: ${problems.join('; ')}`)
+    } finally { rmSync(work, { recursive: true, force: true }) }
+  }
+
+  // 3b. APPLY human rendering carries the adopts-tracking-only honesty Note
+  //     (fresh copy — the Note prints only when init-project-state actually applies).
+  {
+    const work = copyFixture('legacy-0.1.0-project')
+    try {
+      const r = spawnSync('node', [MIGRATE, work, '--apply'], { encoding: 'utf8' })
+      if (!r.stdout.includes('adopts artifact tracking only'))
+        fail('migrate [apply-legacy-copy, human]: apply rendering lacks the adopts-tracking-only honesty Note')
     } finally { rmSync(work, { recursive: true, force: true }) }
   }
 
