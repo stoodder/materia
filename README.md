@@ -88,6 +88,50 @@ plugins/materia/
 scripts/validate-plugin.mjs          validates the marketplace + plugin manifests and the scaffold
 ```
 
+## Staying current — doctor, migrate & the release ledger
+
+Materia is a versioned plugin, so a repo it's installed in can drift from what the
+current plugin expects. Two operator commands make that legible — and both are
+**opt-in and non-surprising**:
+
+- **`/materia:doctor`** — a **read-only** health check. It reads the plugin's release
+  ledger and your repo's `.materia/project.json` and reports one status
+  (`healthy · warnings · action-needed · blocked · unknown`), your current vs latest
+  artifact schema, and any changes to adopt. It **writes nothing** and migrates
+  nothing — where a migration would help it only *suggests* `/materia:migrate --plan`.
+- **`/materia:migrate`** — the explicit, **plan-first** upgrade command. The default
+  (`--plan`) prints what it *would* do and changes nothing; only `--apply` acts, and
+  only for safe, idempotent migrations. **Migrations never auto-run** — nothing
+  triggers them from plugin update or startup. Upgrading the plugin never silently
+  rewrites your repo; you run migrate when you choose to.
+
+**The release ledger is the source of truth.** Compatibility is defined by a
+machine-readable release/migration ledger (`plugins/materia/release/`), not by prose.
+Human changelogs and release notes *summarize* the ledger for people; they do **not**
+define compatibility — when they disagree, the ledger governs. It is what doctor and
+migrate actually read (from the installed plugin cache; the ledger is never copied into
+your repo).
+
+**Plugin version ≠ artifact schema.** The plugin's semver changes whenever it ships; the
+**artifact schema** — an integer describing what an installed repo is expected to
+contain — changes only when that installed-project contract actually changes. Multiple
+plugin versions can share one schema, so a plugin upgrade does **not** imply a project
+migration. `0.1.0` is the **pre-tracking baseline** (schema 1): installs from before this
+system existed had no project-state file and no ledger. The **first tracked schema (2)**
+begins with this compatibility system itself.
+
+**Project state — new vs existing repos.** New repos get their state for free:
+`/materia:init` materializes `.materia/project.json` (schema 2) from the bundled scaffold,
+so a fresh install is born tracked. Existing pre-tracking (dogfood) repos — created before
+schema 2 — have no `.materia/project.json`; `/materia:doctor` detects them as *untracked
+legacy* and points at `/materia:migrate --plan`, and `/materia:migrate --apply` then runs
+the one v0 migration, `init-project-state`, which writes the project-state file without
+touching anything else.
+
+This is a deliberately **conservative, dogfood-grade v0 foundation**, not a public-grade
+migration framework: one automated migration, plan-first, no auto-run, and it never
+overwrites an existing or hand-edited state file.
+
 ## Design values
 
 - **Contracts are sacred.** The queue frontmatter contracts, the producer

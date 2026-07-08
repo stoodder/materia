@@ -4,6 +4,12 @@ The machine-readable compatibility contract for the `materia` plugin. It records
 plugin release, what changed about the **installed-project artifact contract** — enough for
 `/materia:doctor` to detect drift and `/materia:migrate` to adopt changes.
 
+It is the **source of truth** for compatibility: human changelogs and release notes
+*summarize* it for people but do **not** define it — when they disagree, the ledger
+governs. Existing pre-tracking installs adopt tracking by running `/materia:migrate
+--apply` (the `init-project-state` migration); new repos are born tracked from the
+scaffold's `.materia/project.json`.
+
 This directory ships **inside the distributed plugin** but is **not** materialized into user
 repos: `/materia:init` copies `scaffold/`, never `release/`. Doctor/migrate read it from the
 installed plugin cache.
@@ -69,6 +75,7 @@ contract change, not a version coincidence.
 | `impact` | One of the impact classifications below. |
 | `surfaces` | Array of surface tokens this change touches (glossary below). |
 | `detectable` | `true` if a doctor check can detect the drift in an installed repo. |
+| `detectionNotes` | Required when `detectable` is `false`: why the drift cannot be detected (ignored when `true`). |
 | `migratable` | `true` if adoption can be automated (vs manual-only). |
 | `doctorChecks` | Stable check IDs `/materia:doctor` implements to detect this change's drift. |
 | `migrations` | Stable migration IDs `/materia:migrate` implements (or reserves for a later handler). |
