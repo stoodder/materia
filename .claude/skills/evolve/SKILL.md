@@ -76,7 +76,8 @@ machine tokens (release/README.md) so a PR-body list mirrors a `Change.surfaces`
 - **`ledger`** — the release/migration ledger.
 - **`validator`** — `scripts/validate-plugin.mjs` expectations.
 - **`doctor`** — a `/materia:doctor` check applies.
-- **`migrate`** — a `/materia:migrate` step or manual migration instruction applies.
+- **`migrate`** — a `/materia:migrate` step applies (manual instructions are the
+  separate `manualMigration` Change field, not this token).
 
 **Precedence — the ledger is the contract, not the changelog.** The **human changelog /
 release notes** are not a sixth surface but a communication artifact — they map to the ledger
@@ -86,15 +87,17 @@ governs.
 
 ### Ledger mandate
 
-When a run's change is **non-`none` and touches a distributed surface whose drift is
-detectable**, it **MUST** land the ledger update in the **same PR** — a `Change` entry per the
-schema (release/README.md), plus the version-file mechanics (§ Shipping a schema/version
-change) when applicable — and re-run **validator §6 green** before Phase 6 opens the PR. The
-prose Downstream-project-impact section never substitutes for the ledger entry. Deferring is
-legal **only** for (a) a `none`/`doctor-only` change with a recorded detectionNotes-style
-justification, or (b) an explicit operator decision recorded at intake or Phase 3 (an operator
-may defer the ledger/version update to release time; recorded in the plan and PR body, that
-satisfies the contract). Silence, or an undefined "cover," is never enough.
+When a run's change is **non-`none`**, it **MUST** land the ledger update in the **same PR** —
+a `Change` entry per the schema (release/README.md), plus the version-file mechanics
+(§ Shipping a schema/version change) when applicable — and re-run **validator §6 green**
+before Phase 6 opens the PR. Detectability does not gate the entry: `detectable: true`
+carries `doctorChecks`; `detectable: false` carries `detectionNotes` — either way the entry
+exists (impact class and detectability are independent ledger fields). The prose
+Downstream-project-impact section never substitutes for the ledger entry. Deferring the
+entry itself is legal **only** via an **explicit operator decision recorded in the plan and
+PR body** — made at intake, at Phase 3, or as a Phase 5 stop-and-return sign-off (an
+operator may defer the ledger/version update to release time; so recorded, that satisfies
+the contract). Silence, or an undefined "cover," is never enough.
 
 ### Shipping a schema/version change
 
@@ -335,8 +338,9 @@ silently proceed:
 - **Beyond-decision calls are flagged for veto** in the PR, not shipped silently.
 - **Downstream contract is not optional.** A non-`none` change touching a detectable
   distributed surface must land the machine-readable ledger update in the **same PR** and keep
-  **validator §6 green** (§ Ledger mandate); deferral is legal only via a § Ledger mandate
-  exception. No harness change is complete with its downstream impact left unclassified.
+  **validator §6 green** (§ Ledger mandate); deferring the entry is legal only via the
+  recorded operator decision § Ledger mandate names. No harness change is complete with its
+  downstream impact left unclassified.
 
 ## Scope
 
