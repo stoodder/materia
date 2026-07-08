@@ -1971,6 +1971,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       writeFileSync(join(dir, 'tools', 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
       writeFileSync(join(dir, 'tools', 'run.md'), 'Run `sh tools/scripts/check-docs.sh` here.\n')
       writeFileSync(join(dir, 'run-docs.md'), 'Run `./scripts/check-docs.sh` here.\n')
+      // Frozen-folder pin: a dated run folder's old-path reference is a historical
+      // artifact — the scan must never surface it (the skill would otherwise rewrite
+      // frozen history).
+      mkdirSync(join(dir, 'docs', 'specs', '2026-07-01-run'), { recursive: true })
+      writeFileSync(join(dir, 'docs', 'specs', '2026-07-01-run', 'x.md'), 'ran `sh scripts/check-docs.sh` then\n')
       const snap = snapshot(dir)
       const { r, report } = runMigrate(dir)
       const problems = []
@@ -1985,6 +1990,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
           if (!sh.hits.some((h) => h.file === 'Makefile')) problems.push('follow-up hits missing the Makefile consumer')
           if (sh.hits.some((h) => h.file === 'tools/run.md')) problems.push('nested tools/scripts/check-docs.sh reference wrongly matched — the left boundary regressed (autoFix would corrupt a different file)')
           if (!sh.hits.some((h) => h.file === 'run-docs.md')) problems.push('relative-dot ./scripts/check-docs.sh consumer missed — the optional ./ group regressed')
+          if (sh.hits.some((h) => h.file.startsWith('docs/specs/2026-07-01-run/'))) problems.push('frozen dated run folder surfaced in hits — the historical-artifact exclusion regressed (the sweep would rewrite frozen history)')
         }
       }
       const changed = diffKeys(snap, snapshot(dir))

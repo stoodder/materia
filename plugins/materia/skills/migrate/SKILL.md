@@ -116,7 +116,10 @@ No branch, commit, or PR is ever produced.
      lists). For a follow-up with `autoFix: false` (e.g. a `.mjs` consumer whose
      `node …` command shape must become `sh …`, not a mechanical path swap) and for
      any ambiguous hit (a lockfile, vendored or generated code), **list it with a
-     suggested rewrite — do not edit it.**
+     suggested rewrite — do not edit it.** A hit inside a file the same report names
+     as a manual **cleanup** item (a superseded artifact awaiting by-hand removal)
+     is skipped, not rewritten — there is no point editing a file slated for
+     deletion.
    - **Plan mode with `staleNow` hits and nothing applicable** — the
      schema-complete-but-stale repo (a relocated/replaced artifact whose consumers
      still point at the old path, the gymii failure mode). The plan itself writes
