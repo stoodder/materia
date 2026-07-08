@@ -465,6 +465,13 @@ it **supersedes `implement-task/SKILL.md` Procedure step 6's default
 `STATUS.md` tick** — a spawned implementer ticks only its own `tasks.md` AC
 boxes and leaves `STATUS.md` (and `retro.md`) to the orchestrator.
 
+**Creation-only carve-out (ad-hoc intake).** On the ad-hoc path (§ Proposal
+selection — Ad-hoc path) the orchestrator has not pre-created the folder, so
+`intake-spec` seeds + commits the initial `STATUS.md` at mint. That is the sole
+spawned-stage `STATUS.md` write, and it is **creation, not ticking** — intake
+still never ticks a stage row; the orchestrator ticks stage 1 after intake
+returns. The ticking monopoly is unchanged.
+
 ## Fresh-context reviewer spawning
 
 In this environment, subagents **cannot spawn further subagents**. Any
@@ -937,10 +944,10 @@ the orchestrator parses, numbers, appends, and flushes.
 
 ### Touchpoints
 
-After every first-level subagent (`intake`, `design`, `architecture`,
-`plan-tasks`, each `implement-task`, `docs-sync` per round, `docs-audit` per
-round, `reconcile-epic` when the epic gate ran it, `finalize`), the
-orchestrator:
+After every first-level subagent (`intake`, `design`, `ui-test-plan`,
+`architecture`, `plan-tasks`, each `implement-task`, `docs-sync` per round,
+`docs-audit` per round, `reconcile-epic` when the epic gate ran it,
+`finalize`), the orchestrator:
 
 1. **Asks** that subagent — via `spawn-contract.md` Block 2 in its spawn
    prompt — to return its retro entry in a ` ```retro ` fenced block as the
@@ -1015,7 +1022,7 @@ worktrees, the orchestrator:
 ```markdown
 ## Entry <N> — <stage-id> — <ISO timestamp>
 
-- **Stage:** <intake | design | architecture | plan-tasks | implement-task:T<n> | docs-sync | docs-audit | reconcile-epic | finalize>
+- **Stage:** <intake | design | ui-test-plan | architecture | plan-tasks | implement-task:T<n> | docs-sync | docs-audit | reconcile-epic | finalize | orchestrator (pipeline-level)>
 - **Outcome:** ok | blocked | failed | partial
 - **Subagent return:** ok          <!-- crashed | empty | malformed if synthesized -->
 

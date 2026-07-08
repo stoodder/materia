@@ -332,7 +332,7 @@ const canon = [
   ['plugins/materia/skills/architecture/SKILL.md', 'tick stage 4 in `STATUS.md`'],
   ['plugins/materia/skills/plan-tasks/SKILL.md', 'tick stage 5 in `STATUS.md`'],
   ['plugins/materia/skills/finalize/SKILL.md', 'row 9 in the spec template, row 8 in the bug template'],
-  ['plugins/materia/skills/fix-bug/SKILL.md', 'Tick **stage 3**, not stage 5'],
+  ['plugins/materia/skills/fix-bug/SKILL.md', 'it ticks **stage 3**, not stage 5'],
   ['plugins/materia/skills/fix-bug/SKILL.md', '7. **docs-audit**'],
 ]
 for (const [f, needle] of canon)

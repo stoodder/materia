@@ -228,8 +228,19 @@ standalone runs apply it on first use.
 6. **Register** the spec: add a row under "Index" in `docs/specs/README.md`,
    linking the full dated folder name.
 
-7. **Persist:** in `STATUS.md`, tick stage 1 and set `Next: design`; then
-   commit (`spec.md`, `STATUS.md`, the README index) and push.
+7. **Persist:** commit `spec.md`, the README index row, and — on the ad-hoc
+   path — the initial `STATUS.md` intake seeded at step 2; then push.
+   **Standalone**, also tick stage 1 in `STATUS.md` and set `Next: design` in
+   that commit. **Orchestrator-lane exception (creation-only carve-out):** when
+   spawned by `ship-spec`, do **not** tick stage rows or set `Next:` — the
+   orchestrator ticks stage 1 and sets `Next:` after intake returns (see
+   `ship-spec/SKILL.md` § STATUS.md ownership (orchestrator lane)). Intake still
+   owns **creation**: on the ad-hoc path (no `pre-created-folder:`) the
+   orchestrator hasn't minted the folder, so intake commits the initial
+   `STATUS.md` it seeded at step 2 with all stage rows **unticked** (posture
+   left at the template default; the orchestrator flips it on its first
+   post-intake commit if `--auto`). On the proposal path the folder +
+   `STATUS.md` already exist and intake never touches `STATUS.md`.
 
 ## Done when
 

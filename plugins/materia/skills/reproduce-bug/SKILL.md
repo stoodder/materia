@@ -1,15 +1,18 @@
 ---
 name: reproduce-bug
-description: Write the failing test(s) that reproduce a reported bug and fill reproduction.md — consumes the bug report body (frontmatter stripped) and STATUS.md, produces test file(s) placed per the repo testing standard plus docs/bugs/<dated-slug>/reproduction.md, and ticks STATUS.md stage 1 only after a real RED test run confirms the failure. Stage 1 of the fix-bug pipeline; usable standalone given a report body + folder.
+description: Write the failing test(s) that reproduce a reported bug and fill reproduction.md — consumes the bug report body (frontmatter stripped) and STATUS.md, produces test file(s) placed per the repo testing standard plus docs/bugs/<dated-slug>/reproduction.md, and records the RED evidence only after a real failing-test run confirms the bug on pre-fix code. Stage 1 of the fix-bug pipeline; usable standalone given a report body + folder.
 ---
 
 # reproduce-bug — confirm the bug is RED before anyone touches the fix
 
 Write the failing test(s) that encode a reported bug's expected-vs-actual
 contract, run them to confirm they fail on pre-fix code, and record the
-evidence. This is the **RED gate**: stage 1 is ticked only when the test
-run proves the bug is genuine. Runs as a subagent dispatched by `/materia:fix-bug`;
-usable standalone after a bug report exists.
+evidence. This is the **RED gate**: the reproduction is recorded only when the
+test run proves the bug is genuine. Under `/materia:fix-bug`, the orchestrator
+then independently verifies the committed RED and ticks stage 1 — this skill
+commits its own artifacts and, in that lane, leaves `STATUS.md` to the
+orchestrator. Runs as a subagent dispatched by `/materia:fix-bug`; usable
+standalone after a bug report exists.
 
 This skill does **not** fix the bug and does **not** analyse root cause —
 those are subsequent stages (`bug-analysis`, then `plan-tasks` +
@@ -20,8 +23,11 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
 - Bug report body (frontmatter stripped) — the full description, affected
   surface, steps to reproduce, expected vs actual, and severity from the
   report file in `docs/bugs/_reports/`.
-- `docs/bugs/<dated-slug>/STATUS.md` — the bug run's live state; this skill
-  ticks stage 1 here on success (or sets `Blocker:`).
+- `docs/bugs/<dated-slug>/STATUS.md` — the bug run's live state. **Standalone**,
+  this skill ticks stage 1 here on success (or sets `Blocker:`); **in the
+  `/materia:fix-bug` orchestrator lane it does not touch `STATUS.md`** — the
+  orchestrator ticks stage 1 (or writes the `Blocker:`) after verifying the
+  committed RED (see § Rules).
 - `docs/standards/testing.md` — the repo's testing standard: test placement
   (co-located or a separate test tree — whatever the standard says), naming,
   stubbing conventions, and the test runner's API.
@@ -39,8 +45,11 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
   name(s), the restated repro steps, expected vs actual, the verbatim RED
   evidence (failing test output + command + SHA), and any notes for downstream
   stages.
-- `STATUS.md` stage-1 ticked **or** `Blocker:` set (see § Procedure step 5).
-- Committed + pushed.
+- **Standalone:** `STATUS.md` stage-1 ticked, **or** `Blocker:` set (see
+  § Procedure step 5). **Orchestrator lane:** `STATUS.md` untouched — the
+  stage-1 tick / `Blocker:` is the orchestrator's, driven by this stage's
+  committed artifacts + return (see § Rules).
+- `reproduction.md` + failing test(s) committed + pushed.
 
 ## Procedure
 
@@ -76,8 +85,9 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
    Capture the full stderr/stdout output and the commit SHA (`git rev-parse
    HEAD`). This is the RED evidence.
 
-   If the tests pass (green) on current code, do **not** tick stage 1 — set
-   `Blocker:` instead (see § Procedure step 5 — Blocker condition 2).
+   If the tests pass (green) on current code, this is **not** a confirmed RED —
+   do not record the reproduction; set/return `Blocker:` instead (see
+   § Procedure step 5 — Blocker condition 2).
 
    If the test suite can't run at all (infrastructure failure unrelated to
    the bug), diagnose a Node-version mismatch or a stopped database before
@@ -85,7 +95,8 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
    `${CLAUDE_PLUGIN_ROOT}/skills/ship-spec/resources/env-preflight.md` (Node major via hard
    runtime selection; dead-service restart).
 
-5. **On RED confirmed — fill `reproduction.md` and tick stage 1.** Write
+5. **On RED confirmed — fill `reproduction.md`, commit, and (standalone) tick
+   stage 1.** Write
    `docs/bugs/<dated-slug>/reproduction.md` from the template, populating:
    - `## Failing test(s)` — repo-root-relative paths + `it(...)` name(s).
    - `## Repro steps` — the report's steps to reproduce, restated (the report
@@ -96,36 +107,50 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
    - `## Notes` — anything `bug-analysis` or `plan-tasks` needs (preconditions,
      data setup, intermittency patterns).
 
-   Then in `STATUS.md`: tick stage 1 (`- [x] 1. reproduce-bug …`) and set
-   `Next: bug-analysis`. Commit the test file(s) + `reproduction.md` +
-   `STATUS.md` and push.
+   Commit the test file(s) + `reproduction.md` and push. **Standalone**, also
+   tick stage 1 in `STATUS.md` (`- [x] 1. reproduce-bug …`), set
+   `Next: bug-analysis`, and commit `STATUS.md` in the same push.
+
+   **Orchestrator-lane exception:** when spawned by `/materia:fix-bug`, do
+   **not** tick or commit `STATUS.md` — commit only your own artifacts (the
+   test(s) + `reproduction.md`) and return. The orchestrator verifies the
+   committed RED, ticks stage 1, and sets `Next:` (see `ship-spec/SKILL.md`
+   § STATUS.md ownership (orchestrator lane) and `fix-bug/SKILL.md` § RED gate).
 
    **Blocker condition 1 — cannot reproduce:** If the described steps do not
    trigger the observed failure after a genuine attempt (env seeded correctly,
-   right Node version, right DB state), set in `STATUS.md`:
+   right Node version, right DB state), the blocker is:
 
    ```
    Blocker: cannot reproduce — <reason: what you tried and what happened instead>
    ```
 
-   Commit + push. Stop. Surface to the human; do not tick stage 1.
+   **Standalone**, write it to `STATUS.md`, commit + push, and stop. **In the
+   `/materia:fix-bug` orchestrator lane, RETURN this blocker** instead — do not
+   write `STATUS.md`; the orchestrator writes the `Blocker:` line (see
+   `fix-bug/SKILL.md` § RED gate). Either way, stop and surface to the human;
+   the reproduction is not confirmed and stage 1 stays unticked.
 
    **Blocker condition 2 — test passes on pre-fix code:** If the test you
    wrote is green on the current HEAD (the bug may already be fixed, or the
-   repro steps are insufficient to trigger it), set in `STATUS.md`:
+   repro steps are insufficient to trigger it), the blocker is:
 
    ```
    Blocker: test passes on pre-fix code — bug may already be fixed or repro steps insufficient
    ```
 
-   Commit + push. Stop. Surface to the human; do not tick stage 1.
+   **Standalone**, write it to `STATUS.md`, commit + push, and stop. **In the
+   `/materia:fix-bug` orchestrator lane, RETURN this blocker** instead — do not
+   write `STATUS.md`; the orchestrator writes the `Blocker:` line (see
+   `fix-bug/SKILL.md` § RED gate). Either way, stop and surface to the human;
+   the reproduction is not confirmed and stage 1 stays unticked.
 
 ## Scope
 
 This skill:
 
 - **Writes** the failing test(s) and `reproduction.md`.
-- **Confirms** the test is RED before ticking stage 1.
+- **Confirms** the test is RED before the reproduction is recorded.
 - **Does NOT** attempt the fix or modify any production code.
 - **Does NOT** analyse root cause — that is `bug-analysis`'s role.
 - **Does NOT** enumerate tasks — that is `plan-tasks`'s role.
@@ -136,12 +161,17 @@ evidence is recorded.
 
 ## Rules
 
-- **Never tick stage 1 before the test run.** The RED gate is machine-checkable
-  from the `STATUS.md` stage-1 checkbox: ticked = reproduction confirmed RED.
-  The orchestrator reads this field before spawning `bug-analysis`.
+- **RED must be real before the reproduction is recorded.** Never record a
+  confirmed reproduction (or, standalone, tick stage 1) before the test run
+  proves the bug fails on pre-fix code. In the `/materia:fix-bug` orchestrator
+  lane the RED gate is machine-checkable from your **committed artifacts** — the
+  orchestrator confirms `reproduction.md` + the failing test are in the pushed
+  commit, re-runs the test where a runnable command exists, and ticks stage 1
+  itself (`fix-bug/SKILL.md` § RED gate). This skill never ticks `STATUS.md`
+  when spawned.
 - **RED evidence is mandatory.** The verbatim failing-test output + command +
-  SHA must appear in `reproduction.md`. A stage-1 tick with no evidence block
-  is invalid.
+  SHA must appear in `reproduction.md`. A recorded reproduction with no evidence
+  block is invalid.
 - **Two and only two `Blocker:` exits** (see § Procedure step 5). Any other
   failure mode (infra, Node version, DB) is diagnosed and retried, not
   declared a blocker.
