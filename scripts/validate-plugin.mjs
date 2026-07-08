@@ -1246,6 +1246,9 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'),
     ...sevWant(rep, 'check-docs-sh-present', 'ok'),       // fixture ships a ROOT gate-script stub
     ...sevWant(rep, 'check-docs-sh-location', 'warning'), // …but at the legacy root location
+    // Missing state -> install-check-docs IS applicable (relocate), so the location
+    // detail may honestly point at migrate.
+    ...detailWant(rep, 'check-docs-sh-location', 'run /materia:migrate --plan'),
     // Adopted-drift filter: the required gate entry is filtered (presence ok) -> EMPTY.
     ...(rep.requiredChanges.length === 0 ? [] : [`requiredChanges must be empty (gate entry adopted-away), got ${JSON.stringify(rep.requiredChanges.map((c) => c.id))}`]),
     ...(rep.recommendedChanges.some((c) => c.id === '0.2.0-project-state-file')
@@ -1328,6 +1331,27 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
         ...exitWant(r, 0),
       ])
     } finally { rmSync(s1, { recursive: true, force: true }) }
+  }
+
+  // …and the sibling wording guard: present schema-1 state + ROOT-only script. The
+  // location check must NOT point at migrate (install-check-docs classifies a present
+  // schema<2 state as manual — the never-overwrite guarantee), so the warning detail
+  // says move-by-hand. Same defect class as the bridge gate above, pinned on the
+  // check-docs-sh-location wording branch.
+  {
+    const s1r = mkdtempSync(join(tmpdir(), 'materia-doctor-schema1-root-'))
+    try {
+      mkdirSync(join(s1r, '.materia'), { recursive: true })
+      mkdirSync(join(s1r, 'scripts'), { recursive: true })
+      writeFileSync(join(s1r, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(s1r, 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
+      writeFileSync(join(s1r, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: 1, pluginVersion: null, source: 'hand-authored', appliedMigrations: [] }))
+      check('schema1-root-script-wording', s1r, (rep) => [
+        ...sevWant(rep, 'check-docs-sh-location', 'warning'),
+        ...detailWant(rep, 'check-docs-sh-location', 'move it by hand'),
+      ])
+    } finally { rmSync(s1r, { recursive: true, force: true }) }
   }
 
   // synthetic non-Materia repo -> unknown, no invented state

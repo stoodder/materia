@@ -224,26 +224,37 @@ export const inspect = (targetRoot, releaseDir) => {
     add('check-docs-sh-present', 'check:docs gate script present', 'warning',
       'the binding check:docs gate script is missing from both .materia/scripts/check-docs.sh and scripts/check-docs.sh — this repo predates the gate script (it replaced scripts/check-docs.mjs) or has moved it; the binding check:docs gate will fail. Copy it from the installed plugin scaffold (scaffold/.materia/scripts/check-docs.sh).')
   }
-  // Location detector for the 0.3.0 relocation change. The warning detail is
-  // schema-aware: a hand-authored repo already AT the latest schema but with the script
-  // still at root is tool-unreachable (install-check-docs is not discovered at the latest
-  // schema, so migrate offers nothing), so it must be moved by hand; a behind/untracked
-  // repo is pointed at /materia:migrate --plan. Peek the recorded schema for that wording
-  // only — the authoritative parse/known/current checks run in the branches below. (This
-  // is a read-only peek; the canonical parse still happens once, gated, at step 5.)
+  // Location detector for the 0.3.0 relocation change. The warning detail only points
+  // at /materia:migrate when install-check-docs would actually be APPLICABLE there:
+  // a MISSING state file (untracked-legacy — migrate relocates, disposition 4) or a
+  // recorded schema of exactly 2 (the one behind-schema migrate will stamp). Everything
+  // else — at/above the latest schema (migrate discovers nothing), or a present
+  // schema<2 / unknown / unparseable state (migrate's classify says manual, the
+  // never-overwrite guarantee) — gets move-by-hand wording, so doctor never points at
+  // a command migrate would refuse. Peek the recorded state for that wording only —
+  // the authoritative parse/known/current checks run in the branches below. (This is a
+  // read-only peek; the canonical parse still happens once, gated, at step 5.)
   let recordedSchema = null
+  let statePeekPresent = false
   {
     const sp = join(targetRoot, '.materia', 'project.json')
-    if (existsSync(sp)) { const p = readJson(sp); if (!p.error && isInt(p.value.artifactSchema)) recordedSchema = p.value.artifactSchema }
+    if (existsSync(sp)) {
+      statePeekPresent = true
+      const p = readJson(sp)
+      if (!p.error && isInt(p.value.artifactSchema)) recordedSchema = p.value.artifactSchema
+    }
   }
   if (atCanonSh) {
     add('check-docs-sh-location', 'check:docs gate script at canonical location', 'ok',
       'the gate script is at the canonical .materia/scripts/check-docs.sh.')
   } else if (atRootSh) {
     overall = worst(overall, 'warning')
-    const fix = isInt(recordedSchema) && recordedSchema >= ledger.latestSchema
-      ? 'move it by hand to .materia/scripts/check-docs.sh (this repo is not behind this plugin\'s schema — migrate has nothing to apply).'
-      : 'run /materia:migrate --plan to relocate it to .materia/scripts/check-docs.sh.'
+    // 2 mirrors migrate's INIT_STATE_SCHEMA stamp floor (install-check-docs stamps
+    // only a schema-2 state; see migrate.mjs).
+    const migrateApplicable = !statePeekPresent || recordedSchema === 2
+    const fix = migrateApplicable
+      ? 'run /materia:migrate --plan to relocate it to .materia/scripts/check-docs.sh.'
+      : 'move it by hand to .materia/scripts/check-docs.sh (this repo\'s recorded state is not one migrate will modify — see /materia:migrate --plan\'s manual items).'
     add('check-docs-sh-location', 'check:docs gate script at canonical location', 'warning',
       `the gate script is at the legacy scripts/check-docs.sh, not the canonical .materia/scripts/check-docs.sh — ${fix}`)
   } else {
