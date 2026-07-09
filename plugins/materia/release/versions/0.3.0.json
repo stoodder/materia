@@ -55,7 +55,7 @@
       "detectionNotes": "A new named prose section in MATERIA.md, which the user repo freely edits; skills that consume the section treat a missing section as none, so absence is behaviorally identical to the shipped default and cannot honestly be flagged as drift.",
       "migratable": false,
       "manualMigration": "Add the § Design tool section to MATERIA.md by hand, matching the current scaffold's section (heading, slots, capability meanings, degradation rules); set Tool to none unless the repo actually connects a design tool over MCP.",
-      "notes": "Nothing consumes the section at this plugin version — it is the seam the later design-stage releases gate on (the consume-missing-as-none rule is a prospective contract on those consumers, not a description of current behavior). Adding it ahead of need is deliberate: later releases edit a known home instead of inventing one."
+      "notes": "Nothing consumes the section at this plugin version — it is the seam the later design-stage releases gate on (the consume-missing-as-none rule is a prospective contract on those consumers, not a description of current behavior). Adding it ahead of need is deliberate: later releases edit a known home instead of inventing one. Known discoverability limitation, shared with this file's other optional entries: inspect() surfaces optional changes only inside a schema-adoption window, so a schema-current repo sees this entry in neither doctor nor migrate output — until that gap is closed, it is discoverable only by reading this version file."
     },
     {
       "id": "0.3.0-review-angles-calibration-xref",
