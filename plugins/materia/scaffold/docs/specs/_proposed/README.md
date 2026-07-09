@@ -47,7 +47,7 @@ source_refs:                             # provenance pointers back to the produ
 title: <short human-readable title>      # one line; matches the spec body's H1
 date: <YYYY-MM-DD>                       # the date the proposal was drafted
 status: proposed                         # always literally `proposed` while in this directory
-surfaces: [ui]                           # optional; see field roles
+# surfaces: [ui]                          # OPTIONAL — see Field roles below
 ---
 ```
 
@@ -89,21 +89,32 @@ surfaces: [ui]                           # optional; see field roles
   **acted-upon** (file removed by `ship-spec` consumption) and **rejected**
   (file deleted manually). The directory holds only `status: proposed`.
 - **`surfaces`** *(optional)* — the product surfaces this proposal is
-  expected to touch, written as a YAML flow list (`[ui]`, `[ui, data]`, `[]`)
-  that downstream consumers read; the format lets a consumer distinguish a
-  present-but-empty `[]` from a missing key. Vocabulary is fixed: `ui`,
-  `data` — derived from the two diff classifiers in `MATERIA.md § Surface
-  gates` (UI-affecting and Data-affecting) — plus `[]`. New values are added
-  only when a downstream consumer exists to read them. **Absent means
-  "unknown"** (the producer did not declare), **not "none"**; `surfaces: []`
-  means "none" — a declared absence of any surface. Today `ui` is the only
-  **design-bearing** surface value: the value that gates the design /
-  ui-test-plan stages. Downstream gates resolve "the declared surfaces
-  include a design-bearing surface" against this definition. This field is
-  unrelated to the release ledger's `Change.surfaces` array (the five machine
-  tokens `scaffold`/`ledger`/`validator`/`doctor`/`migrate`) — nothing is
-  shared but the word; and "design-bearing surface" here is distinct from
-  `MATERIA.md § Design tool` (the MCP design-tool capability seam).
+  expected to touch. Optional and additive: a proposal MAY omit it entirely.
+  - **Value** — a YAML flow list: `[ui]`, `[ui, data]`, or the empty list
+    `[]`. The list form lets a consumer tell a present-but-empty `[]` apart
+    from a missing key.
+  - **Vocabulary** — list elements are drawn from a fixed set: `ui` and
+    `data`, derived from the two diff classifiers in `MATERIA.md § Surface
+    gates` (UI-affecting and Data-affecting). New elements are added only when
+    a downstream consumer exists to read them.
+  - **Semantics** — **absent means "unknown"** (the producer did not
+    declare), **not "none"**; `surfaces: []` means "none" — a declared
+    absence of any surface.
+  - **Design-bearing** — today `ui` is the only *design-bearing* surface: the
+    surface class that carries a UX design (the design / ui-test-plan stages).
+    Consumers that gate design work resolve the phrase "the declared surfaces
+    include a design-bearing surface" against this definition. A declared
+    value is triage input to those consumers, **not a redefinition of any
+    consumer's own gate** — e.g. `ship-spec`'s § UI-surface gate stays the
+    single canonical definition of "UI-affecting" and consults a declared
+    value only in its predictive (pre-implementation) form; its
+    post-implementation diff form still governs and catches a declared-vs-built
+    mismatch.
+  - **Two namesakes** — this field is unrelated to the release ledger's
+    `Change.surfaces` array (the five machine tokens
+    `scaffold`/`ledger`/`validator`/`doctor`/`migrate`) — nothing shared but
+    the word; and "design-bearing surface" here is distinct from
+    `MATERIA.md § Design tool` (the MCP design-tool capability seam).
 
 ## Filename pattern
 
