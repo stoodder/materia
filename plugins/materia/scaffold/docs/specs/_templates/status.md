@@ -113,7 +113,28 @@
 <!-- Gate-decision convention — the orchestrator writes one of these lines
      here after evaluating the UI-surface gate (defined canonically in
      ship-spec/SKILL.md § Review — § UI-surface gate; the design/ui-test-plan
-     decision uses its predictive form, evaluated once after intake):
+     decision uses its predictive form, resolved once per run — from a
+     declared `surfaces:` at stake, otherwise through intake):
+
+     For the surfaces run-fact (the authoritative value; shape and
+     semantics are defined in `_proposed/README.md` § Field roles —
+     reference, don't restate here):
+       Surfaces: [ui] | [ui, data] | [] | —
+
+     The orchestrator writes this line either `declared` — copied straight
+     from the proposal frontmatter's `surfaces:` at intake — or `resolved`
+     — settled after intake, when the run started ad-hoc or the
+     frontmatter omitted the field. `[]` means "none" (a declared
+     absence); `—` or a missing line means "unknown" — never treat a
+     missing line as "none".
+
+     For the predictive UI-surface gate (the umbrella decision the design
+     and ui-test-plan lines below follow from):
+       ui-surface (predictive): <positive|negative> (<declared|resolved> surfaces: […])
+
+     The parenthetical is a derivative echo of the `Surfaces:` line above,
+     not a second source of truth: `declared` on the frontmatter path,
+     `resolved` on the absent (intake/Auto-Mode/autopilot) path.
 
      For design:
        design: skipped (non-UI — <reason>) | ran
@@ -175,4 +196,8 @@
        proposal dequeue)
      - missing `## Autopilot posture` block → resumes as `off` — never
        assume autopilot when the block is silent
+     - missing `Surfaces:` line (and/or missing `ui-surface (predictive):`
+       line) → treated as absent ("unknown"), routing to the UI-surface
+       gate's absent path — this must degrade to today's behavior, never
+       fail or mis-parse
      New runs should always fill these in. -->
