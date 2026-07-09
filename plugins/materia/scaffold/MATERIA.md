@@ -186,6 +186,115 @@ UI work — the toolchain behind `design`, `ui-test-plan`, `ui-review`,
 - **Capture:** {{how to take a screenshot/snapshot and where proofs land —
   keep the `docs/specs/<dated-slug>/ui-proof/` convention}}
 
+## Design tool
+
+The external design tool the pipeline authors designs on, over MCP — and the
+capability contract that decides what the design-related stages can do here.
+Skills gate on the **capability list below, never on tool identity**, and
+reference this section by name. Distinct from § Eyes: § Eyes is how an agent
+sees the *running app*; this section is where the *design itself* is authored
+and read. `none` means no external design tool is connected — a first-class
+value per the `none` convention, independent of § Surface gates § UI-affecting
+(a UI repo may author designs repo-side). A MATERIA.md predating this section
+reads as `none` — skills that consume this section treat absence and `none` as
+the same value.
+
+- **Tool:** {{`claude-design` (default) · `figma` · `penpot` · `paper` ·
+  `figma-context` · another adapter — or `none`}}
+- **MCP setup:** {{the connect command plus any one-time grant, e.g.
+  `claude mcp add --scope user --transport http claude-design
+  https://api.anthropic.com/v1/design/mcp`, then `/design consent` once — or
+  `none`}}
+- **Capabilities:** {{the subset of `author · read · export · tokens ·
+  reference` this adapter has (meanings below; write `export: via-read` when
+  snapshots are reconstructed from reads) — or `none`}}
+- **Reachable from:** {{where this adapter's MCP surface is callable —
+  record what you verified for this repo's client and config, not an
+  assumption. Example (claude-design, user-scope HTTP server, verified
+  2026-07-09): tools load at session start, so a session configured — and
+  consent granted — before launch has them in the operator lane, inside
+  spawned subagents, and in headless child sessions alike, while a session
+  started before setup sees nothing. Other scopes, transports, or clients
+  may differ — verify, don't assume. Note any local-endpoint constraint
+  (e.g. `paper` needs its desktop app running).}}
+- **Design project(s):** {{the durable reference(s) to this repo's design
+  project — project id / file key / URL, durable per the `reference` meaning
+  below — or `-` until the first run mints one}}
+<!-- design-gate default: reserved knob — the human design-gate default (on/off) lands here with the design-gate release; leave this line in place. -->
+<!-- canvas-authoring budget posture: reserved knob — authoring cost + revision-rounds multiplier land here with the canvas-authoring release; leave this line in place. -->
+
+**Capability meanings** — the contract skills gate on:
+
+- `author` — the pipeline can create and modify designs on the tool's canvas
+  over MCP. What makes canvas-side authoring — the primary lane — possible.
+- `read` — the pipeline can read canvas state back richly enough to re-derive
+  the descriptive design doc after a human edited the canvas directly. What
+  makes direct-on-canvas edits a syncable feedback channel.
+- `export` — the tool can emit the canvas as static HTML/CSS/assets to a
+  filesystem path; what makes a committed snapshot possible. A tool that
+  cannot export but can `read` is marked `export: via-read` — the snapshot is
+  reconstructed from reads, at the cost the adapter note records.
+- `tokens` — the tool returns the project's design system in machine-readable
+  form (CSS custom properties or equivalent).
+- `reference` — the tool returns a durable pointer (project id, file key,
+  node id, URL) to the design it authored. Load-bearing twice under canvas
+  authoring: it is the human's review link, and it is recorded as part of
+  what was approved. Durable means never a short-lived preview/session
+  link — some adapters embed access tokens in preview URLs; record only the
+  stable pointer.
+
+**Degradation** — self-gate / skip-and-record, never block (the same way
+§ Version control § Forge degrades to manual on `none`):
+
+- No `author` → **repo-side authoring**: the design stage writes `design.md`
+  directly; the design gate reviews the tool's `reference` URL when one
+  exists, or `design.md` as text; no canvas round-trip. A supported lane, not
+  an error — how read-only adapters participate.
+- No `read` → direct-on-canvas edits cannot be synced back: the canvas
+  feedback channel says so at gate time and routes canvas edits through
+  described feedback instead. Not an error.
+- No `export`, and no `read` to reconstruct from → the committed pair is
+  `design.md` + `reference` only: no snapshot, and the design-conformance
+  check degrades per its own ladder.
+- No `tokens` → design-conformance falls back to structural assertions only,
+  and says so.
+- `none` → only the tool-dependent pieces disappear: no canvas authoring, no
+  committed snapshot, no deterministic canvas-vs-built diff; design review
+  degrades to `design.md` as text. `none` does **not** disable the design
+  stage itself (§ Surface gates § UI-affecting owns that gate), the design
+  doc's assertions requirement, or the human design gate — those are
+  tool-independent and apply to a `none` repo with a UI.
+
+<!-- init: known-adapter catalog (verified 2026-07-09; interview source material —
+     re-verify cells marked beta at interview time; deleted on materialization
+     like every init comment):
+
+| Tool | MCP endpoint / package | author | read | export | tokens | reference |
+|---|---|---|---|---|---|---|
+| claude-design (default) | claude mcp add --scope user --transport http claude-design https://api.anthropic.com/v1/design/mcp + one-time /design consent | yes | yes | via-read | yes | yes |
+| figma | remote server https://mcp.figma.com/mcp | beta | yes | no | yes (get_variable_defs) | yes |
+| penpot | penpot/penpot-mcp (official, self-hostable) | yes | yes | partial (assets; HTML/CSS via generation) | yes (CSS) | yes |
+| figma-context | GLips/Figma-Context-MCP (community) | no | yes | assets only | partial | yes |
+| paper | paper.design desktop app, local http://127.0.0.1:29979/mcp | yes | yes | via-read | yes | yes |
+| none | — | no | no | no | no | no |
+
+- claude-design: author/read verified live 2026-07-09 (create_project → write_files →
+  read_file round-trip). Per-file etags change on every write and serve as the canvas
+  state/version identifier; if_match catches concurrent canvas edits. No filesystem-export
+  tool → export: via-read (read_file pages at 256 KiB/call; render_preview returns a
+  short-lived serve_url for browser-tooling screenshots — NEVER persist serve_url, it embeds
+  a project-scoped token; the durable open_url is the only link to record). Tokens via
+  design systems (list_design_systems, get_claude_design_prompt, /design-sync).
+- figma: write-to-canvas (use_figma) is beta — free today, stated to become usage-based
+  paid; write tools require Full/Dev seats on paid plans. No canvas→HTML export.
+- penpot: the official MCP supports creation and modification of design elements (not
+  read-only); token values come back as CSS.
+- figma-context: two tools (get_figma_data, download_figma_images) — read plus
+  image-asset download only.
+- paper: code-native canvas (real HTML/CSS); needs the desktop app running locally;
+  free tier ~100 MCP calls/week.
+-->
+
 ## Data layer
 
 What the data-safety review angle checks beyond the generic rubric
