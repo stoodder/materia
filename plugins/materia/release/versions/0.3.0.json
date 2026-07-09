@@ -1,7 +1,7 @@
 {
   "pluginVersion": "0.3.0",
   "artifactSchema": 3,
-  "summary": "Relocates the check:docs gate script to its canonical .materia/scripts/check-docs.sh, widens artifactSchema to track the installed-artifact contract (canonical file locations, not just project.json), and settles the deferred PR #17 ledger entries.",
+  "summary": "Relocates the check:docs gate script to its canonical .materia/scripts/check-docs.sh, widens artifactSchema to track the installed-artifact contract (canonical file locations, not just project.json), settles the deferred PR #17 ledger entries, and adds the MATERIA.md § Design tool section (the design-tool capability seam, default none).",
   "changes": [
     {
       "id": "0.3.0-check-docs-sh-gate",
@@ -45,6 +45,17 @@
       "detectable": false,
       "detectionNotes": "A prose refinement inside materialized queue README docs, which the user repo freely edits; there is no canonical byte-string to diff against, so no doctor check can detect it without false positives.",
       "migratable": false
+    },
+    {
+      "id": "0.3.0-design-tool-section",
+      "summary": "MATERIA.md gains a § Design tool section — the capability seam (author/read/export/tokens/reference) for external design tools the pipeline authors on over MCP; defaults to none.",
+      "impact": "optional",
+      "surfaces": ["scaffold"],
+      "detectable": false,
+      "detectionNotes": "A new named prose section in MATERIA.md, which the user repo freely edits; skills that consume the section treat a missing section as none, so absence is behaviorally identical to the shipped default and cannot honestly be flagged as drift.",
+      "migratable": false,
+      "manualMigration": "Add the § Design tool section to MATERIA.md by hand, matching the current scaffold's section (heading, slots, capability meanings, degradation rules); set Tool to none unless the repo actually connects a design tool over MCP.",
+      "notes": "Nothing consumes the section at this plugin version — it is the seam the later design-stage releases gate on (the consume-missing-as-none rule is a prospective contract on those consumers, not a description of current behavior). Adding it ahead of need is deliberate: later releases edit a known home instead of inventing one. Known discoverability limitation, shared with this file's other optional entries: inspect() surfaces optional changes only inside a schema-adoption window, so a schema-current repo sees this entry in neither doctor nor migrate output — until that gap is closed, it is discoverable only by reading this version file."
     },
     {
       "id": "0.3.0-review-angles-calibration-xref",
