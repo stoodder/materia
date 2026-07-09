@@ -216,7 +216,7 @@ the same value.
   spawned subagents, and in headless child sessions alike, while a session
   started before setup sees nothing. Other scopes, transports, or clients
   may differ — verify, don't assume. Note any local-endpoint constraint
-  (e.g. `paper` needs its desktop app running).}}
+  (e.g. `paper` needs its desktop app running) — or `none`.}}
 - **Design project(s):** {{the durable reference(s) to this repo's design
   project — project id / file key / URL, durable per the `reference` meaning
   below — or `-` until the first run mints one}}
