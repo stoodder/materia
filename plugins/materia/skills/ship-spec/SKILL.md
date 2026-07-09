@@ -154,7 +154,8 @@ Precedence on ambiguity: an explicit `<id>` arg wins over any trailing text.
 (underscore-prefixed subdirectories are producer bookkeeping), **excluding
 `README.md`**. Parse each frontmatter (§ Frontmatter parser) and validate
 required fields (`id`, `title`, `source`, `date`, `status: proposed`;
-`schema_version` informational). **Validate `id` against `^[a-z0-9]{4,8}$`**
+`schema_version` informational; `surfaces` optional/informational —
+consulted at stake per § Mint the `<dated-slug>` step 4, never required). **Validate `id` against `^[a-z0-9]{4,8}$`**
 — ids are interpolated into branch names, commit messages, and STATUS
 fields, so a non-conforming one is dropped like a parse failure, never
 "cleaned up". Drop files whose parse failed or whose
@@ -243,6 +244,24 @@ fills the `## Provenance` block with `—`):
    `## Autopilot posture` at this same moment: `on` if the invocation carried
    `--auto` (post dash-normalization per `docs/standards/skills.md` § The
    `--auto` argument), else `off`.
+
+   **Capture `surfaces:` at stake (the declared path of the § UI-surface
+   gate).** When `frontmatter.surfaces` is present, write the `Surfaces:`
+   § Notes line now (convention: `docs/specs/_templates/status.md` § Notes).
+   The § Frontmatter parser is simple `key: value`, so `surfaces: [ui]`
+   arrives as the raw string `[ui]` — interpret the flow-list tokens (`ui`,
+   `data`) yourself, and keep the **key-absent** case (no `surfaces:` key →
+   "unknown"; write no `Surfaces:` line, or `—`) strictly distinct from the
+   literal **`[]`** case (declared "none" → write `Surfaces: []`); never
+   collapse one into the other (semantics per `docs/specs/_proposed/README.md`
+   § Field roles → `surfaces`). A present value is **authoritative and
+   short-circuits before intake**: also record the declared-path decision
+   `ui-surface (predictive): <positive|negative> (declared surfaces: […])` —
+   positive iff the declared set includes a design-bearing surface (§ Review
+   — § UI-surface gate) — so intake is signalled not to ask (§ Spawn intake).
+   With no `surfaces:` key, leave the line absent (routing resolution through
+   intake). On the ad-hoc path there is no frontmatter, so `Surfaces:`
+   defaults to absent (`—`).
 5. Commit: `ship-spec(intake): claim proposal <id> for spec <dated-slug>`
 6. Push.
 
@@ -259,6 +278,14 @@ In both paths the **input** to `intake-spec` is the spec body (stripped
 proposal body or freeform text). The proposal path additionally signals
 `pre-created-folder: docs/specs/<dated-slug>/` so intake writes `spec.md` into
 the existing folder and leaves the provenance lines read-only.
+
+Also pass a **`surfaces:` spawn signal** (modeled on `pre-created-folder:`):
+the declared value when the proposal frontmatter carried one (e.g.
+`surfaces: [ui]`), otherwise `surfaces: absent`. A declared value tells
+intake **not** to ask "does this ship UI?" — the resolution is already
+settled upstream (§ UI-surface gate, declared path). `absent` (proposal that
+omitted the key, or the ad-hoc path) routes intake into its own resolution
+(§ Intake hand-off; `intake-spec/SKILL.md` § Procedure step 4).
 
 ### Failure semantics — proposal path
 
@@ -290,10 +317,10 @@ finalize is stage 10); `STATUS.md` checkboxes use the **STATUS-checkbox scale**
 `docs/specs/_templates/status.md` § Stages.
 `design` (logical stage 2) and `ui-test-plan` (logical stage 3) are
 **UI-gated**: spawned only when the run is UI-affecting (§ Review —
-§ UI-surface gate, **predictive form** — evaluated once after intake, one
-decision covering both stages); on a non-UI run both are skipped and the
-decisions recorded in `STATUS.md`, and `architecture` works from `spec.md`
-alone. `reconcile-epic` is **epic-gated**: a
+§ UI-surface gate, **predictive form** — one per-run decision covering both
+stages, resolved per that section's resolution order); on a non-UI run both
+are skipped and the decisions recorded in `STATUS.md`, and `architecture`
+works from `spec.md` alone. `reconcile-epic` is **epic-gated**: a
 no-checkbox interstitial between docs-audit and finalize, spawned only when
 the run's proposal is an epic member (§ Epic gate — reconcile-epic); on a
 non-epic run it is skipped and the decision recorded in `STATUS.md`.
@@ -376,31 +403,55 @@ epic record and the queue never drift from what actually merged.
   table because the edit only lands if this run's PR merges — merge makes it
   true; a closed PR lands neither the member nor the sync.
 
-## Intake hand-off (`partial` outcome)
+## Intake hand-off
 
-`intake-spec` returns one of two outcomes:
+`intake-spec` returns one of two outcomes. Both may carry the **surfaces
+resolution** the orchestrator must record (§ UI-surface gate, paths 2–4) —
+but only on the **absent** paths: when the run took the **declared** path
+(path 1 — `surfaces:` was in the proposal frontmatter and captured at stake),
+the two § Notes lines are already written and intake was signalled not to
+ask, so nothing below adds them.
 
 - **`ok`** — intake asked the clarifying questions via `AskUserQuestion` and
-  the operator answered. Proceed directly to `design`.
+  the operator answered. If surfaces resolution ran through intake (the spawn
+  signal was `surfaces: absent`), intake's return carries a pinned line of
+  exactly this shape as the last part of its report:
+
+  ```
+  Resolved surfaces: [ui]        # or [ui, data], or []
+  ```
+
+  Parse it and write the two § Notes lines — `Surfaces: […]` and
+  `ui-surface (predictive): <positive|negative> (resolved surfaces: […])`,
+  positive iff the resolved set includes a design-bearing surface (§ Review —
+  § UI-surface gate). Then proceed to `design`.
 - **`partial`** — `AskUserQuestion` was unavailable (the common case for a
   spawned intake), so intake ran in Auto Mode: it baked grounded defaults into
-  `spec.md` and surfaced every default + alternative under "Open questions".
+  `spec.md` and surfaced every default + alternative under "Open questions" —
+  **including the baked `surfaces` prediction** (one bullet: the assumption +
+  the flip) when the spawn signal was `surfaces: absent`.
   **Operator confirmation is required before spawning `design`.**
 
 On `partial`, the orchestrator: (1) reads `spec.md`'s "Open questions";
 (2) surfaces every question to the human — `AskUserQuestion` if available,
 otherwise an end-of-turn prompt listing every default + alternative — and does
-not spawn `design` until the operator has had the chance to flip any default;
+not spawn `design` until the operator has had the chance to flip any default
+(**the surfaces assumption included, before `design` spawns**);
 (3) folds the answers back into `spec.md` (removing resolved bullets);
-(4) commits + pushes before spawning `design`. Defaults baked in Auto Mode are
-*always* surfaced before downstream stages build on them.
+(4) writes the two § Notes lines from the post-checkpoint resolution
+(`Surfaces: […]` and
+`ui-surface (predictive): <positive|negative> (resolved surfaces: […])`),
+then commits + pushes before spawning `design`. Defaults baked in Auto Mode
+are *always* surfaced before downstream stages build on them.
 
 **Autopilot exception.** On an autopilot run (§ Autopilot) the orchestrator
-does not pause on `partial`: it accepts intake's baked defaults as-is, records
+does not pause on `partial`: it accepts intake's baked defaults as-is (**the
+baked `surfaces` prediction included**), records
 `autopilot: intake defaults accepted without operator checkpoint (see spec.md
-§ Open questions)` in `STATUS.md` § Notes, and proceeds to the next stage. The
-"Open questions" section stays in `spec.md` as the audit record of what was
-assumed — the PR reviewer reads it there.
+§ Open questions)` in `STATUS.md` § Notes, writes the two § Notes lines from
+the baked resolution (parenthetical reads `resolved`), and proceeds to the
+next stage. The "Open questions" section stays in `spec.md` as the audit
+record of what was assumed — the PR reviewer reads it there.
 
 ## Tier routing
 
@@ -661,16 +712,56 @@ above literally. Pre-implementation evaluations — the `design` and
 `ui-test-plan` stage gates, which run before any product diff exists — use
 the **predictive form**: would the feature described in `spec.md` add or
 change any screen, page, component, or `composables/ui/` hook such that the
-eventual diff matches the patterns above? Evaluate the predictive form
-**once, after intake** — one decision gating both stages. When in doubt,
-treat the run as UI-affecting: a wasted design pass is cheaper than an
-undesigned UI change.
+eventual diff matches the patterns above? The predictive form is a **single
+per-run decision gating both stages**, and it is **positive iff the run's
+resolved surfaces include a design-bearing surface** (today `ui`; the
+design-bearing set is defined in `docs/specs/_proposed/README.md` § Field
+roles → `surfaces` — reference it, don't restate). The diff form above
+remains the single canonical definition of "UI-affecting" and the
+post-implementation authority; a declared/resolved value is triage input to
+the predictive form only, never a redefinition of it.
 
-The **orchestrator** evaluates this gate — the predictive form after intake
-(gating `design` + `ui-test-plan`) and the diff form again **before the
-review fan-out** (over the cumulative diff) — and records each decision in
-`STATUS.md`. On a non-UI run it skips `design` and `ui-test-plan` and omits
-the `ui-review` angle, noting `design: skipped (non-UI — <reason>)`,
+**Predictive-form resolution order (one decision, four paths).** The
+prediction is made **once**: intake bakes it on the Auto/autopilot paths and
+the orchestrator only *records* the settled value — it never runs a second
+independent inference. "Absent" is **never a hard stop**.
+
+1. **Declared** — the proposal frontmatter carried `surfaces:`, captured to
+   the `Surfaces:` § Notes line at stake (§ Mint the `<dated-slug>` — step 4).
+   Authoritative and **short-circuits before intake**: resolve from the
+   declared set and record both `Surfaces: […]` and
+   `ui-surface (predictive): <positive|negative> (declared surfaces: […])`.
+2. **Absent + interactive intake** (`AskUserQuestion` available) — intake
+   asks "does this ship UI?" (the UI/design-bearing determination only — not
+   the data dimension), suggested from its own prediction, and returns a
+   pinned `Resolved surfaces: [ui]` (or `[]`) line in its subagent return
+   (§ Intake hand-off). The orchestrator parses that line and writes
+   `Surfaces: […]` and
+   `ui-surface (predictive): <positive|negative> (resolved surfaces: […])`.
+3. **Absent + Auto Mode** (`AskUserQuestion` unavailable, orchestrated) —
+   intake bakes the predicted value into `spec.md` § Open questions (one
+   bullet: the assumption + the flip) and returns `partial`; the existing
+   § Intake hand-off checkpoint lets the operator flip it **before `design`
+   spawns**; then the orchestrator writes the two lines (`resolved`).
+4. **Absent + autopilot** — no pause (§ Autopilot): the baked prediction
+   stands, recorded in `spec.md` § Open questions and the two § Notes lines
+   (`resolved`).
+
+Only when **no** declared or baked value exists (nothing on the `Surfaces:`
+line and nothing baked) does the orchestrator fall back to today's bare
+heuristic: **when in doubt, treat the run as UI-affecting** — a wasted design
+pass is cheaper than an undesigned UI change. A recorded
+`ui-surface (predictive):` decision is **honored on resume** — never
+re-derived from a now-absent `Surfaces:` line and flipped. (Namesake caution:
+this `surfaces:` field is unrelated to the release ledger's `Change.surfaces`
+array — nothing shared but the word; see `docs/specs/_proposed/README.md`
+§ Field roles → Two namesakes.)
+
+The **orchestrator** evaluates this gate — the predictive form (resolved per
+the order above, gating `design` + `ui-test-plan`) and the diff form again
+**before the review fan-out** (over the cumulative diff) — and records each
+decision in `STATUS.md`. On a non-UI run it skips `design` and `ui-test-plan`
+and omits the `ui-review` angle, noting `design: skipped (non-UI — <reason>)`,
 `ui-test-plan: skipped (non-UI — <reason>)`, and
 `ui-review: skipped (non-UI — <reason>)`. When positive, `ui-review`'s
 findings flow through the same remediation loop and re-spawn across the

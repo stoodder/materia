@@ -25,6 +25,12 @@ Runs as a subagent in `ship-spec`; usable standalone.
   block) as part of staking a proposal claim. When present, intake
   **skips folder/STATUS.md creation** and writes spec.md into the
   existing folder; the provenance lines are read-only to intake.
+- **Optional: `surfaces: <value>`** — a spawn signal from `ship-spec`
+  carrying either the proposal's declared `surfaces:` value (e.g.
+  `surfaces: [ui]`) or `surfaces: absent`. A **declared** value means the
+  UI/design-bearing determination is settled upstream — intake does **not**
+  ask about it. `absent` (or the signal missing, e.g. standalone) means
+  intake owns the resolution (see § Procedure step 4 — Surfaces resolution).
 
 ## Harness noise
 
@@ -166,6 +172,38 @@ standalone runs apply it on first use.
 
    When `AskUserQuestion` *is* available, ask the questions and return
    outcome `ok` — silently baked defaults are forbidden on that path.
+
+   **Surfaces resolution (the UI/design-bearing determination).** `ship-spec`
+   passes a `surfaces:` spawn signal (§ Inputs); resolve per its value — this
+   settles the predictive UI-surface gate the orchestrator records
+   (`ship-spec/SKILL.md` § Review — § UI-surface gate). Vocabulary and
+   "design-bearing" live in `docs/specs/_proposed/README.md` § Field roles →
+   `surfaces` — reference, don't restate.
+
+   - **Signal declared** (e.g. `surfaces: [ui]`) → do **not** ask; the value
+     is settled upstream. Skip the surfaces question entirely.
+   - **Signal `absent`, `AskUserQuestion` available** → add one question to
+     the set: **does this ship UI?** (the UI/design-bearing determination
+     only — *not* the data dimension), with the suggested answer pre-set from
+     your own prediction of the spec. Fold the answer in. On the orchestrated
+     `ok` path, return a pinned line of exactly this shape as the final part
+     of your return message so the orchestrator can parse it:
+
+     ```
+     Resolved surfaces: [ui]        # or [ui, data], or []
+     ```
+
+   - **Signal `absent`, Auto Mode** (`AskUserQuestion` unavailable, under the
+     orchestrator) → **bake** the predicted `surfaces` value into `spec.md`
+     § Open questions as one bullet (the assumption + the flip) — it is one of
+     the defaults you bake under the three-part Auto-Mode contract above — and
+     return `partial`. Do **not** write `STATUS.md`; the orchestrator records
+     the two § Notes lines after the operator checkpoint.
+   - **Standalone** (no orchestrator, no signal) → intake owns `STATUS.md`, so
+     ask "does this ship UI?" (or, if `AskUserQuestion` is absent, in the
+     plain-text fallback) and write the `Surfaces:` and
+     `ui-surface (predictive):` lines yourself, per
+     `docs/specs/_templates/status.md` § Notes.
 
    **Transient `AskUserQuestion` failure → retry once, then degrade to Auto
    Mode.** `AskUserQuestion` can fail mid-checkpoint with a transient stream
