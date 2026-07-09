@@ -199,8 +199,8 @@ value per the `none` convention, independent of § Surface gates § UI-affecting
 reads as `none` — skills that consume this section treat absence and `none` as
 the same value.
 
-- **Tool:** {{`claude-design` (default) · `figma` · `penpot` · `paper` ·
-  `figma-context` · another adapter — or `none`}}
+- **Tool:** {{`claude-design` (recommended adapter) · `figma` · `penpot` ·
+  `paper` · `figma-context` · another adapter — or `none`}}
 - **MCP setup:** {{the connect command plus any one-time grant, e.g.
   `claude mcp add --scope user --transport http claude-design
   https://api.anthropic.com/v1/design/mcp`, then `/design consent` once — or
@@ -271,7 +271,7 @@ the same value.
 
 | Tool | MCP endpoint / package | author | read | export | tokens | reference |
 |---|---|---|---|---|---|---|
-| claude-design (default) | claude mcp add --scope user --transport http claude-design https://api.anthropic.com/v1/design/mcp + one-time /design consent | yes | yes | via-read | yes | yes |
+| claude-design (recommended) | claude mcp add --scope user --transport http claude-design https://api.anthropic.com/v1/design/mcp + one-time /design consent | yes | yes | via-read | yes | yes |
 | figma | remote server https://mcp.figma.com/mcp | beta | yes | no | yes (get_variable_defs) | yes |
 | penpot | penpot/penpot-mcp (official, self-hostable) | yes | yes | partial (assets; HTML/CSS via generation) | yes (CSS) | yes |
 | figma-context | GLips/Figma-Context-MCP (community) | no | yes | assets only | partial | yes |
