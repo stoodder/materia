@@ -33,7 +33,6 @@ scripts/validate-plugin.mjs          ← the repo's gate: §-numbered consistenc
 scripts/check-docs-oracle.mjs        ← Node parity oracle for the scaffold's check-docs.sh (repo-local, never bundled)
 tests/fixtures/materia/              ← committed doctor/migrate fixture repos
 .claude/skills/evolve/               ← /evolve, the repo-local change orchestrator (not distributed)
-.tmp/                                ← gitignored operator bookkeeping (TODO.md, backlog.md, run plans)
 .github/workflows/validate.yml       ← CI: the same validators, plus busybox/gawk portability lanes
 ```
 
@@ -44,11 +43,9 @@ release machinery, CI — runs through **`/evolve`** (`.claude/skills/evolve/`):
 intake → plan → adversarial review → operator approval → reviewed execution →
 exactly one PR, never auto-merged. A small change still uses `/evolve` (it
 scales the ceremony down); only a single obvious edit (a typo) skips it.
-Working state for a run lives in `.tmp/<slug>-plan.md`.
 
-The repo's backlog is `.tmp/backlog.md` + `.tmp/TODO.md` (operator-maintained,
-gitignored) — not a `docs/specs/_proposed/` queue; that queue shape belongs to
-Materia-installed repos.
+This repo carries no `docs/specs/_proposed/` queue — that queue shape belongs
+to Materia-installed repos, not the harness source.
 
 ## Gates — run before every commit
 
