@@ -65,6 +65,17 @@
       "detectable": false,
       "detectionNotes": "A single cross-reference line in a materialized doc the user repo may edit; its absence is not mechanically distinguishable from an intentional local edit, so no doctor check can flag it honestly.",
       "migratable": false
+    },
+    {
+      "id": "0.3.0-proposed-spec-surfaces-field",
+      "summary": "The proposed-spec queue frontmatter gains an optional `surfaces:` field (vocabulary `ui`/`data`/`[]`, absent = unknown) and its `schema_version` bumps 1→2; strictly additive (old proposals stay valid).",
+      "impact": "optional",
+      "surfaces": ["scaffold"],
+      "detectable": false,
+      "detectionNotes": "Doctor's inspect() does not scan docs/specs/** / the queue README / status-template prose; an old repo's absence of the field is indistinguishable from a user edit, and consumers treat an absent surfaces: / older schema_version as unknown-and-degrade (behaviorally identical to the shipped default) — so no doctor check can honestly flag it.",
+      "migratable": false,
+      "manualMigration": "Add the surfaces: field to _proposed/README.md § Frontmatter contract + Field roles, add the Surfaces: / ui-surface (predictive): § Notes convention lines to the status template, and bump the queue schema_version to 2 in the producer emitters — matching the current scaffold. (No installed-artifact relocation, so /materia:migrate has nothing mechanical to do.)",
+      "notes": "Shares the same inspect() optional-entry discoverability limitation the sibling optional entries record: a schema-current repo sees this entry in neither doctor nor migrate output — discoverable only by reading this version file. Distinct from 0.3.0-queue-readme-prose: that entry is clarifying prose on the same README; this one is a frontmatter shape + schema_version change. The queue schema_version is its own axis, unrelated to this file's artifactSchema (unchanged at 3)."
     }
   ]
 }
