@@ -301,6 +301,11 @@ const parseArgs = (argv) => {
         out.acknowledgeError ??= '--acknowledge requires a change-id operand (none given, or the next token looked like a flag)'
       else { out.acknowledge.push(next); i++ }
     }
+    // The equals form must not fall through to the ignore-unknown-flags default: that
+    // would silently run a plain plan (nothing acknowledged, exit 0) — a wrong-mode trap,
+    // not an unknown flag. Refuse with the correct spelling instead.
+    else if (a.startsWith('--acknowledge='))
+      out.acknowledgeError ??= `use the space form: --acknowledge ${a.slice('--acknowledge='.length) || '<change-id>'} (the equals form is not supported)`
     else if (a.startsWith('-')) { /* ignore unknown flags in v0 */ }
     else if (out.target === null) out.target = a
   }
@@ -650,8 +655,13 @@ const buildAcknowledge = (targetRoot, releaseDir, ids, { planOnly }) => {
   //    not just the current schema's window — an ack should be honorable against any
   //    known change, not just the ones the windowless pass happens to surface right now).
   const ledger = readLedger(releaseDir)
-  if (ledger.error)
+  // The one genuine plugin-fault path in acknowledge mode: carry toolFault so a machine
+  // consumer keying on that boolean classifies it correctly (refused alone means the
+  // OPERATOR's input/state was refused). Exit is 2 either way.
+  if (ledger.error) {
+    out.toolFault = true
     return refuse(`TOOL FAULT (not the project): could not read this plugin's release ledger — ${ledger.error}`)
+  }
   const knownIds = new Set()
   for (const v of ledger.versions) for (const ch of Array.isArray(v.changes) ? v.changes : []) knownIds.add(ch.id)
   const unknown = [...new Set(ids)].filter((id) => !knownIds.has(id))
