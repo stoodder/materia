@@ -2052,9 +2052,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   }
 
   // 11. Synthetic MOVED-BUT-UNSTAMPED repo (schema 2, gate script at the canonical
-  //     location only): the doctor↔migrate bridge. doctor is healthy yet suggests
-  //     /materia:migrate --plan; migrate has a stamp-only install-check-docs applicable;
-  //     apply stamps schema 3; re-apply is idempotent (byte-identical).
+  //     location only): the doctor↔migrate bridge. doctor reports `warnings` (the
+  //     non-detectable recommended entry — see the doctor moved-but-unstamped fixture
+  //     comment) and suggests /materia:migrate --plan; migrate has a stamp-only
+  //     install-check-docs applicable; apply stamps schema 3; re-apply is idempotent
+  //     (byte-identical).
   {
     const mk = () => {
       const dir = mkdtempSync(join(tmpdir(), 'materia-migrate-moved-'))
