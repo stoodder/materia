@@ -1135,6 +1135,30 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       fail(`release: scaffold .materia/project.json artifactSchema (${scaffoldState.artifactSchema}) != latest.artifactSchema (${latest.artifactSchema})`)
   }
 
+  // Scaffold acknowledgedChanges prefill pin. A fresh install already CONTAINS every
+  // same-schema change's content (it got the current scaffold), so the scaffold state
+  // pre-acknowledges them — doctor's availableAdoptions listing stays empty on a fresh
+  // install instead of listing adoptions the repo was born with. Keyed to ALL version
+  // files at the scaffold's own schema (not just the pointed file) so a later
+  // same-schema version file keeps fresh installs quiet too. Set-EQUALITY, both ways:
+  // minting a new same-schema change forces this list current (missing), and a stale id
+  // never lingers after a schema bump moves the ids out of scope (extra).
+  if (scaffoldState && isInt(scaffoldState.artifactSchema)) {
+    const wantIds = new Set()
+    for (const obj of parsedVersions.values())
+      if (obj.artifactSchema === scaffoldState.artifactSchema)
+        for (const ch of Array.isArray(obj.changes) ? obj.changes : []) if (isStr(ch.id)) wantIds.add(ch.id)
+    if (!Array.isArray(scaffoldState.acknowledgedChanges))
+      fail(`scaffold .materia/project.json: acknowledgedChanges must be an array prefilled with every schema-${scaffoldState.artifactSchema} change id (fresh installs must not surface adoptions they were born with)`)
+    else {
+      const have = new Set(scaffoldState.acknowledgedChanges)
+      const missing = [...wantIds].filter((id) => !have.has(id))
+      const extra = [...have].filter((id) => !wantIds.has(id))
+      if (missing.length || extra.length)
+        fail(`scaffold .materia/project.json acknowledgedChanges must set-equal all schema-${scaffoldState.artifactSchema} change ids — missing: [${missing}], extra: [${extra}]`)
+    }
+  }
+
   // Fixture pins: tracked carries a schema-3 project.json (the current tracked shape);
   // legacy carries none (its defining trait — the absence a future doctor keys on).
   const trackedState = 'tests/fixtures/materia/tracked-current-project/.materia/project.json'
