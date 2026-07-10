@@ -2247,8 +2247,218 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     } finally { rmSync(dir, { recursive: true, force: true }) }
   }
 
+  // ---- --acknowledge behavior --------------------------------------------
+  // A real, currently-shipped ledger change id to acknowledge against — DERIVED from
+  // the runtime ledger (never hardcoded) so a future ledger edit can't silently
+  // desync this suite from what --acknowledge actually validates against. Prefers the
+  // one known-stable literal '0.3.0-design-tool-section' (an optional, detectable:false
+  // 0.3.0 entry unlikely to be retired) when it's still present, falling back to
+  // whatever id the ledger happens to carry first so the suite never hard-fails on a
+  // ledger reshuffle.
+  const ledgerChangeIds = readdirSync(resolve('plugins/materia/release/versions'))
+    .filter((f) => f.endsWith('.json'))
+    .flatMap((f) => { try { return JSON.parse(readFileSync(resolve('plugins/materia/release/versions', f), 'utf8')).changes ?? [] } catch { return [] } })
+    .map((ch) => ch.id)
+  const ACK_ID = ledgerChangeIds.includes('0.3.0-design-tool-section') ? '0.3.0-design-tool-section' : ledgerChangeIds[0]
+
+  // 13. Happy path: schema-3 synthetic repo, --acknowledge one real id -> exit 0,
+  //     written:true, acknowledgedChanges contains it (sorted-unique), every OTHER
+  //     project.json field byte-identical to before, and doctor then shows that id
+  //     GONE from availableAdoptions with acknowledgedCount incremented by one.
+  {
+    const dir = mkdtempSync(join(tmpdir(), 'materia-migrate-ack-happy-'))
+    try {
+      mkdirSync(join(dir, '.materia', 'scripts'), { recursive: true })
+      writeFileSync(join(dir, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(dir, '.materia', 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
+      const before = { artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }
+      writeFileSync(join(dir, '.materia', 'project.json'), JSON.stringify(before))
+      const dPre = spawnSync('node', [DOCTOR, dir, '--json'], { encoding: 'utf8' })
+      let repPre = null; try { repPre = JSON.parse(dPre.stdout) } catch { /* below */ }
+      const problems = []
+      if (!repPre) problems.push('pre-ack doctor emitted no parseable JSON')
+      else if (!repPre.availableAdoptions.some((a) => a.id === ACK_ID))
+        problems.push(`pre-ack doctor availableAdoptions missing ${ACK_ID} (fixture setup assumption wrong)`)
+      const preCount = repPre ? repPre.acknowledgedCount : null
+
+      const { r, report } = runMigrate(dir, '--acknowledge', ACK_ID)
+      if (!report) problems.push('no parseable JSON')
+      else {
+        if (report.mode !== 'acknowledge') problems.push(`mode=${report.mode} (want acknowledge)`)
+        if (report.written !== true) problems.push('written should be true')
+        if (report.refused !== false) problems.push('refused should be false')
+        if (!Array.isArray(report.projectState?.acknowledgedChanges) || !report.projectState.acknowledgedChanges.includes(ACK_ID))
+          problems.push(`projectState.acknowledgedChanges missing ${ACK_ID}: ${JSON.stringify(report.projectState)}`)
+      }
+      problems.push(...exitWant(r, 0))
+      const onDisk = JSON.parse(readFileSync(join(dir, '.materia', 'project.json'), 'utf8'))
+      if (JSON.stringify(onDisk.acknowledgedChanges) !== JSON.stringify([ACK_ID]))
+        problems.push(`on-disk acknowledgedChanges=${JSON.stringify(onDisk.acknowledgedChanges)} (want [${ACK_ID}], sorted-unique)`)
+      for (const k of Object.keys(before))
+        if (JSON.stringify(onDisk[k]) !== JSON.stringify(before[k])) problems.push(`on-disk field ${k} changed: ${JSON.stringify(onDisk[k])} (want ${JSON.stringify(before[k])})`)
+
+      const dPost = spawnSync('node', [DOCTOR, dir, '--json'], { encoding: 'utf8' })
+      let repPost = null; try { repPost = JSON.parse(dPost.stdout) } catch { /* below */ }
+      if (!repPost) problems.push('post-ack doctor emitted no parseable JSON')
+      else {
+        if (repPost.availableAdoptions.some((a) => a.id === ACK_ID)) problems.push(`post-ack doctor still lists ${ACK_ID} in availableAdoptions`)
+        if (repPost.acknowledgedCount !== preCount + 1) problems.push(`post-ack acknowledgedCount=${repPost.acknowledgedCount} (want ${preCount + 1})`)
+      }
+      if (problems.length) fail(`migrate [acknowledge-happy]: ${problems.join('; ')}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+
+  // 14. Idempotent: re-running the SAME --acknowledge -> exit 0, no-op reported
+  //     (written:false, alreadyAcknowledged includes the id), file bytes UNCHANGED.
+  {
+    const dir = mkdtempSync(join(tmpdir(), 'materia-migrate-ack-idem-'))
+    try {
+      mkdirSync(join(dir, '.materia'), { recursive: true })
+      writeFileSync(join(dir, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(dir, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [], acknowledgedChanges: [ACK_ID] }))
+      const before = readFileSync(join(dir, '.materia', 'project.json'), 'utf8')
+      const { r, report } = runMigrate(dir, '--acknowledge', ACK_ID)
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else {
+        if (report.written !== false) problems.push('written should be false (idempotent no-op)')
+        if (report.refused !== false) problems.push('refused should be false (a no-op is not a refusal)')
+        if (!report.alreadyAcknowledged.includes(ACK_ID)) problems.push(`alreadyAcknowledged=${JSON.stringify(report.alreadyAcknowledged)} (want it to include ${ACK_ID})`)
+      }
+      problems.push(...exitWant(r, 0))
+      const after = readFileSync(join(dir, '.materia', 'project.json'), 'utf8')
+      if (before !== after) problems.push('idempotent re-acknowledge changed file bytes')
+      if (problems.length) fail(`migrate [acknowledge-idempotent]: ${problems.join('; ')}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+
+  // 15. Unknown id -> exit 2, refused:true report with unknownIds, tree byte-unchanged,
+  //     and — the render-path pin — toolFault is NOT a truthy field in the JSON (an
+  //     acknowledge refusal must never be swallowed by / confused with the plan/apply
+  //     toolFault branch).
+  {
+    const dir = mkdtempSync(join(tmpdir(), 'materia-migrate-ack-unknown-'))
+    try {
+      mkdirSync(join(dir, '.materia'), { recursive: true })
+      writeFileSync(join(dir, 'MATERIA.md'), '# m\n')
+      const before = JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [] })
+      writeFileSync(join(dir, '.materia', 'project.json'), before)
+      const { r, report } = runMigrate(dir, '--acknowledge', 'not-a-real-ledger-change-id')
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else {
+        if (report.refused !== true) problems.push('refused should be true')
+        if (!report.unknownIds.includes('not-a-real-ledger-change-id')) problems.push(`unknownIds=${JSON.stringify(report.unknownIds)}`)
+        if (report.written !== false) problems.push('written should be false')
+        if (report.toolFault) problems.push('toolFault must not be set for an acknowledge refusal')
+      }
+      problems.push(...exitWant(r, 2))
+      if (readFileSync(join(dir, '.materia', 'project.json'), 'utf8') !== before) problems.push('unknown-id acknowledge OVERWROTE project.json')
+      if (problems.length) fail(`migrate [acknowledge-unknown-id]: ${problems.join('; ')}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+
+  // 16. --plan --acknowledge <id> -> exit 0, mode acknowledge-plan, written:false,
+  //     would-be projectState shown, nothing written to disk.
+  {
+    const dir = mkdtempSync(join(tmpdir(), 'materia-migrate-ack-plan-'))
+    try {
+      mkdirSync(join(dir, '.materia'), { recursive: true })
+      writeFileSync(join(dir, 'MATERIA.md'), '# m\n')
+      const before = JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [] })
+      writeFileSync(join(dir, '.materia', 'project.json'), before)
+      const { r, report } = runMigrate(dir, '--plan', '--acknowledge', ACK_ID)
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else {
+        if (report.mode !== 'acknowledge-plan') problems.push(`mode=${report.mode} (want acknowledge-plan)`)
+        if (report.written !== false) problems.push('written should be false (--plan preview)')
+        if (report.refused !== false) problems.push('refused should be false')
+        if (!report.projectState?.acknowledgedChanges?.includes(ACK_ID)) problems.push(`would-be projectState missing ${ACK_ID}: ${JSON.stringify(report.projectState)}`)
+      }
+      problems.push(...exitWant(r, 0))
+      if (readFileSync(join(dir, '.materia', 'project.json'), 'utf8') !== before) problems.push('--plan --acknowledge WROTE to project.json')
+      if (problems.length) fail(`migrate [acknowledge-plan-preview]: ${problems.join('; ')}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+
+  // 17. --apply --acknowledge <id> -> mutually exclusive modes, refused, exit 2,
+  //     nothing written.
+  {
+    const dir = mkdtempSync(join(tmpdir(), 'materia-migrate-ack-apply-conflict-'))
+    try {
+      mkdirSync(join(dir, '.materia'), { recursive: true })
+      writeFileSync(join(dir, 'MATERIA.md'), '# m\n')
+      const before = JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [] })
+      writeFileSync(join(dir, '.materia', 'project.json'), before)
+      const { r, report } = runMigrate(dir, '--apply', '--acknowledge', ACK_ID)
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else if (report.refused !== true) problems.push('refused should be true (--apply + --acknowledge are mutually exclusive)')
+      problems.push(...exitWant(r, 2))
+      if (readFileSync(join(dir, '.materia', 'project.json'), 'utf8') !== before) problems.push('--apply --acknowledge WROTE to project.json')
+      if (problems.length) fail(`migrate [acknowledge-apply-conflict]: ${problems.join('; ')}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+
+  // 18. Missing operand: --acknowledge at the end of argv, and --acknowledge
+  //     immediately followed by another flag -> both refused, exit 2.
+  for (const [label, extraArgs] of [['end-of-argv', ['--acknowledge']], ['followed-by-flag', ['--acknowledge', '--json']]]) {
+    const dir = mkdtempSync(join(tmpdir(), `materia-migrate-ack-missing-operand-${label}-`))
+    try {
+      mkdirSync(join(dir, '.materia'), { recursive: true })
+      writeFileSync(join(dir, 'MATERIA.md'), '# m\n')
+      const before = JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [] })
+      writeFileSync(join(dir, '.materia', 'project.json'), before)
+      // Built directly (not via runMigrate, which appends --json at the END of argv —
+      // that would make the 'followed-by-flag' case's own trailing --json the operand
+      // lookalike, not a second, independent flag collision).
+      const r = spawnSync('node', [MIGRATE, dir, '--json', ...extraArgs], { encoding: 'utf8' })
+      let report = null; try { report = JSON.parse(r.stdout) } catch { /* asserted below */ }
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else if (report.refused !== true) problems.push('refused should be true (missing --acknowledge operand)')
+      problems.push(...exitWant(r, 2))
+      if (readFileSync(join(dir, '.materia', 'project.json'), 'utf8') !== before) problems.push('missing-operand acknowledge WROTE to project.json')
+      if (problems.length) fail(`migrate [acknowledge-missing-operand-${label}]: ${problems.join('; ')}`)
+    } finally { rmSync(dir, { recursive: true, force: true }) }
+  }
+
+  // 19. schema-1 hand-authored state / malformed state -> refused (manual-style
+  //     message), exit 2, nothing written (the same never-overwrite/stamp-floor
+  //     guarantee plan/apply enforce elsewhere).
+  {
+    const s1 = synthState('ack-s1', '{ "artifactSchema": 1, "pluginVersion": null, "source": "hand", "appliedMigrations": [] }')
+    try {
+      const before = readFileSync(join(s1, '.materia', 'project.json'), 'utf8')
+      const { r, report } = runMigrate(s1, '--acknowledge', ACK_ID)
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else {
+        if (report.refused !== true) problems.push('refused should be true (schema-1 hand-authored state)')
+        if (!/expected >= 2/.test(report.reason || '')) problems.push(`reason lacks the schema-floor explanation: ${JSON.stringify(report.reason)}`)
+      }
+      problems.push(...exitWant(r, 2))
+      if (readFileSync(join(s1, '.materia', 'project.json'), 'utf8') !== before) problems.push('schema-1 acknowledge OVERWROTE project.json')
+      if (problems.length) fail(`migrate [acknowledge-schema1]: ${problems.join('; ')}`)
+    } finally { rmSync(s1, { recursive: true, force: true }) }
+
+    const raw = '{ not valid json'
+    const mf = synthState('ack-mf', raw)
+    try {
+      const { r, report } = runMigrate(mf, '--acknowledge', ACK_ID)
+      const problems = []
+      if (!report) problems.push('no parseable JSON')
+      else if (report.refused !== true) problems.push('refused should be true (malformed state)')
+      problems.push(...exitWant(r, 2))
+      if (readFileSync(join(mf, '.materia', 'project.json'), 'utf8') !== raw) problems.push('malformed-state acknowledge OVERWROTE project.json')
+      if (problems.length) fail(`migrate [acknowledge-malformed]: ${problems.join('; ')}`)
+    } finally { rmSync(mf, { recursive: true, force: true }) }
+  }
+
   if (failures === before)
-    console.log('  ✓ migrate behavior: plan→no-mutate · apply(legacy)→init+install-check-docs(relocate+stamp 3→doctor healthy) · apply(gnarly)→copy-from-scaffold+stamp(stale .mjs untouched) · both-locations→stamp-only(root untouched) · moved-but-unstamped→bridge+stamp · idempotent · never overwrites valid/stale/malformed · tracked-noop · unknown/future/non-materia→no-write · referenceFollowUps: legacy plan/apply(.sh token, staleNow flips) · tracked/current→none · schema-3-stale-consumer(window-independent) · gnarly(.mjs autoFix:false)')
+    console.log('  ✓ migrate behavior: plan→no-mutate · apply(legacy)→init+install-check-docs(relocate+stamp 3→doctor healthy) · apply(gnarly)→copy-from-scaffold+stamp(stale .mjs untouched) · both-locations→stamp-only(root untouched) · moved-but-unstamped→bridge+stamp · idempotent · never overwrites valid/stale/malformed · tracked-noop · unknown/future/non-materia→no-write · referenceFollowUps: legacy plan/apply(.sh token, staleNow flips) · tracked/current→none · schema-3-stale-consumer(window-independent) · gnarly(.mjs autoFix:false) · --acknowledge: happy(doctor availableAdoptions shrinks+acknowledgedCount++) · idempotent(byte-stable) · unknown-id→refused(no toolFault) · --plan preview · --apply conflict→refused · missing-operand(end-of-argv/followed-by-flag)→refused · schema-1/malformed→refused(never overwritten)')
 }
 
 // ---- 9. doctor/migrate skills + script references ---------------------------
