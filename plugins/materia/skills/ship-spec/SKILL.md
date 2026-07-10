@@ -1,6 +1,6 @@
 ---
 name: ship-spec
-description: "Run the full spec-to-PR pipeline for a new product spec or feature request — intake → design → architecture → task breakdown → autonomous implementation → post-implementation multi-angle review → lint/typecheck/test gate → docs → pull request. Supports `--auto` (autopilot): operator checkpoints accept grounded defaults, and after the PR opens the orchestrator watches CI, fixes failures, resolves merge conflicts, and merges once green. Captures a per-run retrospective (`retro.md`) at each touchpoint so a downstream skill can aggregate them into pipeline improvements. Resumable across sessions. Interactive design-bearing runs pause once for the human design gate (`--approve-design` or `--auto` skips it). Use when the user hands over a product spec or feature to build end-to-end."
+description: "Run the full spec-to-PR pipeline for a new product spec or feature request — intake → design → architecture → task breakdown → autonomous implementation → post-implementation multi-angle review → lint/typecheck/test gate → docs → pull request. Supports `--auto` (autopilot): operator checkpoints accept grounded defaults, and after the PR opens the orchestrator watches CI, fixes failures, resolves merge conflicts, and merges once green. Captures a per-run retrospective (`retro.md`) at each touchpoint so a downstream skill can aggregate them into pipeline improvements. Resumable across sessions. Interactive design-bearing runs pause at the human design gate (`--approve-design` or `--auto` skips it). Use when the user hands over a product spec or feature to build end-to-end."
 ---
 
 # ship-spec — the spec-to-ship orchestrator
@@ -73,18 +73,27 @@ Then:
 1. Read its `STATUS.md`. Find the first unchecked stage (and within implement,
    the first task in `tasks.md` not `[x]`).
 2. If `Blocker` is set, surface it to the human and stop until resolved.
+   **Sole exception** (scoped to this exact Blocker string): when the Blocker
+   is `design-gate revision bound exhausted (rounds=3)` **and** the operator's
+   message carries `approve` or `abandon`, treat the reply as resolving the
+   Blocker — clear it and route the verb through step 0's gate check below
+   (§ Design gate — revision bound carve-out). A further `revise` does not
+   resolve it.
 
 0. **The design-gate check** (§ Design gate) — numbered **step 0** because it
    is evaluated **before** the first-unchecked-stage scan acts (step 3), yet it
    runs **after** the folder match and **after** the `Blocker:` hard-stop
-   (step 2) — a set Blocker always wins; step 0 never routes around it. It
+   (step 2) — a set Blocker always wins; step 0 never routes around it except
+   via step 2's own scoped exhaustion-Blocker carve-out. It
    fires only when `design.md` **exists**, carries an `approval:` block, **and**
    the run has **not** advanced past the gate (§ Design gate — advanced-past
    predicate). No block = a pre-gate run → skip this step; today's behavior.
    Route on the block:
    - `approved`/`auto-approved` **and** `design_hash` matches the current body
      → clear the waiting state, set `Next:` to the next stage, continue as
-     today.
+     today. (Before advancing past the gate on **any** route: if `Branch:` is
+     still the template placeholder, provision the run branch first —
+     § Design gate — Standalone-first lane.)
    - `pending`, body **clean** vs the last gate-marked commit, no verb in the
      operator's message → re-present; do **not** increment `rounds` (a
      re-present alone is not a revision round).
@@ -97,7 +106,14 @@ Then:
      (§ Design gate — revision bound).
    - `abandoned` → re-present with an explicit note (abandoned on `<date>`); the
      operator may re-open (routes to revise), approve after all, or leave (end
-     the turn again). Parked, not locked.
+     the turn again). Parked, not locked. **Re-open resets the state first**:
+     set the block back to `status: pending`, set
+     `Next: design-approval (awaiting operator)`, and append
+     `design-gate: re-opened (<date>)` to § Notes (superseding the abandoned
+     line) — *then* run the revise steps. Without the reset, the block,
+     `Next:`, and § Notes would keep reporting "abandoned" through a live
+     revision round, and a mid-round resume would re-offer the abandoned menu
+     (and double-count `rounds`).
    - `approved` + hash **MISMATCH** → the approved design is not the design on
      disk; route to **revise** with the diff as implicit feedback (this is why
      `design_hash` exists).
@@ -236,6 +252,11 @@ through to the menu below — choosing *what* to build stays with the operator.
   pauses until you reply.)" — then end the turn with the marker sentence:
 
 > Awaiting operator selection at the proposal menu. The next message in this thread will resume the run.
+
+When the paused invocation carried `--approve-design`, append one line to the
+marker: the arm did not survive this pause (it is durable only from stake —
+§ Design gate — `--approve-design`); re-pass the flag with the selection to
+keep the bypass.
 
 The next invocation re-runs the Resume gate (no in-flight folder yet) and
 re-enters this section, parsing the reply as an `<id>` or ad-hoc text. Under
@@ -549,10 +570,12 @@ After `design` returns `design.md`:
 1. Resolve the chain above (`--auto` posture is handled in § Autopilot).
 2. **Gate ON and no auto-approval applies** — write the approval block into
    `design.md` frontmatter (`status: pending`, `rounds: 0`, no hash — the
-   design stage never touches the block), commit with the gate-marker subject
-   (§ Gate commits), tick the design stage row, set
+   design stage never touches the block), tick the design stage row, set
    `Next: design-approval (awaiting operator)` (a waiting state, **not** a
-   Blocker), append `design-gate: awaiting approval` to § Notes, push. Present
+   Blocker), append `design-gate: awaiting approval` to § Notes, **then**
+   commit (`design.md` + `STATUS.md` together, one commit) with the
+   gate-marker subject (§ Gate commits), and push — never leave the STATUS.md
+   edits uncommitted behind a design.md-only commit. Present
    the design (§ Presentation), print the three verbs, and **end the turn**
    with the marker sentence:
 
@@ -602,7 +625,8 @@ revision request → write
 The bound limits **revisions, not decisions**:
 when surfacing this Blocker, name approve/abandon as the legal in-thread
 resolutions — such a reply clears the Blocker and routes through the gate
-normally (this carve-out is scoped to this Blocker string only).
+normally (this carve-out is scoped to this Blocker string only, and its
+resume-side wiring lives at § Resume step 2's sole exception).
 
 ### `design_hash` — the single normative definition
 

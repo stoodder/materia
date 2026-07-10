@@ -195,6 +195,9 @@
            design-gate: auto-approved (--auto autopilot run)
            design-gate: auto-approved (MATERIA.md gate: off))
        design-gate: abandoned (<date>)
+       design-gate: re-opened (<date>)
+         (appended when the operator re-opens an abandoned gate,
+         superseding the abandoned line; the block returns to pending)
        design-gate: auto-approve armed (--approve-design)
        design-gate: auto-approve consumed (--approve-design)
          (the armed line above is rewritten to this at consumption; a
