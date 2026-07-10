@@ -418,7 +418,7 @@ ask, so nothing below adds them.
   exactly this shape as the last part of its report:
 
   ```
-  Resolved surfaces: [ui]        # or [ui, data], or []
+  Resolved surfaces: [ui]        # [ui] if it ships UI, else []
   ```
 
   Parse it and write the two § Notes lines — `Surfaces: […]` and
@@ -756,6 +756,15 @@ re-derived from a now-absent `Surfaces:` line and flipped. (Namesake caution:
 this `surfaces:` field is unrelated to the release ledger's `Change.surfaces`
 array — nothing shared but the word; see `docs/specs/_proposed/README.md`
 § Field roles → Two namesakes.)
+
+**The absent paths (2–4) resolve only the UI dimension.** The "does this ship
+UI?" question settles the **design-bearing (UI)** determination alone, so the
+`resolved` `Surfaces:` value it records is `[ui]` or `[]` and makes **no** data
+claim — a `resolved` `[]` means "no UI surface," *not* "no data." Data-affecting
+classification stays owned by the diff-form § Data-surface gate; a `data` token
+appears in `Surfaces:` only when a proposal **declared** it (path 1). So `[]`
+must be read together with its `(declared|resolved)` provenance: `declared []`
+is "none across the vocabulary," `resolved []` is "no UI (data unasserted)."
 
 The **orchestrator** evaluates this gate — the predictive form (resolved per
 the order above, gating `design` + `ui-test-plan`) and the diff form again

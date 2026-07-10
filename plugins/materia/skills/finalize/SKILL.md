@@ -321,9 +321,10 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
    ```
 
    Because it is anchored to the gate and not to Provenance, it renders on
-   ad-hoc runs too (where the `## Provenance` block is skipped). If the
-   `Surfaces:` line is absent or `—`, render `— (unknown)` — never omit the
-   block on that basis.
+   ad-hoc runs too (where the `## Provenance` block is skipped). If **either**
+   § Notes line is absent or `—` (e.g. resuming a pre-change `STATUS.md` that
+   has neither), render that sub-line's value as `— (unknown)` — never omit
+   the block on that basis.
 
    **Autopilot note (when instructed).** When the orchestrator's spawn prompt
    marks the run as autopilot (`--auto`), insert the one-line autopilot

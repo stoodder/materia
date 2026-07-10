@@ -30,7 +30,10 @@ Runs as a subagent in `ship-spec`; usable standalone.
   `surfaces: [ui]`) or `surfaces: absent`. A **declared** value means the
   UI/design-bearing determination is settled upstream — intake does **not**
   ask about it. `absent` (or the signal missing, e.g. standalone) means
-  intake owns the resolution (see § Procedure step 4 — Surfaces resolution).
+  intake **performs** the resolution (asks or bakes); which lane **writes**
+  `STATUS.md` depends on the run — the orchestrator writes it in the spawned
+  lane, intake itself only when standalone (see § Procedure step 4 — Surfaces
+  resolution).
 
 ## Harness noise
 
@@ -190,7 +193,7 @@ standalone runs apply it on first use.
      of your return message so the orchestrator can parse it:
 
      ```
-     Resolved surfaces: [ui]        # or [ui, data], or []
+     Resolved surfaces: [ui]        # [ui] if it ships UI, else []
      ```
 
    - **Signal `absent`, Auto Mode** (`AskUserQuestion` unavailable, under the
