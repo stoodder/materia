@@ -1,8 +1,8 @@
 <!-- Filled by the design stage when it commits a static canvas snapshot to
      docs/specs/<dated-slug>/design/ (see MATERIA.md § Design tool's `export`
      and `export: via-read` capabilities). Audience: a human skimming this
-     design/ directory, and — once built, a future release — an automated
-     conformance-diff tool that compares this snapshot against the built app.
+     design/ directory, and the design-conformance harness (MATERIA.md
+     § Eyes) that compares this snapshot against the built app.
      Never write a live bracket-then-paren markdown link anywhere in this
      file; describe cross-references with an arrow instead
      (text → path) — this rule binds everything under docs/specs/**, which
@@ -27,8 +27,9 @@ file, same directory).
 
 ## Fabrication contract
 
-<!-- The load-bearing section. A later automated conformance-diff tool reads
-     these three category names verbatim — do not paraphrase them. -->
+<!-- The load-bearing section. The design-conformance harness (MATERIA.md
+     § Eyes) reads these three category names verbatim — do not paraphrase
+     them. -->
 
 - **fabricated** — text content and data on the canvas. Never comparable;
   never diff these against the built app's copy or data.
@@ -44,7 +45,7 @@ file, same directory).
 `semantic-structure: {{yes | no}}`
 
 <!-- Record `no` honestly when the export lacks real landmark/heading
-     elements. A later conformance checker reads this line and, on `no`,
+     elements. The design-conformance harness reads this line and, on `no`,
      skips structural comparison entirely rather than manufacturing false
      "structure mismatch" findings against a perfectly good implementation.
      Only record `yes` when the exported markup genuinely carries

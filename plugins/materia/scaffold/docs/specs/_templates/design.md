@@ -171,7 +171,8 @@
      prose — each assertion is one line, imperative, and either passes or
      fails when checked against a rendered screen. Prefer assertions a static
      capture + computed styles can check (an element's presence, its color,
-     its spacing, its copy). Runtime-behavior assertions are legitimate
+     its spacing, its copy) — the `design-conformance` review angle verifies
+     those at review time. Runtime-behavior assertions are legitimate
      design intent too — e.g. "the error state preserves the user's typed
      input," "the list virtualizes above 50 items" — but a static capture
      can't see them: they're checked by the e2e lane instead, where

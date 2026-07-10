@@ -200,13 +200,21 @@ standalone runs apply it on first use.
 7. **Assertions.** Distill the design into a `## Assertions` checklist — each
    line one-line, imperative, and pass/fail when checked against a **rendered**
    screen. Prefer statically-checkable assertions (an element's presence,
-   color, spacing, copy — what a static capture plus computed styles can see);
+   color, spacing, copy — what a static capture plus computed styles can see;
+   the `design-conformance` review angle verifies these at review time);
    runtime-behavior assertions (e.g. "the error state preserves the user's
    typed input") are legitimate design intent but belong to the e2e lane —
    write them knowing `ui-test-plan` reads this section and turns them into
    guarded flows. **Hard rule (UI runs):** a `design.md` that can produce no
-   assertions has not specified anything — **fail the run and return the
-   failure to the caller rather than writing an empty `## Assertions` block**.
+   assertions has not specified anything — **fail the run rather than writing
+   an empty `## Assertions` block**, with the concrete line
+   `Blocker: design produced no checkable assertions — <one line on what the
+   design lacks> — revise spec.md or the design, then resume` (the same shape
+   as step 9's git-ignore hard stop, and the same lane split: in the
+   standalone lane write it to `STATUS.md` and end the turn; in the
+   orchestrator lane return this exact `Blocker:` line in the return payload
+   for the generic spawned-stage-Blocker hand-off, `ship-spec/SKILL.md`
+   § STATUS.md ownership (orchestrator lane)).
    This binds every lane: the canvas lane and a `MATERIA.md § Design tool`
    `none` repo are held to it identically. Exempt: the non-UI skeleton variant
    and the code-only shape — neither has a rendered screen to assert against.
@@ -286,9 +294,8 @@ standalone runs apply it on first use.
    return payload — the orchestrator writes it verbatim to `STATUS.md`,
    commits, and surfaces it to the human (`ship-spec/SKILL.md` § STATUS.md
    ownership (orchestrator lane) is the normative home for this generic
-   spawned-stage-Blocker hand-off, which also covers step 7's pre-existing
-   assertions hard rule — neither was previously wired to an orchestrator-side
-   receiving mechanism until this change specifies one).
+   spawned-stage-Blocker hand-off, which also carries step 7's assertions
+   hard rule).
 
    Alongside the exported assets, write `README.md` from
    `docs/specs/_templates/design-snapshot-readme.md` (read that template, do

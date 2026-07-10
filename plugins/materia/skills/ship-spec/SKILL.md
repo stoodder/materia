@@ -1100,9 +1100,9 @@ boxes and leaves `STATUS.md` (and `retro.md`) to the orchestrator.
 **return payload** is how it reaches the human. When a spawned stage's return
 carries an explicit `Blocker: <text>` line — it hit a hard stop it cannot
 resolve in its own lane (e.g. `design/SKILL.md` step 9's git-ignored-snapshot-
-path guard, which already specifies this exact format; any other stage-level
-hard stop that wants this hand-off, such as step 7's failed-assertions rule,
-must likewise return a concrete `Blocker: <text>` line rather than a bare
+path guard and step 7's failed-assertions rule, which both specify this exact
+format; any other stage-level hard stop that wants this hand-off must likewise
+return a concrete `Blocker: <text>` line rather than a bare
 failure) — the orchestrator writes
 that line **verbatim** to `STATUS.md`, commits, and surfaces it to the human,
 **ending the turn** exactly as any other Blocker arrival does (§ Resume step 2
@@ -1334,8 +1334,9 @@ runtime. A positive registry row whose `File` is absent or unreadable in
   mirroring § Session-limit fallback for a crashed reviewer — a deviation from
   the fresh-context guarantee, flagged explicitly in `STATUS.md`, the review
   retro entry, and the PR description.
-- **Gated angle** (a non-`always` row — `ui`, `data-safety`, or a repo-specific
-  predicate) → may instead **skip and record** the drop. (This is why a missing
+- **Gated angle** (a non-`always` row — `ui`, `data-safety`,
+  `design-conformance`, or a repo-specific predicate) → may instead **skip and
+  record** the drop. (This is why a missing
   file is treated more leniently than § Session-limit fallback treats a *crashed*
   gated reviewer: a crash means the angle is still configured to run, but a
   missing file in a fork can mean the angle was deliberately removed there.)
