@@ -41,8 +41,9 @@ the flows through them, the states each must handle, the interaction contract,
 the components reused vs added, the cohesion anchors, and the assertions — the
 things a canvas cannot say and a reader (a human, or a fresh-context subagent)
 needs alongside it. Visual truth lives on the canvas — and, when the adapter can
-`export`, in a committed snapshot a later release adds; descriptive truth lives
-in `design.md`. The descriptive half is **tool-independent and not optional**:
+`export` (or `read` well enough to reconstruct one, `export: via-read`), in a
+committed static snapshot; descriptive truth lives in `design.md`. The
+descriptive half is **tool-independent and not optional**:
 every downstream stage — `ui-test-plan`, `architecture`, `ui-review` — is a
 fresh-context subagent reading the repo, not the canvas, and a spec shipped six
 months ago must stay readable when the canvas is gone. Keep `design.md` current
@@ -50,6 +51,18 @@ with the canvas at **every pause point**: first presentation, each revision
 round, and approval (where the gate freezes it). Same sections as a repo-side
 run, same downstream consumers, same exact flow-name contract `ui-test-plan`
 depends on.
+
+**The committed snapshot's directory contract.** When export or
+export-via-read applies, the snapshot lands at
+`docs/specs/<dated-slug>/design/`, a sibling of `design.md` — never inside it,
+never a substitute for it. It must be **self-contained**: assets inlined or
+co-located under that directory as relative paths, no network fetches, such
+that opening `docs/specs/<dated-slug>/design/index.html` straight from disk
+(no dev server, no auth) renders correctly. When the tool's own export isn't
+self-contained, inline the assets **at write time** — never commit a snapshot
+that silently 404s half its assets the moment someone opens it offline.
+Mechanics — when it is (re-)written, by which actor, and the README that must
+accompany it — are in § Persist step 9 and § Sync mode below.
 
 **The lane split — who holds the MCP connection.** Whether the *spawned* design
 stage can touch the canvas is decided by what `MATERIA.md § Design tool`'s
@@ -243,6 +256,59 @@ standalone runs apply it on first use.
    approval block in that lane. (At an **approve** there is no re-authoring —
    `ship-spec/SKILL.md` § Design gate's edited-body rule governs.)
 
+   **Committed snapshot (export).** On first authoring and on every full
+   revision round (the re-spawned-with-feedback path just above — never sync
+   mode; § Sync mode wires that re-export separately) — once the canvas-owned
+   content is current — export or reconstruct the canvas as the self-contained
+   static snapshot described in § Canvas authoring & the paired artifact's
+   directory contract, performed by the **same actor** who holds the MCP
+   connection for this touch. That's the lane split's existing "and export
+   alike" rule (§ Canvas authoring & the paired artifact, "The lane split"
+   subsection) — nothing new to decide here, just invoke it for this write.
+   Skip cleanly — print one line naming what was skipped, per
+   `MATERIA.md § Design tool`'s Degradation conventions — when either: no
+   `author` adapter is configured (the repo-side lane; there is no canvas to
+   export), or the adapter has neither `export` nor `read` to reconstruct from
+   (that Degradation entry: "no snapshot, and the design-conformance check
+   degrades per its own ladder"). A skipped snapshot never blocks the rest of
+   this step.
+
+   Before writing the directory, run
+   `git check-ignore docs/specs/<dated-slug>/design/`. A match is a **hard
+   stop** — never a silent skip and never a quiet no-commit: write
+   `Blocker: design snapshot path is git-ignored — <path> — remove or adjust
+   the local ignore rule, then resume` to `STATUS.md` and end the turn (the
+   same shape as this skill's other hard stops, e.g. the rounds-exhaustion
+   Blocker in `ship-spec/SKILL.md` § Revision bound). In the standalone lane
+   (below) the stage owns `STATUS.md` already and writes this directly; in the
+   orchestrator lane (below), where `STATUS.md` stays orchestrator-owned, the
+   stage instead fails the run and returns this exact `Blocker:` line in its
+   return payload — the orchestrator writes it verbatim to `STATUS.md`,
+   commits, and surfaces it to the human (`ship-spec/SKILL.md` § STATUS.md
+   ownership (orchestrator lane) is the normative home for this generic
+   spawned-stage-Blocker hand-off, which also covers step 7's pre-existing
+   assertions hard rule — neither was previously wired to an orchestrator-side
+   receiving mechanism until this change specifies one).
+
+   Alongside the exported assets, write `README.md` from
+   `docs/specs/_templates/design-snapshot-readme.md` (read that template, do
+   not inline its content here), filled in with this run's specifics: the
+   `semantic-structure: yes/no` line **verified against the actual exported
+   markup** (never asserted from how the design merely looks on the canvas),
+   and — only when this adapter is `export: via-read` — the honesty clause
+   naming which of the three fabrication-contract properties (`fabricated`,
+   `faithful`, `semantic structure`) this reconstruction actually preserves.
+   This README lives under `docs/specs/**`, so it is bound by the
+   spawn-contract's no-live-markdown-links rule (arrow form only,
+   `text → path`) — `ship-spec/resources/spawn-contract.md` Block 1.
+
+   The snapshot is a **sibling directory**, never `design.md` itself: this
+   changes nothing about the sole-writer split above or the `design_hash`
+   recipe (frontmatter-excluded, body-only, per `ship-spec/SKILL.md`
+   § `design_hash`). Like `docs/specs/<dated-slug>/ui-proof/`, the directory's
+   presence is checked directly — it gets no frontmatter pointer of its own;
+   the `canvas:` keys' job is change-detection, not snapshot-existence.
+
    **Orchestrator lane (spawned by `ship-spec`/`fix-bug`):** do **not** tick
    `STATUS.md`, do **not** commit it, and do **not** touch the approval block —
    the orchestrator owns `STATUS.md`, the design row, `Next:`, and the whole
@@ -340,6 +406,17 @@ authoring run. The normative flow (when it fires, how the round is counted) is
   descriptive). Canvas-owned = what the read-back can reproduce — the
   screen/state/layout facts the canvas holds; the descriptive-judgement
   content (flow reasoning, cohesion anchors, assertions) is never re-derived.
+- **Snapshot re-export.** When the adapter can `export` (or reconstruct via
+  `read`), sync mode's outputs also include a re-derived committed snapshot
+  at `docs/specs/<dated-slug>/design/` (§ Canvas authoring & the paired
+  artifact's directory contract) plus its `README.md`, from the same serialized
+  canvas read-back that re-derives the body above — same inputs, same
+  self-contained requirement, same git-ignore guard (§ Persist step 9). Who
+  actually performs it in the operator-only-MCP world (where the spawned sync
+  unit never touches MCP) follows the same actor-per-lane rule as everything
+  else in this section (§ Canvas authoring & the paired artifact, "The lane
+  split") — `ship-spec/SKILL.md`'s Actor split paragraph is the normative home
+  for spelling that out, not restated here.
 - **Precedence:** operator hand-edits are **authoritative** for the sections
   they touch. Sync re-derives **only** canvas-owned content and never overwrites
   operator-authored descriptive edits — the canvas cannot produce an
