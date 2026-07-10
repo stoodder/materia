@@ -207,6 +207,15 @@
          frontmatter declares `design_gate:`; durable through dequeue,
          like the `Surfaces:` line above) -->
 
+<!-- Architecture-bounce convention (ship-spec/SKILL.md § Design gate —
+     Architecture bounce is the normative home): when the architecture stage
+     finds the approved design infeasible, the orchestrator records one line
+     here per bounce — durable and resumable, since the ≤2 bounce bound is
+     counted from these lines:
+       design-revision (architecture): <reason> (bounce <n>/2)
+         (<reason> is the short-form infeasibility cause — what cannot be built
+          as designed; <n> is the bounce ordinal, 1 or 2) -->
+
 <!-- Epic-gate-decision convention — like `review`, the `reconcile-epic`
      stage has no checkbox row (it edits artifacts outside this spec folder);
      the orchestrator records one of these lines here after evaluating the

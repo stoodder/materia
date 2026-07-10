@@ -172,6 +172,34 @@ standalone runs apply it on first use.
 - It's concrete enough that `plan-tasks` can decompose it without re-deciding.
 - `STATUS.md` updated; architecture committed + pushed.
 
+## When the approved design is infeasible (bounce to the design gate)
+
+On a UI run this stage maps an **approved** `design.md` onto the codebase. If
+that mapping shows the design **cannot be built as designed** — the data model,
+the API surface, or an existing contract cannot support what it demands without
+contradicting `spec.md` or the approved design's **own intent** — do **not**
+silently design around it. Silent accommodation is exactly how the approved
+design and the shipped screen diverge at the one moment you lose the ability to
+say why: the architecture quietly deviates, review has no signal, and the gate
+the operator signed no longer describes what ships.
+
+The bar is **infeasibility, not preference.** Architecture gets no taste veto —
+"I would lay it out differently" is never a bounce. The test is "cannot be built
+as designed," and the return must name it concretely: **what** is infeasible,
+**why** (the constraint that blocks it), and **what change** to the design would
+make it feasible.
+
+- **Orchestrator lane** (spawned by `ship-spec`): return outcome
+  `design-revision-requested` to the caller in the subagent return message,
+  carrying that concrete reason — instead of writing an `architecture.md` that
+  quietly deviates. Write **no** `architecture.md` this pass; the orchestrator
+  routes the reason back through the design gate as a revision
+  (`ship-spec/SKILL.md` § Architecture hand-off), and re-spawns you against the
+  re-approved design.
+- **Standalone lane:** report the infeasibility to the operator and **stop**,
+  same bar — the design is the operator's to revise before architecture can
+  proceed. Do not write an architecture that deviates from it.
+
 ## Non-product features (no product surface)
 
 Step 3 above is laid out for product features that touch the data model,

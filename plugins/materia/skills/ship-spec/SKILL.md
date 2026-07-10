@@ -76,8 +76,11 @@ Then:
 1. Read its `STATUS.md`. Find the first unchecked stage (and within implement,
    the first task in `tasks.md` not `[x]`).
 2. If `Blocker` is set, surface it to the human and stop until resolved.
-   **Sole exception** (scoped to this exact Blocker string): when the Blocker
-   is `design-gate revision bound exhausted (rounds=3)` **and** the operator's
+   **Sole exception** (scoped by **prefix match** to
+   `design-gate revision bound exhausted (rounds=3)` — so the architecture-bounce
+   cause appended after that prefix is covered too, while every other Blocker
+   stays exact-match): when the Blocker **begins with**
+   `design-gate revision bound exhausted (rounds=3)` **and** the operator's
    message carries `approve` or `abandon`, treat the reply as resolving the
    Blocker — clear it and route the verb through step 0's gate check below
    (§ Design gate — revision bound carve-out). A further `revise` does not
@@ -217,7 +220,7 @@ the operator saying up front "don't wait for me."
     auto-accepted; this PR auto-merges once CI is green.`
 - **What does NOT change:** Blockers still stop the run. Autopilot never
   overrides a `Blocker`, widens a loop bound (review ≤3, docs ≤2, gate ≤3,
-  design-gate ≤3, CI-fix ≤3), skips a gate (e2e-coverage, screenshot-presence,
+  design-gate ≤3, architecture-bounce ≤2, CI-fix ≤3), skips a gate (e2e-coverage, screenshot-presence,
   epic, UI-surface, data-surface), force-pushes, or **merges under bootstrap
   grace** (§ Merge watch step 6 — graced CI is not green CI). Autopilot also
   **never un-abandons a parked design** — resuming an `abandoned` gate is an
@@ -679,15 +682,19 @@ section governs (§ Sole-writer split carve-out 1 for the feedback commit,
 
 Counted by `approval.rounds` — the durable counter the orchestrator increments
 and commits on **every** revision, whatever the channel (the revise verb, a
-hand-edit re-present, and a detected canvas edit are the same loop through
-different doors; design the counter for channels). At `rounds` ≥ 3, a further
+hand-edit re-present, a detected canvas edit, and an **architecture bounce**
+(§ Architecture bounce) are the same loop through different doors; design the
+counter for channels). At `rounds` ≥ 3, a further
 revision request → write
 `Blocker: design-gate revision bound exhausted (rounds=3)` and end the turn.
 The bound limits **revisions, not decisions**:
 when surfacing this Blocker, name approve/abandon as the legal in-thread
 resolutions — such a reply clears the Blocker and routes through the gate
-normally (this carve-out is scoped to this Blocker string only, and its
-resume-side wiring lives at § Resume step 2's sole exception).
+normally (this carve-out is scoped to this Blocker string by **prefix match** —
+`design-gate revision bound exhausted (rounds=3)`, so the architecture-bounce
+cause appended after that prefix still resolves in-thread while every other
+Blocker stays exact-match — and its resume-side wiring lives at § Resume step 2's
+sole exception).
 
 ### `design_hash` — the single normative definition
 
@@ -813,6 +820,55 @@ current baseline to diff against. The sync unit's body writes and the
 `canvas:`-key refreshes ride the gate-marked commit like every gate commit
 (§ Gate commits).
 
+### Architecture bounce (design-revision-requested)
+
+The `architecture` stage may find the approved design **infeasible** — buildable
+only by contradicting `spec.md` or the design's own intent (`architecture/SKILL.md`
+§ When the approved design is infeasible). Rather than write an `architecture.md`
+that quietly deviates, it returns outcome `design-revision-requested` with a
+concrete reason; the orchestrator intercepts that return (§ Architecture hand-off)
+and routes the reason back through this gate as a **revision — the bounce**. The
+bounce is one of the revision channels this gate's bound counts (revise verb ·
+hand-edit re-present · detected canvas edit · **architecture bounce** — § Revision
+bound), with these mechanics:
+
+- **One increment at dispatch.** Incrementing `approval.rounds` by one is this
+  arrival's single increment (the one-per-arrival clamp — the bounce *is* the
+  arrival). Re-spawn the `design` stage as a **full revision** (never sync mode —
+  the design body changes), passing the reason as the feedback: the stage
+  produces a new body and appends the round to `## Feedback log` (round number,
+  the reason recorded as what-was-asked, **attributed to architecture**), and —
+  canvas lane — re-authors the canvas per the lane split (`design/SKILL.md`
+  § Canvas authoring & the paired artifact). The revision commit refreshes the
+  `canvas:` version baseline (§ Gate-arrival sync — The `canvas:` baseline) so the
+  **next** gate arrival's detection sees no *additional* change — no double-count.
+- **The bounce re-arms the gate.** Reset the approval block to a bare
+  `status: pending` carrying only the incremented `rounds` — the superseded
+  `by:` / `at:` / `design_hash` fields are **dropped** (a pending block never
+  carries approval-era fields — § `design_hash`; supersession is recorded in the
+  `## Feedback log` entry and the § Notes line, never in the block). Set
+  `Next: design-approval (awaiting operator)`, append the § Notes line
+  `design-revision (architecture): <reason> (bounce <n>/2)` (short-form reason;
+  convention in `docs/specs/_templates/status.md` § Notes), and commit with the
+  gate marker (§ Gate commits). The re-presented design then routes through this
+  gate **normally** (§ Gate arrival · § The gate is ternary): the human sees what
+  architecture forced. On an autopilot run the re-armed arrival auto-resolves per
+  § Autopilot's gate rules; the § Notes line still lands as the audit record.
+- **Bounce bound — ≤2 per run.** Count the existing
+  `design-revision (architecture):` § Notes lines (durable and **resumable** — the
+  count is read from § Notes, never held in memory, so it survives across
+  sessions). A **third** `design-revision-requested` →
+  write `Blocker: architecture design-revision bound exhausted (bounces=2)` and
+  end the turn.
+- **Exhaustion precedence.** A bounce is capped by **both** bounds — its own ≤2
+  and the gate's ≤3. A bounce arriving when `approval.rounds` is already 3 cannot
+  dispatch a revision: the rounds Blocker fires instead, carrying the real cause —
+  `Blocker: design-gate revision bound exhausted (rounds=3) — architecture reports design infeasible: <reason>`.
+  The approve/abandon carve-out still applies to this combined string — it is
+  covered by the § Revision bound prefix match (and § Resume step 2's sole
+  exception), which keys on the `design-gate revision bound exhausted (rounds=3)`
+  prefix.
+
 ### Presentation — a capability ladder
 
 Later prompts extend the remaining rung; the gate itself never changes:
@@ -853,15 +909,21 @@ not the adapter.
 
 ### Advanced-past-the-gate predicate (pinned)
 
-The run has advanced past the gate **iff any stage row after design is ticked
-in `STATUS.md`, or `Next:` names a stage beyond the gate** (equivalently:
-`Next:` is neither `design-approval (awaiting operator)` nor
-`design-abandoned (parked)`). **Never** key it on `status: approved` alone.
-Once past, the approval block — hash included — is a **frozen audit record**:
-Resume step 0 no longer routes on it; later body writes (course-correction
-banners, future debt banners) are expected and legitimate and must **never**
-bounce a reviewed run back to the gate — the hash answers "what did the human
-approve," not "has the file changed since."
+The run has advanced past the gate **iff `Next:` names a stage beyond the
+gate** — that is, `Next:` is neither `design-approval (awaiting operator)` nor
+`design-abandoned (parked)`. This `Next:`-based test is the **normative** one.
+The ticked-rows form ("any stage row after design is ticked") is **no longer
+equivalent** to it: an architecture bounce (§ Architecture bounce) can re-arm a
+**mid-run** gate — resetting the block to `pending` and `Next:` to
+`design-approval (awaiting operator)` — while the post-design rows (`ui-test-plan`,
+`architecture`) are **already ticked**, so a ticked-row scan would walk right past
+a legitimately re-opened gate. Key on `Next:`, never on the ticked rows, and
+**never** on `status: approved` alone. Once past — `Next:` beyond the gate — the
+approval block, hash included, is a **frozen audit record**: Resume step 0 no
+longer routes on it; later body writes (course-correction banners, future debt
+banners) are expected and legitimate and must **never** bounce a reviewed run
+back to the gate, because they never reset `Next:` or the block — the hash
+answers "what did the human approve," not "has the file changed since."
 
 ### Standalone-first lane
 
@@ -888,6 +950,31 @@ feedback commit first, then the stamp, reason `--approve-design on
 invocation`) — then rewrite the armed line to
 `design-gate: auto-approve consumed (--approve-design)`. Arming never overrides
 the rounds bound or a set Blocker. Redundant-but-legal under `--auto`.
+
+## Architecture hand-off
+
+`architecture` (stage 4) returns one of two outcomes — mirroring how § Intake
+hand-off intercepts intake's `partial`:
+
+- **`ok`** — `architecture.md` is written and committed; continue to `plan-tasks`
+  (stage 5) as always.
+- **`design-revision-requested`** — on a UI run, architecture found the
+  **approved** design infeasible: it cannot be built without contradicting
+  `spec.md` or the design's own intent, so it returned a concrete reason
+  (what is infeasible · why · what change would make it feasible —
+  `architecture/SKILL.md` § When the approved design is infeasible) instead of
+  writing an `architecture.md` that quietly deviates. **No `architecture.md`
+  landed this pass.**
+
+**The orchestrator intercepts `design-revision-requested`** and routes the reason
+back through the design gate as a **revision — the bounce**: re-spawn `design`
+with the reason as feedback, re-arm the gate, re-present it, and re-run
+`architecture` only once the revised design is re-approved — all under the
+mechanics and the **≤2 bounce bound** pinned in § Design gate — Architecture
+bounce (which also enforces the gate's own ≤3 revision bound and the exhaustion
+precedence between the two). This is the **active** half of § Course corrections:
+a design contradiction caught while the design stage can still be re-run is
+revised-and-re-approved, not banner-cordoned.
 
 ## Tier routing
 
@@ -1451,6 +1538,19 @@ the fix in place and re-flow the artifacts **asymmetrically**:
 - **`retro.md` carries the original-decision story** — the entry where the
   wrong decision landed records what was decided and why; the entry where the
   correction landed records the flip and the fix.
+
+**The active variant — a design bounce, not a banner.** When the downstream stage
+is `architecture` and the artifact it contradicts is the **approved design**, the
+correction is **not** a banner cordoning stale `design.md` prose — it routes
+through the gate as an **architecture bounce** (§ Architecture hand-off; § Design
+gate — Architecture bounce): architecture returns `design-revision-requested`, the
+design is revised and **re-approved** rather than frozen-with-a-caveat, so the
+gate the operator signs still describes what ships. This is not a parallel
+mechanism — it is the same course-correction doctrine routed through the live
+design stage. The banner path above still governs the cases the bounce cannot
+reach: a correction discovered after the design stage can no longer be re-run
+(post-implementation), or a non-design artifact. Revise-and-re-approve while the
+design stage is still live; banner-cordon once it isn't.
 
 ## Retrospective capture (per-run `retro.md`)
 
