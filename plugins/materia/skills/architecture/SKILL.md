@@ -17,6 +17,10 @@ usable standalone.
   UI-gated (`ship-spec/SKILL.md` § Review — § UI-surface gate). On a non-UI
   run, work from `spec.md` alone and own the operator-surface enumeration
   yourself (§ Non-product features).
+- `design.md`'s `## Assertions` (checkable statements about the implemented
+  screens) are part of the approved contract the mapping must honor; never
+  render one unbuildable silently — see § When the approved design is
+  infeasible below.
 
 ## Harness noise
 

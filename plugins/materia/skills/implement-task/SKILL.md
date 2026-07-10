@@ -98,6 +98,11 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
    comes from reuse, not from re-deriving tokens per screen; `ui-review`
    compares your screens against the anchors side-by-side.
 
+   **UI work honors its `## Assertions`.** When `design.md` has an
+   `## Assertions` section, build to satisfy each line — downstream lanes
+   check them (the e2e flows `ui-test-plan` derives guard the
+   runtime-behavior ones), but the requirement is set here.
+
 4. **Tests.** Add/extend tests for every source module you touch, following
    the repo's testing standard (`docs/standards/testing.md`).
 
