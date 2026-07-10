@@ -56,6 +56,10 @@ Two independent version axes:
   scaffold — a repo at the latest schema has the tracked artifacts in their canonical places
   and a current project-state file, not necessarily a fully reconciled scaffold (MATERIA.md
   sections, the review-angle library, and other prose are still reconciled by hand). The
+  review-angle library is hand-reconciled in its **membership** too, not only its prose:
+  adding or removing a `.materia/review-angles/<slug>.md` angle file (and its registry row)
+  is outside the tracked contract and does **not** bump the schema — `inspect()` never scans
+  that library, so a bump would promise a drift signal doctor cannot emit. The
   schema changes **only** when that installed-artifact contract actually changes.
 
 Multiple plugin versions may share one `artifactSchema`. Do **not** bump the schema just

@@ -61,7 +61,7 @@ Merge watch sections.
 | 4. Architecture | `architecture` | `architecture.md` (reads `docs/`, reuses resources; on non-UI runs also carries the operator-surface enumeration design would) |
 | 5. Plan | `plan-tasks` | `tasks.md` |
 | 6. Implement | `implement-task` | code + tests per task (no per-task review — see row 7) |
-| 7. Review | — (orchestrator-spawned review fan-out) | the angles in the `MATERIA.md` § Review angles registry, each defined in `.materia/review-angles/` (correctness · security · spec-adherence+regression · behavior · ui UI-gated · data-safety data-gated seed the library); remediation tasks loop back; UI runs must land committed `ui-proof/` screenshots (screenshot-presence check) |
+| 7. Review | — (orchestrator-spawned review fan-out) | the angles in the `MATERIA.md` § Review angles registry, each defined in `.materia/review-angles/` (correctness · security · spec-adherence+regression · behavior · ui UI-gated · data-safety data-gated · design-conformance design-gated seed the library); remediation tasks loop back; UI runs must land committed `ui-proof/` screenshots (screenshot-presence check) |
 | 8. docs-sync | `docs-sync` | doc edits committed (cross-cutting docs reconciled under intent-oracle rules) |
 | 9. docs-audit | `docs-audit` | HIGH/MEDIUM/LOW findings or clean verdict; loop back to docs-sync on HIGH/MEDIUM |
 | 9½. reconcile-epic | `reconcile-epic` | **epic-gated** (spawned only when the proposal carries an `epic:` key; skipped+recorded otherwise): syncs the member's epic under [`docs/epics/`](../epics/README.md) and cascades invalidated content into its pending sibling proposals — the edits ride this run's PR |

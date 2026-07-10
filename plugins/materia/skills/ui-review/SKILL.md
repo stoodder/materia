@@ -193,8 +193,9 @@ This skill does **not**:
   orchestrator has already evaluated the gate and spawned it.
 - Author or modify e2e spec files — those are written by the per-feature
   e2e-authoring task derived from `ui-test-plan.md`.
-- Perform correctness, security, spec-adherence, or data-safety review — those
-  are other angles in the `ship-spec` § Review fan-out.
+- Perform correctness, security, spec-adherence, data-safety, or
+  design-conformance review — those are other angles in the `ship-spec` § Review
+  fan-out.
 - Automate visual baseline diffing — judgment is qualitative, Claude reviewing
   rendered output against the repo's visual standards rubric.
 - Run a subset of the suite — the full `test:e2e` run is the default;

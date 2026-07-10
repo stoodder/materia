@@ -21,7 +21,7 @@ machinery ship verbatim. The tier machinery includes `MATERIA.md` § Skill
 routing — the per-skill / per-role model/effort assignments (including their
 `opus` fallbacks), which are not stack-specific and ship exactly as written,
 like the § Effort set and § Coercion. The **review-angle library** ships
-verbatim the same way: the six canonical `.materia/review-angles/` files and
+verbatim the same way: the seven canonical `.materia/review-angles/` files and
 their `MATERIA.md` § Review angles registry rows are not stack-specific — the
 survey only *appends* any repo-specific angles (Phase 4). Only the `{{slots}}`
 and the stack-specific standards docs are authored fresh, from the survey
@@ -43,7 +43,7 @@ Read tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path) — e.g.
   `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/product.md` brief template.
 - `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/scripts/check-docs.sh` — the portable docs checker.
 - `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/review-angles/**` — the review-angle
-  library (the six canonical angle definitions + the directory `README.md`),
+  library (the seven canonical angle definitions + the directory `README.md`),
   materialized so projects can fork or extend it; the `MATERIA.md` § Review
   angles registry maps each to its File / Gate / Tier.
 - `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/project.json` — the project-state
@@ -65,7 +65,7 @@ branch-and-PR discipline — there is nothing to diff against yet):
 - `docs/**` — the skeleton, the filled `docs/product.md` product brief, plus
   the generated stack-specific standards.
 - `.materia/scripts/check-docs.sh`.
-- `.materia/review-angles/**` — the review-angle library (six canonical angle
+- `.materia/review-angles/**` — the review-angle library (seven canonical angle
   files + `README.md`), materialized verbatim; repo-specific angles append as
   new files + `MATERIA.md` § Review angles rows.
 - `.materia/project.json` — the project-state file, materialized verbatim so the
@@ -174,7 +174,7 @@ rest). No skill is removed from the repo.
 | How will agents *see* it? (browser automation — Playwright is the default for web — TUI capture, screenshot tooling) | § Eyes | — |
 | Will design work happen on an external design tool over MCP? (`claude-design` is the default offer; § Design tool's init comment carries the known-adapter catalog and each tool's capabilities) | § Design tool | `none` (also the default when the engineer skips the question); the design stage authors `design.md` repo-side and every tool-dependent behavior self-gates per § Design tool's degradation rules |
 | Does it persist data? | § Surface gates § Data-affecting, § Data layer | both `none`; the ship-spec data-safety review angle never runs (the orchestrator's per-run data gate) |
-| Any extra review angles the domain demands (a11y, perf budgets, compliance)? | § Review angles registry + a `.materia/review-angles/<slug>.md` file | absent → just the canonical six; a positive answer **appends** an angle file + a registry row (File / Gate / Tier) |
+| Any extra review angles the domain demands (a11y, perf budgets, compliance)? | § Review angles registry + a `.materia/review-angles/<slug>.md` file | absent → just the canonical seven; a positive answer **appends** an angle file + a registry row (File / Gate / Tier) |
 | Anything unusual about cold-start (runtime versions, codegen, services)? | § Environment preflight | — |
 | Which models are available for spawn routing? (Sensible default: `haiku`/`sonnet`/`opus`/`fable` — all listed; `fable` is assigned nowhere by default, so it's never spent unless an operator assigns it in § Skill routing. Trim a row only if the plan genuinely can't spawn it, keeping `opus` as the protected fallback anchor.) This fills § Model set only — the per-skill § Skill routing assignments and their fixed `opus` fallbacks are **not** surveyed; they ship verbatim. | § Model set | — (a declared model outside the set coerces to the fallback) |
 
@@ -186,7 +186,7 @@ feel adjectives · taste references · principles), the stack, the § Gate
 table, the surface-gate patterns, the Eyes choice, the design-tool answer
 (tool + capabilities, or `none`), the § Model set
 (the § Skill routing assignments and their fallbacks ship verbatim — not
-surveyed), the review-angle library (the canonical six ship verbatim; note any
+surveyed), the review-angle library (the canonical seven ship verbatim; note any
 repo-specific angle to be appended from Phase 4),
 the sections that will be marked `none` (and which UI/data-gated skills that
 makes inert), and the bootstrap
@@ -227,7 +227,7 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
    angle**, author it now as a pair: write `.materia/review-angles/<slug>.md`
    (two-key `name`+`description` front matter + body, per that directory's
    `README.md`) **and** append its row to § Review angles (File / Gate / Tier).
-   The canonical six copied in step 1 stay verbatim.
+   The canonical seven copied in step 1 stay verbatim.
 4. **Write `CLAUDE.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/CLAUDE.md`: same
    treatment. The folder map documents the *intended* layout the bootstrap epic
    will create.

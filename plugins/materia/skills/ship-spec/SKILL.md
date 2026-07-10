@@ -1213,13 +1213,14 @@ up-to-date base.
 
 Spawn reviewers as a **single message**, one `Agent` call per **applicable**
 angle. **Iterate the `MATERIA.md` § Review angles registry** — the canonical
-six ship pre-filled and any repo-specific rows append below, iterated the same
+seven ship pre-filled and any repo-specific rows append below, iterated the same
 way (one reviewer per applicable row; there is no separate "repo-specific
 angles" step). For each row:
 
 1. **Evaluate its Gate over the cumulative diff.** `always` → unconditional;
    `ui-affecting` → per § UI-surface gate; `data-affecting` → per § Data-surface
-   gate; a repo-specific predicate → as the row states. Record every negative
+   gate; `design-bearing` → per the **design-conformance gate** (below);
+   a repo-specific predicate → as the row states. Record every negative
    decision in `STATUS.md` (`<angle>-review: skipped (<reason>)`), exactly as
    the UI/data gates already do.
 
@@ -1234,9 +1235,16 @@ angles" step). For each row:
    convergence check, and session-limit fallback as every other angle. The
    **Markdown-only exemption** and **Trivial-diff threshold** collapses apply to
    every row — repo-specific rows included — dropping an angle unless a surface
-   gate of its own (`ui-affecting` / `data-affecting` / a repo-specific
+   gate of its own (`ui-affecting` / `data-affecting` / a repo-specific *diff*
    predicate) is independently positive (as `data-safety`'s can be on a
-   seed-data-only diff).
+   seed-data-only diff). **`design-conformance` is the exception:** its
+   `design-bearing` gate is **artifact-based** (design.md + declared surface +
+   Eyes), not a diff-surface gate, so a positive gate does **not** keep it alive
+   through a collapse — it drops on both the markdown-only exemption and the
+   trivial-diff threshold with the rest (a design-bearing run whose cumulative
+   diff is markdown-only or trivial is nearly a contradiction). Only diff-surface
+   gates survive a collapse; the survive-if-positive clause never reaches an
+   artifact-based gate.
 
 On the markdown-only exemption path the `spec-adherence` angle spawns at
 `haiku/low` — the **Markdown-only exemption** paragraph below carries that
@@ -1254,6 +1262,51 @@ server stack (database + Eyes toolchain + dev server), mirroring § Orchestrator
 behavioral-verify lane — a standing contract, not a per-run deviation. The
 orchestrator records the lane decision and the fresh-context deviation in
 `STATUS.md`, the review retro entry, and the PR body.
+
+**The design-conformance gate.** `design-bearing` is positive **iff** all three
+hold: the run resolved to a **design-bearing (UI) surface** (the recorded
+`ui-surface (predictive)` decision — § UI-surface gate; the design-bearing set
+is defined in `docs/specs/_proposed/README.md` § Field roles → `surfaces`),
+`design.md` exists with a **non-empty `## Assertions` block**, and `MATERIA.md`
+§ Eyes is not `none`. This is an **artifact/config** predicate, not a diff
+predicate — which is why the collapse paths drop it (above) and why it is
+evaluated from the run's artifacts and recorded decisions, never from the
+cumulative diff. A negative decision is recorded like any other
+(`design-conformance-review: skipped (<reason>)`).
+
+**Design-conformance is harness-first (orchestrator lane).** Its inputs come
+from the § Eyes design conformance harness, which needs the app up and so runs
+in the § Orchestrator behavioral-verify lane — never inside a fresh-context
+spawn. So when the `design-bearing` gate is positive **and the fan-out has not
+collapsed** — evaluate the markdown-only exemption and trivial-diff threshold
+first, both of which drop design-conformance, and skip the harness entirely when
+either fires (never provision the app only to discard the angle) — **before** the
+fan-out message the orchestrator:
+
+1. Runs the harness in the behavioral-verify lane: provision per `MATERIA.md`
+   § Eyes, drive both sides, write the findings JSON (the gitignored diagnostic)
+   plus the labeled captures under `docs/specs/<dated-slug>/design-conformance/
+   captures/`, then tear down — teardown is **its own command**, never chained
+   with follow-up work (§ Orchestrator behavioral-verify lane).
+2. Spawns the `design-conformance` reviewer in the same fan-out message as every
+   other applicable angle, but with its context built from the harness output:
+   the `## Assertions` block, the findings **content inlined into the brief**
+   (never the `.claude/review-logs/` path — reviewers are forbidden that
+   directory; the inline follows the dismissed-findings carry-forward
+   precedent), and the readable capture path above. **Not** the diff, `tasks.md`,
+   or the implementation reasoning.
+
+The harness re-runs in this lane **before each review round's fan-out** — § Loop
+step 4 re-spawns the angles over the new cumulative diff, so each round's
+design-conformance angle must verify against the current tree, never stale
+round-1 findings.
+
+**Harness failure follows the § Session-limit fallback shape** — never a silent
+drop. Record it in `STATUS.md` (`design-conformance: harness failed (<reason>) —
+angle ran on assertions + captures alone`), and spawn the angle in its degraded
+mode: it works from the `## Assertions` block plus whatever captures exist
+(§ Eyes names the degraded/one-sided capture modes). The angle still runs; only
+the deterministic findings are absent.
 
 **Markdown-only exemption.** If the cumulative diff contains no source-code
 changes (no changed file outside markdown/docs) and no test additions, skip
@@ -1427,8 +1480,9 @@ Every reviewer returns findings as a list of JSON-shaped records:
   "line_start": 42,
   "line_end": 47,
   "severity": "HIGH" | "MEDIUM" | "LOW",
-  "category": "correctness" | "security" | "spec-adherence" | "regression" | "behavior" | "coverage" | "simplicity" | "ui" | "data-safety" | "<repo-specific angle>",  // category ∈ the kebab angle `name` from the MATERIA.md § Review angles registry, OR a documented sub-category (`coverage`/`simplicity` under `correctness`, `regression` under `spec-adherence`)
+  "category": "correctness" | "security" | "spec-adherence" | "regression" | "behavior" | "coverage" | "simplicity" | "ui" | "data-safety" | "design-conformance" | "<repo-specific angle>",  // category ∈ the kebab angle `name` from the MATERIA.md § Review angles registry, OR a documented sub-category (`coverage`/`simplicity` under `correctness`, `regression` under `spec-adherence`)
   "recommendation": "revert" | "modify" | "keep_with_concern",
+  "classification": "design-debt" | "not-checkable",  // OPTIONAL — the design-conformance angle only; absent on every other finding. `design-debt` = correct code, stale/infeasible design (not a code fix); `not-checkable` = a runtime-behaviour assertion whose only checker is the e2e lane (informational). Both are excluded from the fix loop AND the convergence aggregate and folded into the review retro entry — never a code-fix demand (§ Loop on findings).
   "description": "<one-sentence reason>"
 }
 ```
@@ -1452,7 +1506,36 @@ review-loop commit messages plus the `STATUS.md` notes.
 
 ### Loop on findings
 
-1. Aggregate findings across angles, deduping by `<file>:<line_start>`.
+1. Aggregate findings across angles, deduping by `<file>:<line_start>`. When two
+   findings collide on that key, an **unclassified** finding (implementation drift, or any
+   non-design-conformance angle) **wins** over a `classification`-carrying one — so a real
+   fix is never masked by a co-located design-debt entry.
+
+   **Classified design-conformance findings are pulled out here — before the convergence
+   check and the fix loop.** A design-conformance finding carrying `classification:
+   design-debt` or `classification: not-checkable` (§ Structured finding schema) is **not** a
+   code-fix item: the code may be right and the design wrong or infeasible (`design-debt`), or
+   the assertion's only checker is the e2e lane (`not-checkable`). Handle each as
+   **excluded-with-disposition** — remove it from this round's aggregate entirely, so it counts
+   toward **neither** the convergence HIGH/MEDIUM test (step 2) **nor** inline-fix /
+   remediation-task routing (step 3). **Do not add it to the sub-condition-B accumulated
+   dismissed set** — that set is keyed `<file>:<line_start>` and gates convergence by membership,
+   so seeding it with a design-debt key would let a *later* real HIGH at the same line converge
+   silently; removal from the aggregate is already complete exclusion without it. Carry the
+   disposition forward only to the **design-conformance reviewer's own brief** (a
+   `prior-round classification: <finding> — <design-debt|not-checkable>` line, separate from the
+   dismissed-findings carry-forward) so the angle keeps context without re-litigating. The
+   **orchestrator** (sole retro
+   writer) folds every classified finding into the review retro entry (§ Retrospective capture)
+   and **also tags every design-conformance implementation-drift finding it fixed** in that same
+   entry — each tagged with its design-drift category word in the bullet prose, so the full
+   taxonomy is reachable: the code patterns (`assertion-unmet`, `token-hardcoded`) as well as the
+   design patterns (`design-infeasible`, `design-underspecified`, `assertion-unfalsifiable`).
+   `triage-retros` clusters on those words (it has no category field; the category list lives in
+   the retro template's design-conformance drift-signal comment).
+   A **material** (`HIGH`/`MEDIUM`, confirmed) `design-debt` finding additionally gets a
+   `design.md` course-correction banner, written by the orchestrator per § Course corrections;
+   `not-checkable` is informational only — no banner, and no backlog item by itself.
 
 2. **Convergence check (early exit).** A round is **converged** when either
    sub-condition holds (OR logic):
@@ -1614,6 +1697,20 @@ the fix in place and re-flow the artifacts **asymmetrically**:
 - **`retro.md` carries the original-decision story** — the entry where the
   wrong decision landed records what was decided and why; the entry where the
   correction landed records the flip and the fix.
+
+**A material `design-debt` review finding is a post-approval banner trigger.**
+When the `design-conformance` angle classifies a HIGH/MEDIUM discrepancy as
+`classification: design-debt` (§ Loop on findings — correct code, wrong or
+infeasible design), the **design.md banner above is the routing**: the *finding*,
+not a downstream stage, is the decision-flip source. The orchestrator (the design
+stage isn't running, and the angle is read-only) writes the banner — the flip, the
+reason, and the artifact now carrying the binding decision — cordoning the stale
+`design.md` prose so intent-oracle passes don't false-positive; the paired
+`design/` snapshot is frozen exactly as ever, with the banner the reader's signal
+it may be visually stale. This is a legal post-approval body write under § Design
+gate's frozen-audit-record scoping and **never** re-triggers the gate. A
+`not-checkable` finding never banners (informational only), and a LOW/minor
+`design-debt` discrepancy is folded into the retro without a banner.
 
 **The active variant — a design bounce, not a banner.** When the downstream stage
 is `architecture` and the artifact it contradicts is the **approved design**, the
