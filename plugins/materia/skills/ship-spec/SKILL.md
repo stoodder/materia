@@ -613,9 +613,14 @@ After `design` returns `design.md`:
    design stage never touches the block), tick the design stage row, set
    `Next: design-approval (awaiting operator)` (a waiting state, **not** a
    Blocker), append `design-gate: awaiting approval` to § Notes, **then**
-   commit (`design.md` + `STATUS.md` together, one commit) with the
-   gate-marker subject (§ Gate commits), and push — never leave the STATUS.md
-   edits uncommitted behind a design.md-only commit. Present
+   commit (`design.md` + `STATUS.md` + `design/` together — the `design/`
+   snapshot **only when one was produced this arrival**, already exported by
+   the design stage or the orchestrator as part of its own persist step per
+   `design/SKILL.md`'s mechanics — one commit) with the gate-marker subject
+   (§ Gate commits), and push — never leave the STATUS.md edits uncommitted
+   behind a design.md-only commit. This commit-together rule is stated once
+   here and inherited by the auto-approve stamp path (step 3, "run the same
+   arrival steps"). Present
    the design (§ Presentation — including, with no `read`, the every-time
    notice that direct canvas edits cannot be seen), print the three verbs, and
    **end the turn** with the marker sentence:
@@ -653,7 +658,9 @@ proposal menu's degradation):
 - **abandon** → set `status: abandoned` (no hash),
   `Next: design-abandoned (parked)`, append `design-gate: abandoned (<date>)`
   to § Notes, commit, end the turn. **No Blocker** — parked is a decision, not
-  a problem; do **not** delete `design.md`.
+  a problem; do **not** delete `design.md`. An existing `design/` snapshot is
+  likewise left **as-is** on abandon — like `design.md`, it is neither deleted
+  nor re-exported.
 
 **The canvas is a fourth door into revision — not a fourth verb.** With a
 `read`-capable adapter (`MATERIA.md § Design tool`), the human may edit the
@@ -720,10 +727,10 @@ marker (see `design/SKILL.md`), so the baseline is uniform.
 ### Clean-tree stamping precondition (new behavior — no precedent claimed)
 
 At the moment of stamping approval/auto-approval, if the working tree is dirty
-in paths **other than the gate's own artifacts** — `design.md` and (future)
+in paths **other than the gate's own artifacts** — `design.md` and
 `docs/specs/<dated-slug>/design/` — **refuse the stamp and say why; do not
 stash**. A dirty `design.md` is operator revision content (verb rules); a dirty
-`design/` is the future sync/export output. Evaluate this **after** the
+`design/` is the sync/export output. Evaluate this **after** the
 path-scoped feedback commit (if any) and **before** the orchestrator's own
 `STATUS.md`/stamp writes (its own pending STATUS edit must not false-trip the
 check).
@@ -750,7 +757,11 @@ always. Two carve-outs:
 canvas to sync) opens by asking: **did the canvas change since the last gate
 commit?**
 This holds for all four arrivals — a re-present, the approve verb, an armed
-`--approve-design` auto-approval, an autopilot auto-approval. On an autopilot
+`--approve-design` auto-approval, an autopilot auto-approval. **Abandon is
+explicitly not a fifth arrival this section covers:** a canvas edit made
+immediately before abandoning is neither synced nor exported — it becomes
+visible only if the run is later revived through a revise, which re-arms the
+gate through the normal channels. On an autopilot
 run the answer is almost always **no** — the design stage just authored the
 canvas and nobody paused to touch it — so the sync collapses to the stamp; the
 **uniformity** is the point here, not the work.
@@ -792,24 +803,37 @@ most once per gate arrival** however many channels fired: a canvas edit + a
 hand-edit + the revise verb in one arrival is **one** round and **one**
 `## Feedback log` entry covering all of it, and the sync unit writes that entry.
 
+The **same split governs the snapshot export/re-export exactly as it governs the
+body** (`design/SKILL.md` § Canvas authoring & the paired artifact's "and export
+alike" rule): when MCP is reachable inside the spawned sync unit, that unit
+performs the re-export itself alongside its body re-derivation; when MCP is
+operator-session-only, the **orchestrator** performs the re-export itself
+alongside its own canvas read-back — the same actor already doing the body
+re-derivation in that world. This is the paragraph `design/SKILL.md` § Sync mode
+forward-references as the normative home for the operator-only-MCP re-export
+duty.
+
 **Precedence.** Operator hand-edits to the body are **authoritative** for the
 sections they touch; the sync unit re-derives **only** canvas-owned content and
 never overwrites operator-authored descriptive edits (`design/SKILL.md`
 § Sync mode pins the canvas-owned boundary).
 
 **Approval = sync, then freeze.** When the arrival's resolution is a **stamp**:
-run detection; if the canvas changed, the sync unit re-derives the canvas-owned
-sections (and, when a later release adds the committed snapshot, re-exports it —
-that snapshot is a named seam, mechanics unspecified here) with its outputs
-committed **before** the stamp commit — **not** a counted round (the terminal
-carve-out above) — **then** the orchestrator stamps, `design_hash` computed over
-the **now-current** body. If nothing changed, approve is just
+run detection; if the canvas changed (per the detection preference order
+defined earlier in this section), the sync unit re-derives the canvas-owned
+sections (and, when the adapter can `export`/reconstruct, also re-derives the
+committed snapshot at `docs/specs/<dated-slug>/design/` — same actor as the body
+re-derivation (§ Actor split), riding the **same** terminal carve-out that
+already governs the body-only case, never a new countable event) with its
+outputs committed **before** the stamp commit — **not** a counted round (the
+terminal carve-out above) — **then** the orchestrator stamps, `design_hash`
+computed over the **now-current** body. If nothing changed, approve is just
 commit-any-body-edit + stamp, exactly as § The gate is ternary and § Resume
 step 0 already prescribe. Under **`read: no`** the read-back clause vanishes
 entirely — the body is already current (the stage kept it so while authoring;
 there is nothing to read back), so approval stamps **without a canvas read** (the
-snapshot seam applies only where `export` allows, a later release). After the
-stamp the repo record is **frozen**: post-approval canvas drift does **not**
+snapshot re-export applies only where the adapter can `export`/reconstruct).
+After the stamp the repo record is **frozen**: post-approval canvas drift does **not**
 change the build contract — the post-approval-drift statement in `MATERIA.md
 § Design tool` gives the operator-facing half (expect someone to keep sketching);
 the pipeline-facing half is that the gate built the contract from the committed
@@ -887,7 +911,8 @@ bound), with these mechanics:
 
 ### Presentation — a capability ladder
 
-Later prompts extend the remaining rung; the gate itself never changes:
+Every rung is real today; the gate itself never changes across adapter
+configurations:
 
 1. **Canvas link** (**live** — adapters with `reference`). The canvas
    `reference` URL — the durable pointer (`MATERIA.md § Design tool`) — is the
@@ -895,9 +920,16 @@ Later prompts extend the remaining rung; the gate itself never changes:
    design, not `design.md` prose. It satisfies the binding constraint below by
    nature — a cloud canvas is reviewable after the turn ends, no process to
    kill. Print the committed pair's paths (`design.md`, plus the committed
-   snapshot once rung 2 lands) **alongside** it: the review link on top, the
+   snapshot when one was exported) **alongside** it: the review link on top, the
    repo record beneath.
-2. **Committed snapshot** (future — adapters with `export`).
+2. **Committed snapshot** (adapters with `export` or `read`-reconstruction).
+   When a `design/` snapshot was committed for this run, print its path
+   (`docs/specs/<dated-slug>/design/`) and a one-line serve command (e.g.
+   `npx serve docs/specs/<dated-slug>/design`) alongside rung 1 and rung 3. The
+   skill **starts no server itself** — it prints the command and the operator
+   runs it if they want a proper HTTP origin instead of opening `index.html`
+   straight from disk. When rung 1 (the canvas link) is unavailable but a
+   snapshot exists, **rung 2 is the primary reviewable surface**.
 3. **Text (always)** — `design.md` itself, the floor every configuration has;
    with no `reference` link and no snapshot, say plainly that no visual render
    is available yet.
@@ -1054,6 +1086,18 @@ part of `spawn-contract.md` Block 1 — pass it into every spawn. In particular
 it **supersedes `implement-task/SKILL.md` Procedure step 6's default
 `STATUS.md` tick** — a spawned implementer ticks only its own `tasks.md` AC
 boxes and leaves `STATUS.md` (and `retro.md`) to the orchestrator.
+
+**Spawned-stage Blocker hand-off (generic).** A spawned stage never touches
+`STATUS.md` in the orchestrator lane, so carrying a `Blocker:` line back in its
+**return payload** is how it reaches the human. When a spawned stage's return
+carries an explicit `Blocker: <text>` line — it hit a hard stop it cannot
+resolve in its own lane (e.g. `design/SKILL.md` step 7's failed-assertions
+rule, or step 9's git-ignored-snapshot-path guard) — the orchestrator writes
+that line **verbatim** to `STATUS.md`, commits, and surfaces it to the human,
+**ending the turn** exactly as any other Blocker arrival does (§ Resume step 2
+hard-stops on it on the next session). This is the single receiving-end
+mechanism for **every** spawned-stage Blocker — no bespoke per-case wiring, and
+no new Blocker vocabulary beyond what the producing stage already specifies.
 
 **Creation-only carve-out (ad-hoc intake).** On the ad-hoc path (§ Proposal
 selection — Ad-hoc path) the orchestrator has not pre-created the folder, so
@@ -1550,7 +1594,12 @@ the fix in place and re-flow the artifacts **asymmetrically**:
   flag stale-prose false positives. **The orchestrator writes the `design.md`
   banner** (the design stage isn't running post-approval) — a post-approval
   banner is a legal body write under § Design gate's frozen-audit-record
-  scoping and **never** re-triggers the gate.
+  scoping and **never** re-triggers the gate. A committed `design/` snapshot
+  (when one exists) is frozen exactly like `design.md`'s pre-banner prose: the
+  banner written into `design.md` is the reader's signal that the paired
+  snapshot may now be visually stale. Course corrections **never** trigger a
+  re-export — only a design-gate revision channel does (§ Gate-arrival sync);
+  course corrections are post-approval and entirely outside that loop.
 - **`retro.md` carries the original-decision story** — the entry where the
   wrong decision landed records what was decided and why; the entry where the
   correction landed records the flip and the fix.
