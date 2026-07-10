@@ -228,7 +228,17 @@ the same value.
   setting. § Design tool `none` does not turn the gate off by itself — a repo
   can review `design.md` as text; the gate-off knob is this chain, not the
   adapter.
-<!-- canvas-authoring budget posture: reserved knob — authoring cost + revision-rounds multiplier land here with the canvas-authoring release; leave this line in place. -->
+- **Authoring budget:** price this before you configure an adapter. Canvas
+  authoring is the token-expensive step of the pipeline — one reported Claude
+  Design session consumed more than half a weekly Pro allotment. With the
+  design gate's revision bound, a single spec authors on the canvas up to **4
+  times total**: the initial authoring plus up to 3 revision rounds. Rounds are
+  counted by `approval.rounds` across **all** channels — the revise verb, an
+  operator hand-edit, a detected direct canvas edit, an architecture-requested
+  revision — of which at most 2 may be architecture-requested (their own ≤2
+  bound). Those bounces count *inside* the 3, not on top of it. The normative
+  counting mechanics live in ship-spec/SKILL.md § Design gate; this is the cost
+  posture you budget against, not a restatement.
 
 **Capability meanings** — the contract skills gate on:
 
@@ -271,6 +281,28 @@ the same value.
   stage itself (§ Surface gates § UI-affecting owns that gate), the design
   doc's assertions requirement, or the human design gate — those are
   tool-independent and apply to a `none` repo with a UI.
+
+**Canvas-change detection** — the gate-arrival sync asks "did the canvas change
+since the last gate commit?"; an adapter's entry records how it answers, in
+preference order:
+
+1. a canvas state/version identifier when the tool exposes one — the cheap,
+   exact signal (claude-design: per-file etags, documented in the init catalog
+   below).
+2. otherwise, a canvas read-back plus a canonicalized re-export compared against
+   the last committed versions — the adapter note must record whether its export
+   is deterministic enough for this comparison to mean anything.
+3. neither → record `canvas-change-detection: none`. Its consequence is defined
+   normatively in ship-spec/SKILL.md § Design gate: every `read`-capable gate
+   arrival that re-presents counts one revision round unconditionally, with the
+   terminal stamping arrival (an approve that ends the gate) carved out.
+
+**Post-approval drift** — once the design gate stamps approval, the committed
+pair (`design.md`, plus the committed snapshot when one exists) is the frozen
+build contract. Architecture, implementation, and review build from that repo
+record, never from the live canvas; sketching on the canvas after approval does
+not move the pipeline. Expect someone to keep drawing past the gate — the
+pipeline does not follow it there.
 
 <!-- init: known-adapter catalog (verified 2026-07-09; interview source material —
      re-verify cells marked beta at interview time; deleted on materialization
