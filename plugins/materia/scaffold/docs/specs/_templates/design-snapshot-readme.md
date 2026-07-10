@@ -59,8 +59,8 @@ file, same directory).
      section when the adapter is a native exporter.
 
      State explicitly which of the three fabrication-contract properties
-     above the reconstruction actually preserves — fabricated content,
-     faithful tokens, semantic structure — and which it does not. Never
+     above the reconstruction actually preserves — fabricated, faithful,
+     semantic structure — and which it does not. Never
      overclaim fidelity a reconstruction doesn't actually have: a read-based
      rebuild may drop token wiring, flatten structure to divs, or otherwise
      lose ground relative to a native export. Say so plainly rather than
