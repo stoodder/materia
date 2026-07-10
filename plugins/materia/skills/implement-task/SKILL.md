@@ -99,9 +99,16 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
    compares your screens against the anchors side-by-side.
 
    **UI work honors its `## Assertions`.** When `design.md` has an
-   `## Assertions` section, build to satisfy each line — a downstream lane
-   checks the runtime-behavior ones (the e2e flows `ui-test-plan` derives),
-   but the requirement is set here for every line.
+   `## Assertions` section, build to satisfy each line — downstream lanes
+   check them (the `design-conformance` review angle verifies the
+   statically-checkable ones; the e2e flows `ui-test-plan` derives check the
+   runtime-behavior ones), but the requirement is set here for every line.
+   When the run carries a committed design snapshot
+   (`docs/specs/<dated-slug>/design/`), treat it as the frozen visual
+   reference complementing the cohesion anchors — the design-conformance
+   review compares the built screens against it, within what its `README.md`
+   fabrication contract says is comparable — and never build from the live
+   canvas.
 
 4. **Tests.** Add/extend tests for every source module you touch, following
    the repo's testing standard (`docs/standards/testing.md`).

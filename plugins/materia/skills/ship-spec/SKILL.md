@@ -1334,8 +1334,9 @@ runtime. A positive registry row whose `File` is absent or unreadable in
   mirroring § Session-limit fallback for a crashed reviewer — a deviation from
   the fresh-context guarantee, flagged explicitly in `STATUS.md`, the review
   retro entry, and the PR description.
-- **Gated angle** (a non-`always` row — `ui`, `data-safety`, or a repo-specific
-  predicate) → may instead **skip and record** the drop. (This is why a missing
+- **Gated angle** (a non-`always` row — `ui`, `data-safety`,
+  `design-conformance`, or a repo-specific predicate) → may instead **skip and
+  record** the drop. (This is why a missing
   file is treated more leniently than § Session-limit fallback treats a *crashed*
   gated reviewer: a crash means the angle is still configured to run, but a
   missing file in a fork can mean the angle was deliberately removed there.)

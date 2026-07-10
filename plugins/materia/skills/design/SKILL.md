@@ -200,7 +200,8 @@ standalone runs apply it on first use.
 7. **Assertions.** Distill the design into a `## Assertions` checklist — each
    line one-line, imperative, and pass/fail when checked against a **rendered**
    screen. Prefer statically-checkable assertions (an element's presence,
-   color, spacing, copy — what a static capture plus computed styles can see);
+   color, spacing, copy — what a static capture plus computed styles can see;
+   the `design-conformance` review angle verifies these at review time);
    runtime-behavior assertions (e.g. "the error state preserves the user's
    typed input") are legitimate design intent but belong to the e2e lane —
    write them knowing `ui-test-plan` reads this section and turns them into

@@ -85,7 +85,8 @@ full procedure below only when at least one flow is worth guarding.
      section can carry assertions a static capture can't check (e.g. "the
      error state preserves the user's typed input"); this skill is the e2e
      lane that checks them — fold each into the flow section it belongs to,
-     as an assertion for the relevant state.
+     as an assertion for the relevant state. (The statically-checkable lines
+     belong to the `design-conformance` review angle, not this plan.)
    - **Seed values** — note any seeded data values (`docs/standards/testing.md`
      seed-value assertion convention) the assertions should use.
 
