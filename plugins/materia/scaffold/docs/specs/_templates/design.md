@@ -30,6 +30,32 @@
      closing `---` of the frontmatter block; all frontmatter is excluded.
      Normative definition: ship-spec/SKILL.md § Design gate.
 
+     Canvas-pointer keys (only on runs where MATERIA.md § Design tool records a
+     connected adapter — its Capabilities line is not `none`). These live
+     OUTSIDE and DISJOINT FROM the `approval:` mapping, as a sibling key in the
+     same frontmatter block:
+
+       canvas:
+         reference: <durable project id | file key | URL>   # never a short-lived
+                                                              # preview/session URL
+         version: <canvas state/version id>   # only when the adapter exposes one
+                                                # (claude-design: per-file etags)
+
+     `reference` is the adapter's durable pointer (MATERIA.md § Design tool's
+     `reference` capability); `version` is its canvas-change-detection signal
+     when one exists. Written by whichever actor owns canvas I/O per the lane
+     split in design/SKILL.md — metadata, like the approval block, never body
+     content — and refreshed and committed at every gate commit, so
+     canvas-change detection always has a current baseline to diff against.
+     Like all frontmatter, both keys are excluded from `design_hash` (the
+     normative definition stays ship-spec/SKILL.md § Design gate, above).
+
+     Merge semantics: one frontmatter block per file, always. A writer adding
+     `canvas:` inserts it into the existing block alongside `approval:`; it
+     never opens a second `---` block — the hash recipe strips the leading
+     frontmatter block (first `---` line through the next `---` line,
+     inclusive), and a second block would corrupt that recipe.
+
      Post-approval orchestrator-written banners (course corrections) are
      legal body writes and never re-trigger the gate — the hash answers
      "what did the human approve," not "has the file changed since." -->
@@ -95,13 +121,24 @@
 
 ## Screens & states
 
-<!-- Per screen/route: purpose, key elements, and the loading / empty / error /
-     success states (every screen must define all four — use the repo's
-     loading/empty/error component conventions from its UI standard). -->
+<!-- Per screen/route: purpose, key elements, visual hierarchy, and the
+     loading / empty / error / ready states — use the repo's
+     loading/empty/error component conventions from its UI standard.
 
-| Screen / route | Purpose | States covered |
-|---|---|---|
-|  |  | loading · empty · error · ready |
+     Hierarchy: what's primary (the one thing the screen wants done), what's
+     secondary (supporting actions), and what's chrome (nav, headers, other
+     screen furniture that isn't this screen's content).
+
+     States: all four canonical states stay mandatory per screen — never leave
+     one silently undefined. But "n/a — this screen cannot be empty because
+     <reason>" is a legal fill-in when a state genuinely doesn't apply (e.g. a
+     fixed-config screen with no empty state), and domain-specific states
+     beyond the canonical four (e.g. "offline", "conflict") are admitted
+     alongside them, never instead of them. -->
+
+| Screen / route | Purpose | Hierarchy | States covered |
+|---|---|---|---|
+|  |  |  | loading · empty · error · ready |
 
 ## Components
 
@@ -127,6 +164,35 @@
      § Eyes), save/feedback affordances, debounce — per the repo's UI and
      API-layer standards. -->
 
+## Assertions
+
+<!-- The load-bearing section: a checklist of specific, checkable statements
+     about the implemented screens, distilled from the design above. Not
+     prose — each assertion is one line, imperative, and either passes or
+     fails when checked against a rendered screen. Prefer assertions a static
+     capture + computed styles can check (an element's presence, its color,
+     its spacing, its copy). Runtime-behavior assertions are legitimate
+     design intent too — e.g. "the error state preserves the user's typed
+     input," "the list virtualizes above 50 items" — but a static capture
+     can't see them: they're checked by the e2e lane instead, where
+     `ui-test-plan` reads this section and turns them into guarded flows.
+     Write each assertion knowing which lane checks it.
+
+     On a UI run this section must not be empty — a UI design that can
+     produce no assertions has not specified anything, and the design stage
+     fails rather than emit an empty block.
+
+     Exempt: the non-UI skeleton variant above and the code-only shape it
+     nests — neither has a rendered screen to assert against. Delete this
+     section entirely for those runs.
+
+     Example checklist lines:
+       - [ ] The empty state shows a single primary CTA and no secondary actions.
+       - [ ] The primary action is the only filled button on the screen.
+       - [ ] Every interactive element has an accessible name.
+       - [ ] The error state preserves the user's typed input.
+       - [ ] Loading state shows a skeleton, never a blank screen. -->
+
 ## Open design questions
 
 <!-- Unresolved UX/scope questions for the operator; remove the section if none. -->
@@ -135,6 +201,6 @@
      first design-gate revision round (see ship-spec/SKILL.md § Design gate),
      never materialized as an empty section up front. Design-stage-owned
      design content (like the body above it), not orchestrator-owned like the
-     approval block. Per round: round number, what was asked, what changed.
-     It survives into the PR so a reviewer can see how and why the design was
-     revised. -->
+     approval block. Per round: round number, what was asked, what changed —
+     a synced canvas edit counts as a round too. It survives into the PR so a
+     reviewer can see how and why the design was revised. -->
