@@ -1274,6 +1274,12 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     const problems = assertFn(report, r)
     if (problems.length) fail(`doctor [${label}]: ${problems.join('; ')}`)
   }
+  // Look a bucket entry's full Change up in the shipped ledger (buckets carry
+  // only {impact, id, summary}; detectability lives on the Change object).
+  const ledgerChanges = readdirSync(resolve('plugins/materia/release/versions'))
+    .filter((f) => f.endsWith('.json'))
+    .flatMap((f) => { try { return JSON.parse(readFileSync(resolve('plugins/materia/release/versions', f), 'utf8')).changes ?? [] } catch { return [] } })
+  const ledgerChangeById = (id) => ledgerChanges.find((ch) => ch.id === id) ?? null
 
   // tracked-current fixture -> healthy, schema 3, gate script at canonical location,
   // nothing outstanding
@@ -1362,10 +1368,17 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   // synthetic moved-but-unstamped repo -> the doctor↔migrate adopted-but-unstamped
   // bridge. Schema 2 in project.json but the gate script ALREADY at its canonical
   // .materia/scripts/check-docs.sh: both check-docs checks report `ok`, so the gate +
-  // relocation changes are filtered as adopted, leaving only optional drift (sev info).
-  // Doctor must stay `healthy` (exit 0) YET still suggest /materia:migrate --plan (the
-  // stamp-only step migrate has left), and say so in the artifact-schema-current detail.
-  // Runs against the REAL shipped ledger via the doctor CLI.
+  // relocation changes are filtered as adopted. Since 0.3.0-design-review-gate (the
+  // ledger's first recommended + detectable:false entry) the buckets can no longer
+  // empty fully on a schema-behind repo — a non-detectable change is never filterable
+  // as adopted (isAdopted keys on firing `ok` checks), so doctor truthfully reports
+  // `warnings` (still exit 0) until the repo stamps to the current schema (relevance
+  // keys on schema position; a stamped schema-3 repo sees none of this). The bridge
+  // suggestion (/materia:migrate --plan — the stamp-only step migrate has left) and
+  // the artifact-schema-current detail are unchanged. Pins: requiredChanges stays
+  // empty and every surviving recommendedChanges entry is detectable:false — i.e.
+  // all DETECTABLE drift is still filtered as adopted. Runs against the REAL
+  // shipped ledger via the doctor CLI.
   {
     const mu = mkdtempSync(join(tmpdir(), 'materia-doctor-moved-'))
     try {
@@ -1375,26 +1388,30 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       writeFileSync(join(mu, '.materia', 'project.json'),
         JSON.stringify({ artifactSchema: 2, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
       check('moved-but-unstamped', mu, (rep, r) => [
-        ...want(rep, 'status', 'healthy'),
+        ...want(rep, 'status', 'warnings'),
         ...want(rep, 'currentSchema', 2),
         ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'), // the bridge
         ...sevWant(rep, 'check-docs-sh-present', 'ok'),
         ...sevWant(rep, 'check-docs-sh-location', 'ok'),
         ...detailWant(rep, 'artifact-schema-current', 'adopted but unstamped'),
-        ...(rep.requiredChanges.length === 0 && rep.recommendedChanges.length === 0
-          ? [] : ['gate/relocation not filtered as adopted']),
+        ...(rep.requiredChanges.length === 0 ? [] : ['gate/relocation not filtered as adopted (requiredChanges non-empty)']),
+        ...(rep.recommendedChanges.every((ch) => ledgerChangeById(ch.id)?.detectable === false)
+          ? [] : ['a DETECTABLE recommended change was not filtered as adopted']),
         ...exitWant(r, 0),
       ])
     } finally { rmSync(mu, { recursive: true, force: true }) }
   }
 
   // synthetic hand-authored schema-1 state + canonical script -> the bridge must NOT
-  // fire. The adopted-drift filter still empties the buckets (the artifacts ARE
+  // fire. The adopted-drift filter clears all DETECTABLE drift (the artifacts ARE
   // present), but migrate refuses to stamp a schema<2 hand-authored state
-  // (install-check-docs disposition 1 = manual, the never-overwrite guarantee), so
-  // doctor promising "run migrate to record adoption" would be unfulfillable. Pin:
-  // healthy, NO suggested command, and the detail says the state needs by-hand review
-  // — doctor and migrate agree the stamp is manual on both sides.
+  // (install-check-docs disposition 1 = manual, the never-overwrite guarantee).
+  // Since the ledger's first recommended + detectable:false entry
+  // (0.3.0-design-review-gate), a schema-behind repo carries a truthful pending
+  // recommended change -> `warnings` (exit 0), and the ≥warning severity legitimately
+  // suggests /materia:migrate --plan — --plan is read-only and reports the change as
+  // manual, so the suggestion is fulfillable (unlike the withheld stamp bridge, which
+  // stays withheld: the detail still says by-hand review).
   {
     const s1 = mkdtempSync(join(tmpdir(), 'materia-doctor-schema1-'))
     try {
@@ -1404,9 +1421,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       writeFileSync(join(s1, '.materia', 'project.json'),
         JSON.stringify({ artifactSchema: 1, pluginVersion: null, source: 'hand-authored', appliedMigrations: [] }))
       check('schema1-no-bridge', s1, (rep, r) => [
-        ...want(rep, 'status', 'healthy'),
+        ...want(rep, 'status', 'warnings'),
         ...want(rep, 'currentSchema', 1),
-        ...want(rep, 'suggestedNextCommand', null), // bridge withheld — migrate would refuse the stamp
+        // ≥warning severity (the pending non-detectable recommended change) suggests
+        // --plan; the stamp bridge itself stays withheld — the detail pins that.
+        ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'),
         ...detailWant(rep, 'artifact-schema-current', 'needs by-hand review'),
         ...exitWant(r, 0),
       ])
@@ -1534,7 +1553,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   }
 
   if (failures === before)
-    console.log('  ✓ doctor behavior: tracked→healthy(schema 3, location ok) · legacy→warnings(gate adopted-away→requiredChanges empty, relocation recommended) · gnarly→action-needed(exit 1, required gate drift) · moved-but-unstamped→healthy(+bridge suggests migrate) · schema1+script→healthy(bridge withheld) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
+    console.log('  ✓ doctor behavior: tracked→healthy(schema 3, location ok) · legacy→warnings(gate adopted-away→requiredChanges empty, relocation recommended) · gnarly→action-needed(exit 1, required gate drift) · moved-but-unstamped→warnings(non-detectable recommended entry; detectable drift adopted-away; +bridge suggests migrate) · schema1+script→warnings(stamp bridge withheld, --plan suggested) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
 }
 
 // ---- 7b. doctor's design-gate reporting layer — NEGATIVE invariants ---------
@@ -2049,10 +2068,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     const dir = mk()
     try {
       const problems = []
-      // doctor: healthy + bridge suggestion.
+      // doctor: warnings (the ledger's non-detectable recommended entry — see the
+      // doctor moved-but-unstamped fixture comment) + bridge suggestion.
       const dr0 = spawnSync('node', [DOCTOR, dir, '--json'], { encoding: 'utf8' })
       let d0 = null; try { d0 = JSON.parse(dr0.stdout) } catch { /* below */ }
-      if (!d0 || d0.status !== 'healthy') problems.push(`pre-apply doctor status=${d0 && d0.status} (want healthy)`)
+      if (!d0 || d0.status !== 'warnings') problems.push(`pre-apply doctor status=${d0 && d0.status} (want warnings — schema-behind + non-detectable recommended entry)`)
       if (!d0 || d0.suggestedNextCommand !== '/materia:migrate --plan') problems.push(`pre-apply doctor suggestedNextCommand=${d0 && d0.suggestedNextCommand} (want the bridge)`)
       // migrate plan: install-check-docs stamp-only applicable, files = project.json only.
       const { report: plan } = runMigrate(dir)

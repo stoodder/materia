@@ -76,6 +76,28 @@
       "migratable": false,
       "manualMigration": "Update the two materialized scaffold docs to match the current scaffold: add the surfaces: field to _proposed/README.md § Frontmatter contract + Field roles and bump its example schema_version to 2, and add the Surfaces: / ui-surface (predictive): § Notes convention lines to the status template. (Producer emission of the field lives in the plugin skills, not in the repo. No installed-artifact relocation, so /materia:migrate has nothing mechanical to do.)",
       "notes": "Shares the same inspect() optional-entry discoverability limitation the sibling optional entries record: a schema-current repo sees this entry in neither doctor nor migrate output — discoverable only by reading this version file. Distinct from 0.3.0-queue-readme-prose: that entry is clarifying prose on the same README; this one is a frontmatter shape + schema_version change. The queue schema_version is its own axis, unrelated to this file's artifactSchema (unchanged at 3)."
+    },
+    {
+      "id": "0.3.0-design-review-gate",
+      "summary": "Ship-spec gains a human design-review gate after the design stage: interactive design-bearing runs pause for approve/revise/abandon, design.md gains an orchestrator-owned `approval:` frontmatter block (pending/approved/auto-approved/abandoned + rounds + body-only design_hash), --auto auto-approves with a recorded stamp, and --approve-design arms a one-shot bypass; default on, disableable per the precedence chain (flag > proposal frontmatter > MATERIA.md § Design tool).",
+      "impact": "recommended",
+      "surfaces": ["scaffold", "validator"],
+      "detectable": false,
+      "detectionNotes": "A per-run product output (design.md's approval-frontmatter contract), not an installed-artifact contract change — per release/README.md § Per-run outputs are outside the contract, its absence is legitimate: a repo may not have run a design-bearing spec since upgrading. Doctor's inspect() never scans docs/specs/**, so the gate state cannot be diffed there either.",
+      "migratable": false,
+      "manualMigration": "Update the materialized scaffold docs to match the current scaffold: docs/specs/_templates/status.md (the two Next: waiting states — design-approval (awaiting operator) / design-abandoned (parked) — and the seven design-gate: § Notes convention lines, plus the § Stages canonical-note extension and its forward-compat default), docs/specs/_templates/design.md (the approval-block contract comment and the Feedback log documentation), docs/specs/_templates/retro.md (the design-gate rounds/category signal), MATERIA.md § Design tool (the Design gate knob line and its precedence chain), docs/standards/skills.md (§ The --approve-design argument), and docs/specs/README.md + CLAUDE.md (the interactive-pause clauses on the runs-to-PR claims). The gate behavior itself lives in the plugin skills and updates with the plugin — no repo action needed for that part.",
+      "notes": "The `doctor` surfaces token is deliberately omitted even though doctor.mjs gained a design-gate reporting layer: the glossary meaning of `doctor` is \"a doctor check applies\" (detects this change's drift), and this layer is explicitly read-only, out-of-contract, and carries no stable check id — it never affects status or exit. `validator` is listed because validate-plugin.mjs gained §7b negative-invariant guards for that layer (precedent: 0.3.0-scripts-relocation, which lists `validator` whenever the validator's expectations change). Shares the same inspect() optional-entry discoverability limitation the sibling optional entries record. Pre-gate design.md files (no approval block) are legitimate and are treated as pre-gate runs on resume — today's behavior, not drift."
+    },
+    {
+      "id": "0.3.0-proposed-spec-design-gate-field",
+      "summary": "The proposed-spec queue frontmatter gains an optional `design_gate: on | off` field (absent = unset, falls through the precedence chain) and its `schema_version` bumps 2→3; strictly additive (v1/v2 proposals stay valid).",
+      "impact": "optional",
+      "surfaces": ["scaffold"],
+      "detectable": false,
+      "detectionNotes": "Doctor's inspect() does not scan docs/specs/** / the queue README / status-template prose; an old repo's absence of the field is indistinguishable from a user edit, and consumers treat an absent design_gate: / older schema_version as unset-and-fall-through (behaviorally identical to the shipped default) — so no doctor check can honestly flag it.",
+      "migratable": false,
+      "manualMigration": "Update the materialized scaffold doc to match the current scaffold: add the design_gate: field to _proposed/README.md § Frontmatter contract + Field roles and bump its example schema_version to 3. (Producer emission of the field lives in the plugin skills, not in the repo. No installed-artifact relocation, so /materia:migrate has nothing mechanical to do.)",
+      "notes": "Shares the same inspect() optional-entry discoverability limitation the sibling optional entries record: a schema-current repo sees this entry in neither doctor nor migrate output — discoverable only by reading this version file. Distinct from 0.3.0-design-review-gate: that entry is the gate behavior + design.md run-artifact contract; this one is the proposed-spec queue-contract shape change. The queue schema_version is its own axis, unrelated to this file's artifactSchema (unchanged at 3)."
     }
   ]
 }

@@ -229,7 +229,10 @@ const main = () => {
   const designGate = report.materiaEnabled ? scanDesignGates(targetRoot) : []
   if (json) console.log(JSON.stringify({ ...report, designGate }, null, 2))
   else console.log([renderHuman(report, targetRoot), ...renderDesignGate(designGate)].join('\n'))
-  process.exit(EXIT[report.status] ?? 0)
+  // Set exitCode rather than process.exit(): exit() can kill the process before
+  // a large piped stdout write flushes (observed >8KB on macOS), truncating the
+  // --json document. exitCode lets the event loop drain, then exits.
+  process.exitCode = EXIT[report.status] ?? 0
 }
 
 main()
