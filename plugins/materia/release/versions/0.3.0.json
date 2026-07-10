@@ -1,7 +1,7 @@
 {
   "pluginVersion": "0.3.0",
   "artifactSchema": 3,
-  "summary": "Relocates the check:docs gate script to its canonical .materia/scripts/check-docs.sh, widens artifactSchema to track the installed-artifact contract (canonical file locations, not just project.json), settles the deferred PR #17 ledger entries, and adds the MATERIA.md § Design tool section (the design-tool capability seam, default none).",
+  "summary": "Relocates the check:docs gate script to its canonical .materia/scripts/check-docs.sh, widens artifactSchema to track the installed-artifact contract (canonical file locations, not just project.json), settles the deferred PR #17 ledger entries, adds the MATERIA.md § Design tool section (the design-tool capability seam, default none), lands the human design-review gate, and rebuilds the design stage around canvas authoring (paired artifact, assertions, gate-arrival sync, architecture bounce).",
   "changes": [
     {
       "id": "0.3.0-check-docs-sh-gate",
@@ -98,6 +98,17 @@
       "migratable": false,
       "manualMigration": "Update the materialized scaffold doc to match the current scaffold: add the design_gate: field to _proposed/README.md § Frontmatter contract + Field roles and bump its example schema_version to 3. (Producer emission of the field lives in the plugin skills, not in the repo. No installed-artifact relocation, so /materia:migrate has nothing mechanical to do.)",
       "notes": "Shares the same inspect() optional-entry discoverability limitation the sibling optional entries record: a schema-current repo sees this entry in neither doctor nor migrate output — discoverable only by reading this version file. Distinct from 0.3.0-design-review-gate: that entry is the gate behavior + design.md run-artifact contract; this one is the proposed-spec queue-contract shape change. The queue schema_version is its own axis, unrelated to this file's artifactSchema (unchanged at 3)."
+    },
+    {
+      "id": "0.3.0-canvas-authoring",
+      "summary": "The design stage authors on the design tool's canvas when an author-capable adapter is configured (design.md becomes the descriptive half of a paired artifact, with canvas: reference/version frontmatter keys); the design template gains a mandatory-on-UI-runs ## Assertions checklist, a per-screen Hierarchy column, and the n/a-with-reason states escape plus domain-specific states; the design gate gains a live canvas-link presentation rung, a direct-canvas-edit revision channel, and a gate-arrival sync; architecture gains a bounded (≤2) design-revision-requested bounce through the gate.",
+      "impact": "recommended",
+      "surfaces": ["scaffold"],
+      "detectable": false,
+      "detectionNotes": "Per-run product outputs (design.md's extended format, its canvas: frontmatter keys) sit outside the artifact contract — per release/README.md § Per-run outputs are outside the contract, their absence is legitimate: a repo may not have run a design-bearing spec since upgrading, and its adapter may lack the capabilities the canvas pieces gate on. MATERIA.md § Design tool's new budget/detection/drift prose and the status template's bounce § Notes convention are hand-reconciled prose in files the user repo freely edits — no doctor check can honestly flag their absence.",
+      "migratable": false,
+      "manualMigration": "Update the materialized scaffold docs to match the current scaffold: docs/specs/_templates/design.md (the ## Assertions section + its lane-steering comment, the Hierarchy column and n/a-with-reason states relaxation in ## Screens & states, and the canvas: reference/version frontmatter contract with single-block merge semantics), MATERIA.md § Design tool (the Authoring budget bullet, the Canvas-change detection convention, and the Post-approval drift statement), and docs/specs/_templates/status.md (the design-revision (architecture) § Notes convention for the ≤2 bounce bound). The authoring/sync/bounce behavior itself lives in the plugin skills and updates with the plugin — no repo action needed for that part.",
+      "notes": "Classified recommended (operator decision at intake): the ## Assertions block is load-bearing for downstream design-conformance checking, but existing per-run design.md files keep working untouched. Budget posture: canvas authoring invalidates prior token-budget assumptions for ship-spec runs — one reported Claude Design session consumed more than half a weekly Pro allotment, and a single spec can author on the canvas up to 4 times total (initial + up to 3 revision rounds, any channel, of which at most 2 may be architecture bounces) — MATERIA.md § Design tool's Authoring budget bullet is the operator-facing statement. The committed-snapshot/export machinery and the static design-conformance checker are later releases; this entry covers only the seams they land in. Shares the inspect() discoverability limitation the sibling recommended + detectable:false entry (0.3.0-design-review-gate) records."
     }
   ]
 }
