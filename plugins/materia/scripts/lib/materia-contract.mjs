@@ -194,12 +194,14 @@ const surfaceWindowless = (report, versions, currentSchema, emittedChecks, state
     if (isInt(v.artifactSchema) && v.artifactSchema === currentSchema)
       for (const ch of Array.isArray(v.changes) ? v.changes : []) windowless.push(ch)
   }
-  const afterAdopted = windowless.filter((ch) => !isAdopted(ch, emittedChecks))
+  // Impact filter FIRST: a doctor-only/none entry could never have surfaced, so an
+  // ack for one must not inflate the "(N hidden)" count either.
+  const listable = windowless.filter((ch) => ch.impact in IMPACT_RANK)
+  const afterAdopted = listable.filter((ch) => !isAdopted(ch, emittedChecks))
   const acked = Array.isArray(state.acknowledgedChanges) ? state.acknowledgedChanges : []
   const surviving = afterAdopted.filter((ch) => !acked.includes(ch.id))
   report.acknowledgedCount = afterAdopted.length - surviving.length
   const surfaced = surviving
-    .filter((ch) => ch.impact in IMPACT_RANK)
     .sort((a, b) => IMPACT_RANK[a.impact] - IMPACT_RANK[b.impact])
   report.availableAdoptions = surfaced.map((ch) => {
     const e = { id: ch.id, summary: ch.summary, impact: ch.impact }
