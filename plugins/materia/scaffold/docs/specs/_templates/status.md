@@ -69,7 +69,16 @@
 
      Both are correct in their own frame; a finding that flags their coexistence
      as a bug is by-design (carry it in the docs-audit dismissed-findings list).
-     Fully unifying the two scales is a separate, larger proposal. -->
+     Fully unifying the two scales is a separate, larger proposal.
+
+     - The design gate (ship-spec/SKILL.md § Design gate) has no checkbox row
+       of its own — it is not a tenth row inserted after design. Row 2 (design)
+       may be ticked while gate approval is still pending: gate state lives in
+       `Next:` (`design-approval (awaiting operator)` /
+       `design-abandoned (parked)`) plus the `design.md` approval block, not
+       in this checkbox scale. This is why ship-spec's Resume step 0 keys on
+       the approval block rather than the checkbox scan — a scan alone would
+       walk right past a ticked-but-unapproved row 2. -->
 
 - [ ] 1. intake — `spec.md`
 - [ ] 2. design — `design.md` (UI-gated; skipped+recorded if non-UI)
@@ -84,6 +93,15 @@
 ## Current
 
 - **Next:** <the stage or task id to do next>
+  <!-- Two design-gate waiting states, alongside the ordinary stage/task
+       names — both are legitimate pauses, not Blockers:
+         Next: design-approval (awaiting operator)  — the run is paused for
+           the human design-review gate; the design stage's checkbox (row 2)
+           may already be ticked while this stands — see § Stages CANONICAL
+           NOTE below.
+         Next: design-abandoned (parked)  — the design was abandoned by
+           operator decision; parked, not blocked; the design stage's
+           checkbox stays ticked. See ship-spec/SKILL.md § Design gate. -->
 - **Blocker:** none <!-- or: a description of why the run paused for a human -->
 - **PR:** <link once finalize opens it>
 
@@ -168,6 +186,24 @@
        auto-merge: CI fix round <n> — <summary>
        auto-merge: conflict resolved (<baseline> merged) -->
 
+<!-- Design-gate convention (ship-spec/SKILL.md § Design gate is the
+     normative home — the exact strings below are pinned there too):
+       design-gate: awaiting approval
+       design-gate: auto-approved (<reason>)
+         (parenthetical is the full reason string verbatim, never a
+         shortened flag form, e.g.:
+           design-gate: auto-approved (--auto autopilot run)
+           design-gate: auto-approved (MATERIA.md gate: off))
+       design-gate: abandoned (<date>)
+       design-gate: auto-approve armed (--approve-design)
+       design-gate: auto-approve consumed (--approve-design)
+         (the armed line above is rewritten to this at consumption; a
+         spent arm must never re-fire on a later re-opened gate)
+       design-gate: <on|off> (proposal frontmatter)
+         (the capture-at-stake line — written only when the proposal
+         frontmatter declares `design_gate:`; durable through dequeue,
+         like the `Surfaces:` line above) -->
+
 <!-- Epic-gate-decision convention — like `review`, the `reconcile-epic`
      stage has no checkbox row (it edits artifacts outside this spec folder);
      the orchestrator records one of these lines here after evaluating the
@@ -203,4 +239,8 @@
        line) → treated as absent ("unknown"), routing to the UI-surface
        gate's absent path — this must degrade to today's behavior, never
        fail or mis-parse
+     - a `design.md` with no `approval:` frontmatter block at all → a
+       pre-gate run; ship-spec's Resume step 0 does not fire and resume
+       behaves exactly as it did before the gate existed — never invent an
+       approval state for it
      New runs should always fill these in. -->

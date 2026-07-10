@@ -53,4 +53,15 @@ status: running
 
      The final entry is the orchestrator's own pipeline-level self-review,
      following the same schema, clearly marked `Stage: orchestrator
-     (pipeline-level)`. -->
+     (pipeline-level)`.
+
+     Design-gate signal (ship-spec/SKILL.md § Design gate): when the run had
+     a design gate, the `design` entry (or the orchestrator's own, if the
+     gate resolved after design's entry was already written) records
+     `rounds` from the design.md approval block and what the revisions were
+     about, categorized: `missing-state` | `wrong-hierarchy` |
+     `design-system-violation` | `infeasible` | `misread-spec`. Rounds-per-
+     spec is the honest measure of whether the design stage itself is any
+     good — but if `misread-spec` dominates, the problem is upstream in the
+     spec, not the design stage. -->
+
