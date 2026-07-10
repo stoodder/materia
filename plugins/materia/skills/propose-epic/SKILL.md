@@ -248,7 +248,13 @@ source_refs:
   - docs/epics/<dated-slug>/epic.md
 epic: <epic-id>
 depends_on: []            # or [<sibling proposal id>, …]
+surfaces: [ui]            # optional; per-member — infer from THIS member's own scope, not the epic's
 ```
+
+Members of one epic can touch different surfaces — infer `surfaces:` per
+member from that member's own scope, same suggestion-only semantics as
+`propose-spec` § File format (`docs/specs/_proposed/README.md` § Field roles
+→ `surfaces`).
 
 and one extra body section, **last, after `## Open questions`**, so
 `intake-spec`'s required-H2 detector sees the standard spine first:
