@@ -862,12 +862,26 @@ bound), with these mechanics:
   end the turn.
 - **Exhaustion precedence.** A bounce is capped by **both** bounds — its own ≤2
   and the gate's ≤3. A bounce arriving when `approval.rounds` is already 3 cannot
-  dispatch a revision: the rounds Blocker fires instead, carrying the real cause —
-  `Blocker: design-gate revision bound exhausted (rounds=3) — architecture reports design infeasible: <reason>`.
-  The approve/abandon carve-out still applies to this combined string — it is
-  covered by the § Revision bound prefix match (and § Resume step 2's sole
-  exception), which keys on the `design-gate revision bound exhausted (rounds=3)`
-  prefix.
+  dispatch a revision — no design re-spawn, **no increment** — but it must still
+  put the run where its resolution can be acted on: **re-arm the gate without
+  incrementing** — reset the block to bare `status: pending` (`rounds` unchanged
+  at 3), set `Next: design-approval (awaiting operator)`, append the § Notes
+  bounce line (the attempt is real architecture signal and consumes a bounce
+  slot), gate-marked commit — then write the rounds Blocker carrying the real
+  cause —
+  `Blocker: design-gate revision bound exhausted (rounds=3) — architecture reports design infeasible: <reason>`
+  — and end the turn. The approve/abandon carve-out applies to this combined
+  string — covered by the § Revision bound prefix match (and § Resume step 2's
+  sole exception), which keys on the
+  `design-gate revision bound exhausted (rounds=3)` prefix — and because the
+  gate is re-armed, the cleared verb genuinely routes through Resume step 0
+  (the `Next:`-normative predicate reads the run as **not** advanced): `approve`
+  stamps the design with architecture's objection on record and re-runs
+  architecture as the operator's informed call; `abandon` parks it. Without the
+  re-arm the carve-out would clear the Blocker into a step 0 that never fires —
+  the bounce-bound check (≤2, above) runs **first**, so a third
+  `design-revision-requested` still hard-stops at `bounces=2` rather than
+  cycling this path.
 
 ### Presentation — a capability ladder
 
