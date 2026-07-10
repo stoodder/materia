@@ -238,7 +238,12 @@ the same value.
   revision — of which at most 2 may be architecture-requested (their own ≤2
   bound). Those bounces count *inside* the 3, not on top of it. The normative
   counting mechanics live in ship-spec/SKILL.md § Design gate; this is the cost
-  posture you budget against, not a restatement.
+  posture you budget against, not a restatement. On an `export: via-read`
+  adapter (the recommended `claude-design` included), each of those ≤4 touches
+  also pays a reconstruction-read cost for the committed snapshot — paginated
+  `read_file` calls, per the init-comment catalog below — but this rides the
+  same cadence, so the existing ≤4-touch bound already caps it; no separate
+  counter needed.
 
 **Capability meanings** — the contract skills gate on:
 
@@ -248,9 +253,11 @@ the same value.
   the descriptive design doc after a human edited the canvas directly. What
   makes direct-on-canvas edits a syncable feedback channel.
 - `export` — the tool can emit the canvas as static HTML/CSS/assets to a
-  filesystem path; what makes a committed snapshot possible. A tool that
-  cannot export but can `read` is marked `export: via-read` — the snapshot is
-  reconstructed from reads, at the cost the adapter note records.
+  filesystem path; what makes a committed snapshot possible. The path is
+  `docs/specs/<dated-slug>/design/` (normative home: design/SKILL.md § Canvas
+  authoring & the paired artifact for the directory contract and mechanics). A
+  tool that cannot export but can `read` is marked `export: via-read` — the
+  snapshot is reconstructed from reads, at the cost the adapter note records.
 - `tokens` — the tool returns the project's design system in machine-readable
   form (CSS custom properties or equivalent).
 - `reference` — the tool returns a durable pointer (project id, file key,
