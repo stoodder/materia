@@ -48,7 +48,7 @@
 //
 // It also runs a deterministic, NO-AI consumer REFERENCE SWEEP: for a migration that
 // relocates/renames/replaces an artifact (see the REGISTRY `referenceSweep` field), it
-// walks the target repo and REPORTS every stale reference to the old path (the gymii
+// walks the target repo and REPORTS every stale reference to the old path (the first-migration
 // lesson — a moved gate script leaves the repo's own package.json / CI / § Gate row /
 // docs pointing at the old location, a broken gate behind a healthy doctor). The scan is
 // window-independent (it runs even when the migration is not in the schema window, so a
@@ -81,7 +81,7 @@ import { inspect, readLedger, relevantChanges, isInt, readJson, MIG } from './li
 //    classify returned `applicable`)
 //  - referenceSweep?: OPTIONAL array documenting the artifacts this migration
 //    relocates/renames/replaces, so the engine can deterministically SCAN the target
-//    repo for stale CONSUMER references (the gymii lesson: a migration that moves a gate
+//    repo for stale CONSUMER references (the first-migration lesson: a migration that moves a gate
 //    script leaves the repo's OWN package.json / CI / MATERIA.md § Gate row / docs still
 //    naming the old path — a broken gate behind a healthy doctor). Each token:
 //      { from, to, autoFix }
@@ -94,7 +94,7 @@ import { inspect, readLedger, relevantChanges, isInt, readJson, MIG } from './li
 //    repos reference. The scan (scanReferences, below) is WINDOW-INDEPENDENT: it runs on
 //    every plan/apply against a Materia-enabled target regardless of whether the migration
 //    is in the schema window, so a schema-complete repo whose consumers are still stale
-//    (the literal gymii failure mode) is still surfaced. The engine only REPORTS the hits
+//    (the literal first-migration failure mode) is still surfaced. The engine only REPORTS the hits
 //    (referenceFollowUps); the migrate SKILL performs the bounded sweep — no AI here.
 
 // `init-project-state` establishes artifact schema 2 — the schema of the change
@@ -353,7 +353,7 @@ no-op. --plan --acknowledge <id> previews the would-be state without writing.`
 
 // ---- reference sweep: deterministic consumer scan ---------------------------
 // For a migration carrying `referenceSweep` (see the REGISTRY field doc), walk the TARGET
-// repo and find every stale reference to a relocated/replaced artifact — the gymii failure
+// repo and find every stale reference to a relocated/replaced artifact — the first-migration failure
 // mode (a moved gate script leaves the repo's own package.json / CI / § Gate row / docs
 // naming the old path). WINDOW-INDEPENDENT and NO-AI: the engine only REPORTS hits
 // (referenceFollowUps); the migrate skill performs the bounded sweep.
@@ -560,7 +560,7 @@ const buildPlan = (targetRoot, releaseDir, opts = {}) => {
 
   // Window-independent consumer reference sweep (see scanReferences). Runs on every plan
   // against a Materia-enabled target regardless of whether install-check-docs is in-window
-  // — the schema-complete-but-stale repo (gymii) must still be surfaced. Plan REPORTS only,
+  // — a schema-complete-but-stale repo (the case that motivated the sweep) must still be surfaced. Plan REPORTS only,
   // writes nothing. A non-Materia repo has nothing to sweep (and toolFault returned above).
   // runApply passes skipReferenceScan: its post-apply re-scan is the one that matters
   // (staleNow must reflect the post-move truth), so the pre-apply walk is skipped rather
