@@ -150,7 +150,7 @@ No branch, commit, or PR is ever produced.
      deletion.
    - **Plan mode with `staleNow` hits and nothing applicable** — the
      schema-complete-but-stale repo (a relocated/replaced artifact whose consumers
-     still point at the old path, the gymii failure mode). The plan itself writes
+     still point at the old path, the first-migration failure mode). The plan itself writes
      **nothing**; surface the hits and **offer** the sweep. Run it only on the
      operator's explicit in-session go-ahead.
    - **Then re-run the repo's `check:docs` gate.** The gate command resolves from
@@ -182,7 +182,7 @@ flags the adopted drift. Two bookkeeping states are worth naming:
   review-angle library); a healthy schema certifies only `.materia/project.json`,
   and migrate surfaces by-hand cleanup (a superseded root `scripts/check-docs.sh`,
   a stale legacy `check-docs.mjs`) as manual items — it never deletes them.
-- **Consumers, not just artifacts.** The gymii lesson: doctor certifies the
+- **Consumers, not just artifacts.** The first-migration lesson: doctor certifies the
   *artifact* (the gate script is present and at its canonical location) but not the
   repo's own *references* to it — a relocated gate can pass doctor while the repo's
   `check:docs` command still points at the old path. migrate's reference scan is the

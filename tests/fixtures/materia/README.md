@@ -21,7 +21,7 @@ Three shapes, each carrying a distinct story about the release/artifact contract
   reports `warnings`. §8 copies it to a temp dir to exercise apply (init-project-state
   + install-check-docs relocate the script and stamp schema 3; the committed fixture
   is never mutated). It also carries a minimal **`package.json`** whose `check:docs`
-  script runs `sh scripts/check-docs.sh` — a genuine gymii-class **consumer** of the
+  script runs `sh scripts/check-docs.sh` — a genuine first-migration-class **consumer** of the
   old gate path, so migrate's reference scan surfaces exactly one auto-fixable
   `referenceFollowUps` hit (the package.json line, NOT the gate script's own header,
   which the scan excludes as the from-path artifact). §8 pins that hit both directions

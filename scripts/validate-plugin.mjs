@@ -2222,7 +2222,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
 
   // 12. PLAN on a synthetic SCHEMA-3 (already-current) repo whose CONSUMER is still stale:
   //     canonical gate script present, schema 3 stamped, but a Makefile still runs the old
-  //     `sh scripts/check-docs.sh`. This is the literal gymii failure mode — the migration
+  //     `sh scripts/check-docs.sh`. This is the literal first-migration failure mode — the migration
   //     window is empty (nothing applicable), yet the WINDOW-INDEPENDENT reference scan must
   //     STILL surface the stale consumer with staleNow:true (the artifact is at its
   //     canonical location, so the old-path reference is broken NOW). Plan writes nothing.
