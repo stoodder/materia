@@ -611,9 +611,11 @@ markdown-only exemption and trivial-diff collapse), `ui-affecting`,
 `ui-affecting` and `data-affecting` are evaluated exactly as ship-spec's
 UI/Data-surface gates — over the cumulative diff, per `MATERIA.md § Surface
 gates`. `design-bearing` is evaluated per `ship-spec/SKILL.md` § Review (the
-design-conformance gate): the run's declared surfaces include a design-bearing
-surface (`STATUS.md` `Surfaces:`), `design.md` carries a non-empty
-`## Assertions` block, and § Eyes is not `none`. Unlike the diff-surface gates
+design-conformance gate): the run resolved to a design-bearing (UI) surface
+(the `ui-surface (predictive)` decision recorded in `STATUS.md`; the
+design-bearing set is defined in `docs/specs/_proposed/README.md` § Field roles
+→ `surfaces`), `design.md` carries a non-empty `## Assertions` block, and § Eyes
+is not `none`. Unlike the diff-surface gates
 it is **artifact-based** — it inspects declared surfaces and design artifacts,
 not the cumulative diff — so the markdown-only exemption and trivial-diff
 collapse **drop** it (a design-bearing run whose diff is trivial is nearly a

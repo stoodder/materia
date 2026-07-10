@@ -64,8 +64,8 @@ the orchestrator already ran it in the behavioral-verify lane and handed you its
 
 ## Gate rationale
 
-Relevant only on a run that designs a UI surface with a committed design contract to verify
-against: the design stage produced a `design.md` with assertions, the run declares a
-design-bearing surface, and an Eyes toolchain exists to see the built screen. When any of those
-is absent there is nothing to check against. (The gate value has one home — the
-`MATERIA.md § Review angles` registry — and is never restated here.)
+Relevant only on a run that designs a UI surface and commits a design contract to verify
+against: the design stage produced a `design.md` with a non-empty assertions checklist, the run
+resolved to a UI surface, and an Eyes toolchain exists to see the built screen. When any of those
+is absent there is nothing to check against. (The gate value itself has one home — the
+`MATERIA.md § Review angles` registry — not restated here.)
