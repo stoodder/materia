@@ -186,6 +186,75 @@ UI work — the toolchain behind `design`, `ui-test-plan`, `ui-review`,
 - **Capture:** {{how to take a screenshot/snapshot and where proofs land —
   keep the `docs/specs/<dated-slug>/ui-proof/` convention}}
 
+### Design conformance harness
+
+The deterministic half of the `design-conformance` review angle (§ Review angles):
+a computed-layer comparison between the committed design snapshot
+(`docs/specs/<dated-slug>/design/`, per § Design tool's `export` capability) and the
+implemented screen. **A procedure the orchestrator drives through this toolchain — not an
+installed script.** It runs in the § Orchestrator behavioral-verify lane
+(`ship-spec/SKILL.md`), because it needs the app up; the angle then reads only its output.
+The point is to **compute facts, never ask a model to eyeball a measurement** — four pixels of
+drift or `#1a4d8f` vs `#2a5d9f` is a machine's job, and a gate cannot rest on a model asserting
+a colour match by eye.
+
+**Compare only the faithful layer — scoped by the snapshot's fabrication contract.** The
+snapshot's `README.md` (from `docs/specs/_templates/design-snapshot-readme.md`) states, per run,
+what is `fabricated` vs `faithful` and records `semantic-structure: yes/no`. Comparing the
+fabricated layer manufactures false positives on a perfect build, so the harness reads that
+README first and scopes to what it declares faithful:
+
+- **Accessibility-tree structure and DOM shape — only when the README says
+  `semantic-structure: yes`.** Then compare roles, the landmark/heading skeleton, ordering, and
+  the *presence* of accessible names — **never the name text** (copy is `fabricated`) and
+  **never node counts on data-bound regions** (`fabricated` data ⇒ different list lengths on a
+  perfect build). When it says `no`, drop this layer and name it in the findings file as
+  excluded-with-reason.
+- **`getComputedStyle` on token-derived properties** — colour, background, spacing scale, and
+  border-radius via the design system's custom properties; `font-family` / `font-size` **iff
+  the snapshot README marks fonts faithful** (i.e. § Design tool's `tokens` reached the canvas
+  this run). When both sides consumed the same tokens, a mismatch here means a hardcoded value —
+  a sharp finding. When they didn't, the property is out of scope and the findings file says so.
+- **Design-system classes / custom properties in use** — a set difference.
+
+Point the toolchain at the snapshot via an **absolute `file://` URL** (self-contained per the
+snapshot contract) and at the running app's screen. Emit a **machine-readable findings file**;
+every excluded layer is named with its reason, so "no finding" is never confused with "not
+checked."
+
+**Where the output lives.** The findings file is an orchestrator-produced diagnostic at
+`.claude/review-logs/<dated-slug>/design-conformance-findings.json` (gitignored, like
+`review-r<N>.json`). The angle never reads that path — the orchestrator inlines its *content*
+into the angle's brief (reviewers are forbidden `.claude/review-logs/`; the inline follows the
+dismissed-findings carry-forward precedent). Labeled captures land under the run folder at
+`docs/specs/<dated-slug>/design-conformance/captures/` — a reviewer-readable path, never under
+`.claude/review-logs/` — and the orchestrator names it in the brief.
+
+**Capture hygiene.** Identical viewport and `deviceScaleFactor` on both sides (the canonical
+viewport above). `prefers-reduced-motion`, animations disabled, caret hidden, fixture data
+seeded, timestamps masked. **No full-page screenshots of long screens** — they downscale into
+the model's image budget and lose the detail being checked; capture per-section / per-component.
+**Two separately labeled images, never one stitched side-by-side** — stitching halves each
+half's resolution.
+
+**Degradation** — reconciled with, not a parallel of, § Design tool's degradation ladder (cite
+it; never restate its token/snapshot rules):
+
+- **No committed snapshot** — triggered by absence, however caused (an author-less adapter has
+  no pipeline-authored canvas; an `export`/`read`-less one commits none): skip the DOM/computed
+  diff and run token conformance against § Design tool's `tokens` output alone. The comparison
+  is one-sided — capture-hygiene applies to the implemented screen only, there is no snapshot
+  image or fabrication README, and the findings file says structural comparison was unavailable,
+  its reason string naming the **actual cause** (e.g. `author: no — no pipeline-authored
+  canvas`, or `adapter lacks export/read`), never a hardcoded capability claim. This is the
+  `design-conformance` end of § Design tool's "no snapshot … degrades per its own ladder."
+- **No `tokens`** — the harness drops token conformance and emits structural findings only,
+  matching § Design tool's "No `tokens` → design-conformance falls back to structural assertions
+  only, and says so." With neither snapshot nor tokens, the findings file carries only the
+  implemented-screen captures, and the angle works from `design.md` assertions alone. Honest
+  degradation, clearly labeled.
+- **§ Eyes `none`** — the whole harness self-gates off, like everything else behind § Eyes.
+
 ## Design tool
 
 The external design tool the pipeline authors designs on, over MCP — and the
