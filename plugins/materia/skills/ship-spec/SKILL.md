@@ -1427,8 +1427,9 @@ Every reviewer returns findings as a list of JSON-shaped records:
   "line_start": 42,
   "line_end": 47,
   "severity": "HIGH" | "MEDIUM" | "LOW",
-  "category": "correctness" | "security" | "spec-adherence" | "regression" | "behavior" | "coverage" | "simplicity" | "ui" | "data-safety" | "<repo-specific angle>",  // category ∈ the kebab angle `name` from the MATERIA.md § Review angles registry, OR a documented sub-category (`coverage`/`simplicity` under `correctness`, `regression` under `spec-adherence`)
+  "category": "correctness" | "security" | "spec-adherence" | "regression" | "behavior" | "coverage" | "simplicity" | "ui" | "data-safety" | "design-conformance" | "<repo-specific angle>",  // category ∈ the kebab angle `name` from the MATERIA.md § Review angles registry, OR a documented sub-category (`coverage`/`simplicity` under `correctness`, `regression` under `spec-adherence`)
   "recommendation": "revert" | "modify" | "keep_with_concern",
+  "classification": "design-debt" | "not-checkable",  // OPTIONAL — the design-conformance angle only; absent on every other finding. `design-debt` = correct code, stale/infeasible design (not a code fix); `not-checkable` = a runtime-behaviour assertion whose only checker is the e2e lane (informational). Both are excluded from the fix loop AND the convergence aggregate and folded into the review retro entry — never a code-fix demand (§ Loop on findings).
   "description": "<one-sentence reason>"
 }
 ```
@@ -1452,7 +1453,25 @@ review-loop commit messages plus the `STATUS.md` notes.
 
 ### Loop on findings
 
-1. Aggregate findings across angles, deduping by `<file>:<line_start>`.
+1. Aggregate findings across angles, deduping by `<file>:<line_start>`. When two
+   findings collide on that key, an **unclassified** finding (implementation drift, or any
+   non-design-conformance angle) **wins** over a `classification`-carrying one — so a real
+   fix is never masked by a co-located design-debt entry.
+
+   **Classified design-conformance findings are pulled out here — before the convergence
+   check and the fix loop.** A design-conformance finding carrying `classification:
+   design-debt` or `classification: not-checkable` (§ Structured finding schema) is **not** a
+   code-fix item: the code may be right and the design wrong or infeasible (`design-debt`), or
+   the assertion's only checker is the e2e lane (`not-checkable`). Handle each as
+   **dismissed-with-disposition** — add it to the accumulated dismissed set (keyed
+   `<file>:<line_start>`, carried forward per the round-2 dismissed-findings carry-forward with
+   its `classification`) so it counts toward **neither** the convergence HIGH/MEDIUM test (step 2)
+   **nor** inline-fix / remediation-task routing (step 3). The **orchestrator** (sole retro
+   writer) folds every classified finding into the review retro entry (§ Retrospective capture),
+   surfacing the design-drift category words in the entry's bullets so `triage-retros` can
+   cluster. A **material** (`HIGH`/`MEDIUM`, confirmed) `design-debt` finding additionally gets a
+   `design.md` course-correction banner, written by the orchestrator per § Course corrections;
+   `not-checkable` is informational only — no banner, and no backlog item by itself.
 
 2. **Convergence check (early exit).** A round is **converged** when either
    sub-condition holds (OR logic):
