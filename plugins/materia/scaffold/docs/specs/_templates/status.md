@@ -59,7 +59,8 @@
          The scale has 9 rows (1 through 9); both no-checkbox stages record
          their outcome as gate-decision lines in § Notes. Rows 2–3 (design,
          ui-test-plan) are UI-gated and may be skipped on non-UI runs — one
-         predictive-form gate decision after intake covers both; when
+         predictive-form gate decision (resolved once per run — declared at
+         stake or via intake) covers both; when
          skipped, each checkbox is ticked as "skipped (non-UI)" and the gate
          decision is recorded in § Notes — never left perpetually blank.
        - Logical-stage scale (used by SKILL.md "Stage N of the pipeline" prose):
