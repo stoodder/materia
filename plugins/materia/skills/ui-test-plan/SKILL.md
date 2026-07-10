@@ -73,10 +73,19 @@ full procedure below only when at least one flow is worth guarding.
    - **Flow name** (match the name used in `design.md` exactly).
    - **Entry point** — the URL or navigation action that starts the flow.
    - **Assertions per state** — one assertion per loading/empty/error/ready state
-     defined for that flow in `design.md`. Assertions describe *what the test
-     should observe* (e.g. "heading is visible", "empty-state text reads X",
+     defined for that flow in `design.md`; skip a state `design.md` marks
+     `n/a — <reason>` (no assertion against a state the design says cannot
+     occur), and guard domain-specific states beyond the canonical four
+     (e.g. "offline", "conflict") the same way when `design.md` defines them.
+     Assertions describe *what the test should observe* (e.g. "heading is
+     visible", "empty-state text reads X",
      "error banner contains Y", "value field shows seed value Z") — not the
      driver API calls (those belong in the implementation task).
+   - **Runtime-behavior assertions from `design.md` § Assertions** — that
+     section can carry assertions a static capture can't check (e.g. "the
+     error state preserves the user's typed input"); this skill is the e2e
+     lane that checks them — fold each into the flow section it belongs to,
+     as an assertion for the relevant state.
    - **Seed values** — note any seeded data values (`docs/standards/testing.md`
      seed-value assertion convention) the assertions should use.
 
@@ -93,7 +102,8 @@ full procedure below only when at least one flow is worth guarding.
 
 - `ui-test-plan.md` exists in the spec folder with one section per guarded flow
   and at least one assertion per loading/empty/error/ready state defined in
-  `design.md`.
+  `design.md` (a state `design.md` marks `n/a — <reason>` needs none; guard any
+  domain-specific states it defines).
 - `STATUS.md` stage 3 ticked; `Next: architecture`; committed and pushed.
 
 ## Scope

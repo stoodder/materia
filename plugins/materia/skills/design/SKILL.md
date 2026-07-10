@@ -1,13 +1,16 @@
 ---
 name: design
-description: From a feature spec, produce a UX design doc (user flows, screens, and their loading/empty/error/ready states) at docs/specs/<dated-slug>/design.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export). Stage 2 of the ship-spec pipeline (UI-gated — spawned only when the feature ships UI; skipped and recorded on non-UI runs); usable standalone after a spec exists.
+description: From a feature spec, produce a UX design — authored on the design tool's canvas when an author-capable adapter is configured (MATERIA.md § Design tool), paired with a descriptive design.md (user flows, screens, their loading/empty/error/ready states, and pass/fail assertions) at docs/specs/<dated-slug>/design.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export); with no such adapter the stage authors design.md directly. Stage 2 of the ship-spec pipeline (UI-gated — spawned only when the feature ships UI; skipped and recorded on non-UI runs); usable standalone after a spec exists.
 ---
 
 # design — UX flows & screens from a spec
 
-Turn `spec.md` into a concrete `design.md` that lands inside the product's
-taste (`docs/product.md`). Runs as a subagent in
-`ship-spec`; usable standalone after a spec exists.
+Design the feature's screens, flows, and states inside the product's taste
+(`docs/product.md`) — on the design tool's canvas when the adapter can
+`author`, otherwise into `design.md` directly. Either way the stage produces
+`design.md`, the descriptive half of a paired artifact (§ Canvas authoring &
+the paired artifact). Runs as a subagent in `ship-spec`; usable standalone
+after a spec exists.
 
 **UI-gated.** This stage designs screens; a feature that ships no UI has
 nothing for it to design. The orchestrator evaluates the UI-surface gate's
@@ -17,6 +20,68 @@ gate owns the timing and resolution) and skips this stage on non-UI runs —
 operator-surface enumeration for non-product features (its § Non-product
 features).
 
+## Canvas authoring & the paired artifact
+
+**The primary lane is the canvas.** When `MATERIA.md § Design tool` records an
+`author`-capable adapter, this stage designs on that tool's canvas: the same
+inputs as a repo-side run (`spec.md`, the `docs/product.md` taste sections, the
+UI standards, and the design system the adapter returns through its `tokens`
+capability), but the deliverable is a real visual design driven over MCP —
+flows, screens, and states authored as canvas artifacts. With **no** `author`
+adapter — or `MATERIA.md § Design tool` `none`/absent — the stage authors
+`design.md` directly, exactly as it always has: a supported lane, not an error.
+Which lane you are in is governed by the degradation ladder in
+`MATERIA.md § Design tool` — read it, don't restate it here.
+
+**The paired artifact.** The design is one artifact in two halves. The **canvas
+is the visual half**; **`design.md` is the descriptive half**. `design.md` is
+*not* a textual re-rendering of the canvas — do not transcribe layouts into
+prose. It is the context that pairs with the canvas: what each screen is for,
+the flows through them, the states each must handle, the interaction contract,
+the components reused vs added, the cohesion anchors, and the assertions — the
+things a canvas cannot say and a reader (a human, or a fresh-context subagent)
+needs alongside it. Visual truth lives on the canvas — and, when the adapter can
+`export`, in a committed snapshot a later release adds; descriptive truth lives
+in `design.md`. The descriptive half is **tool-independent and not optional**:
+every downstream stage — `ui-test-plan`, `architecture`, `ui-review` — is a
+fresh-context subagent reading the repo, not the canvas, and a spec shipped six
+months ago must stay readable when the canvas is gone. Keep `design.md` current
+with the canvas at **every pause point**: first presentation, each revision
+round, and approval (where the gate freezes it). Same sections as a repo-side
+run, same downstream consumers, same exact flow-name contract `ui-test-plan`
+depends on.
+
+**The lane split — who holds the MCP connection.** Whether the *spawned* design
+stage can touch the canvas is decided by what `MATERIA.md § Design tool`'s
+Reachable-from line records for this repo — verify that line, don't assume:
+
+- **MCP reachable inside Agent spawns** → the spawned design stage drives the
+  canvas directly: it authors, reads canvas state back, and writes the
+  canvas-pointer frontmatter itself.
+- **MCP reachable in the operator session only** → the spawned stage **cannot**
+  touch the canvas. Split by ownership: the spawned design stage keeps the
+  design thinking and the descriptive half — it produces `design.md` plus a
+  concrete **canvas-authoring plan** (screens, layout intent, components,
+  states, in enough detail to transcribe onto the canvas without re-deciding
+  anything). The plan rides the spawn's **return payload** — never a committed
+  artifact and never a `design.md` section (committing it would trip the gate's
+  clean-tree stamping precondition, and inlining it would make `design.md` the
+  transcription this section forbids). The **orchestrator owns all canvas
+  I/O** — it executes that plan onto the canvas over MCP, reads canvas state
+  back, and serializes the read-backs into any later sync spawn. The
+  orchestrator transcribes; it never designs.
+
+The same split governs **every** canvas touch — authoring, revision, read-back
+sync, and export alike. In both worlds "re-spawn the design stage; it produces
+a new body" (`ship-spec/SKILL.md § Design gate`) stays literally true; only
+*who holds the MCP connection* varies. The **canvas-pointer frontmatter keys**
+(the `canvas:` reference/version keys of the design template's frontmatter
+contract) are written by whichever actor owns canvas I/O — the spawned stage in
+the first world, the orchestrator in the second — as metadata, like the
+approval block, never body content. They are refreshed at every pause point so
+the canvas-change-detection convention in `MATERIA.md § Design tool` always has
+a current baseline to diff against.
+
 ## Inputs
 
 - `docs/specs/<dated-slug>/spec.md`; `docs/product.md` (§ Design feel &
@@ -24,6 +89,12 @@ features).
   `docs/standards/ui-components.md`; `docs/standards/visual-language.md`
   (the binding visual rules); relevant resource docs for screens you'll
   touch.
+- **The design tool**, per `MATERIA.md § Design tool`: when it has `tokens`,
+  the machine-readable design system the adapter returns (CSS custom properties
+  or equivalent) — the canvas authors against these; when it can `author`, the
+  tool's canvas and its `reference` are both an input (an existing canvas you
+  revise) and an output (what you author). No adapter → repo-side authoring, no
+  canvas input.
 
 ## Harness noise
 
@@ -32,9 +103,12 @@ acting on them wastes context.
 
 ## Outputs
 
-- `docs/specs/<dated-slug>/design.md` — plus, standalone lane only,
-  `STATUS.md` updated, committed and pushed (orchestrator lane: body only —
-  see step 8).
+- `docs/specs/<dated-slug>/design.md` — the descriptive half of the paired
+  artifact (the canvas is the visual half when an `author` adapter is
+  configured). When an adapter exists, the `canvas:` pointer keys are recorded
+  in `design.md` frontmatter by the canvas-I/O owner (§ Canvas authoring & the
+  paired artifact). Plus, standalone lane only, `STATUS.md` updated, committed
+  and pushed (orchestrator lane: body only — see step 9).
 
 ## Environment
 
@@ -61,17 +135,31 @@ standalone runs apply it on first use.
    principles — the judgement baseline), `docs/standards/ui-components.md`
    (conventions), `docs/standards/visual-language.md` (the binding visual
    rules), and `docs/glossary.md`. Skim related resource docs for screens
-   you'll touch.
+   you'll touch. Also read `MATERIA.md § Design tool` to settle your authoring
+   lane (canvas vs repo-side) and, in the canvas lane, pull the design system
+   through the adapter's `tokens` capability — § Canvas authoring & the paired
+   artifact governs which lane you are in and who holds the MCP connection.
+
+   Steps 2–6 are the design itself: in the canvas lane you author them on the
+   canvas (§ Canvas authoring & the paired artifact) while capturing the
+   descriptive half in `design.md`; in the repo-side lane they go into
+   `design.md` directly. Step 7 distills the assertions, step 8 writes the
+   descriptive half, step 9 persists.
 
 2. **Flows.** For each user story, write the step-by-step path the user takes
    (entry → actions → outcome), grounded in the usage context from
    `docs/product.md` § Audience & market.
 
 3. **Screens & states.** For every screen/route, define purpose, key elements,
-   and **all four states**: loading, empty, error, ready — matching the existing
-   repo's loading/empty/error component conventions (its UI standard names
-   them). Don't leave a
-   state undefined.
+   its **visual hierarchy** — what's primary (the one thing the screen wants
+   done), secondary, and chrome (the template's Hierarchy column) — and its
+   states. The **four canonical states — loading, empty, error, ready — stay
+   mandatory per screen**, matching the repo's loading/empty/error component
+   conventions (its UI standard names them). A state that genuinely cannot
+   occur is recorded as an explicit `n/a — this screen cannot be <state>
+   because <reason>`, never left silent; **domain-specific states** beyond the
+   canonical four (e.g. offline, conflict) are admitted alongside them, never
+   instead of them. Never a silent omission.
 
 4. **Components.** Identify what's **reused** from `components/` vs **new**. New
    reusable patterns → `components/`; derived strings/classes/tones → a
@@ -96,7 +184,24 @@ standalone runs apply it on first use.
    siblings — per-screen correctness doesn't compose into app-level cohesion
    unless the anchors make it checkable.
 
-7. **Write** `docs/specs/<dated-slug>/design.md`. Flag any genuinely open design
+7. **Assertions.** Distill the design into a `## Assertions` checklist — each
+   line one-line, imperative, and pass/fail when checked against a **rendered**
+   screen. Prefer statically-checkable assertions (an element's presence,
+   color, spacing, copy — what a static capture plus computed styles can see);
+   runtime-behavior assertions (e.g. "the error state preserves the user's
+   typed input") are legitimate design intent but belong to the e2e lane —
+   write them knowing `ui-test-plan` reads this section and turns them into
+   guarded flows. **Hard rule (UI runs):** a `design.md` that can produce no
+   assertions has not specified anything — **fail the run and return the
+   failure to the caller rather than writing an empty `## Assertions` block**.
+   This binds every lane: the canvas lane and a `MATERIA.md § Design tool`
+   `none` repo are held to it identically. Exempt: the non-UI skeleton variant
+   and the code-only shape — neither has a rendered screen to assert against.
+
+8. **Write** `docs/specs/<dated-slug>/design.md` — the descriptive half. In the
+   canvas lane the visual design already lives on the canvas; `design.md`
+   captures what the canvas cannot say (§ Canvas authoring & the paired
+   artifact), never a transcription of it. Flag any genuinely open design
    question, but resolve everything that affects architecture now.
 
    **Auto Mode allowance for non-blocking judgement calls.** Small design
@@ -111,18 +216,32 @@ standalone runs apply it on first use.
    without re-running design. Reserve clarifying questions for choices
    that genuinely change scope or block downstream stages.
 
-8. **Persist.**
+9. **Persist.**
 
    **Sole-writer split.** The design stage owns the `design.md` **body and
    `## Feedback log`** — the log is design content (round number, what was
    asked, what changed), appended on the first gate revision round (the loop is
-   defined in `ship-spec/SKILL.md` § Design gate). The **approval block is
-   orchestrator-owned** (the standalone-lane exception below is the sole place
-   this skill writes it). The operator hand-editing the body is a blessed
-   feedback channel, never a sole-writer violation. On a gate revision round
-   (re-spawned by `ship-spec` with feedback) produce a new body and append the
-   round to `## Feedback log` — still never touch the approval block in that
-   lane.
+   defined in `ship-spec/SKILL.md` § Design gate); a canvas-sync write
+   (§ Sync mode) is a design-stage write of the same two things. The **approval
+   block is orchestrator-owned** (the standalone-lane exception below is the
+   sole place this skill writes it). The **`canvas:` frontmatter keys** are
+   neither body nor approval block: they are canvas-I/O-owner metadata, written
+   by whichever actor holds the MCP connection per the lane split (§ Canvas
+   authoring & the paired artifact) — the spawned stage when spawns reach the
+   canvas, the orchestrator when they don't — refreshed at each pause point and
+   carried in the gate commit; being frontmatter, they never enter the
+   body-only `design_hash`. The operator hand-editing the body is a blessed
+   feedback channel, never a sole-writer violation.
+
+   On a gate revision round (re-spawned by `ship-spec` with the operator's
+   feedback and any hand-edits) produce a new body and append the round to
+   `## Feedback log`. Where a hand-edit or feedback item expresses **visual
+   intent**, apply it onto the canvas during this same revision so the two
+   halves never fork; a purely descriptive edit — a new assertion, a corrected
+   flow — may leave the canvas untouched. The stage judges which is which and
+   records that judgement in the `## Feedback log` entry. Still never touch the
+   approval block in that lane. (At an **approve** there is no re-authoring —
+   `ship-spec/SKILL.md` § Design gate's edited-body rule governs.)
 
    **Orchestrator lane (spawned by `ship-spec`/`fix-bug`):** do **not** tick
    `STATUS.md`, do **not** commit it, and do **not** touch the approval block —
@@ -134,8 +253,12 @@ standalone runs apply it on first use.
    **Standalone lane (operator-invoked directly, not a spawn):** this is the
    **sole standalone-lane exception** to the approval block's orchestrator
    ownership (`ship-spec/SKILL.md` § Design gate — Sole-writer split) — here the
-   skill writes the initial approval block itself. Resolve the gate for this
-   run, then persist:
+   skill writes the initial approval block itself. Because this lane is
+   operator-invoked (the skill holds any canvas connection itself), the skill
+   also owns canvas I/O here — it writes the `canvas:` pointer keys, when
+   `MATERIA.md § Design tool` records an adapter, into that same single
+   frontmatter block alongside `approval:` (metadata, never body; one block,
+   per the template's merge rule). Resolve the gate for this run, then persist:
 
    - **Resolve the gate** — consult, in order: a captured
      `design-gate: <on|off> (proposal frontmatter)` line in `STATUS.md`
@@ -177,15 +300,57 @@ standalone runs apply it on first use.
 
 ## Done when
 
-- Every spec story has a flow; every screen defines all four states.
+- Every spec story has a flow; every screen records its hierarchy
+  (primary/secondary/chrome) and its states — the four canonical states each
+  present or an explicit `n/a — <reason>`, never silently omitted, with any
+  domain-specific states admitted alongside them.
 - Every new/changed screen names its anchor screen(s) in `## Cohesion anchors`.
 - Reused vs new components are listed.
+- **UI runs** (both the canvas lane and a `MATERIA.md § Design tool` `none`
+  repo, identically): `## Assertions` is non-empty — one-line, imperative,
+  pass/fail-against-a-rendered-screen statements distilled from the design; a UI
+  `design.md` that can produce none has specified nothing and **fails rather
+  than shipping an empty block** (non-UI skeleton variant and code-only shape
+  exempt).
+- **Paired-artifact currency:** when an adapter is configured, the `canvas:`
+  pointer is recorded in frontmatter and `design.md` (the descriptive half) is
+  current with the canvas at this pause point — first presentation, revision
+  round, or approval.
 - No design decision needed by the architecture stage is left ambiguous.
 - Orchestrator lane: only the `design.md` body is written — the orchestrator
   ticks `STATUS.md`, sets `Next:`, and owns the approval block. Standalone lane:
   `STATUS.md` ticked with the approval block written and `Next:` set —
   `design-approval (awaiting operator)` when the gate is on, `architecture` when
   off (auto-approved, `design_hash` computed) — design committed + pushed.
+
+## Sync mode
+
+`ship-spec` may re-spawn this skill in **sync mode** at a gate arrival where the
+canvas changed since the last gate commit — a compact unit, not a full
+authoring run. The normative flow (when it fires, how the round is counted) is
+`ship-spec/SKILL.md` § Design gate; this contract defines only the unit's I/O.
+
+- **Inputs:** a serialized canvas read-back (the orchestrator's, when canvas
+  I/O is operator-session-only; the stage's own read otherwise — the lane split
+  in § Canvas authoring & the paired artifact decides) plus the current
+  `design.md`.
+- **Outputs:** the **canvas-owned** sections of `design.md`, re-derived from the
+  read-back, and that round's `## Feedback log` entry (what changed on the
+  canvas, and — per the revise-path rule — which edits were visual vs
+  descriptive). Canvas-owned = what the read-back can reproduce — the
+  screen/state/layout facts the canvas holds; the descriptive-judgement
+  content (flow reasoning, cohesion anchors, assertions) is never re-derived.
+- **Precedence:** operator hand-edits are **authoritative** for the sections
+  they touch. Sync re-derives **only** canvas-owned content and never overwrites
+  operator-authored descriptive edits — the canvas cannot produce an
+  `## Assertions` line, so re-derivation never rewrites what the operator typed
+  there.
+- **Never the approval block.** Sync mode writes body + `## Feedback log` only
+  (both design-stage writes). The orchestrator increments `approval.rounds` (at
+  most one per gate arrival; a terminal stamping arrival counts none — both per
+  `ship-spec/SKILL.md` § Design gate) and owns the block; the sync unit writes
+  the log entry. The `canvas:` pointer keys are refreshed by the canvas-I/O
+  owner as usual.
 
 ## Scope
 
@@ -194,8 +359,9 @@ This skill does **not**:
 - **Do technical planning.** Mapping the feature onto existing resources, the
   data model, the API surface, and the blast-radius/edit-set discovery greps
   all belong to `architecture` (its § Procedure steps 2 and 6). `design.md`
-  is a UX artifact — screens, flows, states, cohesion — and stops there;
-  overlap between the two documents is drift, not thoroughness.
+  is a UX artifact — screens, flows, states, cohesion, and the assertions
+  distilled from them — and stops there; overlap between the two documents is
+  drift, not thoroughness.
 - **Run for non-UI features.** A Claude Code skill, a CLI helper, a refactor —
   the orchestrator's UI gate skips this stage, and `architecture` § Non-product
   features carries the operator-facing phase/output enumeration instead. A
