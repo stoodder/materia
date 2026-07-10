@@ -99,9 +99,9 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
    compares your screens against the anchors side-by-side.
 
    **UI work honors its `## Assertions`.** When `design.md` has an
-   `## Assertions` section, build to satisfy each line — downstream lanes
-   check them (the e2e flows `ui-test-plan` derives guard the
-   runtime-behavior ones), but the requirement is set here.
+   `## Assertions` section, build to satisfy each line — a downstream lane
+   checks the runtime-behavior ones (the e2e flows `ui-test-plan` derives),
+   but the requirement is set here for every line.
 
 4. **Tests.** Add/extend tests for every source module you touch, following
    the repo's testing standard (`docs/standards/testing.md`).

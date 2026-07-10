@@ -102,7 +102,8 @@ full procedure below only when at least one flow is worth guarding.
 
 - `ui-test-plan.md` exists in the spec folder with one section per guarded flow
   and at least one assertion per loading/empty/error/ready state defined in
-  `design.md`.
+  `design.md` (a state `design.md` marks `n/a — <reason>` needs none; guard any
+  domain-specific states it defines).
 - `STATUS.md` stage 3 ticked; `Next: architecture`; committed and pushed.
 
 ## Scope
