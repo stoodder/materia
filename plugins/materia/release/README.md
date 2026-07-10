@@ -17,13 +17,17 @@ installed plugin cache.
 > **Status: v0, dogfood-grade.** `/materia:doctor` ships and reads this ledger to report
 > drift **read-only** (it consumes the `doctorChecks` IDs — `project-state-present`,
 > `check-docs-sh-present`, `check-docs-sh-location`); it writes nothing and runs no
-> migration. `/materia:migrate` ships too — **plan-first** — and consumes the `migrations`
+> migration. It also surfaces same-schema "windowless" changes informationally — see
+> Windowless adoption surfacing and `acknowledgedChanges`, below — never affecting status
+> or exit. `/materia:migrate` ships too — **plan-first** — and consumes the `migrations`
 > IDs: v0 implements two, `init-project-state` (reserved in `0.2.0-project-state-file`),
 > which initializes `.materia/project.json` for a pre-tracking install, and
 > `install-check-docs` (reserved in `0.3.0-check-docs-sh-gate` + `0.3.0-scripts-relocation`),
 > which puts the check:docs gate script at its canonical `.materia/scripts/check-docs.sh` and
 > stamps schema 3. Any other `migrations` ID below is a reserved identifier no handler
-> consumes yet; migrate reports it as manual/skipped.
+> consumes yet; migrate reports it as manual/skipped. A third mode, `--acknowledge
+> <change-id>`, is a targeted write to `acknowledgedChanges` — not a ledger-declared
+> migration — that quiets a windowless entry once adopted or considered.
 
 ## Files
 
@@ -59,7 +63,12 @@ Two independent version axes:
   review-angle library is hand-reconciled in its **membership** too, not only its prose:
   adding or removing a `.materia/review-angles/<slug>.md` angle file (and its registry row)
   is outside the tracked contract and does **not** bump the schema — `inspect()` never scans
-  that library, so a bump would promise a drift signal doctor cannot emit. The
+  that library, so a bump would promise a drift signal doctor cannot emit. A strictly
+  **additive optional field** on `.materia/project.json` with a safe absent-default is the
+  same kind of carve-out: `acknowledgedChanges` (see Windowless adoption surfacing, below)
+  is outside the tracked contract and does **not** bump the schema either — its absence is
+  the legitimate default for an older-scaffold or migrate-inited state (absent reads as
+  `[]`), so a bump would promise a drift signal doctor cannot honestly emit. The
   schema changes **only** when that installed-artifact contract actually changes.
 
 Multiple plugin versions may share one `artifactSchema`. Do **not** bump the schema just
@@ -86,6 +95,42 @@ to record the adoption in `.materia/project.json`; doctor points at it while sta
 `healthy` — the adopted-but-unstamped bridge.) This is why a change's `doctorChecks` must
 honestly detect the presence of its artifact: they are read both as drift detectors and as
 adoption signals.
+
+### Windowless adoption surfacing and `acknowledgedChanges`
+
+The adoption buckets above only ever compare a project-state's recorded schema against the
+OPEN window `(fromSchema, latestSchema]`, so a repo already stamped at the latest schema
+sees no drift for a change whose `impact` is `recommended`/`optional` but which bumps **no**
+schema (prose, per-run-artifact contracts, and other changes outside the tracked
+installed-artifact contract — see "Per-run outputs are outside the contract", below, and the
+additive-optional-field carve-out, above). Such a change is `detectable: false` and carries
+no `doctorChecks` by construction, so the schema window can never reach it — without a
+further pass it would be invisible to a schema-current repo unless a human read the raw
+version file.
+
+`/materia:doctor`'s `inspect()` closes that gap with a purely informational pass: for the
+version file(s) at a repo's own **current** schema (not the window), it lists every
+non-`doctor-only`/`none` change, minus (a) anything already adopted (a `detectable` change
+whose `doctorChecks` already all fired `ok`) and (b) anything the operator has acknowledged
+(below) — impact-ordered required/breaking → recommended → optional, in the report's
+`availableAdoptions` field. It never touches `report.status`, severity, the exit code, the
+schema-window adoption buckets, `manualActionItems`, or `suggestedNextCommand`; it can
+legitimately still list a `required`-impact entry (the entry's own detectable check already
+carries the real severity — this listing just restates it in adoption terms, "adoption
+cannot be auto-verified" either way).
+
+`.materia/project.json`'s optional `acknowledgedChanges` array — change ids the operator has
+adopted or deliberately considered — is what quiets an entry once seen; a missing/non-array
+field reads as `[]`. `/materia:migrate --acknowledge <change-id>` (repeatable) is the write
+path: every id must resolve against some ledger version file (unknown ids refuse, nothing
+written); the target project-state file must be present, parsed, and record an integer
+`artifactSchema >= 2` (the same never-overwrite/stamp-floor rule `--apply` enforces
+elsewhere); the write is the sorted-unique union of what was already there plus the given
+ids, atomic (temp file + rename), and idempotent (re-acknowledging is a byte-stable no-op).
+The bundled scaffold ships `acknowledgedChanges` **pre-filled** with every change id at its
+own schema (`scripts/validate-plugin.mjs` pins that set-equality, so minting a new
+same-schema change forces the prefill current) — a fresh install already contains everything
+that entry describes, so it is born already-considered and surfaces nothing.
 
 ## Per-run outputs are outside the contract
 
