@@ -122,11 +122,13 @@
        Surfaces: [ui] | [ui, data] | [] | —
 
      The orchestrator writes this line either `declared` — copied straight
-     from the proposal frontmatter's `surfaces:` at intake — or `resolved`
-     — settled after intake, when the run started ad-hoc or the
-     frontmatter omitted the field. `[]` means "none" (a declared
-     absence); `—` or a missing line means "unknown" — never treat a
-     missing line as "none".
+     from the proposal frontmatter's `surfaces:` at stake — or `resolved`
+     — settled through intake, when the run started ad-hoc or the
+     frontmatter omitted the field. `—` or a missing line means "unknown" —
+     never treat it as "none". A `[]` value is read together with its
+     `(declared|resolved)` provenance: `declared []` is a declared absence
+     of any surface, while `resolved []` asserts only "no UI" (data
+     unasserted) — see `ship-spec/SKILL.md` § Review — § UI-surface gate.
 
      For the predictive UI-surface gate (the umbrella decision the design
      and ui-test-plan lines below follow from):
