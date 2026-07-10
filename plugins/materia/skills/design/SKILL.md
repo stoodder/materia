@@ -63,10 +63,13 @@ Reachable-from line records for this repo — verify that line, don't assume:
   design thinking and the descriptive half — it produces `design.md` plus a
   concrete **canvas-authoring plan** (screens, layout intent, components,
   states, in enough detail to transcribe onto the canvas without re-deciding
-  anything); the **orchestrator owns all canvas I/O** — it executes that plan
-  onto the canvas over MCP, reads canvas state back, and serializes the
-  read-backs into any later sync spawn. The orchestrator transcribes; it never
-  designs.
+  anything). The plan rides the spawn's **return payload** — never a committed
+  artifact and never a `design.md` section (committing it would trip the gate's
+  clean-tree stamping precondition, and inlining it would make `design.md` the
+  transcription this section forbids). The **orchestrator owns all canvas
+  I/O** — it executes that plan onto the canvas over MCP, reads canvas state
+  back, and serializes the read-backs into any later sync spawn. The
+  orchestrator transcribes; it never designs.
 
 The same split governs **every** canvas touch — authoring, revision, read-back
 sync, and export alike. In both worlds "re-spawn the design stage; it produces
@@ -334,16 +337,20 @@ authoring run. The normative flow (when it fires, how the round is counted) is
 - **Outputs:** the **canvas-owned** sections of `design.md`, re-derived from the
   read-back, and that round's `## Feedback log` entry (what changed on the
   canvas, and — per the revise-path rule — which edits were visual vs
-  descriptive).
+  descriptive). Canvas-owned = what the read-back can reproduce — the
+  screen/state/layout facts the canvas holds; the descriptive-judgement
+  content (flow reasoning, cohesion anchors, assertions) is never re-derived.
 - **Precedence:** operator hand-edits are **authoritative** for the sections
   they touch. Sync re-derives **only** canvas-owned content and never overwrites
   operator-authored descriptive edits — the canvas cannot produce an
   `## Assertions` line, so re-derivation never rewrites what the operator typed
   there.
 - **Never the approval block.** Sync mode writes body + `## Feedback log` only
-  (both design-stage writes). The orchestrator increments `approval.rounds` (one
-  per gate arrival) and owns the block; the sync unit writes the log entry. The
-  `canvas:` pointer keys are refreshed by the canvas-I/O owner as usual.
+  (both design-stage writes). The orchestrator increments `approval.rounds` (at
+  most one per gate arrival; a terminal stamping arrival counts none — both per
+  `ship-spec/SKILL.md` § Design gate) and owns the block; the sync unit writes
+  the log entry. The `canvas:` pointer keys are refreshed by the canvas-I/O
+  owner as usual.
 
 ## Scope
 
