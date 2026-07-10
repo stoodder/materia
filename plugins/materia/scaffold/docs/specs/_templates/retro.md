@@ -67,14 +67,17 @@ status: running
 
      Design-conformance drift signal (ship-spec/SKILL.md § Review — the
      design-conformance angle): when a design-conformance review ran, the
-     orchestrator's review entry records each classified finding with a
+     orchestrator's review entry records each design-conformance finding with a
      drift category, in the bullet prose (triage-retros clusters on the words,
-     it has no category field): `assertion-unmet` | `assertion-unfalsifiable`
-     | `design-infeasible` | `design-underspecified` | `token-hardcoded`.
-     `assertion-unmet`, `design-infeasible`, and `token-hardcoded` that name a
-     real code/design gap can become backlog items; `assertion-unfalsifiable`
+     it has no category field) — both the implementation-drift findings it
+     fixed and the design-debt/not-checkable ones it excluded from the fix loop:
+     `assertion-unmet` | `assertion-unfalsifiable` | `design-infeasible` |
+     `design-underspecified` | `token-hardcoded`. The implementation-drift
+     categories (`assertion-unmet`, `token-hardcoded`) get fixed in the review
+     loop, but recording them still lets a recurring code pattern cluster into a
+     systemic backlog item; the design categories (`design-infeasible`,
+     `design-underspecified`) name a real design gap; `assertion-unfalsifiable`
      (a runtime assertion the static angle can't settle — its checker is the
-     e2e lane) and `design-underspecified` are process signal. If
-     `design-underspecified` dominates, the design.md Assertions format is
-     wrong, not the implementers. -->
+     e2e lane) is process signal. If `design-underspecified` dominates, the
+     design.md Assertions format is wrong, not the implementers. -->
 

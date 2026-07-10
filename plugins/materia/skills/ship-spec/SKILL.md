@@ -1526,9 +1526,14 @@ review-loop commit messages plus the `STATUS.md` notes.
    `prior-round classification: <finding> — <design-debt|not-checkable>` line, separate from the
    dismissed-findings carry-forward) so the angle keeps context without re-litigating. The
    **orchestrator** (sole retro
-   writer) folds every classified finding into the review retro entry (§ Retrospective capture),
-   surfacing the design-drift category words in the entry's bullets so `triage-retros` can
-   cluster. A **material** (`HIGH`/`MEDIUM`, confirmed) `design-debt` finding additionally gets a
+   writer) folds every classified finding into the review retro entry (§ Retrospective capture)
+   and **also tags every design-conformance implementation-drift finding it fixed** in that same
+   entry — each tagged with its design-drift category word in the bullet prose, so the full
+   taxonomy is reachable: the code patterns (`assertion-unmet`, `token-hardcoded`) as well as the
+   design patterns (`design-infeasible`, `design-underspecified`, `assertion-unfalsifiable`).
+   `triage-retros` clusters on those words (it has no category field; the category list lives in
+   the retro template's design-conformance drift-signal comment).
+   A **material** (`HIGH`/`MEDIUM`, confirmed) `design-debt` finding additionally gets a
    `design.md` course-correction banner, written by the orchestrator per § Course corrections;
    `not-checkable` is informational only — no banner, and no backlog item by itself.
 
