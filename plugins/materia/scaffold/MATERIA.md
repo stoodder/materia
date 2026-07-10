@@ -600,10 +600,10 @@ that directory's `README.md` for the file schema and how to add an angle). This
 table owns the File → Gate → Tier mapping; the angle file itself carries only
 `name`, `description`, and body.
 
-The six canonical rows ship **pre-filled** and are **not** stack-specific —
+The seven canonical rows ship **pre-filled** and are **not** stack-specific —
 they ship verbatim, like § Skill routing. Repo-specific angles (a11y, perf
 budgets, compliance) are appended as additional rows by /materia:init or the
-operator; by default there are none beyond the canonical six.
+operator; by default there are none beyond the canonical seven.
 
 **Gate** is when the angle runs: `always` (every run, subject to ship-spec's
 markdown-only exemption and trivial-diff collapse), `ui-affecting`,
@@ -637,7 +637,7 @@ routing **Default** row (`opus`), per § Coercion.
 | `data-safety` | `data-safety.md` | `data-affecting` | `sonnet/high` |
 | `design-conformance` | `design-conformance.md` | `design-bearing` | `opus/high` |
 
-Repo-specific angles go in additional rows below the canonical six.
+Repo-specific angles go in additional rows below the canonical seven.
 
 The `spec-adherence` angle drops to `haiku/low` on ship-spec's markdown-only
 exemption path (binding rule stated in `ship-spec` § Review).

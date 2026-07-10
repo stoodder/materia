@@ -63,5 +63,18 @@ status: running
      `design-system-violation` | `infeasible` | `misread-spec`. Rounds-per-
      spec is the honest measure of whether the design stage itself is any
      good — but if `misread-spec` dominates, the problem is upstream in the
-     spec, not the design stage. -->
+     spec, not the design stage.
+
+     Design-conformance drift signal (ship-spec/SKILL.md § Review — the
+     design-conformance angle): when a design-conformance review ran, the
+     orchestrator's review entry records each classified finding with a
+     drift category, in the bullet prose (triage-retros clusters on the words,
+     it has no category field): `assertion-unmet` | `assertion-unfalsifiable`
+     | `design-infeasible` | `design-underspecified` | `token-hardcoded`.
+     `assertion-unmet`, `design-infeasible`, and `token-hardcoded` that name a
+     real code/design gap can become backlog items; `assertion-unfalsifiable`
+     (a runtime assertion the static angle can't settle — its checker is the
+     e2e lane) and `design-underspecified` are process signal. If
+     `design-underspecified` dominates, the design.md Assertions format is
+     wrong, not the implementers. -->
 

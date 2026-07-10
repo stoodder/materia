@@ -1213,7 +1213,7 @@ up-to-date base.
 
 Spawn reviewers as a **single message**, one `Agent` call per **applicable**
 angle. **Iterate the `MATERIA.md` § Review angles registry** — the canonical
-six ship pre-filled and any repo-specific rows append below, iterated the same
+seven ship pre-filled and any repo-specific rows append below, iterated the same
 way (one reviewer per applicable row; there is no separate "repo-specific
 angles" step). For each row:
 
