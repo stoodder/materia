@@ -106,10 +106,11 @@ Then:
    clean and the message carries no verb**; the normal presentation then
    follows. Under detection option 3 (`canvas-change-detection: none`) there is
    no signal to detect — that mode's unconditional round-count is stated at the
-   bare-re-present clause below. A message whose verb is **terminal** (`approve`)
-   instead follows § Gate-arrival sync's Approval = sync-then-freeze flow:
-   detection and any sync still run, but the stamping arrival is **not** a
-   counted round.
+   bare-re-present clause below. An arrival whose **resolution is terminal** —
+   the `approve` verb, an armed `--approve-design`, or an autopilot
+   auto-approval (§ Gate-arrival sync's universal terminal carve-out) — instead
+   follows § Gate-arrival sync's Approval = sync-then-freeze flow: detection
+   and any sync still run, but the stamping arrival is **not** a counted round.
 
    Route on the block:
    - `approved`/`auto-approved` **and** `design_hash` matches the current body
