@@ -745,8 +745,10 @@ always. Two carve-outs:
 
 ### Gate-arrival sync (canvas ↔ design.md)
 
-**Every gate arrival with a `read`-capable adapter** (`MATERIA.md § Design
-tool`) opens by asking: **did the canvas change since the last gate commit?**
+**Every gate arrival on the canvas lane with a `read`-capable adapter**
+(`MATERIA.md § Design tool` — an `author`-lane run; a repo-side run has no
+canvas to sync) opens by asking: **did the canvas change since the last gate
+commit?**
 This holds for all four arrivals — a re-present, the approve verb, an armed
 `--approve-design` auto-approval, an autopilot auto-approval. On an autopilot
 run the answer is almost always **no** — the design stage just authored the
