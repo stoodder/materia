@@ -1100,9 +1100,9 @@ boxes and leaves `STATUS.md` (and `retro.md`) to the orchestrator.
 **return payload** is how it reaches the human. When a spawned stage's return
 carries an explicit `Blocker: <text>` line — it hit a hard stop it cannot
 resolve in its own lane (e.g. `design/SKILL.md` step 9's git-ignored-snapshot-
-path guard, which already specifies this exact format; any other stage-level
-hard stop that wants this hand-off, such as step 7's failed-assertions rule,
-must likewise return a concrete `Blocker: <text>` line rather than a bare
+path guard and step 7's failed-assertions rule, which both specify this exact
+format; any other stage-level hard stop that wants this hand-off must likewise
+return a concrete `Blocker: <text>` line rather than a bare
 failure) — the orchestrator writes
 that line **verbatim** to `STATUS.md`, commits, and surfaces it to the human,
 **ending the turn** exactly as any other Blocker arrival does (§ Resume step 2
