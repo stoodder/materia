@@ -134,6 +134,28 @@ mechanical-envelope privilege, it is granted per run by the operator's
 explicit flag, and it merges only a green, mergeable PR with no unresolved
 human comments and no `Blocker`.
 
+### The `--approve-design` argument (ship-spec design gate)
+
+Same parsing contract as `--auto`: presence-only, leading-dash
+normalization, fail-open (any near-miss the normalization does not cover is
+NOT PRESENT — never a parse error, and never granting the bypass).
+
+Semantics live entirely in `ship-spec`: the flag **arms** a one-shot
+auto-approval of the design gate — `status: auto-approved, by: auto,
+reason: "--approve-design on invocation"` — consumed at the first gate
+arrival after arming, then spent. The arming is recorded durably in
+`STATUS.md` § Notes at stake (`design-gate: auto-approve armed
+(--approve-design)`), rewritten to `design-gate: auto-approve consumed
+(--approve-design)` at consumption — see `ship-spec/SKILL.md` § Design gate
+for the full mechanics.
+
+Contrast with `--auto`: `--auto` is a sticky per-run posture recorded in
+`STATUS.md` § Autopilot posture; `--approve-design` is armed-then-consumed —
+it never persists past one gate and never upgrades a later run. Its niche is
+the non-autopilot run: skip the human round on one spec without granting
+end-to-end autonomy. Under `--auto` it is redundant (the gate auto-approves
+anyway); passing both is legal and changes nothing.
+
 ### Skill kinds
 
 | Kind | Runs in | Tier | Examples |

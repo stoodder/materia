@@ -569,7 +569,7 @@ is clean.
 ```yaml
 ---
 id: <fresh 6-char base36 token>
-schema_version: 2
+schema_version: 3
 source: retro-triage
 source_refs:
   - "docs/specs/<slug>/retro.processed.md § Entry 3 — implement-task"

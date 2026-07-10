@@ -39,7 +39,7 @@ hard-fail on them.
 ```yaml
 ---
 id: <stable opaque identifier>           # source of truth for identity (see below)
-schema_version: 2                        # informational; bump on shape change
+schema_version: 3                        # informational; bump on shape change
 source: <producer key>                   # which loop produced it; lowercase kebab
 source_refs:                             # provenance pointers back to the producer's input
   - <repo-root-relative path or URL>
@@ -48,6 +48,7 @@ title: <short human-readable title>      # one line; matches the spec body's H1
 date: <YYYY-MM-DD>                       # the date the proposal was drafted
 status: proposed                         # always literally `proposed` while in this directory
 # surfaces: [ui]                          # OPTIONAL — see Field roles below
+# design_gate: off                        # OPTIONAL — override the design-gate default (see Field roles below)
 ---
 ```
 
@@ -64,11 +65,12 @@ status: proposed                         # always literally `proposed` while in 
   matches them. Treat `id` as opaque — do not parse it. Legacy 5-char hex
   ids remain valid — id resolution is format-agnostic.
 - **`schema_version`** — informational version of this frontmatter shape.
-  Bump when the contract changes; the current version is **2**. The bump to
-  2 is purely additive — the optional `surfaces:` field — so `schema_version:
-  1` proposals (with no `surfaces:` key) remain fully valid. Consumers SHOULD
-  record an unrecognised `schema_version` and degrade rather than halt, in
-  both directions: an old consumer seeing `2` and a new consumer seeing `1`
+  Bump when the contract changes; the current version is **3**. The bump to
+  3 is purely additive — the optional `design_gate:` field — so
+  `schema_version: 1`/`2` proposals (with no `design_gate:` key, and no
+  `surfaces:` key for `1`) remain fully valid. Consumers SHOULD record an
+  unrecognised `schema_version` and degrade rather than halt, in both
+  directions: an old consumer seeing `3` and a new consumer seeing `1` or `2`
   both keep working.
 - **`source`** — short kebab-case identifier of the producing loop. Examples:
   `retro-triage`, `market-research`, `user-feedback`, `manual`. New
@@ -115,6 +117,16 @@ status: proposed                         # always literally `proposed` while in 
     `scaffold`/`ledger`/`validator`/`doctor`/`migrate`) — nothing shared but
     the word; and "design-bearing surface" here is distinct from
     `MATERIA.md § Design tool` (the MCP design-tool capability seam).
+- **`design_gate`** *(optional)* — `on | off`. **Absent means "unset"** — it
+  falls through to the next rung of the precedence chain, `MATERIA.md`
+  § Design tool's Design gate default. Operator-owned: producers do not emit
+  this field. Consumed by `ship-spec` at stake time, where a declared value
+  is captured into `STATUS.md` § Notes as the pinned
+  `design-gate: <on|off> (proposal frontmatter)` line — durable through
+  dequeue, like `Surfaces:`. `off` means the design gate auto-approves with
+  reason `proposal frontmatter design_gate: off` — a recorded decision, not
+  a skipped step. Normative gate semantics: `ship-spec/SKILL.md`
+  § Design gate.
 
 ## Filename pattern
 
