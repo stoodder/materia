@@ -39,7 +39,7 @@ hard-fail on them.
 ```yaml
 ---
 id: <stable opaque identifier>           # source of truth for identity (see below)
-schema_version: 1                        # informational; bump on shape change
+schema_version: 2                        # informational; bump on shape change
 source: <producer key>                   # which loop produced it; lowercase kebab
 source_refs:                             # provenance pointers back to the producer's input
   - <repo-root-relative path or URL>
@@ -47,6 +47,7 @@ source_refs:                             # provenance pointers back to the produ
 title: <short human-readable title>      # one line; matches the spec body's H1
 date: <YYYY-MM-DD>                       # the date the proposal was drafted
 status: proposed                         # always literally `proposed` while in this directory
+# surfaces: [ui]                          # OPTIONAL — see Field roles below
 ---
 ```
 
@@ -63,8 +64,12 @@ status: proposed                         # always literally `proposed` while in 
   matches them. Treat `id` as opaque — do not parse it. Legacy 5-char hex
   ids remain valid — id resolution is format-agnostic.
 - **`schema_version`** — informational version of this frontmatter shape.
-  Bump when the contract changes. Consumers SHOULD record an unrecognised
-  `schema_version` and degrade rather than halt.
+  Bump when the contract changes; the current version is **2**. The bump to
+  2 is purely additive — the optional `surfaces:` field — so `schema_version:
+  1` proposals (with no `surfaces:` key) remain fully valid. Consumers SHOULD
+  record an unrecognised `schema_version` and degrade rather than halt, in
+  both directions: an old consumer seeing `2` and a new consumer seeing `1`
+  both keep working.
 - **`source`** — short kebab-case identifier of the producing loop. Examples:
   `retro-triage`, `market-research`, `user-feedback`, `manual`. New
   sources are added by convention; no enum is enforced.
@@ -83,6 +88,33 @@ status: proposed                         # always literally `proposed` while in 
   `accepted`, `rejected`) but in v1 the only terminal states are
   **acted-upon** (file removed by `ship-spec` consumption) and **rejected**
   (file deleted manually). The directory holds only `status: proposed`.
+- **`surfaces`** *(optional)* — the product surfaces this proposal is
+  expected to touch. Optional and additive: a proposal MAY omit it entirely.
+  - **Value** — a YAML flow list: `[ui]`, `[ui, data]`, or the empty list
+    `[]`. The list form lets a consumer tell a present-but-empty `[]` apart
+    from a missing key.
+  - **Vocabulary** — list elements are drawn from a fixed set: `ui` and
+    `data`, derived from the two diff classifiers in `MATERIA.md § Surface
+    gates` (UI-affecting and Data-affecting). New elements are added only when
+    a downstream consumer exists to read them.
+  - **Semantics** — **absent means "unknown"** (the producer did not
+    declare), **not "none"**; `surfaces: []` means "none" — a declared
+    absence of any surface.
+  - **Design-bearing** — today `ui` is the only *design-bearing* surface: the
+    surface class that carries a UX design (the design / ui-test-plan stages).
+    Consumers that gate design work resolve the phrase "the declared surfaces
+    include a design-bearing surface" against this definition. A declared
+    value is triage input to those consumers, **not a redefinition of any
+    consumer's own gate** — e.g. `ship-spec`'s § UI-surface gate stays the
+    single canonical definition of "UI-affecting" and consults a declared
+    value only in its predictive (pre-implementation) form; its
+    post-implementation diff form still governs and catches a declared-vs-built
+    mismatch.
+  - **Two namesakes** — this field is unrelated to the release ledger's
+    `Change.surfaces` array (the five machine tokens
+    `scaffold`/`ledger`/`validator`/`doctor`/`migrate`) — nothing shared but
+    the word; and "design-bearing surface" here is distinct from
+    `MATERIA.md § Design tool` (the MCP design-tool capability seam).
 
 ## Filename pattern
 

@@ -9,9 +9,9 @@ Read `spec.md` + `design.md`, identify the UI flows worth guarding, and write a
 `ui-test-plan.md` artifact the downstream `plan-tasks` stage consumes to derive
 the e2e-authoring task. Runs as a subagent in `ship-spec` (UI-gated — only
 spawned when the run is UI-affecting; the gate is defined in
-`ship-spec/SKILL.md` § Review — § UI-surface gate, whose predictive form is
-evaluated once after intake and covers both `design` and this stage); usable
-standalone after `design` returns.
+`ship-spec/SKILL.md` § Review — § UI-surface gate, whose predictive form is a
+single per-run decision covering both `design` and this stage — that gate
+owns the timing and resolution); usable standalone after `design` returns.
 
 ## Inputs
 

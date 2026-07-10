@@ -238,9 +238,10 @@ branch, PR URL. End the turn.
 
 ## File format — member proposals
 
-Everything from the queue contract and `propose-spec`'s § File format holds
-(frontmatter shape, body H2 set in order, absolute-from-repo-root links,
-filename pattern, kebab-slug algorithm), with these deltas:
+Everything from the queue contract and `propose-spec`'s § File format holds —
+its frontmatter shape **and field values** (so `schema_version: 2`, the same
+as every queue proposal), body H2 set in order, absolute-from-repo-root links,
+filename pattern, kebab-slug algorithm — with these deltas:
 
 ```yaml
 source: epic
@@ -248,7 +249,13 @@ source_refs:
   - docs/epics/<dated-slug>/epic.md
 epic: <epic-id>
 depends_on: []            # or [<sibling proposal id>, …]
+surfaces: [ui]            # optional; per-member — infer from THIS member's own scope, not the epic's
 ```
+
+Members of one epic can touch different surfaces — infer `surfaces:` per
+member from that member's own scope, same suggestion-only semantics as
+`propose-spec` § File format (`docs/specs/_proposed/README.md` § Field roles
+→ `surfaces`).
 
 and one extra body section, **last, after `## Open questions`**, so
 `intake-spec`'s required-H2 detector sees the standard spine first:

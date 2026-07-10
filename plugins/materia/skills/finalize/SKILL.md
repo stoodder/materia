@@ -302,6 +302,30 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
        recapture from § Screenshot-presence check, or records the explicit
        `ui-proof: capture failed — <reason>` note, then re-invokes finalize.
 
+   **Surface-gate block in the PR body (always rendered).** The
+   design-gate-determining decision is high-signal on **every** run — a
+   mispredicted non-UI run is the single most important thing to surface — so
+   this block is gated on the **UI-surface gate decision** (like `## E2e
+   coverage` / `## UI proof`), **not** on the `## Provenance` block, and it
+   renders on **both** the positive and the negative decision (unlike those
+   two blocks, which omit entirely on non-UI runs). Read the two § Notes lines
+   from `STATUS.md` — `Surfaces:` and `ui-surface (predictive):`, written by
+   the orchestrator per `ship-spec/SKILL.md` § Review — § UI-surface gate — and
+   render a `## Surfaces` section:
+
+   ```
+   ## Surfaces
+
+   - Predicted UI-surface: <positive|negative> (<declared|resolved> surfaces: […])
+   - Surfaces: [ui] | [ui, data] | [] | — (unknown)
+   ```
+
+   Because it is anchored to the gate and not to Provenance, it renders on
+   ad-hoc runs too (where the `## Provenance` block is skipped). If **either**
+   § Notes line is absent or `—` (e.g. resuming a pre-change `STATUS.md` that
+   has neither), render that sub-line's value as `— (unknown)` — never omit
+   the block on that basis.
+
    **Autopilot note (when instructed).** When the orchestrator's spawn prompt
    marks the run as autopilot (`--auto`), insert the one-line autopilot
    notice it provides into the PR body, above the closing Materia sigil

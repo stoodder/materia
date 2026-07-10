@@ -11,10 +11,11 @@ taste (`docs/product.md`). Runs as a subagent in
 
 **UI-gated.** This stage designs screens; a feature that ships no UI has
 nothing for it to design. The orchestrator evaluates the UI-surface gate's
-predictive form after intake (`ship-spec/SKILL.md` § Review — § UI-surface
-gate) and skips this stage on non-UI runs — `architecture` then works from
-`spec.md` alone, including the operator-surface enumeration for non-product
-features (its § Non-product features).
+predictive form (`ship-spec/SKILL.md` § Review — § UI-surface gate — that
+gate owns the timing and resolution) and skips this stage on non-UI runs —
+`architecture` then works from `spec.md` alone, including the
+operator-surface enumeration for non-product features (its § Non-product
+features).
 
 ## Inputs
 

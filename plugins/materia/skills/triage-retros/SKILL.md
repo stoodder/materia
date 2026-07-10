@@ -569,7 +569,7 @@ is clean.
 ```yaml
 ---
 id: <fresh 6-char base36 token>
-schema_version: 1
+schema_version: 2
 source: retro-triage
 source_refs:
   - "docs/specs/<slug>/retro.processed.md § Entry 3 — implement-task"
@@ -577,8 +577,15 @@ source_refs:
 title: <one-line title; matches the body H1>
 date: <YYYY-MM-DD>
 status: proposed
+surfaces: [ui]                     # optional; your best inference of the surfaces touched — operator confirms
 ---
 ```
+
+Emit `surfaces:` as your best inference from the clustered retro signal —
+`[ui]`, `[data]`, `[ui, data]`, or `[]` if clearly neither. It's a suggestion
+the operator confirms or edits in the existing review flow. Vocabulary and
+semantics live in `docs/specs/_proposed/README.md` § Field roles →
+`surfaces`.
 
 **Body:** the exact structure `intake-spec` produces / `propose-spec` § Body
 defines — H1 + tagline blockquote + `## Problem`, `## Goals`, `## Non-goals`,

@@ -294,18 +294,26 @@ End the turn.
 ```yaml
 ---
 id: <fresh 6-char base36 token; same shape as `<rand>` in spec folder names>
-schema_version: 1
+schema_version: 2
 source: user-proposed
 source_refs:
   - "user request via /materia:propose-spec on <YYYY-MM-DD>"
 title: <one-line title>
 date: <YYYY-MM-DD>
 status: proposed
+surfaces: [ui]                     # optional; your best inference of the surfaces touched — operator confirms
 ---
 ```
 
 Generate `id` with `LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6` (the same command
 `intake-spec` and `triage-retros` use for `<rand>`).
+
+Emit `surfaces:` as your best inference from the drafted spec — `[ui]` if it
+adds/changes UI, `[data]` if it only touches data/persistence, `[ui, data]` if
+both, `[]` if it clearly touches none.
+It's a suggestion the operator confirms or edits in the existing review flow.
+Vocabulary and semantics live in `docs/specs/_proposed/README.md` § Field
+roles → `surfaces`.
 
 `source_refs` is **always a YAML list**, even with a single human-readable
 string entry. The contract's allowance for human-readable text applies to
