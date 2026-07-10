@@ -923,13 +923,15 @@ configurations:
    snapshot when one was exported) **alongside** it: the review link on top, the
    repo record beneath.
 2. **Committed snapshot** (adapters with `export` or `read`-reconstruction).
-   When a `design/` snapshot was committed for this run, print its path
-   (`docs/specs/<dated-slug>/design/`) and a one-line serve command (e.g.
-   `npx serve docs/specs/<dated-slug>/design`) alongside rung 1 and rung 3. The
-   skill **starts no server itself** — it prints the command and the operator
-   runs it if they want a proper HTTP origin instead of opening `index.html`
-   straight from disk. When rung 1 (the canvas link) is unavailable but a
-   snapshot exists, **rung 2 is the primary reviewable surface**.
+   When a `design/` snapshot was committed for this run, print a one-line
+   serve command (e.g. `npx serve docs/specs/<dated-slug>/design`) — the
+   path itself is already printed by rung 1 when rung 1 applies (its own
+   instruction above already names the snapshot path), so don't print it
+   twice. When rung 1 (the canvas link) is unavailable, print the path here
+   instead, since **rung 2 becomes the primary reviewable surface**. The
+   skill **starts no server itself** — it prints the command and the
+   operator runs it if they want a proper HTTP origin instead of opening
+   `index.html` straight from disk.
 3. **Text (always)** — `design.md` itself, the floor every configuration has;
    with no `reference` link and no snapshot, say plainly that no visual render
    is available yet.
@@ -1091,8 +1093,11 @@ boxes and leaves `STATUS.md` (and `retro.md`) to the orchestrator.
 `STATUS.md` in the orchestrator lane, so carrying a `Blocker:` line back in its
 **return payload** is how it reaches the human. When a spawned stage's return
 carries an explicit `Blocker: <text>` line — it hit a hard stop it cannot
-resolve in its own lane (e.g. `design/SKILL.md` step 7's failed-assertions
-rule, or step 9's git-ignored-snapshot-path guard) — the orchestrator writes
+resolve in its own lane (e.g. `design/SKILL.md` step 9's git-ignored-snapshot-
+path guard, which already specifies this exact format; any other stage-level
+hard stop that wants this hand-off, such as step 7's failed-assertions rule,
+must likewise return a concrete `Blocker: <text>` line rather than a bare
+failure) — the orchestrator writes
 that line **verbatim** to `STATUS.md`, commits, and surfaces it to the human,
 **ending the turn** exactly as any other Blocker arrival does (§ Resume step 2
 hard-stops on it on the next session). This is the single receiving-end
