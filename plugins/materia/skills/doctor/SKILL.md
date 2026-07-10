@@ -1,6 +1,6 @@
 ---
 name: doctor
-description: "Non-destructive health check for a Materia-installed project. Runs the deterministic inspector (plugins/materia/scripts/doctor.mjs) against a target repo — reading this plugin's release/artifact ledger and the repo's .materia/project.json — and reports one overall status (healthy · warnings · action-needed · blocked · unknown) plus whether the repo is Materia-enabled, its current vs latest artifact schema, any required/recommended/optional changes from the ledger, manual action items, and a suggested next command. Detects untracked pre-tracking (legacy) installs and stale schemas and points at /materia:migrate --plan for them. Reads only; writes nothing, migrates nothing. Run it in an operator session on demand when you want to know whether a repo's Materia artifacts are current."
+description: "Non-destructive health check for a Materia-installed project. Runs the deterministic inspector (plugins/materia/scripts/doctor.mjs) against a target repo — reading this plugin's release/artifact ledger and the repo's .materia/project.json — and reports one overall status (healthy · warnings · action-needed · blocked · unknown) plus whether the repo is Materia-enabled, its current vs latest artifact schema, any required/recommended/optional changes from the ledger, manual action items, an informational listing of same-release changes available to adopt (impact-ordered required/recommended/optional — adoption cannot be auto-verified for these; each names its adoption steps and the /materia:migrate --acknowledge pointer to quiet it), and a suggested next command. Detects untracked pre-tracking (legacy) installs and stale schemas and points at /materia:migrate --plan for them. Reads only; writes nothing, migrates nothing. Run it in an operator session on demand when you want to know whether a repo's Materia artifacts are current."
 ---
 
 # doctor — inspect a Materia-installed project's health
@@ -47,8 +47,11 @@ Doctor's only output is the report it prints — it writes nothing to the repo
 - **Default** — a human-readable summary: overall status, whether the repo is
   Materia-enabled, current vs latest artifact schema, the project-state location
   (or that it is missing/malformed), the per-check results, any
-  required/recommended/optional changes, manual action items, and the suggested
-  next command.
+  required/recommended/optional changes, manual action items, an "Available to
+  adopt" listing of same-release changes that cannot be auto-verified
+  (impact-ordered required/recommended/optional, each with its adoption
+  instructions and the `/materia:migrate --acknowledge <id>` pointer to quiet
+  it once adopted or considered), and the suggested next command.
 - **`--json`** — the same report as a structured JSON object (for piping into
   other tooling).
 
@@ -72,7 +75,13 @@ action-needed, `2` blocked).
    Rules). Lead with the overall status and whether the repo is Materia-enabled,
    then the current vs latest artifact schema, the project-state location (or
    that it is missing/malformed), and any required/recommended/optional changes
-   plus manual action items the script listed. Two of the per-check results
+   plus manual action items the script listed. When the report carries an
+   "Available to adopt" listing, relay it too — same-release changes that
+   cannot be auto-verified (schema-invisible prose or per-run-artifact
+   contracts), impact-ordered, each with its adoption steps; mention that
+   `/materia:migrate --acknowledge <change-id>` quiets an entry once the
+   operator has adopted or considered it. It is purely informational — it
+   never changes the status above. Two of the per-check results
    concern the binding check:docs gate script: `check-docs-sh-present` is `ok`
    when it sits at EITHER the canonical `.materia/scripts/check-docs.sh` OR a
    legacy `scripts/check-docs.sh` a not-yet-relocated install still carries (and
@@ -84,9 +93,18 @@ action-needed, `2` blocked).
 
 3. **Recommend the next step the script named** — no more. Common cases:
    - **`healthy`** — schema is current; nothing required. Note that a healthy
-     report can still list *optional* changes (an `optional`-impact drift does
-     not demote the status) — relay them as available, not needed. A healthy
-     report can ALSO carry a `/materia:migrate --plan` suggestion in one
+     report can still list *optional* changes in the schema-window buckets (an
+     `optional`-impact drift never demotes the status) — relay them as
+     available, not needed. Separately, a healthy report — including a
+     schema-current one — can list *recommended* and *optional* same-release
+     changes under "Available to adopt": informational, adoption cannot be
+     auto-verified for these, and listing one never demotes the status. Relay
+     each with its adoption steps and the `/materia:migrate --acknowledge
+     <change-id>` pointer to quiet it once adopted or considered. (A
+     `required`-impact entry cannot legitimately appear here under a genuinely
+     healthy status: an unadopted, detectable `required` drift's own check
+     already demotes status off healthy before this listing is ever reached.)
+     A healthy report can ALSO carry a `/materia:migrate --plan` suggestion in one
      bookkeeping case: an **adopted-but-unstamped** repo (it already carries a
      change's artifact — e.g. the gate script at the canonical
      `.materia/scripts/check-docs.sh` — but the project-state still records the
@@ -113,8 +131,9 @@ action-needed, `2` blocked).
 
 - **Reads only.** Doctor never writes, edits, migrates, or regenerates
   anything — no branch, commit, PR, or file change is ever produced.
-- **Does not implement `/materia:migrate`.** It only *suggests* it (and its
-  `--plan` mode) where the report calls for it.
+- **Does not implement `/materia:migrate`.** It only *suggests* it — `--plan`
+  where the report calls for it, and `--acknowledge <change-id>` alongside each
+  "Available to adopt" entry — never runs it itself.
 - **Certifies artifacts, not their consumers.** A healthy doctor confirms a gate
   script is present and at its canonical location, but not that the repo's own
   references to it (the `MATERIA.md § Gate` row, package scripts, CI, docs) still

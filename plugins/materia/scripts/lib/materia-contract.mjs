@@ -137,6 +137,79 @@ const isAdopted = (ch, emittedChecks) => {
   return dc.every((id) => emittedChecks.some((c) => c.id === id && c.severity === 'ok'))
 }
 
+// ---- windowless adoption surfacing ------------------------------------------
+// The discoverability companion to the schema-adoption buckets. Those buckets
+// only surface changes in the OPEN schema window (currentSchema, latestSchema] —
+// so a repo whose project-state is already stamped at the latest schema sees
+// nothing, even though its release still carries recommended/optional changes a
+// human should consider (the many detectable:false 0.3.0 entries: § Design tool
+// prose, the review-angle library, the design-gate run-artifact contract). Those
+// changes bump NO schema (they're hand-reconciled prose / per-run outputs outside
+// the tracked installed-artifact contract), so the schema window can never reach
+// them and doctor/migrate never mentioned them — they were discoverable only by
+// reading the version file. This pass closes that gap.
+//
+// "Windowless" = the changes whose OWN version-file schema equals the repo's
+// CURRENT schema (the release the repo already sits on), not the (from, latest]
+// delta. So a schema-3 repo sees 0.3.0.json's changes surfaced for consideration
+// even though its schema-window drift is empty. Purely INFORMATIONAL: it never
+// touches the checks array, report.status, severity, exit codes, the adoption
+// buckets, manualActionItems, or suggestedNextCommand — it only fills two
+// additive report fields (availableAdoptions, acknowledgedCount). Detection of
+// these changes is impossible by construction (that is WHY they carry no
+// doctorChecks and bump no schema), so surfacing them can only ever be advisory,
+// never a status signal — hence "adoption cannot be auto-verified".
+//
+// Two filters, in order, keep the listing honest and quiet:
+//   1. isAdopted — a detectable change whose doctorChecks all fired `ok` is
+//      already carried by the repo (e.g. a schema-3 repo with the gate script at
+//      the canonical location has adopted 0.3.0-check-docs-sh-gate /
+//      -scripts-relocation); listing it would be noise. Required entries CAN
+//      still legitimately appear here — a schema-3 repo MISSING the gate script
+//      is not adopted-filtered, so 0.3.0-check-docs-sh-gate surfaces as
+//      [required]. That is honest redundancy: the check-docs-sh-present check
+//      already carries the severity; this listing just restates it in adoption
+//      terms.
+//   2. acknowledged — ids the operator has recorded in project.json's
+//      `acknowledgedChanges` are hidden (they've adopted it, or deliberately
+//      decided not to). A missing/non-array field is treated as [] (mirrors the
+//      module's other defensive guards). `acknowledgedCount` counts only entries
+//      ACTUALLY hidden by this filter (survived isAdopted, then removed) — not
+//      acknowledgedChanges.length — so the "(N hidden)" line reflects real
+//      suppression in THIS window, not stale acks for other releases.
+// A fresh scaffold install ships `acknowledgedChanges` PRE-FILLED with the
+// current release's ids (born already-considered), so a newly-scaffolded
+// schema-current repo lists nothing here; only an upgraded repo that predates a
+// change sees it. (That scaffold prefill lands in a sibling task; this pass is
+// the reader half of that contract.)
+//
+// doctor-only / none impact classes are excluded entirely (they are report-only,
+// never an adoption a human acts on — mirrors bucketize's exclusion of them).
+// Impact-ordered required/breaking → recommended → optional, stable within a
+// class (ledger order preserved — Array.prototype.sort is stable).
+const IMPACT_RANK = { required: 0, breaking: 0, recommended: 1, optional: 2 }
+const surfaceWindowless = (report, versions, currentSchema, emittedChecks, state) => {
+  const windowless = []
+  for (const v of versions) {
+    if (isInt(v.artifactSchema) && v.artifactSchema === currentSchema)
+      for (const ch of Array.isArray(v.changes) ? v.changes : []) windowless.push(ch)
+  }
+  // Impact filter FIRST: a doctor-only/none entry could never have surfaced, so an
+  // ack for one must not inflate the "(N hidden)" count either.
+  const listable = windowless.filter((ch) => ch.impact in IMPACT_RANK)
+  const afterAdopted = listable.filter((ch) => !isAdopted(ch, emittedChecks))
+  const acked = Array.isArray(state.acknowledgedChanges) ? state.acknowledgedChanges : []
+  const surviving = afterAdopted.filter((ch) => !acked.includes(ch.id))
+  report.acknowledgedCount = afterAdopted.length - surviving.length
+  const surfaced = surviving
+    .sort((a, b) => IMPACT_RANK[a.impact] - IMPACT_RANK[b.impact])
+  report.availableAdoptions = surfaced.map((ch) => {
+    const e = { id: ch.id, summary: ch.summary, impact: ch.impact }
+    if (ch.manualMigration) e.manualMigration = ch.manualMigration
+    return e
+  })
+}
+
 // ---- core inspection --------------------------------------------------------
 // Deterministic state detector. Returns the canonical report both doctor and
 // migrate build on. `releaseDir` is passed in (never resolved here) so a caller
@@ -175,6 +248,12 @@ export const inspect = (targetRoot, releaseDir) => {
     optionalChanges: [],
     manualActionItems: [],
     suggestedNextCommand: null,
+    // Windowless adoption surfacing (additive, informational — see surfaceWindowless).
+    // Initialized in the BASE object so every early-return path (non-materia,
+    // tool-fault, malformed, untracked-legacy, unknown/future schema) emits them
+    // well-formed; the windowless pass only runs once the schema is a known integer.
+    availableAdoptions: [],
+    acknowledgedCount: 0,
     checks,
   }
 
@@ -363,6 +442,13 @@ export const inspect = (targetRoot, releaseDir) => {
     // STATUS stays healthy (exit 0) while suggestedNextCommand points at the stamp.
     if (sevRank(sev) >= sevRank('warning') || (adoptedCount > 0 && bridgeStampable)) report.suggestedNextCommand = '/materia:migrate --plan'
   }
+
+  // Windowless adoption surfacing — runs on the tracked path once the schema is a
+  // KNOWN integer, in BOTH branches above (schema-current AND schema-behind). Purely
+  // additive report data (availableAdoptions / acknowledgedCount); it reads the final
+  // checks array + the already-parsed state (never re-reading the file) and touches
+  // nothing that drives status, severity, exit, the buckets, or suggestedNextCommand.
+  surfaceWindowless(report, ledger.versions, schema, checks, parsed.value)
 
   report.status = statusFrom(overall)
   return report

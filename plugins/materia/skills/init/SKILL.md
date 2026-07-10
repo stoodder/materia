@@ -47,9 +47,12 @@ Read tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path) — e.g.
   materialized so projects can fork or extend it; the `MATERIA.md` § Review
   angles registry maps each to its File / Gate / Tier.
 - `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/project.json` — the project-state
-  file (artifact schema, baseline source, applied migrations), materialized
-  verbatim so the repo is tracked from init forward. Copied, not authored — init
-  fills no slot in it.
+  file (artifact schema, baseline source, applied migrations, and an
+  `acknowledgedChanges` array pre-filled with every change id at the
+  scaffold's own schema — see `plugins/materia/release/README.md` — so a
+  fresh install starts with nothing to adopt), materialized verbatim so the
+  repo is tracked from init forward. Copied, not authored — init fills no slot
+  in it.
 - The engineer, interactively — this is the most interactive skill in the
   harness; everything downstream runs autonomously *because* this survey
   resolved the ambiguity up front.
@@ -69,7 +72,10 @@ branch-and-PR discipline — there is nothing to diff against yet):
   files + `README.md`), materialized verbatim; repo-specific angles append as
   new files + `MATERIA.md` § Review angles rows.
 - `.materia/project.json` — the project-state file, materialized verbatim so the
-  repo carries release/artifact tracking from init forward.
+  repo carries release/artifact tracking from init forward, including its
+  pre-filled `acknowledgedChanges` array (so a freshly-inited repo's
+  `/materia:doctor` starts quiet — it was born already carrying everything
+  that array names).
 - `.claude/settings.json` — seeded with this repo's dev permissions (Phase 6).
 - `docs/epics/<dated-slug>/` + 2–N member proposals in
   `docs/specs/_proposed/` — the **bootstrap epic** (see Phase 7).

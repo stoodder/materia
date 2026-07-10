@@ -1,6 +1,6 @@
 ---
 name: migrate
-description: "Explicit, plan-first project upgrade for a Materia-installed repo. Runs the deterministic engine (plugins/materia/scripts/migrate.mjs) against a target repo — reading this plugin's release/artifact ledger and the repo's .materia/project.json — and by default PLANS the migration (writes nothing): current vs target artifact schema, which ledger migrations can be safely applied, which need manual/operator judgement, which are skipped and why, the files it would create/update, and whether local edits could be affected. With --apply it applies only safe, deterministic, idempotent migrations; v0 implements two, init-project-state (initializes .materia/project.json for a detectable pre-tracking untracked-legacy install) and install-check-docs (puts the check:docs gate script at its canonical .materia/scripts/check-docs.sh — renaming a legacy scripts/check-docs.sh in place or copying it from the plugin scaffold — then stamps artifact schema 3). Apply does file ops first and the project.json stamp last, never overwrites an existing gate script or a non-schema-2 state file, never deletes anything, invents no state for a non-Materia repo. Both plan and apply also run a deterministic, no-AI reference sweep — scanning the target repo for stale consumer references to a relocated/replaced artifact (referenceFollowUps); the engine reports the hits and this skill performs the bounded post-apply sweep, then re-runs the repo's check:docs gate. Run it in an operator session when /materia:doctor reports a stale or legacy project — doctor reports, migrate plans, the operator applies."
+description: "Explicit, plan-first project upgrade for a Materia-installed repo. Runs the deterministic engine (plugins/materia/scripts/migrate.mjs) against a target repo — reading this plugin's release/artifact ledger and the repo's .materia/project.json — and by default PLANS the migration (writes nothing): current vs target artifact schema, which ledger migrations can be safely applied, which need manual/operator judgement, which are skipped and why, the files it would create/update, and whether local edits could be affected. With --apply it applies only safe, deterministic, idempotent migrations; v0 implements two, init-project-state (initializes .materia/project.json for a detectable pre-tracking untracked-legacy install) and install-check-docs (puts the check:docs gate script at its canonical .materia/scripts/check-docs.sh — renaming a legacy scripts/check-docs.sh in place or copying it from the plugin scaffold — then stamps artifact schema 3). Apply does file ops first and the project.json stamp last, never overwrites an existing gate script or a non-schema-2 state file, never deletes anything, invents no state for a non-Materia repo. With --acknowledge <change-id> (repeatable, mutually exclusive with --apply) it records that a change from /materia:doctor's windowless availableAdoptions listing was adopted or considered, unioning the id(s) into project.json's acknowledgedChanges; --plan --acknowledge previews without writing. Both plan and apply also run a deterministic, no-AI reference sweep — scanning the target repo for stale consumer references to a relocated/replaced artifact (referenceFollowUps); the engine reports the hits and this skill performs the bounded post-apply sweep, then re-runs the repo's check:docs gate. Run it in an operator session when /materia:doctor reports a stale or legacy project — doctor reports, migrate plans, the operator applies."
 ---
 
 # migrate — upgrade a Materia-installed project's artifacts
@@ -13,7 +13,8 @@ plugin. It is the acting counterpart to the read-only `/materia:doctor`:
 ```
 
 migrate is **plan-first** and **v0, dogfood-grade** — see Scope below for the
-exact contract (what `--plan`/`--apply` do, and the single v0 migration). The
+exact contract (what `--plan`/`--apply`/`--acknowledge` do, and the two v0
+migrations). The
 plan/apply verdict is produced by the deterministic script
 `plugins/materia/scripts/migrate.mjs`, not the model; this skill runs it and
 summarizes the result (see Rules) rather than re-deriving or guessing at
@@ -22,19 +23,25 @@ state.
 ## Invocation
 
 ```
-/materia:migrate [path] [--plan | --apply] [--json]
+/materia:migrate [path] [--plan | --apply] [--acknowledge <change-id>]... [--json]
 ```
 
 - `path` — the project root to migrate (default: the current working directory).
 - `--plan` — inspect and print the plan; **writes nothing** (this is the default).
 - `--apply` — apply only the safe, idempotent migrations the plan lists.
+- `--acknowledge <change-id>` — record that a change from `/materia:doctor`'s
+  windowless `availableAdoptions` listing was adopted or considered;
+  repeatable. **Writes by default** (that write is the point of this mode);
+  mutually exclusive with `--apply`; pair with `--plan` to preview instead.
 - `--json` — emit the structured report as JSON instead of the human summary.
 
 ## Inputs
 
 - The **target repo** at `path` (default cwd): its root `MATERIA.md` / `.materia/`
   (the Materia-enabled markers) and `.materia/project.json` (the project-state
-  file). Plan mode reads only; apply mode may **create** `.materia/project.json`.
+  file). Plan mode reads only; apply mode may **create** `.materia/project.json`;
+  acknowledge mode **modifies** it (adds to / extends its `acknowledgedChanges`
+  array).
 - This plugin's **release ledger**, bundled at `${CLAUDE_PLUGIN_ROOT}/release/`
   (`latest.json` + `versions/*.json`) — the machine-readable compatibility
   contract. The script reads it from its own sibling directory; the skill does
@@ -62,6 +69,13 @@ with no network or AI.
   changed, what did not (and why), the project state after migration, the
   post-apply `referenceFollowUps`, and the suggestion to run `/materia:doctor` to
   confirm health.
+- **Acknowledge mode (`--acknowledge <change-id>`, repeatable)** — prints: the
+  mode (`acknowledge` or, with `--plan`, `acknowledge-plan`), the given `ids`,
+  any `unknownIds` (ids not present in any ledger version file), any
+  `alreadyAcknowledged` ids, whether anything was `written`, whether the
+  request was `refused` (with the `reason`), and the resulting `projectState`.
+  `--plan --acknowledge <id>` computes and prints the would-be state without
+  writing.
 - **`--json`** — the same report as a structured JSON object (for other tooling).
 
 No branch, commit, or PR is ever produced.
@@ -72,11 +86,12 @@ No branch, commit, or PR is ever produced.
    (the Read tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path) and run:
 
    ```bash
-   node "$CLAUDE_PLUGIN_ROOT/scripts/migrate.mjs" [path] [--plan|--apply] [--json]
+   node "$CLAUDE_PLUGIN_ROOT/scripts/migrate.mjs" [path] [--plan|--apply] [--acknowledge <change-id>]... [--json]
    ```
 
    Default to **plan** (`--apply` omitted) unless the operator has explicitly
-   asked to apply (see Rules).
+   asked to apply (see Rules), or the operator asked to acknowledge a listed
+   change (step 5, below) — the two write modes are mutually exclusive.
 
 2. **Summarize the plan** for the operator from the script's own output (see
    Rules). Lead with the current state and target schema, then the migrations
@@ -100,7 +115,20 @@ No branch, commit, or PR is ever produced.
    and why, and the resulting project state. Close by suggesting `/materia:doctor`
    to confirm the result (see Relationship to doctor).
 
-5. **Reference sweep — when the report carries `referenceFollowUps` hits.** The
+5. **Acknowledge mode — when the operator wants to quiet a listed change.**
+   `/materia:doctor`'s "Available to adopt" listing names same-release changes
+   it cannot auto-verify; each entry carries an `/materia:migrate --acknowledge
+   <change-id>` pointer. Run it only on the operator's request (never
+   speculatively): pass every id they name, run `--plan --acknowledge <id>`
+   first if they want a preview, and relay the resulting report verbatim —
+   `refused` (with its `reason`) if an id is unknown or the project-state file
+   isn't one migrate will write to (missing, malformed, or schema below 2),
+   `alreadyAcknowledged` ids and a `written: no` no-op if everything given was
+   already recorded, or the written `projectState` otherwise. Never invent an
+   id the operator did not name, and never combine `--acknowledge` with
+   `--apply` (the engine refuses the combination).
+
+6. **Reference sweep — when the report carries `referenceFollowUps` hits.** The
    engine's scan is the deterministic detector; this skill is the fix. Each
    follow-up is one artifact the migration relocated/replaced, with the stale
    consumer `hits` (`file:line`) the engine already found — **the report's hits are
@@ -159,12 +187,21 @@ flags the adopted drift. Two bookkeeping states are worth naming:
   repo's own *references* to it — a relocated gate can pass doctor while the repo's
   `check:docs` command still points at the old path. migrate's reference scan is the
   deterministic detector for that gap, and this skill's sweep is the fix.
+- **Windowless adoptions and acknowledgement.** Doctor's `availableAdoptions`
+  listing surfaces same-release changes the schema window can never reach
+  (they bump no schema — see `plugins/materia/release/README.md`); migrate's
+  `--acknowledge <change-id>` is the write half of that pair, quieting a listed
+  entry once the operator has adopted or considered it. It never affects
+  doctor's status or exit code either way.
 
 ## Scope
 
-- **Plan-first.** The default (`--plan`) never edits files; only `--apply`
-  changes anything, and only for migrations that are safe, deterministic, and
-  idempotent.
+- **Plan-first.** The default (`--plan`) never edits files. Two modes write:
+  `--apply` applies only migrations that are safe, deterministic, and
+  idempotent; `--acknowledge <change-id>` is its own targeted, explicit write
+  to `.materia/project.json`'s `acknowledgedChanges` — bare `--acknowledge`
+  writes by default (that write is the point), and `--plan --acknowledge <id>`
+  previews it instead. The two write modes are mutually exclusive.
 - **Two migrations in v0.** `init-project-state` (reserved in
   `0.2.0-project-state-file`) initializes `.materia/project.json` for a detectable
   pre-tracking (untracked-legacy) install. `install-check-docs` (reserved in
@@ -174,6 +211,11 @@ flags the adopted drift. Two bookkeeping states are worth naming:
   plugin scaffold — then stamps artifact schema 3. Every other ledger change is
   reported as manual or skipped until a handler ships. No template rewrites,
   scaffold normalization, or conflict resolution in this version.
+- **Acknowledge is a third, targeted mode — not a migration.** It records that
+  the operator adopted or considered a change from `/materia:doctor`'s
+  windowless `availableAdoptions` listing (see `plugins/materia/release/README.md`);
+  it carries no ledger `migrations` id and never touches a schema-window
+  migration's own applicable/satisfied/manual bookkeeping.
 - **Does not auto-run.** It is operator-invoked; nothing triggers it from plugin
   startup or update hooks. Migration is always explicit.
 - Runs in the **operator's own session** — it is never spawned as a pipeline
@@ -192,6 +234,16 @@ flags the adopted drift. Two bookkeeping states are worth naming:
   hand-authored stale schema is reported manual, never clobbered. It never deletes
   anything — a superseded root `scripts/check-docs.sh` or stale legacy
   `check-docs.mjs` is surfaced as a manual cleanup item.
+- **Acknowledge is held to the same floor.** Every given id must resolve
+  against some release-ledger version file — an unknown id refuses, nothing
+  written. The target project-state file must be present, parsed, and record
+  an integer `artifactSchema >= 2` (the same never-overwrite/stamp-floor rule
+  as above) — missing, malformed, or a hand-authored schema-1 state refuses.
+  The write is the sorted-unique union of what was already there plus the
+  given ids: re-acknowledging already-recorded ids is an idempotent,
+  byte-stable no-op. The write is atomic (temp file + rename). A refusal exits
+  `2` **without** setting `toolFault` — that field stays reserved for this
+  script's own ledger-read or apply-write faults.
 - **File ops first, stamp last.** Apply performs file moves/copies before the
   project.json schema stamp, so an interrupted apply leaves a recoverable
   schema-behind state (doctor suggests migrate again), never a stamped-but-unmoved

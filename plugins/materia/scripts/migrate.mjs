@@ -2,8 +2,11 @@
 // migrate.mjs — deterministic, PLAN-FIRST project-upgrade engine for a
 // Materia-installed project. Reads the release/artifact compatibility contract
 // (this plugin's bundled release/ ledger) + the target project's
-// .materia/project.json, then either PLANS (default — writes nothing) or APPLIES
-// only safe, idempotent migrations. NO network, NO AI.
+// .materia/project.json, then either PLANS (default — writes nothing), APPLIES
+// only safe, idempotent migrations, or ACKNOWLEDGES a listed windowless change
+// (--acknowledge <change-id> — the operator's targeted, explicit write recording
+// "I adopted/considered this" in project.json's acknowledgedChanges array, which
+// doctor's availableAdoptions listing then filters on). NO network, NO AI.
 //
 // It shares the ledger read + state detection with /materia:doctor via
 // ./lib/materia-contract.mjs (the single detector), so doctor's report and
@@ -13,6 +16,7 @@
 // Ships INSIDE the plugin so an installed skill runs it from the read-only
 // plugin cache:
 //   node "$CLAUDE_PLUGIN_ROOT/scripts/migrate.mjs" [targetPath] [--apply] [--json]
+//   node "$CLAUDE_PLUGIN_ROOT/scripts/migrate.mjs" [targetPath] --acknowledge <change-id> [--plan] [--json]
 // The ledger is the script's sibling ../release; the TARGET project is a separate
 // root (positional arg, default cwd) — never the plugin cache.
 //
@@ -31,6 +35,17 @@
 // (a superseded root copy or a stale scripts/check-docs.mjs is surfaced as a manual
 // cleanup item, not removed); nothing auto-runs from startup hooks.
 //
+// A THIRD mode, --acknowledge <change-id> (repeatable), is an explicit, TARGETED write
+// — distinct from plan/apply's schema-window migrations. It records that the operator
+// has adopted/considered a ledger change doctor's windowless availableAdoptions listing
+// surfaced (see materia-contract.mjs's surfaceWindowless), by unioning the given id(s)
+// into project.json's optional `acknowledgedChanges` array. Plan-first still holds here:
+// bare --acknowledge WRITES (that IS the point — an explicit ack is deliberate, not a
+// drifting default), but --plan --acknowledge previews without writing. It shares this
+// module's guarantees: NEVER writes to a missing/malformed/non-schema>=2 project-state
+// file (the same never-overwrite/stamp-floor rule plan/apply enforce), atomic tmp+rename,
+// and idempotent (re-acknowledging already-recorded ids is a byte-stable no-op).
+//
 // It also runs a deterministic, NO-AI consumer REFERENCE SWEEP: for a migration that
 // relocates/renames/replaces an artifact (see the REGISTRY `referenceSweep` field), it
 // walks the target repo and REPORTS every stale reference to the old path (the gymii
@@ -40,8 +55,11 @@
 // schema-complete-but-stale repo is still surfaced) and emits `referenceFollowUps`; the
 // engine only reports the hits, the migrate SKILL performs the bounded sweep.
 //
-// Usage: node migrate.mjs [targetPath] [--plan|--apply] [--json] [--help]
-// Exit:  0 ok (plan produced / apply done) · 2 tool fault or apply write failure
+// Usage: node migrate.mjs [targetPath] [--plan|--apply] [--acknowledge <change-id>]... [--json] [--help]
+// Exit:  0 ok (plan produced / apply done / acknowledge written or no-op) ·
+//        2 tool fault, apply write failure, or an acknowledge refusal (unknown id,
+//        --apply combined with --acknowledge, missing operand, or a project-state
+//        file --acknowledge will not write to)
 import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync, readdirSync, statSync, copyFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 import { inspect, readLedger, relevantChanges, isInt, readJson, MIG } from './lib/materia-contract.mjs'
@@ -258,13 +276,36 @@ const installCheckDocs = {
 const REGISTRY = { [initProjectState.id]: initProjectState, [installCheckDocs.id]: installCheckDocs }
 
 // ---- arg parsing ------------------------------------------------------------
+// --acknowledge <change-id> is VALUE-BEARING and REPEATABLE: each occurrence consumes
+// the NEXT argv token as its operand (never mis-parsed as targetPath). Index-based loop
+// (not for-of) so a matched --acknowledge can advance past its operand. A missing
+// operand — end of argv, or the next token itself looks like a flag ('-' prefixed) — is
+// recorded in acknowledgeError rather than thrown here, so main() can still parse the
+// rest of argv (--json in particular) and render a normal, JSON-capable refusal report
+// instead of a bare crash. Only the FIRST such error is kept (repeat occurrences would
+// just repeat the same story). planFlag records whether --plan was given LITERALLY
+// (independent of `apply`, which --plan also flips false) — --acknowledge needs it to
+// tell "no mode flags at all" (acknowledge WRITES by default) apart from an explicit
+// --plan preview; plan/apply's own default-is-plan behavior needs no such distinction.
 const parseArgs = (argv) => {
-  const out = { apply: false, json: false, help: false, target: null }
-  for (const a of argv) {
+  const out = { apply: false, json: false, help: false, target: null, planFlag: false, acknowledge: [], acknowledgeError: null }
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]
     if (a === '--apply') out.apply = true
-    else if (a === '--plan') out.apply = false
+    else if (a === '--plan') { out.apply = false; out.planFlag = true }
     else if (a === '--json') out.json = true
     else if (a === '--help' || a === '-h') out.help = true
+    else if (a === '--acknowledge') {
+      const next = argv[i + 1]
+      if (next === undefined || next.startsWith('-'))
+        out.acknowledgeError ??= '--acknowledge requires a change-id operand (none given, or the next token looked like a flag)'
+      else { out.acknowledge.push(next); i++ }
+    }
+    // The equals form must not fall through to the ignore-unknown-flags default: that
+    // would silently run a plain plan (nothing acknowledged, exit 0) — a wrong-mode trap,
+    // not an unknown flag. Refuse with the correct spelling instead.
+    else if (a.startsWith('--acknowledge='))
+      out.acknowledgeError ??= `use the space form: --acknowledge ${a.slice('--acknowledge='.length) || '<change-id>'} (the equals form is not supported)`
     else if (a.startsWith('-')) { /* ignore unknown flags in v0 */ }
     else if (out.target === null) out.target = a
   }
@@ -273,13 +314,17 @@ const parseArgs = (argv) => {
 
 const HELP = `materia migrate — plan-first project upgrade for a Materia-installed project
 
-Usage: node migrate.mjs [targetPath] [--plan|--apply] [--json] [--help]
+Usage: node migrate.mjs [targetPath] [--plan|--apply] [--acknowledge <change-id>]... [--json] [--help]
 
-  targetPath   project root to migrate (default: current working directory)
-  --plan       inspect and print the migration plan; writes NOTHING (default)
-  --apply      apply only safe, idempotent migrations
-  --json       emit the structured report as JSON
-  --help, -h   show this help
+  targetPath           project root to migrate (default: current working directory)
+  --plan               inspect and print the migration plan; writes NOTHING (default)
+  --apply              apply only safe, idempotent migrations
+  --acknowledge <id>   record that a listed windowless change (doctor's
+                        availableAdoptions) was adopted/considered; repeatable.
+                        WRITES by default; pair with --plan to preview instead.
+                        Mutually exclusive with --apply.
+  --json               emit the structured report as JSON
+  --help, -h           show this help
 
 Default is --plan. Apply implements two migrations: init-project-state, which
 initializes .materia/project.json for a pre-tracking (untracked-legacy) install;
@@ -295,7 +340,16 @@ the target repo for stale references to a relocated/replaced artifact (e.g. a
 scripts/check-docs.sh a consumer still names after it moved to
 .materia/scripts/check-docs.sh) and report them as referenceFollowUps — the engine
 only reports the hits; the /materia:migrate skill performs the bounded sweep and
-re-runs the repo's check:docs gate. Run /materia:doctor afterward to confirm health.`
+re-runs the repo's check:docs gate. Run /materia:doctor afterward to confirm health.
+
+--acknowledge is a third, targeted mode: every given id must exist in the release
+ledger (unknown ids refuse, nothing written); the target project.json must be
+present, parsed, and record an integer artifactSchema >= 2 (the same never-
+overwrite/stamp-floor rule as plan/apply — a missing, malformed, or hand-authored
+schema-1 state refuses, nothing written); acknowledgedChanges becomes the sorted-
+unique union of what was already there plus the given ids, written atomically
+(tmp+rename). Re-acknowledging already-recorded ids is an idempotent, byte-stable
+no-op. --plan --acknowledge <id> previews the would-be state without writing.`
 
 // ---- reference sweep: deterministic consumer scan ---------------------------
 // For a migration carrying `referenceSweep` (see the REGISTRY field doc), walk the TARGET
@@ -581,6 +635,84 @@ const runApply = (targetRoot, releaseDir) => {
   return out
 }
 
+// ---- acknowledge --------------------------------------------------------------
+// A third, TARGETED mode — distinct from buildPlan/runApply's schema-window
+// migrations. Records that the operator adopted/considered a ledger change doctor's
+// windowless availableAdoptions listing surfaced (materia-contract.mjs's
+// surfaceWindowless), by writing the given id(s) into project.json's optional
+// `acknowledgedChanges` array. `planOnly` mirrors --plan: compute and report the
+// would-be result, write nothing. Refusals never throw — every branch returns a
+// well-formed report with `refused: true` and a `reason`; main() maps that to exit 2
+// WITHOUT setting toolFault (toolFault stays reserved for buildPlan/runApply's OWN
+// ledger-read/apply faults — see renderAcknowledge's separate render path).
+const buildAcknowledge = (targetRoot, releaseDir, ids, { planOnly }) => {
+  const mode = planOnly ? 'acknowledge-plan' : 'acknowledge'
+  const out = { mode, target: targetRoot, ids, unknownIds: [], alreadyAcknowledged: [],
+    written: false, refused: false, reason: null, projectState: null }
+  const refuse = (reason) => { out.refused = true; out.reason = reason; return out }
+
+  // 1. Every given id must exist SOMEWHERE in the ledger (all version files' changes,
+  //    not just the current schema's window — an ack should be honorable against any
+  //    known change, not just the ones the windowless pass happens to surface right now).
+  const ledger = readLedger(releaseDir)
+  // The one genuine plugin-fault path in acknowledge mode: carry toolFault so a machine
+  // consumer keying on that boolean classifies it correctly (refused alone means the
+  // OPERATOR's input/state was refused). Exit is 2 either way.
+  if (ledger.error) {
+    out.toolFault = true
+    return refuse(`TOOL FAULT (not the project): could not read this plugin's release ledger — ${ledger.error}`)
+  }
+  const knownIds = new Set()
+  for (const v of ledger.versions) for (const ch of Array.isArray(v.changes) ? v.changes : []) knownIds.add(ch.id)
+  const unknown = [...new Set(ids)].filter((id) => !knownIds.has(id))
+  if (unknown.length) {
+    out.unknownIds = unknown
+    return refuse(`unknown change id(s), not present in any release ledger version file: ${unknown.join(', ')}`)
+  }
+
+  // 2. Load target project.json. Mirrors the never-overwrite/stamp-floor guarantee
+  //    plan/apply enforce elsewhere in this file (see init-project-state's malformed
+  //    guard and install-check-docs disposition 1): missing, malformed, or a present-
+  //    but-hand-authored schema<2 state all refuse — acknowledge WRITES to project.json,
+  //    so it is held to the exact same floor as every other write path here.
+  const statePath = join(targetRoot, STATE_REL)
+  if (!existsSync(statePath))
+    return refuse(`${STATE_REL} is missing — migrate invents no state for --acknowledge; run /materia:migrate --apply (or --plan) first to establish project state.`)
+  const parsed = readJson(statePath)
+  if (parsed.error)
+    return refuse(`${STATE_REL} is malformed — fix the invalid JSON by hand; migrate will not write to it (${parsed.error}).`)
+  const schema = parsed.value.artifactSchema
+  if (!isInt(schema) || schema < INIT_STATE_SCHEMA)
+    return refuse(`${STATE_REL} records ${isInt(schema) ? `schema ${schema}` : 'an unknown schema'} (expected >= ${INIT_STATE_SCHEMA}) — review by hand; migrate will not write to a hand-authored stale state.`)
+
+  // 3. newState: sorted-unique union of existing (Array.isArray-guarded, mirrors
+  //    surfaceWindowless's own defensive read of this same field) + the given ids.
+  const existing = Array.isArray(parsed.value.acknowledgedChanges) ? parsed.value.acknowledgedChanges : []
+  out.alreadyAcknowledged = [...new Set(ids)].filter((id) => existing.includes(id))
+  const existingUnique = [...new Set(existing)].sort()
+  const union = [...new Set([...existing, ...ids])].sort()
+  const isNoOp = existingUnique.length === union.length && existingUnique.every((id, i) => id === union[i])
+  const state = { ...parsed.value, acknowledgedChanges: union }
+  out.projectState = state
+
+  // 4. Write (unless a no-op or a --plan preview). Same atomic tmp+rename pattern as
+  //    every other write in this file — an interrupted write can never leave a
+  //    half-written project.json behind.
+  if (!isNoOp && !planOnly) {
+    const dir = join(targetRoot, '.materia')
+    const tmp = join(dir, `.project.json.tmp-${process.pid}`)
+    try {
+      writeFileSync(tmp, JSON.stringify(state, null, 2) + '\n')
+      renameSync(tmp, statePath)
+      out.written = true
+    } catch (e) {
+      rmSync(tmp, { force: true })
+      return refuse(`could not write ${STATE_REL} — ${e.message}`)
+    }
+  }
+  return out
+}
+
 // ---- human-readable rendering ----------------------------------------------
 // Reference follow-ups block — stale consumer references the migrate SKILL sweeps (autoFix
 // true tokens) or lists for judgement (false). Rendered in BOTH plan and apply (apply is
@@ -609,6 +741,36 @@ const followUpLines = (r) => {
   if (r.mode === 'apply')
     L.push('    Then re-run your check:docs gate (MATERIA.md § Gate) to confirm it passes.')
   return L
+}
+
+// Acknowledge's OWN render path — deliberately NOT a branch inside renderHuman. An
+// acknowledge report carries no `toolFault` field (it uses `refused` instead, per this
+// mode's exit-2-without-toolFault contract — see buildAcknowledge/main), so routing it
+// through renderHuman's plan/apply-shaped rendering (which branches on r.mode === 'plan'
+// vs the apply else-branch, and would print `undefined` for fields an acknowledge report
+// doesn't carry) would either misrender or silently rely on that difference. main()
+// dispatches here directly for mode 'acknowledge' / 'acknowledge-plan', before renderHuman
+// is ever called, so a refusal is never swallowed by unrelated rendering logic.
+const renderAcknowledge = (r) => {
+  const L = []
+  L.push(`materia migrate (${r.mode}) — ${r.target}`)
+  L.push('')
+  L.push(`  ids: ${r.ids.length ? r.ids.join(', ') : '(none)'}`)
+  if (r.refused) {
+    if (r.unknownIds.length) L.push(`  unknown ids: ${r.unknownIds.join(', ')}`)
+    L.push(`  ✗ refused: ${r.reason}`)
+    return L.join('\n')
+  }
+  if (r.alreadyAcknowledged.length) L.push(`  already acknowledged: ${r.alreadyAcknowledged.join(', ')}`)
+  L.push(`  written: ${r.written ? 'yes' : 'no'}`)
+  if (!r.written)
+    L.push(r.mode === 'acknowledge-plan' ? '  (--plan preview — nothing written)' : '  (no-op — all given ids already acknowledged; file unchanged)')
+  if (r.projectState) {
+    L.push('')
+    L.push(r.mode === 'acknowledge-plan' ? '  Project state would become:' : '  Project state now:')
+    for (const line of JSON.stringify(r.projectState, null, 2).split('\n')) L.push(`    ${line}`)
+  }
+  return L.join('\n')
 }
 
 const renderHuman = (r) => {
@@ -676,10 +838,32 @@ const renderHuman = (r) => {
 
 // ---- main -------------------------------------------------------------------
 const main = () => {
-  const { apply, json, help, target } = parseArgs(process.argv.slice(2))
+  const { apply, json, help, target, planFlag, acknowledge, acknowledgeError } = parseArgs(process.argv.slice(2))
   if (help) { console.log(HELP); process.exit(0) }
   const targetRoot = resolve(target ?? process.cwd())
   const releaseDir = resolve(import.meta.dirname, '../release')
+
+  // Acknowledge mode: anything naming --acknowledge (a valid operand, or a bad one that
+  // produced acknowledgeError) routes here instead of plan/apply — a wholly separate,
+  // targeted write. Checked BEFORE dispatching to buildAcknowledge so both refusals that
+  // never need a ledger/state read (the mode conflict, a bad operand) short-circuit with
+  // their own well-formed report, matching buildAcknowledge's report shape exactly.
+  if (acknowledge.length || acknowledgeError) {
+    const base = { target: targetRoot, ids: acknowledge, unknownIds: [], alreadyAcknowledged: [], written: false, projectState: null }
+    let report
+    if (apply) // --apply + --acknowledge: mutually exclusive modes, refused.
+      report = { mode: 'acknowledge', ...base, refused: true,
+        reason: '--apply cannot be combined with --acknowledge — acknowledge is its own write-or-preview mode; use --acknowledge alone to write, or --plan --acknowledge to preview.' }
+    else if (acknowledgeError)
+      report = { mode: planFlag ? 'acknowledge-plan' : 'acknowledge', ...base, refused: true, reason: acknowledgeError }
+    else
+      report = buildAcknowledge(targetRoot, releaseDir, acknowledge, { planOnly: planFlag })
+    if (json) console.log(JSON.stringify(report, null, 2))
+    else console.log(renderAcknowledge(report))
+    process.exit(report.refused ? 2 : 0)
+    return
+  }
+
   const report = apply ? runApply(targetRoot, releaseDir) : buildPlan(targetRoot, releaseDir)
   if (json) console.log(JSON.stringify(report, null, 2))
   else console.log(renderHuman(report))
