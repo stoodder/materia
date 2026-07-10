@@ -1277,8 +1277,11 @@ cumulative diff. A negative decision is recorded like any other
 **Design-conformance is harness-first (orchestrator lane).** Its inputs come
 from the § Eyes design conformance harness, which needs the app up and so runs
 in the § Orchestrator behavioral-verify lane — never inside a fresh-context
-spawn. So when the `design-bearing` gate is positive, **before** the fan-out
-message the orchestrator:
+spawn. So when the `design-bearing` gate is positive **and the fan-out has not
+collapsed** — evaluate the markdown-only exemption and trivial-diff threshold
+first, both of which drop design-conformance, and skip the harness entirely when
+either fires (never provision the app only to discard the angle) — **before** the
+fan-out message the orchestrator:
 
 1. Runs the harness in the behavioral-verify lane: provision per `MATERIA.md`
    § Eyes, drive both sides, write the findings JSON (the gitignored diagnostic)
@@ -1292,6 +1295,11 @@ message the orchestrator:
    directory; the inline follows the dismissed-findings carry-forward
    precedent), and the readable capture path above. **Not** the diff, `tasks.md`,
    or the implementation reasoning.
+
+The harness re-runs in this lane **before each review round's fan-out** — § Loop
+step 4 re-spawns the angles over the new cumulative diff, so each round's
+design-conformance angle must verify against the current tree, never stale
+round-1 findings.
 
 **Harness failure follows the § Session-limit fallback shape** — never a silent
 drop. Record it in `STATUS.md` (`design-conformance: harness failed (<reason>) —
@@ -1508,10 +1516,16 @@ review-loop commit messages plus the `STATUS.md` notes.
    design-debt` or `classification: not-checkable` (§ Structured finding schema) is **not** a
    code-fix item: the code may be right and the design wrong or infeasible (`design-debt`), or
    the assertion's only checker is the e2e lane (`not-checkable`). Handle each as
-   **dismissed-with-disposition** — add it to the accumulated dismissed set (keyed
-   `<file>:<line_start>`, carried forward per the round-2 dismissed-findings carry-forward with
-   its `classification`) so it counts toward **neither** the convergence HIGH/MEDIUM test (step 2)
-   **nor** inline-fix / remediation-task routing (step 3). The **orchestrator** (sole retro
+   **excluded-with-disposition** — remove it from this round's aggregate entirely, so it counts
+   toward **neither** the convergence HIGH/MEDIUM test (step 2) **nor** inline-fix /
+   remediation-task routing (step 3). **Do not add it to the sub-condition-B accumulated
+   dismissed set** — that set is keyed `<file>:<line_start>` and gates convergence by membership,
+   so seeding it with a design-debt key would let a *later* real HIGH at the same line converge
+   silently; removal from the aggregate is already complete exclusion without it. Carry the
+   disposition forward only to the **design-conformance reviewer's own brief** (a
+   `prior-round classification: <finding> — <design-debt|not-checkable>` line, separate from the
+   dismissed-findings carry-forward) so the angle keeps context without re-litigating. The
+   **orchestrator** (sole retro
    writer) folds every classified finding into the review retro entry (§ Retrospective capture),
    surfacing the design-drift category words in the entry's bullets so `triage-retros` can
    cluster. A **material** (`HIGH`/`MEDIUM`, confirmed) `design-debt` finding additionally gets a
