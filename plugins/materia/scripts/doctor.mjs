@@ -154,6 +154,7 @@ const parseApprovalBlock = (text) => {
     if (!m || !KEYS.has(m[1])) continue
     let val = m[2].trim()
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1)
+    else val = val.replace(/\s+#.*$/, '') // strip a trailing YAML comment (hand-edited blocks); none of these keys legitimately contains '#'
     out[m[1]] = val
   }
   if (!out.status) return null

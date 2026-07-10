@@ -1553,8 +1553,9 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
 //       EXIT table keys ONLY on report.status; the scan is attached as a separate
 //       key at print time and `report` stays pristine. Behavioral: a healthy
 //       synthetic repo reports the SAME status+exit with and without a pending
-//       design.md, while --json gains a designGate entry and the human render
-//       names the pending run.
+//       design.md. Liveness + filtering are asserted through the HUMAN render
+//       only (pending run named; approved sibling + _templates absent) — the
+//       JSON key and entry fields stay unpinned so the layer can evolve.
 {
   const before = failures
   const DOCTOR = resolve('plugins/materia/scripts/doctor.mjs')
@@ -1581,11 +1582,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     const base = runJson()
     const problems = []
     if (!base.rep) problems.push(`baseline emitted no parseable JSON (exit ${base.r.status})`)
-    else {
-      if (base.rep.status !== 'healthy') problems.push(`baseline synthetic schema-3 repo not healthy (got ${base.rep.status})`)
-      if (!Array.isArray(base.rep.designGate) || base.rep.designGate.length !== 0)
-        problems.push(`baseline designGate must be [] on a repo with no docs/specs (got ${JSON.stringify(base.rep?.designGate)})`)
-    }
+    else if (base.rep.status !== 'healthy') problems.push(`baseline synthetic schema-3 repo not healthy (got ${base.rep.status})`)
     const baseStatus = base.rep?.status, baseExit = base.r.status
 
     // plant a pending run + an approved sibling + a _templates dir
@@ -1602,16 +1599,13 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
 
     const withGate = runJson()
     if (!withGate.rep) problems.push(`with-gate emitted no parseable JSON (exit ${withGate.r.status})`)
-    else {
-      if (withGate.rep.status !== baseStatus || withGate.r.status !== baseExit)
-        problems.push(`a pending design.md changed doctor status/exit (status ${baseStatus}->${withGate.rep.status}, exit ${baseExit}->${withGate.r.status}) — the reporting layer must never influence exit codes`)
-      const arr = withGate.rep.designGate
-      if (!Array.isArray(arr) || arr.length !== 1 || arr[0].folder !== slug || arr[0].status !== 'pending')
-        problems.push(`--json designGate must carry exactly the one pending run ${slug} (approved sibling + _templates skipped); got ${JSON.stringify(arr)}`)
-    }
-    // human render names the pending run
+    else if (withGate.rep.status !== baseStatus || withGate.r.status !== baseExit)
+      problems.push(`a pending design.md changed doctor status/exit (status ${baseStatus}->${withGate.rep.status}, exit ${baseExit}->${withGate.r.status}) — the reporting layer must never influence exit codes`)
+    // liveness + filtering via the human render only — no JSON-shape pins
     const human = spawnSync('node', [DOCTOR, dg], { encoding: 'utf8' })
     if (!human.stdout.includes(slug)) problems.push('human render does not name the pending run folder')
+    if (human.stdout.includes(done)) problems.push('human render names the approved sibling — approved runs are healthy noise and must be skipped')
+    if (human.stdout.includes('_templates')) problems.push('human render names _templates — underscore-prefixed dirs must be skipped')
 
     if (problems.length) fail(`design-gate layer [behavioral]: ${problems.join('; ')}`)
   } finally { rmSync(dg, { recursive: true, force: true }) }
