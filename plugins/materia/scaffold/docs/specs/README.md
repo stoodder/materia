@@ -20,6 +20,7 @@ docs/specs/<yyyy-mm-dd-hhmmss>-<rand>-<slug>/
   STATUS.md        ← resumable pipeline state (stages done, next stage/task, blocker, PR, ## Provenance block)
   spec.md          ← what & why (problem, users, acceptance criteria)
   design.md        ← UX flows, screens, states (UI-gated — absent on non-UI runs)
+  design/          ← committed static canvas snapshot + README (present iff the design-tool adapter can export/reconstruct — MATERIA.md § Design tool)
   architecture.md  ← technical plan, grounded in docs/ (reuses existing resources)
   tasks.md         ← dependency-ordered tasks with acceptance criteria
   retro.md         ← per-run retrospective; appended after each stage + orchestrator self-review (see ship-spec skill)
@@ -55,7 +56,7 @@ Merge watch sections.
 | Stage | Skill | Produces |
 |---|---|---|
 | 1. Intake | `intake-spec` | `spec.md` (asks clarifying questions) |
-| 2. Design | `design` | `design.md` (UI-gated; skipped+recorded if non-UI) |
+| 2. Design | `design` | `design.md` (UI-gated; skipped+recorded if non-UI), plus `design/` (a committed canvas snapshot — present iff the adapter can export/reconstruct) |
 | 3. UI-test-plan | `ui-test-plan` | `ui-test-plan.md` (UI-gated; skipped+recorded if non-UI) |
 | 4. Architecture | `architecture` | `architecture.md` (reads `docs/`, reuses resources; on non-UI runs also carries the operator-surface enumeration design would) |
 | 5. Plan | `plan-tasks` | `tasks.md` |
