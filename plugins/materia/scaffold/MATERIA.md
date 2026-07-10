@@ -287,15 +287,15 @@ since the last gate commit?"; an adapter's entry records how it answers, in
 preference order:
 
 1. a canvas state/version identifier when the tool exposes one — the cheap,
-   exact signal (claude-design: per-file etags, documented in the init catalog
-   below).
+   exact signal (claude-design: per-file etags).
 2. otherwise, a canvas read-back plus a canonicalized re-export compared against
    the last committed versions — the adapter note must record whether its export
    is deterministic enough for this comparison to mean anything.
 3. neither → record `canvas-change-detection: none`. Its consequence is defined
    normatively in ship-spec/SKILL.md § Design gate: every `read`-capable gate
    arrival that re-presents counts one revision round unconditionally, with the
-   terminal stamping arrival (an approve that ends the gate) carved out.
+   terminal stamping arrival (the approval that ends the gate, auto-approvals
+   included) carved out.
 
 **Post-approval drift** — once the design gate stamps approval, the committed
 pair (`design.md`, plus the committed snapshot when one exists) is the frozen
