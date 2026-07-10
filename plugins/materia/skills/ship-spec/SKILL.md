@@ -1219,7 +1219,8 @@ angles" step). For each row:
 
 1. **Evaluate its Gate over the cumulative diff.** `always` → unconditional;
    `ui-affecting` → per § UI-surface gate; `data-affecting` → per § Data-surface
-   gate; a repo-specific predicate → as the row states. Record every negative
+   gate; `design-bearing` → per the **design-conformance gate** (below);
+   a repo-specific predicate → as the row states. Record every negative
    decision in `STATUS.md` (`<angle>-review: skipped (<reason>)`), exactly as
    the UI/data gates already do.
 
@@ -1234,9 +1235,16 @@ angles" step). For each row:
    convergence check, and session-limit fallback as every other angle. The
    **Markdown-only exemption** and **Trivial-diff threshold** collapses apply to
    every row — repo-specific rows included — dropping an angle unless a surface
-   gate of its own (`ui-affecting` / `data-affecting` / a repo-specific
+   gate of its own (`ui-affecting` / `data-affecting` / a repo-specific *diff*
    predicate) is independently positive (as `data-safety`'s can be on a
-   seed-data-only diff).
+   seed-data-only diff). **`design-conformance` is the exception:** its
+   `design-bearing` gate is **artifact-based** (design.md + declared surface +
+   Eyes), not a diff-surface gate, so a positive gate does **not** keep it alive
+   through a collapse — it drops on both the markdown-only exemption and the
+   trivial-diff threshold with the rest (a design-bearing run whose cumulative
+   diff is markdown-only or trivial is nearly a contradiction). Only diff-surface
+   gates survive a collapse; the survive-if-positive clause never reaches an
+   artifact-based gate.
 
 On the markdown-only exemption path the `spec-adherence` angle spawns at
 `haiku/low` — the **Markdown-only exemption** paragraph below carries that
@@ -1254,6 +1262,43 @@ server stack (database + Eyes toolchain + dev server), mirroring § Orchestrator
 behavioral-verify lane — a standing contract, not a per-run deviation. The
 orchestrator records the lane decision and the fresh-context deviation in
 `STATUS.md`, the review retro entry, and the PR body.
+
+**The design-conformance gate.** `design-bearing` is positive **iff** all three
+hold: the run resolved to a **design-bearing (UI) surface** (the recorded
+`ui-surface (predictive)` decision — § UI-surface gate; the design-bearing set
+is defined in `docs/specs/_proposed/README.md` § Field roles → `surfaces`),
+`design.md` exists with a **non-empty `## Assertions` block**, and `MATERIA.md`
+§ Eyes is not `none`. This is an **artifact/config** predicate, not a diff
+predicate — which is why the collapse paths drop it (above) and why it is
+evaluated from the run's artifacts and recorded decisions, never from the
+cumulative diff. A negative decision is recorded like any other
+(`design-conformance-review: skipped (<reason>)`).
+
+**Design-conformance is harness-first (orchestrator lane).** Its inputs come
+from the § Eyes design conformance harness, which needs the app up and so runs
+in the § Orchestrator behavioral-verify lane — never inside a fresh-context
+spawn. So when the `design-bearing` gate is positive, **before** the fan-out
+message the orchestrator:
+
+1. Runs the harness in the behavioral-verify lane: provision per `MATERIA.md`
+   § Eyes, drive both sides, write the findings JSON (the gitignored diagnostic)
+   plus the labeled captures under `docs/specs/<dated-slug>/design-conformance/
+   captures/`, then tear down — teardown is **its own command**, never chained
+   with follow-up work (§ Orchestrator behavioral-verify lane).
+2. Spawns the `design-conformance` reviewer in the same fan-out message as every
+   other applicable angle, but with its context built from the harness output:
+   the `## Assertions` block, the findings **content inlined into the brief**
+   (never the `.claude/review-logs/` path — reviewers are forbidden that
+   directory; the inline follows the dismissed-findings carry-forward
+   precedent), and the readable capture path above. **Not** the diff, `tasks.md`,
+   or the implementation reasoning.
+
+**Harness failure follows the § Session-limit fallback shape** — never a silent
+drop. Record it in `STATUS.md` (`design-conformance: harness failed (<reason>) —
+angle ran on assertions + captures alone`), and spawn the angle in its degraded
+mode: it works from the `## Assertions` block plus whatever captures exist
+(§ Eyes names the degraded/one-sided capture modes). The angle still runs; only
+the deterministic findings are absent.
 
 **Markdown-only exemption.** If the cumulative diff contains no source-code
 changes (no changed file outside markdown/docs) and no test additions, skip
@@ -1633,6 +1678,20 @@ the fix in place and re-flow the artifacts **asymmetrically**:
 - **`retro.md` carries the original-decision story** — the entry where the
   wrong decision landed records what was decided and why; the entry where the
   correction landed records the flip and the fix.
+
+**A material `design-debt` review finding is a post-approval banner trigger.**
+When the `design-conformance` angle classifies a HIGH/MEDIUM discrepancy as
+`classification: design-debt` (§ Loop on findings — correct code, wrong or
+infeasible design), the **design.md banner above is the routing**: the *finding*,
+not a downstream stage, is the decision-flip source. The orchestrator (the design
+stage isn't running, and the angle is read-only) writes the banner — the flip, the
+reason, and the artifact now carrying the binding decision — cordoning the stale
+`design.md` prose so intent-oracle passes don't false-positive; the paired
+`design/` snapshot is frozen exactly as ever, with the banner the reader's signal
+it may be visually stale. This is a legal post-approval body write under § Design
+gate's frozen-audit-record scoping and **never** re-triggers the gate. A
+`not-checkable` finding never banners (informational only), and a LOW/minor
+`design-debt` discrepancy is folded into the retro without a banner.
 
 **The active variant — a design bounce, not a banner.** When the downstream stage
 is `architecture` and the artifact it contradicts is the **approved design**, the
