@@ -1293,6 +1293,19 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     ...detailWant(rep, 'check-docs-sh-location', '.materia/scripts/check-docs.sh'),
     // Healthy-path honesty: even a green report must say what "current" certifies.
     ...detailWant(rep, 'artifact-schema-current', 'certifies only .materia/project.json'),
+    // Windowless adoption surfacing: a schema-current (schema 3) repo still sees
+    // the 0.3.0 release's schema-invisible changes — the discoverability gap this
+    // pass closes. The gate + relocation entries are adopted-filtered (both
+    // check-docs checks `ok`), so what remains is the detectable:false 0.3.0 set:
+    // non-empty, impact-legal, and (no acknowledgedChanges in the fixture) nothing
+    // hidden. It stays purely informational — status/exit/suggestedNextCommand above
+    // are unchanged.
+    ...(rep.availableAdoptions.length ? [] : ['availableAdoptions empty for a schema-current repo (windowless surfacing missing)']),
+    ...(rep.availableAdoptions.some((a) => a.id === '0.3.0-design-conformance-angle')
+      ? [] : ['availableAdoptions missing 0.3.0-design-conformance-angle']),
+    ...(rep.availableAdoptions.every((a) => ['required', 'breaking', 'recommended', 'optional'].includes(a.impact))
+      ? [] : ['availableAdoptions carries a doctor-only/none impact (must be excluded)']),
+    ...want(rep, 'acknowledgedCount', 0),
     ...exitWant(r, 0),
   ])
 
@@ -1302,6 +1315,10 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     const r = spawnSync('node', [DOCTOR, resolve('tests/fixtures/materia/tracked-current-project')], { encoding: 'utf8' })
     if (!r.stdout.includes('Schema currency certifies only that file'))
       fail('doctor [tracked-current, human]: healthy rendering lacks the schema-currency honesty caveat')
+    // …and the windowless adoption listing renders in the human view too (the
+    // discoverability surface, not just the --json field).
+    if (!r.stdout.includes('Available to adopt'))
+      fail('doctor [tracked-current, human]: healthy rendering lacks the "Available to adopt" windowless listing')
   }
 
   // KNOWN_CHECK_IDS honesty pin (bidirectional). The tracked-current path emits ALL
@@ -1316,6 +1333,71 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     const extra = [...emitted].filter((id) => !KNOWN_CHECK_IDS.includes(id))
     if (missing.length || extra.length)
       fail(`KNOWN_CHECK_IDS drift vs doctor's emitted ids (tracked-current) — missing: [${missing}], extra: [${extra}]`)
+  }
+
+  // The windowless non-adopted set size — derived at test runtime, never hardcoded.
+  // The tracked-current fixture is a schema-3 repo with the gate script at the
+  // canonical location AND no acknowledgedChanges, so its availableAdoptions IS the
+  // full windowless-minus-adopted set for the real ledger (gate + relocation
+  // adopted-filtered; the detectable:false 0.3.0 entries surviving). The
+  // acknowledged-current case below reuses this count: acknowledging ALL of them
+  // must hide exactly this many.
+  const windowlessNonAdopted = runDoctor(resolve('tests/fixtures/materia/tracked-current-project')).report.availableAdoptions.length
+
+  // synthetic acknowledged-current -> the acknowledged filter. Same shape as
+  // tracked-current (schema 3, canonical gate script), but project.json lists ALL
+  // ledger change ids in acknowledgedChanges (read at runtime from the loaded
+  // version files — NOT hardcoded). Every windowless entry that survives the
+  // adopted filter is then acknowledged-hidden, so availableAdoptions is EMPTY,
+  // acknowledgedCount equals the windowless-non-adopted size, and the human render
+  // shows NEITHER the listing nor a bare hidden-count line (both are gated on a
+  // non-empty listing). Status stays healthy — the pass is informational only.
+  {
+    const ac = mkdtempSync(join(tmpdir(), 'materia-doctor-acked-'))
+    try {
+      mkdirSync(join(ac, '.materia', 'scripts'), { recursive: true })
+      writeFileSync(join(ac, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(ac, '.materia', 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
+      writeFileSync(join(ac, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [], acknowledgedChanges: ledgerChanges.map((ch) => ch.id) }))
+      check('acknowledged-current', ac, (rep, r) => [
+        ...want(rep, 'status', 'healthy'),
+        ...(rep.availableAdoptions.length === 0 ? [] : [`availableAdoptions must be empty (all acknowledged), got ${JSON.stringify(rep.availableAdoptions.map((a) => a.id))}`]),
+        ...(rep.acknowledgedCount > 0 ? [] : [`acknowledgedCount must be > 0 (entries hidden), got ${rep.acknowledgedCount}`]),
+        ...want(rep, 'acknowledgedCount', windowlessNonAdopted),
+        ...exitWant(r, 0),
+      ])
+      const human = spawnSync('node', [DOCTOR, ac], { encoding: 'utf8' }).stdout
+      if (human.includes('Available to adopt') || human.includes('hidden'))
+        fail('doctor [acknowledged-current, human]: rendered the windowless listing/hidden-count for an all-acknowledged repo (must show neither)')
+    } finally { rmSync(ac, { recursive: true, force: true }) }
+  }
+
+  // synthetic current-missing-gate -> a schema-current (schema 3) repo MISSING the
+  // gate script at both locations, no acknowledgedChanges. check-docs-sh-present is
+  // `warning` -> overall status `warnings` (exit 0; impact-severity semantics
+  // unchanged — the missing gate is not adopted-filtered). The windowless pass then
+  // surfaces the required 0.3.0-check-docs-sh-gate as [required] (NOT adopted-away,
+  // its doctorCheck is `warning` not `ok`) alongside the recommended detectable:false
+  // entries — honest redundancy: the check already carries the severity, the listing
+  // restates it in adoption terms.
+  {
+    const cmg = mkdtempSync(join(tmpdir(), 'materia-doctor-missgate-'))
+    try {
+      mkdirSync(join(cmg, '.materia'), { recursive: true })
+      writeFileSync(join(cmg, 'MATERIA.md'), '# m\n')
+      writeFileSync(join(cmg, '.materia', 'project.json'),
+        JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
+      check('current-missing-gate', cmg, (rep, r) => [
+        ...want(rep, 'status', 'warnings'),
+        ...sevWant(rep, 'check-docs-sh-present', 'warning'),
+        ...(rep.availableAdoptions.some((a) => a.id === '0.3.0-check-docs-sh-gate' && a.impact === 'required')
+          ? [] : ['availableAdoptions missing 0.3.0-check-docs-sh-gate [required] (missing gate is not adopted-filtered)']),
+        ...(rep.availableAdoptions.some((a) => a.id === '0.3.0-design-review-gate' && a.impact === 'recommended')
+          ? [] : ['availableAdoptions missing the recommended detectable:false entries']),
+        ...exitWant(r, 0),
+      ])
+    } finally { rmSync(cmg, { recursive: true, force: true }) }
   }
 
   // legacy 0.1.0 fixture -> warnings (the adopted-drift-filter carrier). It carries a
@@ -1373,12 +1455,15 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   // empty fully on a schema-behind repo — a non-detectable change is never filterable
   // as adopted (isAdopted keys on firing `ok` checks), so doctor truthfully reports
   // `warnings` (still exit 0) until the repo stamps to the current schema (relevance
-  // keys on schema position; a stamped schema-3 repo sees none of this). The bridge
-  // suggestion (/materia:migrate --plan — the stamp-only step migrate has left) and
-  // the artifact-schema-current detail are unchanged. Pins: requiredChanges stays
-  // empty and every surviving recommendedChanges entry is detectable:false — i.e.
-  // all DETECTABLE drift is still filtered as adopted. Runs against the REAL
-  // shipped ledger via the doctor CLI.
+  // keys on schema position; a stamped schema-3 repo sees none of THESE schema-window
+  // buckets — the windowless listing is a separate axis that DOES surface schema-3's
+  // detectable:false changes there). The bridge suggestion (/materia:migrate --plan —
+  // the stamp-only step migrate has left) and the artifact-schema-current detail are
+  // unchanged. Pins: requiredChanges stays empty and every surviving recommendedChanges
+  // entry is detectable:false — i.e. all DETECTABLE drift is still filtered as adopted.
+  // availableAdoptions is EMPTY here: the windowless set for a schema-2 repo is
+  // 0.2.0.json's single detectable entry (project-state-file), which project-state-present
+  // `ok` adopts away. Runs against the REAL shipped ledger via the doctor CLI.
   {
     const mu = mkdtempSync(join(tmpdir(), 'materia-doctor-moved-'))
     try {
@@ -1397,6 +1482,8 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
         ...(rep.requiredChanges.length === 0 ? [] : ['gate/relocation not filtered as adopted (requiredChanges non-empty)']),
         ...(rep.recommendedChanges.every((ch) => ledgerChangeById(ch.id)?.detectable === false)
           ? [] : ['a DETECTABLE recommended change was not filtered as adopted']),
+        // Windowless-at-2 = 0.2.0's single detectable entry, adopted-filtered -> empty.
+        ...(rep.availableAdoptions.length === 0 ? [] : [`availableAdoptions must be empty at schema 2 (windowless entry adopted-away), got ${JSON.stringify(rep.availableAdoptions.map((a) => a.id))}`]),
         ...exitWant(r, 0),
       ])
     } finally { rmSync(mu, { recursive: true, force: true }) }
@@ -1427,6 +1514,8 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
         // --plan; the stamp bridge itself stays withheld — the detail pins that.
         ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'),
         ...detailWant(rep, 'artifact-schema-current', 'needs by-hand review'),
+        // Windowless-at-1 = 0.1.0.json's changes, of which there are zero (baseline) -> empty.
+        ...(rep.availableAdoptions.length === 0 ? [] : [`availableAdoptions must be empty at schema 1 (0.1.0 baseline has no changes), got ${JSON.stringify(rep.availableAdoptions.map((a) => a.id))}`]),
         ...exitWant(r, 0),
       ])
     } finally { rmSync(s1, { recursive: true, force: true }) }
@@ -1553,7 +1642,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   }
 
   if (failures === before)
-    console.log('  ✓ doctor behavior: tracked→healthy(schema 3, location ok) · legacy→warnings(gate adopted-away→requiredChanges empty, relocation recommended) · gnarly→action-needed(exit 1, required gate drift) · moved-but-unstamped→warnings(non-detectable recommended entry; detectable drift adopted-away; +bridge suggests migrate) · schema1+script→warnings(stamp bridge withheld, --plan suggested) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
+    console.log('  ✓ doctor behavior: tracked→healthy(schema 3, location ok, windowless listing non-empty) · acknowledged-current→healthy(all acked→availableAdoptions empty, count hidden) · current-missing-gate→warnings(windowless surfaces [required] gate) · legacy→warnings(gate adopted-away→requiredChanges empty, relocation recommended) · gnarly→action-needed(exit 1, required gate drift) · moved-but-unstamped→warnings(non-detectable recommended entry; detectable drift adopted-away; +bridge suggests migrate; windowless empty) · schema1+script→warnings(stamp bridge withheld, --plan suggested; windowless empty) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
 }
 
 // ---- 7b. doctor's design-gate reporting layer — NEGATIVE invariants ---------
@@ -1620,11 +1709,17 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     if (!withGate.rep) problems.push(`with-gate emitted no parseable JSON (exit ${withGate.r.status})`)
     else if (withGate.rep.status !== baseStatus || withGate.r.status !== baseExit)
       problems.push(`a pending design.md changed doctor status/exit (status ${baseStatus}->${withGate.rep.status}, exit ${baseExit}->${withGate.r.status}) — the reporting layer must never influence exit codes`)
-    // liveness + filtering via the human render only — no JSON-shape pins
+    // liveness + filtering via the human render only — no JSON-shape pins. Scope the
+    // checks to the "Design gates:" section: this schema-3 repo also renders the
+    // windowless adoption listing, whose adopt: migration prose legitimately mentions
+    // docs/specs/_templates/… paths — a whole-stdout `_templates` scan would false-trip
+    // on that unrelated surface. The design-gate section is what must skip _-dirs.
     const human = spawnSync('node', [DOCTOR, dg], { encoding: 'utf8' })
-    if (!human.stdout.includes(slug)) problems.push('human render does not name the pending run folder')
-    if (human.stdout.includes(done)) problems.push('human render names the approved sibling — approved runs are healthy noise and must be skipped')
-    if (human.stdout.includes('_templates')) problems.push('human render names _templates — underscore-prefixed dirs must be skipped')
+    const dgIdx = human.stdout.indexOf('Design gates:')
+    const dgSection = dgIdx === -1 ? '' : human.stdout.slice(dgIdx)
+    if (!dgSection.includes(slug)) problems.push('design-gate section does not name the pending run folder')
+    if (dgSection.includes(done)) problems.push('design-gate section names the approved sibling — approved runs are healthy noise and must be skipped')
+    if (dgSection.includes('_templates')) problems.push('design-gate section names _templates — underscore-prefixed dirs must be skipped')
 
     if (problems.length) fail(`design-gate layer [behavioral]: ${problems.join('; ')}`)
   } finally { rmSync(dg, { recursive: true, force: true }) }

@@ -8,6 +8,11 @@
 // module (imported below) so /materia:doctor and /materia:migrate see a project
 // identically — doctor renders the report read-only; migrate builds migration
 // planning on the same `inspect()`. This file is doctor's CLI + rendering layer.
+// Alongside the health verdict it renders inspect's windowless adoption listing
+// (availableAdoptions / acknowledgedCount) — same-release changes available to
+// adopt that cannot be auto-verified (they bump no schema, so the schema window
+// never reaches them), minus what the repo already carries or has acknowledged.
+// Informational only: it never affects report.status or the exit code.
 //
 // This script ships INSIDE the plugin (plugins/materia/scripts/) so an installed
 // skill can run it from the read-only plugin cache as
@@ -59,9 +64,12 @@ Usage: node doctor.mjs [targetPath] [--json] [--help]
 
 Doctor reads this plugin's release ledger + the target's .materia/project.json
 and reports one of: healthy · warnings · action-needed · blocked · unknown.
-It also reports any run paused at the design review gate (docs/specs/<run>/
-design.md with a pending/abandoned approval block) — a read-only note outside
-the compatibility contract that never affects the status or exit code.
+It also lists same-release changes available to adopt but not auto-verifiable
+(schema-invisible prose / per-run-artifact contracts), minus what the repo has
+already adopted or acknowledged — an informational listing outside the status/
+exit path. It also reports any run paused at the design review gate (docs/specs/
+<run>/design.md with a pending/abandoned approval block) — a read-only note
+outside the compatibility contract that never affects the status or exit code.
 It writes nothing and never migrates.`
 
 // ---- human-readable rendering ----------------------------------------------
@@ -101,8 +109,30 @@ const renderHuman = (r, targetRoot) => {
     L.push('  Manual action items:')
     for (const m of r.manualActionItems) L.push(`    - ${m}`)
   }
+  // Windowless adoption listing (from inspect's surfaceWindowless — informational,
+  // out of the status/exit path). Same-release changes that cannot be auto-verified
+  // (schema-invisible prose / per-run-artifact contracts), minus what the repo has
+  // already adopted or acknowledged. Rendered ONLY when non-empty — when there is
+  // nothing to list we print nothing new, not even the hidden-count line (an
+  // all-acknowledged repo is indistinguishable from a fresh scaffold here).
+  if (r.availableAdoptions.length) {
+    L.push('')
+    L.push('  Available to adopt (same release — adoption cannot be auto-verified):')
+    for (const a of r.availableAdoptions) {
+      L.push(`    - [${a.impact}] ${a.id}: ${a.summary}`)
+      if (a.manualMigration) L.push(`        adopt: ${a.manualMigration}`)
+    }
+    if (r.acknowledgedCount > 0) L.push(`    (${r.acknowledgedCount} acknowledged change(s) hidden)`)
+    L.push('    Acknowledge once adopted/considered: /materia:migrate --acknowledge <id>')
+  }
   L.push('')
-  L.push(`  Suggested next: ${r.suggestedNextCommand ?? 'none — .materia/project.json is at the latest schema. Schema currency certifies only that file, not full scaffold conformance; see the ledger 0.1.0 baseline notes for legacy items an old install may still need.'}`)
+  // The "none" default must stay honest about what schema currency certifies (the
+  // §7 human pin keys on the "Schema currency certifies only that file" substring);
+  // when the windowless listing above is non-empty, point at it so "none" doesn't
+  // read as "nothing exists to consider".
+  const suggestedNone = 'none — .materia/project.json is at the latest schema. Schema currency certifies only that file, not full scaffold conformance; see the ledger 0.1.0 baseline notes for legacy items an old install may still need.' +
+    (r.availableAdoptions.length ? ' Same-release items that cannot be auto-verified are listed under "Available to adopt" above.' : '')
+  L.push(`  Suggested next: ${r.suggestedNextCommand ?? suggestedNone}`)
   return L.join('\n')
 }
 
