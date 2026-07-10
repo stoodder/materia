@@ -811,7 +811,13 @@ operator-session-only, the **orchestrator** performs the re-export itself
 alongside its own canvas read-back — the same actor already doing the body
 re-derivation in that world. This is the paragraph `design/SKILL.md` § Sync mode
 forward-references as the normative home for the operator-only-MCP re-export
-duty.
+duty. The **first-authoring export** (design/SKILL.md step 9, not sync mode)
+follows the identical assignment: when MCP is operator-session-only, the
+orchestrator — which already executes the design stage's canvas-authoring
+plan onto the canvas over MCP in that world (`design/SKILL.md` § Canvas
+authoring & the paired artifact — "The lane split") — performs that first
+export itself too, immediately after authoring, before the gate-arrival
+commit-together step (§ Gate arrival) runs.
 
 **Precedence.** Operator hand-edits to the body are **authoritative** for the
 sections they touch; the sync unit re-derives **only** canvas-owned content and
