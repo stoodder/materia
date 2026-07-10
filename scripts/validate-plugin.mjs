@@ -1274,6 +1274,12 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     const problems = assertFn(report, r)
     if (problems.length) fail(`doctor [${label}]: ${problems.join('; ')}`)
   }
+  // Look a bucket entry's full Change up in the shipped ledger (buckets carry
+  // only {impact, id, summary}; detectability lives on the Change object).
+  const ledgerChanges = readdirSync(resolve('plugins/materia/release/versions'))
+    .filter((f) => f.endsWith('.json'))
+    .flatMap((f) => { try { return JSON.parse(readFileSync(resolve('plugins/materia/release/versions', f), 'utf8')).changes ?? [] } catch { return [] } })
+  const ledgerChangeById = (id) => ledgerChanges.find((ch) => ch.id === id) ?? null
 
   // tracked-current fixture -> healthy, schema 3, gate script at canonical location,
   // nothing outstanding
@@ -1362,10 +1368,17 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   // synthetic moved-but-unstamped repo -> the doctor↔migrate adopted-but-unstamped
   // bridge. Schema 2 in project.json but the gate script ALREADY at its canonical
   // .materia/scripts/check-docs.sh: both check-docs checks report `ok`, so the gate +
-  // relocation changes are filtered as adopted, leaving only optional drift (sev info).
-  // Doctor must stay `healthy` (exit 0) YET still suggest /materia:migrate --plan (the
-  // stamp-only step migrate has left), and say so in the artifact-schema-current detail.
-  // Runs against the REAL shipped ledger via the doctor CLI.
+  // relocation changes are filtered as adopted. Since 0.3.0-design-review-gate (the
+  // ledger's first recommended + detectable:false entry) the buckets can no longer
+  // empty fully on a schema-behind repo — a non-detectable change is never filterable
+  // as adopted (isAdopted keys on firing `ok` checks), so doctor truthfully reports
+  // `warnings` (still exit 0) until the repo stamps to the current schema (relevance
+  // keys on schema position; a stamped schema-3 repo sees none of this). The bridge
+  // suggestion (/materia:migrate --plan — the stamp-only step migrate has left) and
+  // the artifact-schema-current detail are unchanged. Pins: requiredChanges stays
+  // empty and every surviving recommendedChanges entry is detectable:false — i.e.
+  // all DETECTABLE drift is still filtered as adopted. Runs against the REAL
+  // shipped ledger via the doctor CLI.
   {
     const mu = mkdtempSync(join(tmpdir(), 'materia-doctor-moved-'))
     try {
@@ -1375,26 +1388,30 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       writeFileSync(join(mu, '.materia', 'project.json'),
         JSON.stringify({ artifactSchema: 2, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
       check('moved-but-unstamped', mu, (rep, r) => [
-        ...want(rep, 'status', 'healthy'),
+        ...want(rep, 'status', 'warnings'),
         ...want(rep, 'currentSchema', 2),
         ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'), // the bridge
         ...sevWant(rep, 'check-docs-sh-present', 'ok'),
         ...sevWant(rep, 'check-docs-sh-location', 'ok'),
         ...detailWant(rep, 'artifact-schema-current', 'adopted but unstamped'),
-        ...(rep.requiredChanges.length === 0 && rep.recommendedChanges.length === 0
-          ? [] : ['gate/relocation not filtered as adopted']),
+        ...(rep.requiredChanges.length === 0 ? [] : ['gate/relocation not filtered as adopted (requiredChanges non-empty)']),
+        ...(rep.recommendedChanges.every((ch) => ledgerChangeById(ch.id)?.detectable === false)
+          ? [] : ['a DETECTABLE recommended change was not filtered as adopted']),
         ...exitWant(r, 0),
       ])
     } finally { rmSync(mu, { recursive: true, force: true }) }
   }
 
   // synthetic hand-authored schema-1 state + canonical script -> the bridge must NOT
-  // fire. The adopted-drift filter still empties the buckets (the artifacts ARE
+  // fire. The adopted-drift filter clears all DETECTABLE drift (the artifacts ARE
   // present), but migrate refuses to stamp a schema<2 hand-authored state
-  // (install-check-docs disposition 1 = manual, the never-overwrite guarantee), so
-  // doctor promising "run migrate to record adoption" would be unfulfillable. Pin:
-  // healthy, NO suggested command, and the detail says the state needs by-hand review
-  // — doctor and migrate agree the stamp is manual on both sides.
+  // (install-check-docs disposition 1 = manual, the never-overwrite guarantee).
+  // Since the ledger's first recommended + detectable:false entry
+  // (0.3.0-design-review-gate), a schema-behind repo carries a truthful pending
+  // recommended change -> `warnings` (exit 0), and the ≥warning severity legitimately
+  // suggests /materia:migrate --plan — --plan is read-only and reports the change as
+  // manual, so the suggestion is fulfillable (unlike the withheld stamp bridge, which
+  // stays withheld: the detail still says by-hand review).
   {
     const s1 = mkdtempSync(join(tmpdir(), 'materia-doctor-schema1-'))
     try {
@@ -1404,9 +1421,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       writeFileSync(join(s1, '.materia', 'project.json'),
         JSON.stringify({ artifactSchema: 1, pluginVersion: null, source: 'hand-authored', appliedMigrations: [] }))
       check('schema1-no-bridge', s1, (rep, r) => [
-        ...want(rep, 'status', 'healthy'),
+        ...want(rep, 'status', 'warnings'),
         ...want(rep, 'currentSchema', 1),
-        ...want(rep, 'suggestedNextCommand', null), // bridge withheld — migrate would refuse the stamp
+        // ≥warning severity (the pending non-detectable recommended change) suggests
+        // --plan; the stamp bridge itself stays withheld — the detail pins that.
+        ...want(rep, 'suggestedNextCommand', '/materia:migrate --plan'),
         ...detailWant(rep, 'artifact-schema-current', 'needs by-hand review'),
         ...exitWant(r, 0),
       ])
@@ -1534,7 +1553,84 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   }
 
   if (failures === before)
-    console.log('  ✓ doctor behavior: tracked→healthy(schema 3, location ok) · legacy→warnings(gate adopted-away→requiredChanges empty, relocation recommended) · gnarly→action-needed(exit 1, required gate drift) · moved-but-unstamped→healthy(+bridge suggests migrate) · schema1+script→healthy(bridge withheld) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
+    console.log('  ✓ doctor behavior: tracked→healthy(schema 3, location ok) · legacy→warnings(gate adopted-away→requiredChanges empty, relocation recommended) · gnarly→action-needed(exit 1, required gate drift) · moved-but-unstamped→warnings(non-detectable recommended entry; detectable drift adopted-away; +bridge suggests migrate) · schema1+script→warnings(stamp bridge withheld, --plan suggested) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
+}
+
+// ---- 7b. doctor's design-gate reporting layer — NEGATIVE invariants ---------
+// doctor.mjs gained a read-only report that scans the target's per-run
+// docs/specs/<run>/design.md approval blocks. That layer is explicitly OUTSIDE
+// the release/artifact compatibility contract, so we pin only what it must NOT
+// do — NEVER its positive output shape (section text / JSON key), which would
+// ossify an out-of-contract surface and defeat the point of keeping it separate.
+// Two invariants:
+//   (a) inspect() (lib/materia-contract.mjs) must stay free of per-run-output
+//       scanning. inspect() is shared VERBATIM with migrate and its check-id set
+//       is pinned by §7's KNOWN_CHECK_IDS set-equality — a docs/specs scan there
+//       would be a new, unpinned check surface on a per-run output that lives
+//       outside the contract. Static: the string `docs/specs` must not appear.
+//   (b) the design-gate scan must never influence doctor's exit code. doctor's
+//       EXIT table keys ONLY on report.status; the scan is attached as a separate
+//       key at print time and `report` stays pristine. Behavioral: a healthy
+//       synthetic repo reports the SAME status+exit with and without a pending
+//       design.md. Liveness + filtering are asserted through the HUMAN render
+//       only (pending run named; approved sibling + _templates absent) — the
+//       JSON key and entry fields stay unpinned so the layer can evolve.
+{
+  const before = failures
+  const DOCTOR = resolve('plugins/materia/scripts/doctor.mjs')
+
+  // (a) inspect() purity — no per-run-output scanning in the migrate-shared module.
+  const contractSrc = readFileSync(resolve('plugins/materia/scripts/lib/materia-contract.mjs'), 'utf8')
+  if (contractSrc.includes('docs/specs'))
+    fail('design-gate layer: lib/materia-contract.mjs references docs/specs — the per-run design-gate scan must live in doctor.mjs ONLY. inspect() is shared verbatim with migrate and its check-id set is §7-pinned; per-run outputs are outside the compatibility contract and must never enter inspect().')
+
+  // (b) exit-code independence — behavioral. Build a healthy schema-3 repo, note
+  // its status+exit, then plant a pending design.md (plus an approved sibling and
+  // a _templates dir that must both be ignored) and prove status+exit are
+  // unchanged while the reporting surfaces the pending run.
+  const dg = mkdtempSync(join(tmpdir(), 'materia-doctor-designgate-'))
+  try {
+    mkdirSync(join(dg, '.materia', 'scripts'), { recursive: true })
+    writeFileSync(join(dg, 'MATERIA.md'), '# m\n')
+    writeFileSync(join(dg, '.materia', 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
+    writeFileSync(join(dg, '.materia', 'project.json'),
+      JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
+    const runJson = () => { const r = spawnSync('node', [DOCTOR, dg, '--json'], { encoding: 'utf8' }); let rep = null; try { rep = JSON.parse(r.stdout) } catch { /* asserted */ } return { r, rep } }
+
+    // baseline — no docs/specs at all
+    const base = runJson()
+    const problems = []
+    if (!base.rep) problems.push(`baseline emitted no parseable JSON (exit ${base.r.status})`)
+    else if (base.rep.status !== 'healthy') problems.push(`baseline synthetic schema-3 repo not healthy (got ${base.rep.status})`)
+    const baseStatus = base.rep?.status, baseExit = base.r.status
+
+    // plant a pending run + an approved sibling + a _templates dir
+    const slug = '2026-01-01-000000-abc123-test'
+    mkdirSync(join(dg, 'docs', 'specs', slug), { recursive: true })
+    writeFileSync(join(dg, 'docs', 'specs', slug, 'design.md'),
+      '---\napproval:\n  status: pending\n  rounds: 1\n  by: rick\n  at: 2026-01-01T00:00:00Z\n---\n# Test — design\n\nbody\n')
+    const done = '2026-01-02-000000-def456-done'
+    mkdirSync(join(dg, 'docs', 'specs', done), { recursive: true })
+    writeFileSync(join(dg, 'docs', 'specs', done, 'design.md'),
+      '---\napproval:\n  status: approved\n  rounds: 0\n  by: rick\n  at: 2026-01-02T00:00:00Z\n  design_hash: deadbeef\n---\n# Done — design\n')
+    mkdirSync(join(dg, 'docs', 'specs', '_templates'), { recursive: true })
+    writeFileSync(join(dg, 'docs', 'specs', '_templates', 'design.md'), '---\napproval:\n  status: pending\n---\n# tmpl\n')
+
+    const withGate = runJson()
+    if (!withGate.rep) problems.push(`with-gate emitted no parseable JSON (exit ${withGate.r.status})`)
+    else if (withGate.rep.status !== baseStatus || withGate.r.status !== baseExit)
+      problems.push(`a pending design.md changed doctor status/exit (status ${baseStatus}->${withGate.rep.status}, exit ${baseExit}->${withGate.r.status}) — the reporting layer must never influence exit codes`)
+    // liveness + filtering via the human render only — no JSON-shape pins
+    const human = spawnSync('node', [DOCTOR, dg], { encoding: 'utf8' })
+    if (!human.stdout.includes(slug)) problems.push('human render does not name the pending run folder')
+    if (human.stdout.includes(done)) problems.push('human render names the approved sibling — approved runs are healthy noise and must be skipped')
+    if (human.stdout.includes('_templates')) problems.push('human render names _templates — underscore-prefixed dirs must be skipped')
+
+    if (problems.length) fail(`design-gate layer [behavioral]: ${problems.join('; ')}`)
+  } finally { rmSync(dg, { recursive: true, force: true }) }
+
+  if (failures === before)
+    console.log('  ✓ doctor design-gate layer (out-of-contract): inspect() free of docs/specs scanning; a pending design.md surfaces in --json + human render without changing status/exit (approved + _templates skipped)')
 }
 
 // ---- 8. /materia:migrate deterministic behavior -----------------------------
@@ -1956,9 +2052,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
   }
 
   // 11. Synthetic MOVED-BUT-UNSTAMPED repo (schema 2, gate script at the canonical
-  //     location only): the doctor↔migrate bridge. doctor is healthy yet suggests
-  //     /materia:migrate --plan; migrate has a stamp-only install-check-docs applicable;
-  //     apply stamps schema 3; re-apply is idempotent (byte-identical).
+  //     location only): the doctor↔migrate bridge. doctor reports `warnings` (the
+  //     non-detectable recommended entry — see the doctor moved-but-unstamped fixture
+  //     comment) and suggests /materia:migrate --plan; migrate has a stamp-only
+  //     install-check-docs applicable; apply stamps schema 3; re-apply is idempotent
+  //     (byte-identical).
   {
     const mk = () => {
       const dir = mkdtempSync(join(tmpdir(), 'materia-migrate-moved-'))
@@ -1972,10 +2070,11 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     const dir = mk()
     try {
       const problems = []
-      // doctor: healthy + bridge suggestion.
+      // doctor: warnings (the ledger's non-detectable recommended entry — see the
+      // doctor moved-but-unstamped fixture comment) + bridge suggestion.
       const dr0 = spawnSync('node', [DOCTOR, dir, '--json'], { encoding: 'utf8' })
       let d0 = null; try { d0 = JSON.parse(dr0.stdout) } catch { /* below */ }
-      if (!d0 || d0.status !== 'healthy') problems.push(`pre-apply doctor status=${d0 && d0.status} (want healthy)`)
+      if (!d0 || d0.status !== 'warnings') problems.push(`pre-apply doctor status=${d0 && d0.status} (want warnings — schema-behind + non-detectable recommended entry)`)
       if (!d0 || d0.suggestedNextCommand !== '/materia:migrate --plan') problems.push(`pre-apply doctor suggestedNextCommand=${d0 && d0.suggestedNextCommand} (want the bridge)`)
       // migrate plan: install-check-docs stamp-only applicable, files = project.json only.
       const { report: plan } = runMigrate(dir)

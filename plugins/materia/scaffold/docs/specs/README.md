@@ -40,12 +40,17 @@ the `## Provenance` block is filled with `—` and no dequeue happens.
 
 ## The pipeline (the installed `materia` plugin's skills)
 
-Stage skills, chained by the `ship-spec` orchestrator. Configured to run **mostly
-autonomously**: clarifying questions are asked once during intake, then it runs
-through to a finished PR for you to review. Invoking with `--auto` (autopilot)
-goes further: checkpoints accept grounded defaults, and after the PR opens the
-orchestrator watches CI, fixes failures, resolves merge conflicts, and merges
-once green — see the ship-spec skill's Autopilot + Merge watch sections.
+Stage skills, chained by the `ship-spec` orchestrator. Configured to run
+**mostly autonomously**: clarifying questions are asked once during intake.
+On an **interactive, design-bearing** (UI) run there's one more checkpoint —
+the design gate, which pauses for your approve / revise / abandon call after
+the design stage (`ship-spec/SKILL.md` § Design gate) and can pause again per
+revision round — then the run continues through to a finished PR for you to
+review. `--auto` (autopilot) and `--approve-design` runs don't pause at the
+gate. Autopilot goes further still: checkpoints accept grounded defaults, and
+after the PR opens the orchestrator watches CI, fixes failures, resolves merge
+conflicts, and merges once green — see the ship-spec skill's Autopilot +
+Merge watch sections.
 
 | Stage | Skill | Produces |
 |---|---|---|
@@ -60,7 +65,7 @@ once green — see the ship-spec skill's Autopilot + Merge watch sections.
 | 9. docs-audit | `docs-audit` | HIGH/MEDIUM/LOW findings or clean verdict; loop back to docs-sync on HIGH/MEDIUM |
 | 9½. reconcile-epic | `reconcile-epic` | **epic-gated** (spawned only when the proposal carries an `epic:` key; skipped+recorded otherwise): syncs the member's epic under [`docs/epics/`](../epics/README.md) and cascades invalidated content into its pending sibling proposals — the edits ride this run's PR |
 | 10. Finalize | `finalize` | re-runs `verify` for `behavior-deferred` tasks, then the gate (lint + typecheck + tests + `check:docs`), PR opened |
-| — Orchestrate | `ship-spec` | runs 1→10 (and, on `--auto` runs, the post-finalize merge watch: CI fixes → conflict resolution → merge on green) |
+| — Orchestrate | `ship-spec` | runs 1→10 (pausing at the design gate on interactive design-bearing runs — not on `--auto`/`--approve-design` runs; and, on `--auto` runs, the post-finalize merge watch: CI fixes → conflict resolution → merge on green) |
 
 The pipeline **builds on this repo's docs system**: the architecture stage uses
 the progressive-disclosure read order ([../README.md](../README.md)), the

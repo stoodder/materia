@@ -294,7 +294,7 @@ End the turn.
 ```yaml
 ---
 id: <fresh 6-char base36 token; same shape as `<rand>` in spec folder names>
-schema_version: 2
+schema_version: 3
 source: user-proposed
 source_refs:
   - "user request via /materia:propose-spec on <YYYY-MM-DD>"

@@ -32,7 +32,9 @@ acting on them wastes context.
 
 ## Outputs
 
-- `docs/specs/<dated-slug>/design.md` — `STATUS.md` updated, committed and pushed.
+- `docs/specs/<dated-slug>/design.md` — plus, standalone lane only,
+  `STATUS.md` updated, committed and pushed (orchestrator lane: body only —
+  see step 8).
 
 ## Environment
 
@@ -109,8 +111,69 @@ standalone runs apply it on first use.
    without re-running design. Reserve clarifying questions for choices
    that genuinely change scope or block downstream stages.
 
-8. **Persist:** tick stage 2 in `STATUS.md` and set `Next: architecture`; commit
-   + push. **Orchestrator-lane exception:** when spawned by `ship-spec`/`fix-bug`, do **not** tick `STATUS.md` or commit it — the orchestrator owns both (see `ship-spec/SKILL.md` § STATUS.md ownership (orchestrator lane)); write only your own artifact.
+8. **Persist.**
+
+   **Sole-writer split.** The design stage owns the `design.md` **body and
+   `## Feedback log`** — the log is design content (round number, what was
+   asked, what changed), appended on the first gate revision round (the loop is
+   defined in `ship-spec/SKILL.md` § Design gate). The **approval block is
+   orchestrator-owned** (the standalone-lane exception below is the sole place
+   this skill writes it). The operator hand-editing the body is a blessed
+   feedback channel, never a sole-writer violation. On a gate revision round
+   (re-spawned by `ship-spec` with feedback) produce a new body and append the
+   round to `## Feedback log` — still never touch the approval block in that
+   lane.
+
+   **Orchestrator lane (spawned by `ship-spec`/`fix-bug`):** do **not** tick
+   `STATUS.md`, do **not** commit it, and do **not** touch the approval block —
+   the orchestrator owns `STATUS.md`, the design row, `Next:`, and the whole
+   approval block (`ship-spec/SKILL.md` § STATUS.md ownership (orchestrator
+   lane); § Design gate). Write only your own artifact (the `design.md` body).
+   Unchanged from before the gate existed.
+
+   **Standalone lane (operator-invoked directly, not a spawn):** this is the
+   **sole standalone-lane exception** to the approval block's orchestrator
+   ownership (`ship-spec/SKILL.md` § Design gate — Sole-writer split) — here the
+   skill writes the initial approval block itself. Resolve the gate for this
+   run, then persist:
+
+   - **Resolve the gate** — consult, in order: a captured
+     `design-gate: <on|off> (proposal frontmatter)` line in `STATUS.md`
+     § Notes (present when `ship-spec` staked this folder from a proposal
+     declaring `design_gate:`), then `MATERIA.md` § Design tool's Design gate
+     default (absent section or knob → on). The invocation-flag rung
+     (`--approve-design`) cannot apply in this lane.
+   - **No `STATUS.md` at all** — a hand-created spec folder may have none: seed
+     one from `docs/specs/_templates/status.md` — fill `Slug:` (the folder
+     name), leave `Branch:` at the template placeholder (`ship-spec`'s resume
+     backfills it on any route, gate pending or already auto-approved —
+     § Design gate — Standalone-first lane and § Resume step 3's
+     placeholder-branch guard), leave `## Provenance` ad-hoc (`—`) — rather
+     than failing or writing `Next:` into a file that doesn't exist.
+   - **Gate ON** → write the approval block into `design.md` frontmatter
+     (`status: pending`, `rounds: 0`, no hash — the very top of the file,
+     ordinary YAML frontmatter), tick stage 2, set
+     `Next: design-approval (awaiting operator)`, append
+     `design-gate: awaiting approval` to `STATUS.md` § Notes, commit + push. A
+     later `/materia:ship-spec <slug>` resume then routes to the gate (its
+     Resume step 0) instead of silently building an unapproved design.
+   - **Gate OFF** → stamp `status: auto-approved, by: auto, at: <ISO-8601>,
+     reason: <the deciding knob's reason string>` — the reason is
+     `proposal frontmatter design_gate: off` or `MATERIA.md gate: off` — compute
+     and write `design_hash` per the single normative recipe in
+     `ship-spec/SKILL.md` § Design gate (body-only — that section is the only
+     definition), tick stage 2, set `Next: architecture`, append
+     `design-gate: auto-approved (<full reason string>)` to `STATUS.md`
+     § Notes, commit + push — today's behavior plus the recorded decision.
+   - **The persist commit** — either resolution — carries the gate-marker
+     subject prefix `design-gate(<dated-slug>):` (`ship-spec/SKILL.md`
+     § Design gate — Gate commits), keeping the pending-edit-detection baseline
+     uniform (diff against the most recent gate-marked commit; no
+     unmarked-commit fallback needed).
+
+   This standalone seed/write runs in the **operator-invoked** lane, not a
+   spawn — the spawn-contract's `STATUS.md` monopoly (Block 1) binds spawned
+   subagents and is not contradicted here, so no new carve-out is needed there.
 
 ## Done when
 
@@ -118,7 +181,11 @@ standalone runs apply it on first use.
 - Every new/changed screen names its anchor screen(s) in `## Cohesion anchors`.
 - Reused vs new components are listed.
 - No design decision needed by the architecture stage is left ambiguous.
-- `STATUS.md` updated; design committed + pushed.
+- Orchestrator lane: only the `design.md` body is written — the orchestrator
+  ticks `STATUS.md`, sets `Next:`, and owns the approval block. Standalone lane:
+  `STATUS.md` ticked with the approval block written and `Next:` set —
+  `design-approval (awaiting operator)` when the gate is on, `architecture` when
+  off (auto-approved, `design_hash` computed) — design committed + pushed.
 
 ## Scope
 

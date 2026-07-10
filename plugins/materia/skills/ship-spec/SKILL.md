@@ -1,6 +1,6 @@
 ---
 name: ship-spec
-description: "Run the full spec-to-PR pipeline for a new product spec or feature request — intake → design → architecture → task breakdown → autonomous implementation → post-implementation multi-angle review → lint/typecheck/test gate → docs → pull request. Supports `--auto` (autopilot): operator checkpoints accept grounded defaults, and after the PR opens the orchestrator watches CI, fixes failures, resolves merge conflicts, and merges once green. Captures a per-run retrospective (`retro.md`) at each touchpoint so a downstream skill can aggregate them into pipeline improvements. Resumable across sessions. Use when the user hands over a product spec or feature to build end-to-end."
+description: "Run the full spec-to-PR pipeline for a new product spec or feature request — intake → design → architecture → task breakdown → autonomous implementation → post-implementation multi-angle review → lint/typecheck/test gate → docs → pull request. Supports `--auto` (autopilot): operator checkpoints accept grounded defaults, and after the PR opens the orchestrator watches CI, fixes failures, resolves merge conflicts, and merges once green. Captures a per-run retrospective (`retro.md`) at each touchpoint so a downstream skill can aggregate them into pipeline improvements. Resumable across sessions. Interactive design-bearing runs pause at the human design gate (`--approve-design` or `--auto` skips it). Use when the user hands over a product spec or feature to build end-to-end."
 ---
 
 # ship-spec — the spec-to-ship orchestrator
@@ -8,7 +8,10 @@ description: "Run the full spec-to-PR pipeline for a new product spec or feature
 Drives a feature from a raw spec to an open PR by running each stage **as its own
 subagent** (clean, scoped context), persisting an artifact per stage so the run
 is **resumable across sessions**. Mostly autonomous: clarifying questions happen
-once during intake; otherwise it runs to a finished PR for human review.
+once during intake; an interactive, design-bearing (UI) run also pauses at the
+human design gate after the design stage (§ Design gate) — `--auto`
+(autopilot) and `--approve-design` runs don't pause there — then it runs to a
+finished PR for human review.
 
 Read `docs/specs/README.md` and `docs/README.md` first. Shared resources this
 skill leans on (read at the phase that needs them):
@@ -73,7 +76,62 @@ Then:
 1. Read its `STATUS.md`. Find the first unchecked stage (and within implement,
    the first task in `tasks.md` not `[x]`).
 2. If `Blocker` is set, surface it to the human and stop until resolved.
-3. Otherwise continue from there.
+   **Sole exception** (scoped to this exact Blocker string): when the Blocker
+   is `design-gate revision bound exhausted (rounds=3)` **and** the operator's
+   message carries `approve` or `abandon`, treat the reply as resolving the
+   Blocker — clear it and route the verb through step 0's gate check below
+   (§ Design gate — revision bound carve-out). A further `revise` does not
+   resolve it.
+
+0. **The design-gate check** (§ Design gate) — numbered **step 0** because it
+   is evaluated **before** the first-unchecked-stage scan acts (step 3), yet it
+   runs **after** the folder match and **after** the `Blocker:` hard-stop
+   (step 2) — a set Blocker always wins; step 0 never routes around it except
+   via step 2's own scoped exhaustion-Blocker carve-out. It
+   fires only when `design.md` **exists**, carries an `approval:` block, **and**
+   the run has **not** advanced past the gate (§ Design gate — advanced-past
+   predicate). No block = a pre-gate run → skip this step; today's behavior.
+   Route on the block:
+   - `approved`/`auto-approved` **and** `design_hash` matches the current body
+     → clear the waiting state, set `Next:` to the next stage, continue as
+     today. (Before advancing past the gate on **any** route: if `Branch:` is
+     still the template placeholder, provision the run branch first —
+     § Design gate — Standalone-first lane.)
+   - `pending`, body **clean** vs the last gate-marked commit, no verb in the
+     operator's message → re-present; do **not** increment `rounds` (a
+     re-present alone is not a revision round).
+   - `pending`, body **clean**, verb **present** → resolve the verb per
+     § Design gate — the gate is ternary (an explicit verb is acted on, never
+     answered with another re-present).
+   - `pending`, body **edited** — the verb decides: `approve` → commit the edit
+     (path-scoped, gate feedback), then stamp **that** body (an explicit verb is
+     never downgraded to "feedback noted, approve again"); no verb or `revise` →
+     commit as feedback, **increment `rounds`** (counts against ≤3), re-present
+     against the current body.
+   - `pending` + `rounds` ≥ 3 + another revision → the exhaustion Blocker
+     (§ Design gate — revision bound).
+   - `abandoned` → re-present with an explicit note (abandoned on `<date>`); the
+     operator may re-open (routes to revise), approve after all, or leave (end
+     the turn again). Parked, not locked. **Re-open resets the state first**:
+     set the block back to `status: pending`, set
+     `Next: design-approval (awaiting operator)`, and append
+     `design-gate: re-opened (<date>)` to § Notes (superseding the abandoned
+     line) — *then* run the revise steps. Without the reset, the block,
+     `Next:`, and § Notes would keep reporting "abandoned" through a live
+     revision round, and a mid-round resume would re-offer the abandoned menu
+     (and double-count `rounds`).
+   - `approved` + hash **MISMATCH** → the approved design is not the design on
+     disk; route to **revise** with the diff as implicit feedback (this is why
+     `design_hash` exists).
+   - Malformed/unknown block (bad `status` value; `approved` with no hash) →
+     treat as `pending`, re-present noting the malformation — never fall through
+     unrouted.
+
+3. Otherwise continue from there. **Placeholder-branch guard (any route, gate
+   or not):** if `Branch:` is still the template placeholder — a
+   standalone-produced folder, including one whose gate already auto-approved
+   at persist time — provision the run branch off current HEAD and backfill
+   `Branch:` first (§ Design gate — Standalone-first lane).
 4. If `retro.md` already exists in the folder, **open and append** — never
    restart it. If header `status:` is `blocked`, set it back to `running` once
    the blocker is cleared. See § Retrospective capture.
@@ -115,6 +173,13 @@ the operator saying up front "don't wait for me."
     menu still runs — *what to build* stays an operator decision; autopilot
     only automates *how it ships*.
   - **Intake `partial`** — no operator pause; see § Intake hand-off.
+  - **Design gate** — no pause; the orchestrator runs the same gate arrival and
+    stamps `status: auto-approved, by: auto, reason: "--auto autopilot run"`
+    (hash computed as always), notes
+    `design-gate: auto-approved (--auto autopilot run)` in § Notes, and proceeds
+    in the same invocation (§ Design gate). Same shape as the intake-`partial`
+    exception: no pause, the
+    documented default (approval) recorded, audit trail in the artifact.
   - **Every other operator-optional pause** (non-blocking design calls,
     default confirmations) resolves to the documented default, recorded in
     `STATUS.md` § Notes and the retro entry that made the call.
@@ -125,10 +190,12 @@ the operator saying up front "don't wait for me."
     auto-accepted; this PR auto-merges once CI is green.`
 - **What does NOT change:** Blockers still stop the run. Autopilot never
   overrides a `Blocker`, widens a loop bound (review ≤3, docs ≤2, gate ≤3,
-  CI-fix ≤3), skips a gate (e2e-coverage, screenshot-presence, epic,
-  UI-surface, data-surface), force-pushes, or **merges under bootstrap
-  grace** (§ Merge watch step 6 — graced CI is not green CI). Autopilot
-  removes **waits**, not safety.
+  design-gate ≤3, CI-fix ≤3), skips a gate (e2e-coverage, screenshot-presence,
+  epic, UI-surface, data-surface), force-pushes, or **merges under bootstrap
+  grace** (§ Merge watch step 6 — graced CI is not green CI). Autopilot also
+  **never un-abandons a parked design** — resuming an `abandoned` gate is an
+  operator decision even under `--auto`; record the refusal and stop cleanly.
+  Autopilot removes **waits**, not safety.
 
 ## Proposal selection (the run's entry point)
 
@@ -165,7 +232,11 @@ why a file was skipped.
 **In-flight pickup:** before printing the menu, scan `docs/specs/*-*/STATUS.md`
 for `Proposed-id:` lines matching any pending proposal's `id`; mark those
 proposals **`(in flight — docs/specs/<dated-slug>/)`** in the menu — picking
-one re-enters the Resume gate rather than starting a parallel run.
+one re-enters the Resume gate rather than starting a parallel run. When the
+claimed run's `Next:` is `design-abandoned (parked)`, annotate the entry
+**`(parked — abandoned design)`** instead of the plain in-flight annotation;
+picking it re-enters the design gate (re-open — § Design gate). Deleting the
+spec folder is the operator's manual release path.
 
 **Empty queue** (zero pending unclaimed proposals AND no ad-hoc text): exit
 cleanly — no branch, no files — telling the operator their options
@@ -191,6 +262,11 @@ through to the menu below — choosing *what* to build stays with the operator.
   pauses until you reply.)" — then end the turn with the marker sentence:
 
 > Awaiting operator selection at the proposal menu. The next message in this thread will resume the run.
+
+When the paused invocation carried `--approve-design`, append one line to the
+marker: the arm did not survive this pause (it is durable only from stake —
+§ Design gate — `--approve-design`); re-pass the flag with the selection to
+keep the bypass.
 
 The next invocation re-runs the Resume gate (no in-flight folder yet) and
 re-enters this section, parsing the reply as an `<id>` or ad-hoc text. Under
@@ -262,6 +338,20 @@ fills the `## Provenance` block with `—`):
    With no `surfaces:` key, leave the line absent (routing resolution through
    intake). On the ad-hoc path there is no frontmatter, so `Surfaces:`
    defaults to absent (`—`).
+
+   **Capture `design_gate:` at stake (the gate-off knob's frontmatter rung).**
+   When the proposal frontmatter declares `design_gate:`, append the pinned
+   `design-gate: <on|off> (proposal frontmatter)` line to § Notes now — durable
+   through dequeue, like `Surfaces:` (semantics: `docs/specs/_proposed/README.md`
+   § Field roles → `design_gate`; consumed at gate arrival per § Design gate).
+   Absent key → write no line (fall through the precedence chain).
+
+   **Record the `--approve-design` arm at stake.** When the invocation carried
+   `--approve-design` (§ `--approve-design`; contract in
+   `docs/standards/skills.md`), append
+   `design-gate: auto-approve armed (--approve-design)` to § Notes here — stake
+   is the earliest durable moment (a pre-stake proposal-menu pause cannot
+   persist the arm).
 5. Commit: `ship-spec(intake): claim proposal <id> for spec <dated-slug>`
 6. Push.
 
@@ -331,6 +421,13 @@ non-epic run it is skipped and the decision recorded in `STATUS.md`.
 2. **design** (`design`) → `design.md` (**UI-gated** — the design stage is a
    UX artifact; a feature that ships no UI has nothing for it to design, and
    its technical planning belongs to `architecture`).
+
+   On an **interactive** design-bearing run, the **design gate** (§ Design
+   gate) pauses the run here — after design commits, before `ui-test-plan` — by
+   ending the turn: the third pause-by-ending-turn checkpoint (proposal menu,
+   intake `partial`, design gate). Autopilot and gate-off runs do **not** pause
+   (they stamp a recorded auto-approval and continue). § Design gate is the
+   normative home.
 3. **ui-test-plan** (`ui-test-plan`) → `ui-test-plan.md` (**UI-gated**). Reads
    `spec.md` + `design.md`, enumerates the UI flows worth guarding;
    `plan-tasks` consumes it to derive the e2e-authoring task.
@@ -452,6 +549,201 @@ baked `surfaces` prediction included**), records
 the baked resolution (parenthetical reads `resolved`), and proceeds to the
 next stage. The "Open questions" section stays in `spec.md` as the audit
 record of what was assumed — the PR reviewer reads it there.
+
+## Design gate (after the design stage)
+
+The human design-review gate that runs after the `design` stage returns
+`design.md` on an **interactive, design-bearing** run — the third
+pause-by-ending-turn checkpoint (after the proposal menu and intake `partial`).
+This section is the **normative home** for the whole mechanism; the status
+template, `MATERIA.md` § Design tool, `docs/specs/_proposed/README.md`
+(`design_gate:` field), and `docs/standards/skills.md` § The `--approve-design`
+argument reference it.
+
+### Gate resolution (the gate-off chain)
+
+Resolve the chain, **first hit wins**:
+
+1. `--approve-design` armed (§ `--approve-design`) → an auto-approval applies.
+2. a captured `design-gate: <on|off> (proposal frontmatter)` § Notes line.
+3. `MATERIA.md` § Design tool Design gate default (absent section or knob → `on`).
+
+`--auto` is **not** in this chain — autopilot posture auto-approves separately
+(§ Autopilot). § Design tool `none` does **not** skip the gate (the text rung
+of the ladder covers a no-tool repo); the gate-off knob is this chain, not the
+adapter.
+
+### Gate arrival (interactive, design-bearing run)
+
+After `design` returns `design.md`:
+
+1. Resolve the chain above (`--auto` posture is handled in § Autopilot).
+2. **Gate ON and no auto-approval applies** — write the approval block into
+   `design.md` frontmatter (`status: pending`, `rounds: 0`, no hash — the
+   design stage never touches the block), tick the design stage row, set
+   `Next: design-approval (awaiting operator)` (a waiting state, **not** a
+   Blocker), append `design-gate: awaiting approval` to § Notes, **then**
+   commit (`design.md` + `STATUS.md` together, one commit) with the
+   gate-marker subject (§ Gate commits), and push — never leave the STATUS.md
+   edits uncommitted behind a design.md-only commit. Present
+   the design (§ Presentation), print the three verbs, and **end the turn**
+   with the marker sentence:
+
+   > Awaiting design approval for `<dated-slug>`. The next message in this thread — or a fresh `/materia:ship-spec <slug>` invocation — will resume the run.
+
+   The paused invocation opens **no PR** — one PR still, from the invocation
+   that completes the run.
+3. **Gate resolves OFF, or an auto-approval applies** — run the same arrival
+   steps but stamp `status: auto-approved, by: auto, at: <ISO-8601>,
+   reason: <the deciding knob's reason string>, design_hash: <computed>`,
+   append `design-gate: auto-approved (<full reason string>)` to § Notes (the
+   parenthetical is the full reason string verbatim), and **proceed to the next
+   stage in the same invocation — no pause**. No-approval is a recorded
+   decision, never a missing step.
+
+Reason strings by knob: `--approve-design on invocation` · `--auto autopilot
+run` · `proposal frontmatter design_gate: off` · `MATERIA.md gate: off`.
+
+### The gate is ternary — approve / revise / abandon
+
+Via `AskUserQuestion` when available, else parsed reply text (mirror the
+proposal menu's degradation):
+
+- **approve** → compute `design_hash`, write `status: approved,
+  by: <operator handle>, at:`, commit (gate marker), clear the waiting state
+  (set `Next:` to the next stage — `ui-test-plan` on UI runs), proceed.
+- **revise** → operator supplies feedback; increment `approval.rounds` and
+  commit it; re-spawn the design stage with `design.md` + the feedback (the
+  stage produces a new body and appends the round to `## Feedback log` — round
+  number, what was asked, what changed); re-present; end the turn again.
+  Feedback that arrived on **any** surface goes into `## Feedback log` — never
+  build the channel on design-tool inline comments (documented persistence
+  issues; a channel that drops feedback is worse than none).
+- **abandon** → set `status: abandoned` (no hash),
+  `Next: design-abandoned (parked)`, append `design-gate: abandoned (<date>)`
+  to § Notes, commit, end the turn. **No Blocker** — parked is a decision, not
+  a problem; do **not** delete `design.md`.
+
+### Revision bound — `design-gate ≤3`
+
+Counted by `approval.rounds` — the durable counter the orchestrator increments
+and commits on **every** revision, whatever the channel (the revise verb, a
+hand-edit re-present, and future canvas edits are the same loop through
+different doors; design the counter for channels). At `rounds` ≥ 3, a further
+revision request → write
+`Blocker: design-gate revision bound exhausted (rounds=3)` and end the turn.
+The bound limits **revisions, not decisions**:
+when surfacing this Blocker, name approve/abandon as the legal in-thread
+resolutions — such a reply clears the Blocker and routes through the gate
+normally (this carve-out is scoped to this Blocker string only, and its
+resume-side wiring lives at § Resume step 2's sole exception).
+
+### `design_hash` — the single normative definition
+
+SHA-256 over **every byte after the closing `---` line of the leading
+frontmatter block** — the markdown body only; **all** frontmatter excluded
+(future frontmatter keys must never perturb the hash). Recipe (prose, not a
+shipped script): strip the leading frontmatter block (first line `---` through
+the next `---` line, inclusive, newline included), pipe the rest to
+`shasum -a 256`. Only the `approved` and `auto-approved` stamps compute and
+write it — **every time**; `pending` and `abandoned` blocks carry no hash.
+
+### Gate commits
+
+Every gate commit (pending write, feedback commit, rounds increment, stamp,
+abandon) uses the subject prefix `design-gate(<dated-slug>):`.
+**Pending-edit detection** = `git diff` of `design.md` against the **most
+recent gate-marked commit touching it** — never "most recent commit touching
+the file" (an operator who hand-commits would zero that diff and evade the
+rounds counter). The standalone design skill's persist commit also carries the
+marker (see `design/SKILL.md`), so the baseline is uniform.
+
+### Clean-tree stamping precondition (new behavior — no precedent claimed)
+
+At the moment of stamping approval/auto-approval, if the working tree is dirty
+in paths **other than the gate's own artifacts** — `design.md` and (future)
+`docs/specs/<dated-slug>/design/` — **refuse the stamp and say why; do not
+stash**. A dirty `design.md` is operator revision content (verb rules); a dirty
+`design/` is the future sync/export output. Evaluate this **after** the
+path-scoped feedback commit (if any) and **before** the orchestrator's own
+`STATUS.md`/stamp writes (its own pending STATUS edit must not false-trip the
+check).
+
+### Sole-writer split
+
+`design.md` body + `## Feedback log` = design stage; approval block =
+orchestrator (standalone-lane exception: the standalone design skill writes the
+initial pending block — see `design/SKILL.md`); `STATUS.md` = orchestrator, as
+always. Two carve-outs:
+
+1. **The operator outranks sole-writer** — a hand-edited `design.md` is a
+   blessed feedback channel. On a pending re-present with a hand-edited body the
+   orchestrator commits the edit (path-scoped, gate marker, marked as gate
+   feedback) — bookkeeping of the operator's words, not an authorship claim.
+2. **Post-approval orchestrator-written banners** (§ Course corrections; future
+   design-debt banners) are legal body writes under the frozen-audit-record
+   scoping below.
+
+### Presentation — a capability ladder
+
+Future prompts extend the rungs; the gate itself never changes:
+
+1. **Canvas link** (future — adapters with `reference`).
+2. **Committed snapshot** (future — adapters with `export`).
+3. **Text (always)** — `design.md` itself, the floor every configuration has;
+   today say plainly that no visual render is available yet.
+
+Binding constraint for every rung, now and future: whatever is presented must
+be reviewable **after the turn ends** — the pause kills any process this
+invocation started; a cloud URL or a committed file qualifies, a localhost
+process does not.
+
+### Non-design specs are unchanged
+
+When the run's surfaces exclude design-bearing surfaces (§ Review — § UI-surface
+gate, predictive form negative) or `MATERIA.md` § Surface gates § UI-affecting
+is `none`, ship-spec runs end to end in one invocation exactly as today — no
+gate, no pause. § Design tool `none` does **not** skip the gate by itself (the
+text rung covers a no-tool repo); the gate-off knob is the precedence chain,
+not the adapter.
+
+### Advanced-past-the-gate predicate (pinned)
+
+The run has advanced past the gate **iff any stage row after design is ticked
+in `STATUS.md`, or `Next:` names a stage beyond the gate** (equivalently:
+`Next:` is neither `design-approval (awaiting operator)` nor
+`design-abandoned (parked)`). **Never** key it on `status: approved` alone.
+Once past, the approval block — hash included — is a **frozen audit record**:
+Resume step 0 no longer routes on it; later body writes (course-correction
+banners, future debt banners) are expected and legitimate and must **never**
+bounce a reviewed run back to the gate — the hash answers "what did the human
+approve," not "has the file changed since."
+
+### Standalone-first lane
+
+A folder produced by the **standalone** design skill (no stake — `Branch:`
+still the template placeholder), whether its block is still `pending` or was
+already auto-approved at persist time (gate-off lane): before advancing —
+past the gate, or past resume when the gate never fires (§ Resume step 3's
+placeholder-branch guard) — **provision the run branch off current HEAD**
+(where the standalone commits live — **NOT** off trunk; trunk would strand
+`design.md`/`STATUS.md`), named `<type>/<slug>` per the naming convention,
+and backfill `Branch:`.
+
+### `--approve-design`
+
+The argument contract lives in `docs/standards/skills.md`
+§ The `--approve-design` argument (restated here only gate-side). At
+invocation, record `design-gate: auto-approve armed (--approve-design)` in
+§ Notes at the **earliest durable moment = stake** (an invocation pausing at
+the proposal menu pre-stake cannot persist the arm — the menu's marker text
+must say the arm did not survive; a same-turn selection carries it through
+in-context to stake). Consumed at the **first gate arrival after arming** —
+same steps as the approve verb (a hand-edited pending body → path-scoped
+feedback commit first, then the stamp, reason `--approve-design on
+invocation`) — then rewrite the armed line to
+`design-gate: auto-approve consumed (--approve-design)`. Arming never overrides
+the rounds bound or a set Blocker. Redundant-but-legal under `--auto`.
 
 ## Tier routing
 
@@ -1008,7 +1300,10 @@ the fix in place and re-flow the artifacts **asymmetrically**:
   their prose lags — a short blockquote naming the decision flip, the reason,
   and the artifact that now carries the binding decision. Don't rewrite the
   historical prose; the banner cordons it off so intent-oracle passes don't
-  flag stale-prose false positives.
+  flag stale-prose false positives. **The orchestrator writes the `design.md`
+  banner** (the design stage isn't running post-approval) — a post-approval
+  banner is a legal body write under § Design gate's frozen-audit-record
+  scoping and **never** re-triggers the gate.
 - **`retro.md` carries the original-decision story** — the entry where the
   wrong decision landed records what was decided and why; the entry where the
   correction landed records the flip and the fix.

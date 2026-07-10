@@ -220,7 +220,14 @@ the same value.
 - **Design project(s):** {{the durable reference(s) to this repo's design
   project — project id / file key / URL, durable per the `reference` meaning
   below — or `-` until the first run mints one}}
-<!-- design-gate default: reserved knob — the human design-gate default (on/off) lands here with the design-gate release; leave this line in place. -->
+- **Design gate:** {{on | off — default on}} — the human review gate after the
+  design stage (normative home: ship-spec/SKILL.md § Design gate). Precedence:
+  invocation flag (`--approve-design`) > proposal frontmatter (`design_gate:`)
+  > this default. `--auto` is not a knob in this chain — it is autopilot
+  posture; the gate auto-approves with a recorded stamp regardless of this
+  setting. § Design tool `none` does not turn the gate off by itself — a repo
+  can review `design.md` as text; the gate-off knob is this chain, not the
+  adapter.
 <!-- canvas-authoring budget posture: reserved knob — authoring cost + revision-rounds multiplier land here with the canvas-authoring release; leave this line in place. -->
 
 **Capability meanings** — the contract skills gate on:
