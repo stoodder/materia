@@ -97,6 +97,9 @@ Then:
    - `pending`, body **clean** vs the last gate-marked commit, no verb in the
      operator's message → re-present; do **not** increment `rounds` (a
      re-present alone is not a revision round).
+   - `pending`, body **clean**, verb **present** → resolve the verb per
+     § Design gate — the gate is ternary (an explicit verb is acted on, never
+     answered with another re-present).
    - `pending`, body **edited** — the verb decides: `approve` → commit the edit
      (path-scoped, gate feedback), then stamp **that** body (an explicit verb is
      never downgraded to "feedback noted, approve again"); no verb or `revise` →
