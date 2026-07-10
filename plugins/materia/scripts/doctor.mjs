@@ -18,9 +18,20 @@
 // correspondence and per-drift severity rules are documented next to inspect()
 // in ./lib/materia-contract.mjs, where that logic now lives.)
 //
+// Design-gate reporting layer (scanDesignGates, below) — an ADDITIONAL,
+// read-only report that scans the target's per-run docs/specs/<run>/design.md
+// approval blocks and surfaces runs paused at the design review gate. It is
+// explicitly OUTSIDE the release/artifact compatibility contract: it adds NO
+// inspect() check id (inspect() is migrate-shared and its check-id set is pinned
+// by validate-plugin.mjs §7 — a docs/specs scan there is forbidden), never
+// influences report.status or the exit code, writes nothing, recomputes no
+// hashes, and does no network. Per-run outputs are freely edited and legitimately
+// absent or legacy-shaped, so anything unparseable is silently skipped.
+//
 // Usage: node doctor.mjs [targetPath] [--json] [--help]
 // Exit:  0 healthy|warnings|unknown · 1 action-needed · 2 blocked
-import { resolve } from 'node:path'
+import { resolve, join } from 'node:path'
+import { readdirSync, lstatSync, openSync, readSync, closeSync } from 'node:fs'
 import { inspect } from './lib/materia-contract.mjs'
 
 // status -> exit code (doctor's own CLI concern; not part of the shared report).
@@ -48,6 +59,9 @@ Usage: node doctor.mjs [targetPath] [--json] [--help]
 
 Doctor reads this plugin's release ledger + the target's .materia/project.json
 and reports one of: healthy · warnings · action-needed · blocked · unknown.
+It also reports any run paused at the design review gate (docs/specs/<run>/
+design.md with a pending/abandoned approval block) — a read-only note outside
+the compatibility contract that never affects the status or exit code.
 It writes nothing and never migrates.`
 
 // ---- human-readable rendering ----------------------------------------------
@@ -92,6 +106,115 @@ const renderHuman = (r, targetRoot) => {
   return L.join('\n')
 }
 
+// ---- design-gate reporting layer (read-only; OUTSIDE the compat contract) ---
+// Scans the target's per-run design.md approval blocks and returns entries for
+// runs sitting in a `pending` or `abandoned` gate state ONLY — approved /
+// auto-approved runs are healthy noise. This never touches inspect(), never
+// affects report.status/exit, writes nothing, recomputes no hash. Frontmatter is
+// hand-parsed (the repo has zero deps — no YAML lib): read a bounded head of the
+// file, require a leading `---` block, find the `approval:` mapping, and read its
+// indented scalar keys. Symlinks are never followed and the scan never leaves
+// targetRoot. Anything malformed/missing is silently skipped — per-run outputs
+// are freely edited and their absence or legacy shape is legitimate.
+const FRONT_BYTES = 4096
+
+// Bounded read of a file's leading bytes (frontmatter lives at the very top).
+const readHead = (path, maxBytes) => {
+  const fd = openSync(path, 'r')
+  try {
+    const buf = Buffer.alloc(maxBytes)
+    const n = readSync(fd, buf, 0, maxBytes, 0)
+    return buf.toString('utf8', 0, n)
+  } finally { closeSync(fd) }
+}
+
+// Hand-rolled, defensive parse of the leading YAML frontmatter's `approval:`
+// mapping. Returns { status, rounds?, by?, at? } or null when there is no clean
+// leading frontmatter / no approval block / no status.
+const parseApprovalBlock = (text) => {
+  const lines = text.split(/\r?\n/)
+  if (lines.length === 0 || lines[0].trimEnd() !== '---') return null // must open with frontmatter
+  let end = -1
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].trimEnd() === '---') { end = i; break }
+  }
+  if (end === -1) return null // frontmatter not closed within the bounded read
+  let ai = -1
+  for (let i = 1; i < end; i++) {
+    if (lines[i].trimEnd() === 'approval:') { ai = i; break }
+  }
+  if (ai === -1) return null
+  const KEYS = new Set(['status', 'rounds', 'by', 'at'])
+  const out = {}
+  for (let i = ai + 1; i < end; i++) {
+    const line = lines[i]
+    if (line.trim() === '') continue
+    if (!/^\s/.test(line)) break // dedent to a new top-level key — approval mapping ended
+    const m = /^\s+([A-Za-z_]+):\s*(.*)$/.exec(line)
+    if (!m || !KEYS.has(m[1])) continue
+    let val = m[2].trim()
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1)
+    out[m[1]] = val
+  }
+  if (!out.status) return null
+  if (out.rounds !== undefined) {
+    const n = Number(out.rounds)
+    if (Number.isInteger(n)) out.rounds = n
+  }
+  return out
+}
+
+// Scan docs/specs/<run>/design.md (top-level run folders only; skip _-prefixed
+// dirs like _templates/_proposed). Returns [] when docs/specs is absent.
+const scanDesignGates = (targetRoot) => {
+  const specsDir = join(targetRoot, 'docs', 'specs')
+  let dirents
+  try { dirents = readdirSync(specsDir, { withFileTypes: true }) }
+  catch { return [] } // no docs/specs — silence
+  const out = []
+  for (const de of dirents) {
+    if (de.name.startsWith('_')) continue // _templates, _proposed
+    if (de.isSymbolicLink() || !de.isDirectory()) continue // never follow symlinks / non-dirs
+    const designPath = join(specsDir, de.name, 'design.md')
+    let approval
+    try {
+      const st = lstatSync(designPath)
+      if (st.isSymbolicLink() || !st.isFile()) continue // never follow a symlinked design.md
+      approval = parseApprovalBlock(readHead(designPath, FRONT_BYTES))
+    } catch { continue }
+    if (!approval) continue
+    if (approval.status !== 'pending' && approval.status !== 'abandoned') continue // approved/auto = healthy noise
+    out.push({
+      folder: de.name,
+      status: approval.status,
+      rounds: approval.rounds ?? null,
+      by: approval.by ?? null,
+      at: approval.at ?? null,
+    })
+  }
+  out.sort((a, b) => (a.folder < b.folder ? -1 : a.folder > b.folder ? 1 : 0))
+  return out
+}
+
+// Human render for the design-gate layer — appended AFTER the inspect() report,
+// and only when there is something to show. Pending is info (a legitimate
+// in-progress state); abandoned is quieter (parked).
+const renderDesignGate = (entries) => {
+  const L = []
+  const pending = entries.filter((e) => e.status === 'pending')
+  const abandoned = entries.filter((e) => e.status === 'abandoned')
+  if (!pending.length && !abandoned.length) return L
+  L.push('')
+  L.push('  Design gates:')
+  for (const e of pending) {
+    L.push(`    ${SEV_ICON.info} ${e.folder} — design awaiting approval (rounds: ${e.rounds ?? '?'}) — a legitimate in-progress state, not an error`)
+  }
+  for (const e of abandoned) {
+    L.push(`    - ${e.folder} — design abandoned (parked)`)
+  }
+  return L
+}
+
 // ---- main -------------------------------------------------------------------
 const main = () => {
   const { json, help, target } = parseArgs(process.argv.slice(2))
@@ -99,8 +222,12 @@ const main = () => {
   const targetRoot = resolve(target ?? process.cwd())
   const releaseDir = resolve(import.meta.dirname, '../release')
   const report = inspect(targetRoot, releaseDir)
-  if (json) console.log(JSON.stringify(report, null, 2))
-  else console.log(renderHuman(report, targetRoot))
+  // Read-only design-gate scan — non-materia repos get no scan. Attached as a
+  // separate key at print time; `report` itself stays pristine for the exit-code
+  // lookup, which keys ONLY on report.status.
+  const designGate = report.materiaEnabled ? scanDesignGates(targetRoot) : []
+  if (json) console.log(JSON.stringify({ ...report, designGate }, null, 2))
+  else console.log([renderHuman(report, targetRoot), ...renderDesignGate(designGate)].join('\n'))
   process.exit(EXIT[report.status] ?? 0)
 }
 

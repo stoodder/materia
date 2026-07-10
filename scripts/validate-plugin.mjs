@@ -1537,6 +1537,89 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
     console.log('  ✓ doctor behavior: tracked→healthy(schema 3, location ok) · legacy→warnings(gate adopted-away→requiredChanges empty, relocation recommended) · gnarly→action-needed(exit 1, required gate drift) · moved-but-unstamped→healthy(+bridge suggests migrate) · schema1+script→healthy(bridge withheld) · non-materia→unknown · malformed→blocked · future/zero/negative-schema→blocked(exit 2) · synthetic required-change→action-needed(exit 1, via inspect())')
 }
 
+// ---- 7b. doctor's design-gate reporting layer — NEGATIVE invariants ---------
+// doctor.mjs gained a read-only report that scans the target's per-run
+// docs/specs/<run>/design.md approval blocks. That layer is explicitly OUTSIDE
+// the release/artifact compatibility contract, so we pin only what it must NOT
+// do — NEVER its positive output shape (section text / JSON key), which would
+// ossify an out-of-contract surface and defeat the point of keeping it separate.
+// Two invariants:
+//   (a) inspect() (lib/materia-contract.mjs) must stay free of per-run-output
+//       scanning. inspect() is shared VERBATIM with migrate and its check-id set
+//       is pinned by §7's KNOWN_CHECK_IDS set-equality — a docs/specs scan there
+//       would be a new, unpinned check surface on a per-run output that lives
+//       outside the contract. Static: the string `docs/specs` must not appear.
+//   (b) the design-gate scan must never influence doctor's exit code. doctor's
+//       EXIT table keys ONLY on report.status; the scan is attached as a separate
+//       key at print time and `report` stays pristine. Behavioral: a healthy
+//       synthetic repo reports the SAME status+exit with and without a pending
+//       design.md, while --json gains a designGate entry and the human render
+//       names the pending run.
+{
+  const before = failures
+  const DOCTOR = resolve('plugins/materia/scripts/doctor.mjs')
+
+  // (a) inspect() purity — no per-run-output scanning in the migrate-shared module.
+  const contractSrc = readFileSync(resolve('plugins/materia/scripts/lib/materia-contract.mjs'), 'utf8')
+  if (contractSrc.includes('docs/specs'))
+    fail('design-gate layer: lib/materia-contract.mjs references docs/specs — the per-run design-gate scan must live in doctor.mjs ONLY. inspect() is shared verbatim with migrate and its check-id set is §7-pinned; per-run outputs are outside the compatibility contract and must never enter inspect().')
+
+  // (b) exit-code independence — behavioral. Build a healthy schema-3 repo, note
+  // its status+exit, then plant a pending design.md (plus an approved sibling and
+  // a _templates dir that must both be ignored) and prove status+exit are
+  // unchanged while the reporting surfaces the pending run.
+  const dg = mkdtempSync(join(tmpdir(), 'materia-doctor-designgate-'))
+  try {
+    mkdirSync(join(dg, '.materia', 'scripts'), { recursive: true })
+    writeFileSync(join(dg, 'MATERIA.md'), '# m\n')
+    writeFileSync(join(dg, '.materia', 'scripts', 'check-docs.sh'), '#!/bin/sh\nexit 0\n')
+    writeFileSync(join(dg, '.materia', 'project.json'),
+      JSON.stringify({ artifactSchema: 3, pluginVersion: null, source: 'synthetic', appliedMigrations: [] }))
+    const runJson = () => { const r = spawnSync('node', [DOCTOR, dg, '--json'], { encoding: 'utf8' }); let rep = null; try { rep = JSON.parse(r.stdout) } catch { /* asserted */ } return { r, rep } }
+
+    // baseline — no docs/specs at all
+    const base = runJson()
+    const problems = []
+    if (!base.rep) problems.push(`baseline emitted no parseable JSON (exit ${base.r.status})`)
+    else {
+      if (base.rep.status !== 'healthy') problems.push(`baseline synthetic schema-3 repo not healthy (got ${base.rep.status})`)
+      if (!Array.isArray(base.rep.designGate) || base.rep.designGate.length !== 0)
+        problems.push(`baseline designGate must be [] on a repo with no docs/specs (got ${JSON.stringify(base.rep?.designGate)})`)
+    }
+    const baseStatus = base.rep?.status, baseExit = base.r.status
+
+    // plant a pending run + an approved sibling + a _templates dir
+    const slug = '2026-01-01-000000-abc123-test'
+    mkdirSync(join(dg, 'docs', 'specs', slug), { recursive: true })
+    writeFileSync(join(dg, 'docs', 'specs', slug, 'design.md'),
+      '---\napproval:\n  status: pending\n  rounds: 1\n  by: rick\n  at: 2026-01-01T00:00:00Z\n---\n# Test — design\n\nbody\n')
+    const done = '2026-01-02-000000-def456-done'
+    mkdirSync(join(dg, 'docs', 'specs', done), { recursive: true })
+    writeFileSync(join(dg, 'docs', 'specs', done, 'design.md'),
+      '---\napproval:\n  status: approved\n  rounds: 0\n  by: rick\n  at: 2026-01-02T00:00:00Z\n  design_hash: deadbeef\n---\n# Done — design\n')
+    mkdirSync(join(dg, 'docs', 'specs', '_templates'), { recursive: true })
+    writeFileSync(join(dg, 'docs', 'specs', '_templates', 'design.md'), '---\napproval:\n  status: pending\n---\n# tmpl\n')
+
+    const withGate = runJson()
+    if (!withGate.rep) problems.push(`with-gate emitted no parseable JSON (exit ${withGate.r.status})`)
+    else {
+      if (withGate.rep.status !== baseStatus || withGate.r.status !== baseExit)
+        problems.push(`a pending design.md changed doctor status/exit (status ${baseStatus}->${withGate.rep.status}, exit ${baseExit}->${withGate.r.status}) — the reporting layer must never influence exit codes`)
+      const arr = withGate.rep.designGate
+      if (!Array.isArray(arr) || arr.length !== 1 || arr[0].folder !== slug || arr[0].status !== 'pending')
+        problems.push(`--json designGate must carry exactly the one pending run ${slug} (approved sibling + _templates skipped); got ${JSON.stringify(arr)}`)
+    }
+    // human render names the pending run
+    const human = spawnSync('node', [DOCTOR, dg], { encoding: 'utf8' })
+    if (!human.stdout.includes(slug)) problems.push('human render does not name the pending run folder')
+
+    if (problems.length) fail(`design-gate layer [behavioral]: ${problems.join('; ')}`)
+  } finally { rmSync(dg, { recursive: true, force: true }) }
+
+  if (failures === before)
+    console.log('  ✓ doctor design-gate layer (out-of-contract): inspect() free of docs/specs scanning; a pending design.md surfaces in --json + human render without changing status/exit (approved + _templates skipped)')
+}
+
 // ---- 8. /materia:migrate deterministic behavior -----------------------------
 // Spawn the shipped migrate script (plugins/materia/scripts/migrate.mjs) and pin
 // its plan/apply JSON. Migrate is PLAN-FIRST and its apply path MUTATES a target,
