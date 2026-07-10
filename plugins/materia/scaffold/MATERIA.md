@@ -220,7 +220,7 @@ the same value.
 - **Design project(s):** {{the durable reference(s) to this repo's design
   project — project id / file key / URL, durable per the `reference` meaning
   below — or `-` until the first run mints one}}
-- **Design gate:** {{on | off — default on}} the human review gate after the
+- **Design gate:** {{on | off — default on}} — the human review gate after the
   design stage (normative home: ship-spec/SKILL.md § Design gate). Precedence:
   invocation flag (`--approve-design`) > proposal frontmatter (`design_gate:`)
   > this default. `--auto` is not a knob in this chain — it is autopilot

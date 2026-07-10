@@ -120,10 +120,11 @@ status: proposed                         # always literally `proposed` while in 
 - **`design_gate`** *(optional)* — `on | off`. **Absent means "unset"** — it
   falls through to the next rung of the precedence chain, `MATERIA.md`
   § Design tool's Design gate default. Operator-owned: producers do not emit
-  this field. Consumed by `ship-spec` at stake time, where a declared value
-  is captured into `STATUS.md` § Notes as the pinned
+  this field. Captured by `ship-spec` at stake time: a declared value is
+  recorded into `STATUS.md` § Notes as the pinned
   `design-gate: <on|off> (proposal frontmatter)` line — durable through
-  dequeue, like `Surfaces:`. `off` means the design gate auto-approves with
+  dequeue, like `Surfaces:` — and consumed at gate arrival per the
+  precedence chain. `off` means the design gate auto-approves with
   reason `proposal frontmatter design_gate: off` — a recorded decision, not
   a skipped step. Normative gate semantics: `ship-spec/SKILL.md`
   § Design gate.
