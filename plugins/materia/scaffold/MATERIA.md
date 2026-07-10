@@ -607,9 +607,18 @@ operator; by default there are none beyond the canonical six.
 
 **Gate** is when the angle runs: `always` (every run, subject to ship-spec's
 markdown-only exemption and trivial-diff collapse), `ui-affecting`,
-`data-affecting`, or a repo-specific predicate phrase. `ui-affecting` and
-`data-affecting` are evaluated exactly as ship-spec's UI/Data-surface gates —
-over the cumulative diff, per `MATERIA.md § Surface gates`.
+`data-affecting`, `design-bearing`, or a repo-specific predicate phrase.
+`ui-affecting` and `data-affecting` are evaluated exactly as ship-spec's
+UI/Data-surface gates — over the cumulative diff, per `MATERIA.md § Surface
+gates`. `design-bearing` is evaluated per `ship-spec/SKILL.md` § Review (the
+design-conformance gate): the run's declared surfaces include a design-bearing
+surface (`STATUS.md` `Surfaces:`), `design.md` carries a non-empty
+`## Assertions` block, and § Eyes is not `none`. Unlike the diff-surface gates
+it is **artifact-based** — it inspects declared surfaces and design artifacts,
+not the cumulative diff — so the markdown-only exemption and trivial-diff
+collapse **drop** it (a design-bearing run whose diff is trivial is nearly a
+contradiction) rather than keeping it alive the way an independently-positive
+diff-surface gate keeps `data-safety`.
 
 **Tier** is a `<model>/<effort>` pair resolved like any other (model drawn from
 § Model set; § Effort set for the guidance sentence). These angles carry no
@@ -624,6 +633,7 @@ routing **Default** row (`opus`), per § Coercion.
 | `behavior` | `behavior.md` | `always` | `sonnet/medium` |
 | `ui` | `ui.md` | `ui-affecting` | `opus/high` |
 | `data-safety` | `data-safety.md` | `data-affecting` | `sonnet/high` |
+| `design-conformance` | `design-conformance.md` | `design-bearing` | `opus/high` |
 
 Repo-specific angles go in additional rows below the canonical six.
 
