@@ -124,7 +124,11 @@ Then:
      treat as `pending`, re-present noting the malformation — never fall through
      unrouted.
 
-3. Otherwise continue from there.
+3. Otherwise continue from there. **Placeholder-branch guard (any route, gate
+   or not):** if `Branch:` is still the template placeholder — a
+   standalone-produced folder, including one whose gate already auto-approved
+   at persist time — provision the run branch off current HEAD and backfill
+   `Branch:` first (§ Design gate — Standalone-first lane).
 4. If `retro.md` already exists in the folder, **open and append** — never
    restart it. If header `status:` is `blocked`, set it back to `running` once
    the blocker is cleared. See § Retrospective capture.
@@ -714,12 +718,14 @@ approve," not "has the file changed since."
 
 ### Standalone-first lane
 
-A folder whose `design.md` carries a pending block but was produced by the
-**standalone** design skill (no stake — `Branch:` still the template
-placeholder): before advancing past the gate, **provision the run branch off
-current HEAD** (where the standalone commits live — **NOT** off trunk; trunk
-would strand `design.md`/`STATUS.md`), named `<type>/<slug>` per the naming
-convention, and backfill `Branch:`.
+A folder produced by the **standalone** design skill (no stake — `Branch:`
+still the template placeholder), whether its block is still `pending` or was
+already auto-approved at persist time (gate-off lane): before advancing —
+past the gate, or past resume when the gate never fires (§ Resume step 3's
+placeholder-branch guard) — **provision the run branch off current HEAD**
+(where the standalone commits live — **NOT** off trunk; trunk would strand
+`design.md`/`STATUS.md`), named `<type>/<slug>` per the naming convention,
+and backfill `Branch:`.
 
 ### `--approve-design`
 
