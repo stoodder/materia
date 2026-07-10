@@ -98,7 +98,7 @@
          Next: design-approval (awaiting operator)  — the run is paused for
            the human design-review gate; the design stage's checkbox (row 2)
            may already be ticked while this stands — see § Stages CANONICAL
-           NOTE below.
+           NOTE above.
          Next: design-abandoned (parked)  — the design was abandoned by
            operator decision; parked, not blocked; the design stage's
            checkbox stays ticked. See ship-spec/SKILL.md § Design gate. -->

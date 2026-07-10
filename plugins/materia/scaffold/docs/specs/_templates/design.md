@@ -4,8 +4,8 @@
 
 <!-- Design-review-gate approval block (contract only — no live block ships
      in this template). The orchestrator writes the frontmatter block below
-     into design.md at the top of the file (above this comment, as ordinary
-     YAML frontmatter) once the design stage returns its first body; the
+     into design.md at the very top of the file (line 1, above both comments,
+     as ordinary YAML frontmatter) once the design stage returns its first body; the
      design stage itself never touches it. Shape:
 
        approval:
