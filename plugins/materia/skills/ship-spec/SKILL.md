@@ -8,7 +8,10 @@ description: "Run the full spec-to-PR pipeline for a new product spec or feature
 Drives a feature from a raw spec to an open PR by running each stage **as its own
 subagent** (clean, scoped context), persisting an artifact per stage so the run
 is **resumable across sessions**. Mostly autonomous: clarifying questions happen
-once during intake; otherwise it runs to a finished PR for human review.
+once during intake; an interactive, design-bearing (UI) run also pauses at the
+human design gate after the design stage (§ Design gate) — `--auto`
+(autopilot) and `--approve-design` runs don't pause there — then it runs to a
+finished PR for human review.
 
 Read `docs/specs/README.md` and `docs/README.md` first. Shared resources this
 skill leans on (read at the phase that needs them):

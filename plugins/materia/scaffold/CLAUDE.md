@@ -87,9 +87,11 @@ for the details.
   ([docs/specs/_proposed/](docs/specs/_proposed/README.md)); `/materia:fix-bug`
   drives a bug report from the bug queue
   ([docs/bugs/_reports/](docs/bugs/_reports/README.md)) to a RED→GREEN TDD
-  fix. Both are resumable and open exactly one PR. With `--auto` (autopilot),
-  `/materia:ship-spec` also rides that PR to green — fixing CI, resolving merge
-  conflicts — and merges it.
+  fix. On an interactive, design-bearing (UI) run, `/materia:ship-spec` pauses
+  at a design gate for your approval before continuing (`--auto` runs don't
+  pause there). Both are resumable and open exactly one PR. With `--auto`
+  (autopilot), `/materia:ship-spec` also rides that PR to green — fixing CI,
+  resolving merge conflicts — and merges it.
 - **Producers** fill the queues; **maintainers** (`/materia:janitor`, `/materia:librarian`)
   fix drift directly instead of filing queue entries — the roster and shared
   lifecycle live in [skills](docs/standards/skills.md).
