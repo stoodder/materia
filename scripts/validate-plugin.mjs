@@ -436,6 +436,51 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
     console.log(`  ✓ § Gate path pin: no skill names the legacy gate path (doctor/migrate exempt) + ${GATE_CITERS.length} skills cite MATERIA.md § Gate`)
 }
 
+// ---- 1f. scaffold run-output hygiene ----------------------------------------
+// Per-run product outputs (spec.md/design.md/architecture.md/tasks.md/retro.md/
+// STATUS.md, plus any design/prototype output or snapshot) are NOT installed
+// artifacts — a run emits them per spec into a dated run folder, and they sit
+// OUTSIDE the artifactSchema contract (release/README.md § "Per-run outputs are
+// outside the contract"). The bundled scaffold must therefore ship ONLY the
+// _templates/ they are generated from plus the queue scaffolding — never a
+// materialized run output. A dated run folder, or a stray run-output file, under
+// scaffold/docs/{specs,bugs}/ would mean the scaffold "declares" a per-run
+// artifact it must not, so we fail closed. Pure over a dir listing (name+isDir)
+// so the synthetic negatives below can drive it, mirroring lintLedger's idiom.
+const lintScaffoldRunOutputs = (area, entries) => {
+  const errs = []
+  for (const { name, isDir } of entries) {
+    // Only _-prefixed dirs (_templates/_proposed/_reports) and the area README
+    // may ship. Everything else — most sharply a dated `YYYY-MM-DD-slug/` folder
+    // or a bare run output like design.md — is a per-run artifact and rejected.
+    const allowed = name === 'README.md' || (isDir && name.startsWith('_'))
+    if (!allowed)
+      errs.push(`${area}: "${name}" may not ship in the bundled scaffold — only _-prefixed dirs (_templates/_proposed/_reports) and README.md are allowed; a dated run folder or a materialized per-run output (spec.md/design.md/architecture.md/tasks.md/retro.md/STATUS.md/design snapshot) must never be bundled (per-run outputs are outside the artifact contract)`)
+  }
+  return errs
+}
+{
+  const before = failures
+  const AREAS = ['plugins/materia/scaffold/docs/specs', 'plugins/materia/scaffold/docs/bugs']
+  const readArea = (area) => readdirSync(area, { withFileTypes: true }).map((d) => ({ name: d.name, isDir: d.isDirectory() }))
+  // The real scaffold must be clean.
+  for (const area of AREAS)
+    for (const e of lintScaffoldRunOutputs(area, readArea(area)))
+      fail(`scaffold run-output hygiene: ${e}`)
+  // Synthetic coverage — prove the linter passes a clean area and fail-closes on
+  // BOTH shapes of violation (a dated run folder AND a stray run-output file),
+  // so a validator that only ever sees the good real scaffold can't rot silently.
+  const clean = [{ name: 'README.md', isDir: false }, { name: '_templates', isDir: true }, { name: '_proposed', isDir: true }, { name: '_reports', isDir: true }]
+  if (lintScaffoldRunOutputs('synthetic', clean).length !== 0)
+    fail('scaffold run-output hygiene: self-test — a clean area (README.md + _-dirs) unexpectedly reported a violation')
+  if (lintScaffoldRunOutputs('synthetic', [{ name: '2026-01-01-example', isDir: true }]).length !== 1)
+    fail('scaffold run-output hygiene: self-test — a dated run folder was not rejected')
+  if (lintScaffoldRunOutputs('synthetic', [{ name: 'design.md', isDir: false }]).length !== 1)
+    fail('scaffold run-output hygiene: self-test — a stray materialized per-run output was not rejected')
+  if (failures === before)
+    console.log(`  ✓ scaffold run-output hygiene: ${AREAS.length} scaffold areas ship only _-dirs + README.md (no per-run outputs); 3 self-tests fail-close`)
+}
+
 // ---- helpers ---------------------------------------------------------------
 const mdFiles = []
 const walk = (p) => {
