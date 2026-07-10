@@ -88,13 +88,16 @@ adoption signals.
 `artifactSchema` tracks the **installed-artifact contract** — the harness artifacts
 `/materia:init` materializes and doctor checks for presence and canonical location. It does
 **not** track **per-run product outputs**: the files a pipeline run emits into a dated run
-folder under `docs/specs/<dated-slug>/` — `spec.md`, `design.md`, `architecture.md`, `tasks.md`,
-`retro.md`, and the run's `STATUS.md`. These are authored per spec, live in dated run folders,
-and are freely edited by the project. Their **format** changing — a new `design.md` section, a
-new frontmatter block, a new prototype output — is a `scaffold` template change classified
-`optional`/`recommended`, **never an `artifactSchema` bump.** (The bundled scaffold ships only
-the `_templates/` these are generated from, never a materialized run output;
-`scripts/validate-plugin.mjs` guards that the scaffold carries no per-run output.)
+folder — `spec.md`, `design.md`, `architecture.md`, `tasks.md`, `retro.md`, and the run's
+`STATUS.md` under `docs/specs/<dated-slug>/`; the analogous per-run bug artifacts under
+`docs/bugs/`; and the `epic.md`/`research.md` an epic run mints under `docs/epics/<dated-slug>/`
+(`docs/research/` is reserved for the same class). These are authored per run, live in dated run
+folders, and are freely edited by the project. Their **format** changing — a new `design.md`
+section, a new frontmatter block, a new prototype output — is a `scaffold` template change
+classified `optional`/`recommended`, **never an `artifactSchema` bump.** (The bundled scaffold
+ships only the `_templates/` and queue READMEs these are generated from, never a materialized run
+output; `scripts/validate-plugin.mjs` guards that none of the run-folder trees — specs, bugs,
+epics, research — carries a per-run output.)
 
 Some per-run outputs are **conditional — present iff** a predicate holds:
 

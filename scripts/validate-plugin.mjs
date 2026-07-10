@@ -444,8 +444,11 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
 // outside the contract"). The bundled scaffold must therefore ship ONLY the
 // _templates/ they are generated from plus the queue scaffolding — never a
 // materialized run output. A dated run folder, or a stray run-output file, under
-// scaffold/docs/{specs,bugs}/ would mean the scaffold "declares" a per-run
-// artifact it must not, so we fail closed. Pure over a dir listing (name+isDir)
+// any run-folder tree — scaffold/docs/{specs,bugs,epics,research}/ (specs+bugs
+// runs, plus the epic.md/research.md an epic run mints; janitor/librarian treat
+// all four as one historical-run-artifact class) — would mean the scaffold
+// "declares" a per-run artifact it must not, so we fail closed. Pure over a
+// dir listing (name+isDir)
 // so the synthetic negatives below can drive it, mirroring lintLedger's idiom.
 const lintScaffoldRunOutputs = (area, entries) => {
   const errs = []
@@ -461,7 +464,12 @@ const lintScaffoldRunOutputs = (area, entries) => {
 }
 {
   const before = failures
-  const AREAS = ['plugins/materia/scaffold/docs/specs', 'plugins/materia/scaffold/docs/bugs']
+  const AREAS = [
+    'plugins/materia/scaffold/docs/specs',
+    'plugins/materia/scaffold/docs/bugs',
+    'plugins/materia/scaffold/docs/epics',
+    'plugins/materia/scaffold/docs/research',
+  ]
   const readArea = (area) => readdirSync(area, { withFileTypes: true }).map((d) => ({ name: d.name, isDir: d.isDirectory() }))
   // The real scaffold must be clean.
   for (const area of AREAS)
