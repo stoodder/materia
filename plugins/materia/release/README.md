@@ -83,6 +83,36 @@ to record the adoption in `.materia/project.json`; doctor points at it while sta
 honestly detect the presence of its artifact: they are read both as drift detectors and as
 adoption signals.
 
+## Per-run outputs are outside the contract
+
+`artifactSchema` tracks the **installed-artifact contract** — the harness artifacts
+`/materia:init` materializes and doctor checks for presence and canonical location. It does
+**not** track **per-run product outputs**: the files a pipeline run emits into a dated run
+folder — `spec.md`, `design.md`, `architecture.md`, `tasks.md`, `retro.md`, and the run's
+`STATUS.md` under `docs/specs/<dated-slug>/`; the analogous per-run bug artifacts under
+`docs/bugs/`; and the `epic.md`/`research.md` an epic run mints under `docs/epics/<dated-slug>/`
+(`docs/research/` is reserved for the same class). These are authored per run, live in dated run
+folders, and are freely edited by the project. Their **format** changing — a new `design.md`
+section, a new frontmatter block, a new prototype output — is a `scaffold` template change
+classified `optional`/`recommended`, **never an `artifactSchema` bump.** (The bundled scaffold
+ships only the `_templates/` and queue READMEs these are generated from, never a materialized run
+output; `scripts/validate-plugin.mjs` guards that none of the run-folder trees — specs, bugs,
+epics, research — carries a per-run output.)
+
+Some per-run outputs are **conditional — present iff** a predicate holds:
+
+- `design.md` (and any design/prototype output) is present **iff** the spec declared a
+  design-bearing (UI-affecting) surface; a non-UI run skips the design stage and emits nothing.
+- a design **snapshot** is present **iff** the design-tool adapter has an `export` capability
+  (or a `read` capability to reconstruct one from) — see MATERIA.md § Design tool.
+
+**For doctor/migrate authors:** a per-run output's absence is *legitimate*, not drift — a repo
+may simply not have run a design-bearing spec since upgrading, or its adapter may lack `export`.
+So a change to one of these outputs is `detectable: false` with `detectionNotes` recording the
+conditionality; doctor never flags the absence of a conditional per-run output, and migrate has
+nothing mechanical to relocate. Such a change carries no `doctorChecks` and no schema move — only
+its classification and, where adoption is manual, a `manualMigration` note.
+
 ## Version file schema
 
 ```jsonc
@@ -94,6 +124,21 @@ adoption signals.
   "changes": [ /* Change objects — see below */ ]
 }
 ```
+
+### Accumulating changes; minting a new version file
+
+A version file accumulates `Change` entries for the release it names. While a release is
+**pending and untagged**, new entries append to its existing `versions/<v>.json` — the file
+grows as work lands, and `latest.json` keeps pointing at it. Landing a `Change` entry does
+**not**, on its own, mint a new version file or bump the plugin version.
+
+**Minting a new `versions/<v>.json` (and repointing `latest.json`) is an operator decision that
+closes the current release's deliberate deferral** — never a mechanical side effect of landing
+an entry. A release may be held untagged on purpose (e.g. while dogfooding) with entries
+accumulating; the operator mints the next file when they choose to cut the release. `Change`
+entries and the version-file mechanics are validated independently (validator §6 pins the
+four-way coherence *once a file exists*), so this accumulate-until-mint discipline is
+**semantic** — kept by this rule, not by the linter.
 
 ### Change object
 
