@@ -238,9 +238,10 @@ branch, PR URL. End the turn.
 
 ## File format — member proposals
 
-Everything from the queue contract and `propose-spec`'s § File format holds
-(frontmatter shape, body H2 set in order, absolute-from-repo-root links,
-filename pattern, kebab-slug algorithm), with these deltas:
+Everything from the queue contract and `propose-spec`'s § File format holds —
+its frontmatter shape **and field values** (so `schema_version: 2`, the same
+as every queue proposal), body H2 set in order, absolute-from-repo-root links,
+filename pattern, kebab-slug algorithm — with these deltas:
 
 ```yaml
 source: epic

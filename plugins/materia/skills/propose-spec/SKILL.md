@@ -309,7 +309,8 @@ Generate `id` with `LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6` (the sam
 `intake-spec` and `triage-retros` use for `<rand>`).
 
 Emit `surfaces:` as your best inference from the drafted spec — `[ui]` if it
-adds/changes UI, `[]` if it clearly touches none, `[ui, data]` if both, etc.
+adds/changes UI, `[data]` if it only touches data/persistence, `[ui, data]` if
+both, `[]` if it clearly touches none.
 It's a suggestion the operator confirms or edits in the existing review flow.
 Vocabulary and semantics live in `docs/specs/_proposed/README.md` § Field
 roles → `surfaces`.
