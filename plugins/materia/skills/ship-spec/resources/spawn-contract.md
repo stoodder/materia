@@ -2,9 +2,14 @@
 
 The verbatim boilerplate the `ship-spec` orchestrator copies into subagent
 spawn prompts, assembled per spawn kind: **Block 1** goes into every spawn;
-**Block 2** additionally into every stage/task spawn; **Block 3** additionally
-into every reviewer spawn. Keeping the copies here (one source) is what stops
-the rules drifting apart across the orchestrator's many spawn sites.
+**Block 2** additionally into every stage/task spawn; and a reviewer spawn adds
+**one** of two reviewer blocks by what it reviews — **Block 3** for a
+**diff reviewer** (the post-implementation fan-out, reviewing the cumulative
+branch diff) and **Block 3a** for an **artifact reviewer** (a stage-review over
+a just-authored `design.md` / `architecture.md` / `bug-analysis.md`, per
+`ship-spec/SKILL.md` § Stage reviews (design & architecture)). Keeping the
+copies here (one source) is what stops the rules drifting apart across the
+orchestrator's many spawn sites.
 
 The tier's effort guidance sentence (from `MATERIA.md` § Tiers § Effort
 set) is prepended before Block 1.
@@ -93,3 +98,41 @@ orchestrator's brief, not other reviewers' raw outputs)
   `dismissed-prior-round: <finding> — <why> (verified @ <sha>)`. A reviewer
   that wants to re-raise it must engage with the recorded verification rather
   than restate the original claim.
+
+## Block 3a — artifact-reviewer spawns (adds fresh-context exclusions)
+
+The Block 3 analogue for a **stage-review** reviewer (`ship-spec/SKILL.md`
+§ Stage reviews (design & architecture)): fresh context over a just-authored
+**artifact**, not a code diff. Injected in place of Block 3 for the
+design-stage and architecture-stage angle spawns.
+
+> You are reviewing a stage **artifact** with fresh context — the
+> `design.md`, `architecture.md`, or `bug-analysis.md` named in your brief.
+> You may read: **the artifact under review**; its upstream inputs
+> (`spec.md`; also `design.md` when the artifact under review is
+> `architecture.md`; on the bug lane, the bug report body **plus**
+> `reproduction.md` when the artifact is `bug-analysis.md`); the standards and
+> resource docs plus `docs/product.md`; and the **repo and its code**, to
+> ground-truth the artifact's evidence and reuse claims. You must NOT read:
+> `STATUS.md`, `retro.md`, other reviewers' outputs, prior-round reviewer
+> logs, anything under `.claude/review-logs/`, or the authoring stage's spawn
+> conversation.
+>
+> Verify every finding against the artifact and the actual repo state before
+> reporting it — a finding must carry its evidence (the artifact section or
+> line, plus why it's wrong — a file/doc citation for an evidence or
+> feasibility claim) in the structured finding schema, and one you could not
+> verify must say so explicitly rather than being reported as fact. The
+> `file` field is the artifact path; the `category` is your angle name.
+>
+> Recommendation vocabulary, read for an artifact: `revert` = remove or
+> withdraw the artifact section or claim; `modify` = revise it;
+> `keep_with_concern` = leave it as written, concern noted. (Same three
+> values as a diff review, read against artifact prose rather than code.)
+
+### Round-2+ additions
+
+The **spec + architecture grounding** and **dismissed-findings carry-forward**
+additions apply exactly as in Block 3 (both fresh-context-allowed — the
+orchestrator's brief, not other reviewers' raw outputs), scoped to the
+artifact's upstream inputs.

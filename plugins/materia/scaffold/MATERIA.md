@@ -305,9 +305,14 @@ the same value.
   counted by `approval.rounds` across **all** channels — the revise verb, an
   operator hand-edit, a detected direct canvas edit, an architecture-requested
   revision — of which at most 2 may be architecture-requested (their own ≤2
-  bound). Those bounces count *inside* the 3, not on top of it. The normative
-  counting mechanics live in ship-spec/SKILL.md § Design gate; this is the cost
-  posture you budget against, not a restatement. On an `export: via-read`
+  bound). Those bounces count *inside* the 3, not on top of it. **Before** that
+  gate bound, the pre-gate **design-stage review** (ship-spec/SKILL.md § Stage
+  reviews (design & architecture) — § Design-stage review) can add up to **3
+  further authoring touches** on top of the ≤4 — but only for findings
+  expressing **visual intent**, since the design stage's visual-vs-descriptive
+  judgment applies: the expected case is **0–1** extra touches, worst case 3.
+  The normative counting mechanics live in ship-spec/SKILL.md § Design gate;
+  this is the cost posture you budget against, not a restatement. On an `export: via-read`
   adapter (the recommended `claude-design` included), each of those ≤4 touches
   also pays a reconstruction-read cost for the committed snapshot — paginated
   `read_file` calls, per the init-comment catalog below — but this rides the
