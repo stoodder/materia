@@ -1374,7 +1374,10 @@ the same in one line). The loop, angle set, spawn, and commit format are
   reachable inside spawns the design stage's own step-9 export
   (`design/SKILL.md` § Persist step 9) already precedes its return; when MCP is
   operator-session-only the orchestrator performs that first export — the duty
-  pinned in § Gate-arrival sync's last paragraph. Each stage-review revision
+  pinned in § Gate-arrival sync's snapshot-export paragraph (the "and export
+  alike" rule; the paragraph `design/SKILL.md` § Sync mode forward-references
+  as the operator-only-MCP export duty's normative home). Each stage-review
+  revision
   re-exports via the existing full-revision rule (`design/SKILL.md` § Persist
   step 9's committed-snapshot paragraph), so every round reviews the current
   snapshot.
