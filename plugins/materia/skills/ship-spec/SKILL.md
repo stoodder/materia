@@ -1988,15 +1988,21 @@ mergeable — the run takes its posture's **terminal**:
    authority is exactly the operator's explicit `--auto` at invocation, nothing
    broader.
 7. **No forge, nothing to watch or merge (`none`).** Checked before watching:
-   with no forge there is no PR to watch in either mode and nothing for
-   autopilot to merge — so when `MATERIA.md` § Version control § Forge is
-   `none`, finalize has already opened/prepared the PR handoff (drafted
-   title/body + branch for the operator) and the run stops there. Autopilot
-   **cannot** merge here — its `--auto` asked for a merge the forge can't
-   provide. Record why —
-   `Blocker: pr-watch — no forge (§ Forge = none); nothing to watch, PR handoff
-   prepared for the operator` — and surface to the human. Never silently no-op
-   the phase.
+   with no forge there is no PR to watch in either posture, so when
+   `MATERIA.md` § Version control § Forge is `none`, finalize has already
+   opened/prepared the PR handoff (drafted title/body + branch for the operator)
+   and the run stops there. **Mode-parameterized, like step 6** — the outcome
+   is a clean terminal for notify but a `Blocker` for the merge posture:
+   - **Notify (interactive) — clean stop, no Blocker.** A no-forge interactive
+     run simply ends at finalize's prepared handoff: that *is* the notify
+     terminal (surface the handoff for the human), not a failure. This is the
+     same place a non-autopilot run has always ended — do **not** write a
+     `Blocker`, and do **not** treat the missing forge as drift.
+   - **Merge (`--auto`) — Blocker.** Autopilot **cannot** merge here — its
+     `--auto` asked for a merge the forge can't provide. Record why —
+     `Blocker: pr-watch — no forge (§ Forge = none); nothing to watch or merge,
+     PR handoff prepared for the operator` — and surface to the human. Never
+     silently no-op the autopilot merge.
 
 **Resume durability (make the implicit property explicit).** `§ PR watch` is a
 **live-session best-effort**, no-checkbox orchestrator-lane phase (like `review`
@@ -2004,8 +2010,8 @@ and the epic gate). Its terminal STATUS states — `Next: review + merge` (notif
 and `Next: merge (autopilot)` — are **terminal**: a session that dies mid-watch
 **ends the watch**. On re-invocation, Resume sees the PR open and every
 `tasks.md` row checked ⇒ the run is **done**; the watch is **not** re-entered.
-This is exactly the durability the autopilot merge watch has always had — stated
-here, not changed.
+This is exactly the durability the autopilot merge terminal has always had —
+stated here, not changed.
 
 ## Course corrections (mid-pipeline)
 
