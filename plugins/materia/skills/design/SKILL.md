@@ -241,8 +241,10 @@ standalone runs apply it on first use.
 
    **Sole-writer split.** The design stage owns the `design.md` **body and
    `## Feedback log`** — the log is design content (round number, what was
-   asked, what changed), appended on the first gate revision round (the loop is
-   defined in `ship-spec/SKILL.md` § Design gate); a canvas-sync write
+   asked, what changed), appended on the first gate revision round or the
+   first pre-gate stage-review revision round (gate rounds: the loop defined
+   in `ship-spec/SKILL.md` § Design gate; pre-gate rounds: § Stage reviews
+   (design & architecture) — § Design-stage review); a canvas-sync write
    (§ Sync mode) is a design-stage write of the same two things. The **approval
    block is orchestrator-owned** (the standalone-lane exception below is the
    sole place this skill writes it). The **`canvas:` frontmatter keys** are
@@ -254,15 +256,20 @@ standalone runs apply it on first use.
    body-only `design_hash`. The operator hand-editing the body is a blessed
    feedback channel, never a sole-writer violation.
 
-   On a gate revision round (re-spawned by `ship-spec` with the operator's
-   feedback and any hand-edits) produce a new body and append the round to
-   `## Feedback log`. Where a hand-edit or feedback item expresses **visual
-   intent**, apply it onto the canvas during this same revision so the two
-   halves never fork; a purely descriptive edit — a new assertion, a corrected
-   flow — may leave the canvas untouched. The stage judges which is which and
-   records that judgement in the `## Feedback log` entry. Still never touch the
-   approval block in that lane. (At an **approve** there is no re-authoring —
-   `ship-spec/SKILL.md` § Design gate's edited-body rule governs.)
+   On a revision round — either a **gate revision round** (re-spawned by
+   `ship-spec` with the operator's feedback and any hand-edits, numbered on the
+   gate's own rounds) or a **pre-gate stage-review revision round** (re-spawned
+   with the stage-review findings as feedback, numbered on its own
+   `stage-review r<N>` scale — normative home `ship-spec/SKILL.md` § Stage
+   reviews (design & architecture) — § Design-stage review) — produce a new
+   body and append the round to `## Feedback log`. Where a hand-edit or
+   feedback item expresses **visual intent**, apply it onto the canvas during
+   this same revision so the two halves never fork; a purely descriptive edit —
+   a new assertion, a corrected flow — may leave the canvas untouched. The
+   stage judges which is which and records that judgement in the
+   `## Feedback log` entry. Still never touch the approval block on either
+   round. (At an **approve** there is no re-authoring — `ship-spec/SKILL.md`
+   § Design gate's edited-body rule governs.)
 
    **Committed snapshot (export).** On first authoring and on every full
    revision round (the re-spawned-with-feedback path just above — never sync
@@ -316,11 +323,15 @@ standalone runs apply it on first use.
    presence is checked directly — it gets no frontmatter pointer of its own;
    the `canvas:` keys' job is change-detection, not snapshot-existence.
 
-   **Orchestrator lane (spawned by `ship-spec`/`fix-bug`):** do **not** tick
-   `STATUS.md`, do **not** commit it, and do **not** touch the approval block —
-   the orchestrator owns `STATUS.md`, the design row, `Next:`, and the whole
-   approval block (`ship-spec/SKILL.md` § STATUS.md ownership (orchestrator
-   lane); § Design gate). Write only your own artifact (the `design.md` body).
+   **Orchestrator lane (spawned by `ship-spec`/`fix-bug`):** the freshly
+   returned `design.md` is adversarially reviewed once, pre-gate, before the
+   design gate's first arrival — `ship-spec/SKILL.md` § Stage reviews (design
+   & architecture) — § Design-stage review; a standalone (operator-invoked)
+   run has no such loop. Do **not** tick `STATUS.md`, do **not** commit it,
+   and do **not** touch the approval block — the orchestrator owns
+   `STATUS.md`, the design row, `Next:`, and the whole approval block
+   (`ship-spec/SKILL.md` § STATUS.md ownership (orchestrator lane);
+   § Design gate). Write only your own artifact (the `design.md` body).
    Unchanged from before the gate existed.
 
    **Standalone lane (operator-invoked directly, not a spawn):** this is the

@@ -167,6 +167,15 @@ standalone runs apply it on first use.
 8. **Persist:** tick stage 4 in `STATUS.md` and set `Next: plan-tasks`; commit
    + push. **Orchestrator-lane exception:** when spawned by `ship-spec`/`fix-bug`, do **not** tick `STATUS.md` or commit it — the orchestrator owns both (see `ship-spec/SKILL.md` § STATUS.md ownership (orchestrator lane)); write only your own artifact.
 
+   In that lane, an `ok` return here is followed by the architecture-stage
+   review (`ship-spec/SKILL.md` § Stage reviews (design & architecture) —
+   § Architecture-stage review); a review revision arrives as a re-spawn with
+   the findings as feedback — produce a revised `architecture.md` consuming
+   them (same Inputs, plus the findings) — and that revision re-spawn may
+   still return `design-revision-requested` per § When the approved design is
+   infeasible below, routing to the bounce and ending this artifact's review
+   loop. A standalone (operator-invoked) run has no such loop.
+
 ## Done when
 
 - Every change maps to a resource doc — existing (reused) or a new one named for
