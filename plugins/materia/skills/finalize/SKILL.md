@@ -353,11 +353,13 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
    the run to green; finalize's own job ends at the open PR.
 
    **Standalone invocation (no orchestrator).** § PR watch is an
-   orchestrator-lane phase, so a standalone finalize can't run it — and must not
-   grow its own watch loop, because that machinery has exactly one home
-   (`ship-spec/SKILL.md § PR watch`). End by surfacing the open PR and naming
-   § PR watch as the watch-to-green phase the operator can run; otherwise
-   finalize simply hands off the open PR.
+   orchestrator-lane phase driven by the pipeline orchestrator, so a standalone
+   finalize can't run it — and must not grow its own watch loop, because that
+   machinery has exactly one home (`ship-spec/SKILL.md § PR watch`). End by
+   surfacing the open PR for the operator to take forward, noting that the
+   watch-to-green phase (§ PR watch) is what an orchestrated `ship-spec` /
+   `fix-bug` run performs after this point; a standalone finalize simply hands
+   off the open PR.
 
 ## Fresh-context fallback (no nested subagents)
 
