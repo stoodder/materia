@@ -18,10 +18,12 @@ spec-to-ship pipeline tailored to your tech stack:
   mid-stages.
 - **Producers** — skills that fill the queues from every signal source you
   have: your ideas (`/materia:propose-spec`, `/materia:propose-epic`), your own eyes
-  (`/materia:report-bug`), the app's UI (`/materia:ui-inspection`), and the pipeline's own
-  retrospectives (`/materia:triage-retros`).
+  (`/materia:report-bug`), and the pipeline's own retrospectives
+  (`/materia:triage-retros`).
 - **Maintainers** — `/materia:janitor` sweeps the code against your standards docs;
-  `/materia:librarian` sweeps the docs against the code. Both fix drift directly.
+  `/materia:librarian` sweeps the docs against the code; `/materia:curator` and
+  `/materia:concierge` sweep the running app's visuals and experience. All fix
+  drift directly.
 - **A retro-triage loop that feeds your backlog, not the harness.** Every
   pipeline run writes a `retro.md`; `/materia:triage-retros` clusters the
   accumulated signal and authors it directly into **your project's** backlog —

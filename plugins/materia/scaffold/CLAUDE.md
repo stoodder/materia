@@ -93,9 +93,10 @@ for the details.
   opens, `/materia:ship-spec` watches it to green on **every** run — fixing CI,
   resolving merge conflicts — and surfaces it for your review; with `--auto`
   (autopilot) it additionally merges once green.
-- **Producers** fill the queues; **maintainers** (`/materia:janitor`, `/materia:librarian`)
-  fix bounded drift directly and file oversized findings as queue entries in the
-  same PR — the roster and shared lifecycle live in
+- **Producers** fill the queues; **maintainers** (`/materia:janitor`,
+  `/materia:librarian`, `/materia:curator`, `/materia:concierge`) fix bounded
+  drift directly and file oversized findings as queue entries in the same PR —
+  the roster and shared lifecycle live in
   [skills](.materia/docs/standards/skills.md).
 - **Epics** ([.materia/docs/epics/](.materia/docs/epics/README.md)) group multiple specs under
   one researched initiative with a dependency graph.

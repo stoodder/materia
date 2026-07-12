@@ -297,7 +297,7 @@ The remaining probes follow the chapter skip rules, recording `none`/absent.
 
 | Probe | Section | When absent |
 |---|---|---|
-| Does it have a user-facing UI? | § Surface gates § UI-affecting, § Eyes | both `none`; `design` / `ui-test-plan` / `ui-review` / `ui-inspection` self-gate at runtime (print one line + exit) |
+| Does it have a user-facing UI? | § Surface gates § UI-affecting, § Eyes | both `none`; `design` / `ui-test-plan` / `ui-review` / `curator` / `concierge` self-gate at runtime (print one line + exit) |
 | How will agents *see* it? (browser automation — Playwright is the default for web — TUI capture, screenshot tooling) | § Eyes | — |
 | Will design work happen on an external design tool over MCP? (`claude-design` is the default offer; § Design tool's init comment carries the known-adapter catalog and each tool's capabilities) | § Design tool | `none` (also the default when the engineer skips the question); the design stage authors `design.md` repo-side and every tool-dependent behavior self-gates per § Design tool's degradation rules |
 | Does it persist data? | § Surface gates § Data-affecting, § Data layer | both `none`; the ship-spec data-safety review angle never runs (the orchestrator's per-run data gate) |

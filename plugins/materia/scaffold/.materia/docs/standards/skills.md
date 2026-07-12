@@ -163,7 +163,7 @@ anyway); passing both is legal and changes nothing.
 |---|---|---|---|
 | **Orchestrator** | operator session | none (dispatches others) | `ship-spec`, `fix-bug`, `triage-retros` |
 | **Sub-skill** | a fresh-context subagent the orchestrator spawns | its row in `MATERIA.md` § Skill routing | `intake-spec`, `design`, `ui-test-plan`, `architecture`, `plan-tasks`, `implement-task`, `finalize`, `docs-sync`, `docs-audit`, `reproduce-bug`, `bug-analysis`, `ui-review` |
-| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `report-bug`, `triage-retros`, `ui-inspection` — each writes into a queue under that queue's contract (`.materia/docs/specs/_proposed/` for spec proposals; `.materia/docs/bugs/_reports/` for bug reports) with a distinct `source:` key. `triage-retros` writes into **both** queues in one run, under `source: retro-triage` |
+| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `report-bug`, `triage-retros` — each writes into a queue under that queue's contract (`.materia/docs/specs/_proposed/` for spec proposals; `.materia/docs/bugs/_reports/` for bug reports) with a distinct `source:` key. `triage-retros` writes into **both** queues in one run, under `source: retro-triage` |
 | **Maintainer** | operator session (or scheduled) | none | `librarian` (living docs) and `janitor` (code vs `.materia/docs/standards/`) — each fixes bounded drift directly, files oversized findings as queue entries, notes the rest, opens one PR after pre-PR review rounds (§ Maintainer lifecycle). Only the librarian **auto-merges**: the standing exception to the "no auto-merge" invariant, behind its docs-only envelope + green CI, forfeited on any forfeit-tripping run (§ The docs-only envelope); the janitor stops for review. `--auto` is a per-run exception (§ The `--auto` argument). |
 
 A producer additionally MUST conform to the queue's frontmatter/filename
@@ -179,43 +179,28 @@ tier comes from its `MATERIA.md` § Skill routing row, applied only in that mode
 
 ### Producer lifecycle — the shared contract
 
-Every producer follows one lifecycle; each SKILL.md states its two mode
-choices and points here instead of restating the machinery. Skill-specific
+Every producer follows one lifecycle; each SKILL.md names its checkpoint and
+branch timing and points here instead of restating the machinery. Skill-specific
 content (what it discovers, how it triages, its file format) stays in the
 skill.
 
-**Checkpoint mode** — one of:
+**Checkpoint mode — interactive.** `report-bug`, `propose-spec`, `propose-epic`,
+`reconcile-epic` standalone, and `triage-retros` all draft everything
+in-memory, present one confirmation block, then pause. Reply verbs, with
+exactly these semantics: `approve` (write + ship), `edit: <feedback>`
+(adjust all drafts, re-present), `edit <id>: <feedback>` (adjust one),
+`drop <id>` (remove one from the batch), `cancel` (exit cleanly — nothing
+written, and if a branch was already created, switch to the trunk branch
+(`MATERIA.md` § Version control) and delete it). Fold-and-re-present loops
+until `approve`; usually one round — on round 5+ prefer a fresh re-draft
+over incremental edits. Silence is fine; nothing lands until `approve`.
 
-- **Interactive** (`report-bug`, `propose-spec`, `propose-epic`,
-  `reconcile-epic` standalone, `triage-retros`): draft everything
-  in-memory, present one confirmation block, then pause. Reply verbs, with
-  exactly these semantics: `approve` (write + ship), `edit: <feedback>`
-  (adjust all drafts, re-present), `edit <id>: <feedback>` (adjust one),
-  `drop <id>` (remove one from the batch), `cancel` (exit cleanly — nothing
-  written, and if a branch was already created, switch to the trunk branch
-  (`MATERIA.md` § Version control) and delete it). Fold-and-re-present loops
-  until `approve`; usually one round — on round 5+ prefer a fresh re-draft
-  over incremental edits. Silence is fine;
-  nothing lands until `approve`.
-- **Autonomous** (`ui-inspection`): no mid-run checkpoint —
-  the PR is the operator's review gate, so triage MUST be conservative (when
-  in doubt, drop and list it; a false entry costs more than a missed one).
-
-**Branch timing** — one of:
-
-- **Branch-at-discovery** (autonomous producers with no interactive
-  checkpoint — `ui-inspection`): once the run commits to writing a report,
-  `git checkout <trunk> && git pull <remote> <trunk>` (`<trunk>`/`<remote>` per
-  `MATERIA.md` § Version control) then branch, write, and open the PR in one
-  pass; the PR is the review gate, so there is no `approve` to defer the branch to.
-- **Branch-at-approve** (in-memory producers — `report-bug`, `propose-spec`,
-  `propose-epic`, `reconcile-epic` standalone, `triage-retros`): the whole
-  draft (Q&A, or `triage-retros`'s harvest + synthesis) is in-memory; the
-  branch is created only on `approve`, so an abandoned run leaves no trace.
-
-Either way: if `git pull` is blocked by local uncommitted changes, halt and
-surface the conflict; if the branch name already exists locally (same-day
-rerun), append a short hex suffix (`openssl rand -hex 2`).
+**Branch timing — branch-at-approve.** The whole draft (Q&A, or
+`triage-retros`'s harvest + synthesis) is in-memory; the branch is created only
+on `approve`, so an abandoned run leaves no trace. If `git pull` is blocked by
+local uncommitted changes, halt and surface the conflict; if the branch name
+already exists locally (same-day rerun), append a short hex suffix
+(`openssl rand -hex 2`).
 
 **Invariants (all producers):**
 
@@ -365,6 +350,71 @@ under `.materia/docs/specs/_proposed/`** and **new report folders under
 historical artifact under `.materia/docs/specs/**`, `.materia/docs/bugs/**`,
 `.materia/docs/epics/**`, or `.materia/docs/research/**` stays forbidden — the
 carve-out authorizes new queue entries and nothing else.
+
+#### UI maintainers — the live-app envelope
+
+A **UI maintainer** (`curator`, `concierge`) sweeps the **running app** rather
+than the tree, so it carries machinery the code/docs maintainers do not:
+provisioning the Eyes toolchain, driving surfaces, and re-capturing after each
+fix. That machinery lives here **once**; both UI maintainers cite this
+subsection and add only their judgment basis and skill-specific tables. The
+spine above still holds; this subsection refines the kind-specific steps and is
+the one home for all shared UI-maintainer mechanics.
+
+- **UI self-gate — first action, before any liveness probe.** Read
+  `MATERIA.md` § Surface gates § UI-affecting. If it is `none` — a repo with no
+  user-facing surface (`MATERIA.md` § Eyes is `none` too) — print one line and
+  end cleanly, writing nothing and starting nothing. This runs **before** the
+  liveness probe so a no-UI repo never autostarts a dev stack. (A UI maintainer
+  is operator-invoked, so this gate is its outermost guard — nothing upstream
+  has filtered by UI.)
+- **Liveness probe + autostart (interactive or `--yes` runs only).** Probe the
+  dev URL (`MATERIA.md` § Run it) for liveness. If it is already up, continue.
+  Autostart is an operator-visible machine-state change, so a non-interactive
+  run (Auto Mode / scheduled, no `--yes`) with a down app takes the clean
+  remediation exit instead. On an interactive (or `--yes`) run, **record every
+  service and process the run starts** (for teardown), bring the app up via the
+  first path that applies — the § Run it recipe (preferred), else the § Eyes
+  provisioning recipe plus § Environment preflight — and re-probe on a bounded
+  wait (~120s). If neither path makes it reachable, first tear down anything the
+  attempt started, then print the § Run it remediation step and exit cleanly
+  without writing anything.
+- **Eyes provisioning is always step 1 of provisioning** (`MATERIA.md` § Eyes)
+  — never skipped even when the environment looks provisioned (the recipe is
+  idempotent). **Export the service env block the recipe names in the same
+  command as the drive** (shell state does not persist between tool calls), and
+  **authenticate** with the dev credentials (`MATERIA.md` § Run it) to reach
+  authenticated surfaces (skip when the app has no auth).
+- **Canonical-viewport drive + capture.** Visit every surface in
+  `.materia/docs/surface-map.md` (§ Pages for a web app; § Commands for a
+  CLI/TUI) **in map order**, at the canonical viewport (`MATERIA.md` § Eyes).
+  Per surface take a **capture and a structural snapshot** in the formats
+  § Eyes defines (a browser toolchain writes a PNG capture + an HTML snapshot).
+  A surface that errors, fails to render, or fails to capture is **noted and
+  skipped** — record it and continue to the next; the drive never aborts.
+- **The presentation-layer edit envelope (binding).** A UI maintainer's fixes
+  touch the **presentation layer only** — markup structure, styles, design
+  tokens, component usage/props, and static display copy. It **never** edits
+  logic, data derivation, event handlers, schema, or wire shapes. Anything a
+  fix would need beyond that boundary is **oversized** (a queue entry,
+  § Oversized findings) or a needs-human note — the same "note, don't fix" line
+  the other maintainers draw, drawn here at the presentation boundary.
+- **Re-capture verification (binding — the UI verify step).** This IS the
+  spine's step-6 verify for a UI maintainer, and it is **primary over the
+  diff-review rounds**. After each fix, **re-drive the affected surface and
+  capture it again**; the before/after capture pairs ride the PR — committed
+  under the sweep branch in a run folder the skill names and links from the PR
+  body — so the human gate judges **observed output**, not the diff alone. A
+  fix whose re-capture does not show the intended change (or shows a regression)
+  is reverted and demoted to a needs-human note.
+- **Instability degrade.** If provisioning fails or the § Eyes drive exits with
+  a signature `MATERIA.md` § Eyes names as known environment instability (not a
+  product bug), print a short note, tear down anything the run started, and stop
+  clean — **never crash the operator's session.**
+- **Teardown what the run started** (its own command, never chained with
+  follow-up work). Stop exactly the processes/services the run recorded at
+  autostart/provisioning (the backgrounded dev server, containers this run
+  launched) and nothing that pre-existed.
 
 ### PR attribution — the Materia sigil
 

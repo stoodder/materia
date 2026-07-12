@@ -40,7 +40,8 @@ product code.
   for a human.
 - Default — full sweep: fix → PR → ride CI → merge.
 
-No mid-run checkpoint (the lifecycle is autonomous, like `ui-inspection`);
+No mid-run checkpoint (the maintainer lifecycle runs autonomously past
+preflight — `.materia/docs/standards/skills.md` § Maintainer lifecycle);
 `--dry-run` is the preview mechanism. Judgment is therefore conservative: an
 ambiguous fix is skipped and noted, never guessed at (§ Rules).
 

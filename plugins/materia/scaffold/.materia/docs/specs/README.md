@@ -97,8 +97,8 @@ A separate `.materia/docs/bugs/` tree (queue at [`.materia/docs/bugs/_reports/`]
 overview at [`.materia/docs/bugs/README.md`](../bugs/README.md)) mirrors this one for
 bug reports. Producers that write into the queue: `/materia:report-bug` (operator-described bugs),
 `/materia:triage-retros` (authors bug reports clustered from retro signal, `source: retro-triage`),
-and `/materia:ui-inspection` (drives the live app
-across the full surface-map and files one consolidated checklist bug report).
+and the UI maintainers `/materia:curator` and `/materia:concierge` (file bug
+reports for oversized findings from a live-app sweep).
 `/materia:fix-bug` is the consumer that drives a report through reproduce-bug (RED gate)
 → bug-analysis → plan-tasks → implement → review → docs-sync ⇄ docs-audit →
 finalize (dequeue), opening one PR at terminal state.
