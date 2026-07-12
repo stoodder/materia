@@ -545,9 +545,10 @@ no-op. --plan --acknowledge <id> previews the would-be state without writing.`
 //
 // Scan contract (deterministic, reproducible):
 //  - ONE walk for all tokens. Skip .git, node_modules, and the FROZEN dated run folders
-//    (docs/specs/<dated-slug>/**, docs/bugs/_reports/<dated-slug>/**) — historical run
-//    artifacts are never rewritten. The sibling index README.md / _proposed/ / _templates/
-//    are present-state and ARE scanned (they are genuine consumers).
+//    (docs/specs/<dated-slug>/**, docs/bugs/<dated-slug>/**, docs/bugs/_reports/<dated-slug>/**)
+//    — historical run artifacts are never rewritten. The sibling index README.md /
+//    _proposed/ / _reports/ / _templates/ are present-state and ARE scanned (they are
+//    genuine consumers).
 //  - Per token, EXCLUDE the from-path artifact itself and the to-path: the artifact is not
 //    its own consumer (its header self-reference is a false positive that post-move
 //    dangles), and the relocated file at `to` is the destination, not a stale consumer.
@@ -591,17 +592,22 @@ const scanReferences = (targetRoot, mig) => {
       const childRel = rel ? `${rel}/${e.name}` : e.name
       if (e.isDirectory()) {
         if (e.name === '.git' || e.name === 'node_modules') continue
-        // Frozen dated run folders: only a DATED-slug dir directly under the specs/ or
-        // bugs/_reports/ run trees is exempt — not the sibling README.md / _proposed/ /
-        // _templates/, which are present-state and stay in the scan. BOTH the legacy root
-        // (docs/specs, docs/bugs/_reports) and the relocated (.materia/docs/specs,
-        // .materia/docs/bugs/_reports) prefixes are covered, so a repo mid- or post-relocation
-        // still has its frozen history protected. Canonical single-repo layout assumed: a
-        // nested packages/x/docs/specs/<slug>/ (monorepo) or a bare-date folder (no trailing
-        // slug hyphen) is NOT exempt — Materia's docs tree is repo-root-rooted, so those shapes
-        // are not run artifacts it wrote.
-        if ((rel === 'docs/specs' || rel === 'docs/bugs/_reports' ||
-             rel === '.materia/docs/specs' || rel === '.materia/docs/bugs/_reports') && DATED_SLUG.test(e.name)) continue
+        // Frozen dated run folders: only a DATED-slug dir directly under the specs/, bugs/,
+        // or bugs/_reports/ run trees is exempt — not the sibling README.md / _proposed/ /
+        // _reports/ / _templates/, which are present-state and stay in the scan. All three
+        // frozen classes are covered: spec run folders (docs/specs/<slug>/), fix-bug run
+        // folders (docs/bugs/<slug>/ — permanent history whose STATUS.md provenance fields
+        // legitimately carry old-era paths), and queued bug reports (docs/bugs/_reports/<slug>/
+        // — immutable once filed). The epics/ and research/ trees are deliberately NOT exempt:
+        // reconcile-epic keeps epics living present-state docs, so their stale refs are real.
+        // BOTH the legacy root (docs/…) and the relocated (.materia/docs/…) prefixes are
+        // covered, so a repo mid- or post-relocation still has its frozen history protected.
+        // Canonical single-repo layout assumed: a nested packages/x/docs/specs/<slug>/
+        // (monorepo) or a bare-date folder (no trailing slug hyphen) is NOT exempt — Materia's
+        // docs tree is repo-root-rooted, so those shapes are not run artifacts it wrote.
+        if ((rel === 'docs/specs' || rel === 'docs/bugs' || rel === 'docs/bugs/_reports' ||
+             rel === '.materia/docs/specs' || rel === '.materia/docs/bugs' ||
+             rel === '.materia/docs/bugs/_reports') && DATED_SLUG.test(e.name)) continue
         walk(childAbs, childRel)
       } else if (e.isFile()) {
         let content
