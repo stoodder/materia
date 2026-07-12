@@ -51,9 +51,17 @@ Doctor's only output is the report it prints — it writes nothing to the repo
   adopt" listing of same-release changes that cannot be auto-verified
   (impact-ordered required/recommended/optional, each with its adoption
   instructions and the `/materia:migrate --acknowledge <id>` pointer to quiet
-  it once adopted or considered), and the suggested next command.
+  it once adopted or considered), and the suggested next command. On a
+  Materia-enabled repo the script may append a **"Design gates:"** section —
+  its read-only, out-of-contract scan of per-run `design.md` approval blocks —
+  listing runs paused `pending` (awaiting approval; a legitimate in-progress
+  state, not an error) or `abandoned` (parked). It is informational only and
+  never affects the status or exit code.
 - **`--json`** — the same report as a structured JSON object (for piping into
-  other tooling).
+  other tooling), plus one additional top-level key the human summary derives
+  its "Design gates:" section from: `designGate`, an array of per-run
+  design-gate entries (empty when there is nothing paused or the repo is not
+  Materia-enabled).
 
 The script's exit code encodes the status (`0` healthy/warnings/unknown, `1`
 action-needed, `2` blocked).
@@ -99,7 +107,10 @@ action-needed, `2` blocked).
    check's own remediation wording — it is schema-aware (it points at
    `/materia:migrate --plan` for a behind repo migrate can move/stamp, or "move it
    by hand" / "move the docs tree to .materia/docs/ by hand" for a state migrate
-   will not modify).
+   will not modify). When the script appended a "Design gates:" section (see
+   Outputs), relay those entries too — pending runs awaiting approval and
+   abandoned (parked) runs — noting they are informational and do not affect
+   the status.
 
 3. **Recommend the next step the script named** — no more. Common cases:
    - **`healthy`** — schema is current; nothing required. Note that a healthy

@@ -282,8 +282,9 @@ backlink required by the epic contract's bi-directional-linkage rule.
   `/materia:ship-spec <id>`, in dependency order, at the operator's pace.
 - Does NOT maintain the epic after this run — that's
   [`reconcile-epic`](../reconcile-epic/SKILL.md)'s job.
-- Does NOT modify the `_proposed/` or `_epics/` contract READMEs; contract
-  changes are a separate PR.
+- Does NOT modify the `_proposed/` contract README or
+  `.materia/docs/epics/README.md` (the epic contract); contract changes are a
+  separate PR.
 - Research subagents are read-only gatherers — they never write to the repo
   and never spawn further subagents.
 
