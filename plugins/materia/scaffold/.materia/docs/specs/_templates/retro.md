@@ -27,8 +27,9 @@ status: running
 <!-- The orchestrator extracts each entry from the subagent's returned ` ```retro `
      fenced block and appends it to the file. Sub-subagents (the reviewer subagents
      inside `implement-task`) are summarized in their parent's entry. Each
-     first-level subagent (`intake`, `design`, `architecture`, `plan-tasks`, each
-     `implement-task`, `docs-sync` (per round), `docs-audit` (per round), `finalize`)
+     first-level subagent (`intake`, `design`, `ui-test-plan`, `architecture`,
+     `plan-tasks`, each `implement-task`, `docs-sync` (per round), `docs-audit`
+     (per round), `reconcile-epic` (when the epic gate ran it), `finalize`)
      returns one entry in their report.
 
      Schema per entry (`ship-spec` passes this verbatim in each spawn prompt):
