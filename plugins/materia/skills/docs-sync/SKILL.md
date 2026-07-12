@@ -1,6 +1,6 @@
 ---
 name: docs-sync
-description: Reconcile docs with the branch's aggregate code changes before the PR — apply docs/contributing.md touch-X→update-Y to the whole diff, edit stale resource/standards docs (intent-oracle rules), update cross-cutting docs (CLAUDE.md, README index, surface-map, glossary), with every edit written to docs/standards/docs.md (present-state, one home per fact) and gated by the `check:docs` gate (`MATERIA.md § Gate`) before commit, then hand off to the sibling `docs-audit` stage. Invoked by `ship-spec` as its own pipeline stage (after review, paired with the sibling `docs-audit` stage, before finalize); usable standalone after a hotfix.
+description: Reconcile docs with the branch's aggregate code changes before the PR — apply .materia/docs/contributing.md touch-X→update-Y to the whole diff, edit stale resource/standards docs (intent-oracle rules), update cross-cutting docs (CLAUDE.md, README index, surface-map, glossary), with every edit written to .materia/docs/standards/docs.md (present-state, one home per fact) and gated by the `check:docs` gate (`MATERIA.md § Gate`) before commit, then hand off to the sibling `docs-audit` stage. Invoked by `ship-spec` as its own pipeline stage (after review, paired with the sibling `docs-audit` stage, before finalize); usable standalone after a hotfix.
 ---
 
 # docs-sync — reconcile docs to the final branch state
@@ -9,7 +9,7 @@ Per-task implementation already updates the **directly-touched** resource and
 standards docs. `docs-sync` runs once at the end of the branch to (a) catch
 cross-task drift (Task N invalidates a doc Task N-1 wrote), (b) update the
 **cross-cutting** docs that are deliberately deferred from per-task scope
-(CLAUDE.md, `docs/README.md` index, `docs/surface-map.md`, `docs/glossary.md`),
+(CLAUDE.md, `.materia/docs/README.md` index, `.materia/docs/surface-map.md`, `.materia/docs/glossary.md`),
 and (c) audit doc accuracy from fresh context before the PR.
 
 Runs as a **fresh-context subagent** spawned by `ship-spec` as its own pipeline
@@ -20,12 +20,12 @@ finalize). Usable standalone after a hotfix if docs slip.
 
 - The full branch diff vs the trunk (`git diff <baseline>...HEAD`, `<baseline>`
   per `MATERIA.md` § Version control).
-- `docs/specs/<dated-slug>/spec.md` + `architecture.md` (intent oracles).
-- `docs/contributing.md` (the **touch-X→update-Y** map — the authoritative
+- `.materia/docs/specs/<dated-slug>/spec.md` + `architecture.md` (intent oracles).
+- `.materia/docs/contributing.md` (the **touch-X→update-Y** map — the authoritative
   definition of what "docs" means for a given change).
-- `docs/standards/docs.md` (the **authoring standard** — every edit this
+- `.materia/docs/standards/docs.md` (the **authoring standard** — every edit this
   skill writes must follow it; see § Authoring rules).
-- The current `docs/**` tree (read it as it stands on the branch).
+- The current `.materia/docs/**` tree (read it as it stands on the branch).
 
 **Fresh-context exclusion list — do NOT read:**
 
@@ -36,7 +36,7 @@ finalize). Usable standalone after a hotfix if docs slip.
 
 ## Authoring rules — how every edit is written
 
-The docs are agent context; `docs/standards/docs.md` is binding for every
+The docs are agent context; `.materia/docs/standards/docs.md` is binding for every
 line this skill writes. This skill is the main pressure point: docs written
 change-by-change accrete history unless each pass folds its change into the
 present-state description.
@@ -54,7 +54,7 @@ present-state description.
   with the cell reading "details below". Never grow an existing cell past
   that.
 - **One home per fact.** Before restating a fact in a second doc, link to
-  the doc that owns it (ownership map: `docs/standards/docs.md`
+  the doc that owns it (ownership map: `.materia/docs/standards/docs.md`
   § Ownership map).
 - **Glossary entries are one line** (one sentence + Detail link), inserted at
   the term's alphabetical position.
@@ -62,7 +62,7 @@ present-state description.
 The `check:docs` gate (`MATERIA.md § Gate`) mechanically enforces the checkable subset (narration
 phrases, >600-char lines, duplicated long lines, glossary order, links,
 `#anchor` fragments) over CLAUDE.md + docs root + `resources/` +
-`standards/` + `_templates/` (links also across `docs/**`) — run it before
+`standards/` + `_templates/` (links also across `.materia/docs/**`) — run it before
 committing (Procedure step 6). The rules
 above are broader than the checker; passing it is necessary, not sufficient.
 
@@ -93,13 +93,13 @@ standalone runs apply it on first use.
 ## Procedure
 
 1. **Build the required-updates matrix.** Enumerate every file changed on the
-   branch. For each, apply `docs/contributing.md`'s touch-X→update-Y rows to
+   branch. For each, apply `.materia/docs/contributing.md`'s touch-X→update-Y rows to
    produce the matrix `{changed_file → [docs that must reflect it]}`.
 
    **Widened-enum / closed-set scan.** When the branch widens an enum or
    extends a closed set (e.g. `WeekDay` from `Mon|Tue|Wed` to all seven
    days; a status enum from `pending|done` to `pending|in-progress|done`),
-   grep `docs/**` for the pre-widening literal token-set — both the
+   grep `.materia/docs/**` for the pre-widening literal token-set — both the
    member names themselves AND any derived phrasings (e.g. `Mon/Tue/Wed`,
    `W1 Mon → W8 Wed`, `three program days`). Inline annotations that
    name the old set don't appear in the touch-X→update-Y map (the
@@ -110,17 +110,17 @@ standalone runs apply it on first use.
    prose to match new enum membership"). One-pass grep at the start
    of docs-sync is cheap insurance.
 
-   **Docs-wide sweep safety — exclude `docs/specs/**`.** Any docs-wide glob or
+   **Docs-wide sweep safety — exclude `.materia/docs/specs/**`.** Any docs-wide glob or
    token replacement (the widened-enum grep above, a vocabulary rename sweep)
-   must **exclude `docs/specs/**`** — git fnmatch lets `*` cross `/`, so
-   `git ls-files 'docs/*.md'` / `'docs/**/*.md'` silently match historical spec
+   must **exclude `.materia/docs/specs/**`** — git fnmatch lets `*` cross `/`, so
+   `git ls-files '.materia/docs/*.md'` / `'.materia/docs/**/*.md'` silently match historical spec
    artifacts and the in-flight run's own mapping tables, and a blind
    replacement clobbers them (e.g. turning a `Old → New` rename table into
-   `New → New`). Always scope the sweep with an explicit `:(exclude)docs/specs/**`
-   pathspec (e.g. `git ls-files 'docs/**/*.md' ':(exclude)docs/specs/**'`) or an
+   `New → New`). Always scope the sweep with an explicit `:(exclude).materia/docs/specs/**`
+   pathspec (e.g. `git ls-files '.materia/docs/**/*.md' ':(exclude).materia/docs/specs/**'`) or an
    enumerated live-docs file list. docs-sync reconciles **live** docs
-   (`CLAUDE.md`, `docs/README.md`, `docs/standards/*`, `docs/resources/*`,
-   `docs/glossary.md`, `docs/surface-map.md`), never spec snapshots.
+   (`CLAUDE.md`, `.materia/docs/README.md`, `.materia/docs/standards/*`, `.materia/docs/resources/*`,
+   `.materia/docs/glossary.md`, `.materia/docs/surface-map.md`), never spec snapshots.
 
    **Recurring coverage gaps — a mandatory self-verify gate, not a sample.**
    Four distinct misses recur across runs. Run all four checks in full on
@@ -139,7 +139,7 @@ standalone runs apply it on first use.
       repo with no barrel convention, record this check as
       `not-applicable (no barrel convention)` — an absent barrel is not a
       defect.
-   3. **Advance the `docs/specs/README.md` index Stage column in round 1.** Tick
+   3. **Advance the `.materia/docs/specs/README.md` index Stage column in round 1.** Tick
       the run's Index Stage column to `implement ✓ → docs-sync` in **round 1**,
       not as an afterthought a later round has to backfill.
    4. **Code-comment rationale ↔ resource prose.** When a code-comment rationale
@@ -149,7 +149,7 @@ standalone runs apply it on first use.
    **End-of-round-1 self-verify.** Before closing round 1, diff the round's
    own commit against these mandatory items and confirm each one actually
    landed in the diff — starting with check 3: if
-   `git diff HEAD~1 -- docs/specs/README.md` shows no Stage-column advance for
+   `git diff HEAD~1 -- .materia/docs/specs/README.md` shows no Stage-column advance for
    the run's Index row, the item was silently skipped. Fix any miss inside
    round 1 rather than letting docs-audit catch it and force an extra round.
 
@@ -167,15 +167,15 @@ standalone runs apply it on first use.
 4. **Silent-oracle handling.** For files spec/architecture doesn't name (most
    cross-cutting utilities, helpers, shared composables, internal types):
 
-   - **Resource/standards docs** (`docs/resources/*`, `docs/standards/*`) — if
+   - **Resource/standards docs** (`.materia/docs/resources/*`, `.materia/docs/standards/*`) — if
      the doc edit would change only **descriptive prose** (examples, narrative,
      non-normative explanation), auto-edit to match code; record in the audit
      summary as `silent-oracle: <doc> edited to match <file>`. If the doc edit
      would change a **normative statement** (a "must", "never", invariant, or
      wire-shape sentence), do NOT auto-edit. Write a `Blocker` to STATUS
      surfacing the conflict for the human.
-   - **Cross-cutting docs** (`CLAUDE.md`, `docs/README.md` index tables,
-     `docs/surface-map.md`, `docs/glossary.md`) — **always Blocker on
+   - **Cross-cutting docs** (`CLAUDE.md`, `.materia/docs/README.md` index tables,
+     `.materia/docs/surface-map.md`, `.materia/docs/glossary.md`) — **always Blocker on
      silent-oracle**. These docs are too high-leverage (CLAUDE.md is
      always-loaded; a wrong line poisons every future agent) to be auto-edited
      against silent intent.
@@ -186,16 +186,16 @@ standalone runs apply it on first use.
    demands and are NOT silent-oracle (i.e. the spec/architecture *does* name
    them):
    - New schema model / core entity named in `architecture.md` → ensure
-     `docs/resources/<entity>.md` exists (copy from `docs/_templates/resource.md`
-     if not) and is registered in the Resources index of `docs/README.md`.
+     `.materia/docs/resources/<entity>.md` exists (copy from `.materia/docs/_templates/resource.md`
+     if not) and is registered in the Resources index of `.materia/docs/README.md`.
    - New externally reachable surface named in `architecture.md` — a route,
-     page, CLI command, or public export, whatever `docs/surface-map.md`'s
+     page, CLI command, or public export, whatever `.materia/docs/surface-map.md`'s
      own table shape says this repo's surfaces are → add its row there.
    - New domain term defined in `spec.md` or `architecture.md` → add a
      **one-line** entry (one sentence + Detail link) at its **alphabetical**
-     position in `docs/glossary.md` (`check:docs` enforces both).
+     position in `.materia/docs/glossary.md` (`check:docs` enforces both).
    - New convention/rule documented as a deliberate change in `architecture.md`
-     → reflected in `CLAUDE.md` AND the matching `docs/standards/*.md`.
+     → reflected in `CLAUDE.md` AND the matching `.materia/docs/standards/*.md`.
 
 6. **Run the `check:docs` gate (`MATERIA.md § Gate`), then commit and hand off to `docs-audit`.**
    Run the docs checks **before committing** and fix every failure — the

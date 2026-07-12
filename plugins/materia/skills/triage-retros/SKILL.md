@@ -1,20 +1,20 @@
 ---
 name: triage-retros
-description: "Run manually via `/materia:triage-retros` after a stretch of `ship-spec` / `fix-bug` runs to harvest unprocessed retros (one sub-agent per retro at 3+, parsed inline by the parent at ≤2), cluster the project-specific signal in-memory, and author it directly — proposed specs into `docs/specs/_proposed/` and bug reports into `docs/bugs/_reports/`, both with `source: retro-triage` — following the `propose-spec` / `report-bug` producer practice. Bundles small related capabilities into as few specs as `propose-spec`'s split line allows, and folds duplicate signal about the same defect into one report; de-duplicates the drafts against the pending queues + the recent merge log (nothing silently discarded — a dropped/parked list rides the confirmation and the PR). Drafts everything in-memory, presents one confirmation, and on approve branches, writes the specs + reports, renames each consumed retro to `retro.processed.md`, and opens exactly one PR against the trunk — no auto-merge. In-memory until approve; re-invoke fresh if interrupted."
+description: "Run manually via `/materia:triage-retros` after a stretch of `ship-spec` / `fix-bug` runs to harvest unprocessed retros (one sub-agent per retro at 3+, parsed inline by the parent at ≤2), cluster the project-specific signal in-memory, and author it directly — proposed specs into `.materia/docs/specs/_proposed/` and bug reports into `.materia/docs/bugs/_reports/`, both with `source: retro-triage` — following the `propose-spec` / `report-bug` producer practice. Bundles small related capabilities into as few specs as `propose-spec`'s split line allows, and folds duplicate signal about the same defect into one report; de-duplicates the drafts against the pending queues + the recent merge log (nothing silently discarded — a dropped/parked list rides the confirmation and the PR). Drafts everything in-memory, presents one confirmation, and on approve branches, writes the specs + reports, renames each consumed retro to `retro.processed.md`, and opens exactly one PR against the trunk — no auto-merge. In-memory until approve; re-invoke fresh if interrupted."
 ---
 
 # triage-retros — scan retros and author backlog artifacts
 
 The **scan-and-author** step that harvests `ship-spec`'s and `fix-bug`'s
 per-run `retro.md` captures and turns them into **project-specific** backlog
-artifacts. It globs unprocessed retros from both `docs/specs/**` and
-`docs/bugs/**`, collects one insight envelope per retro (via sub-agents at 3+
+artifacts. It globs unprocessed retros from both `.materia/docs/specs/**` and
+`.materia/docs/bugs/**`, collects one insight envelope per retro (via sub-agents at 3+
 retros, inline at ≤2), then clusters the aggregated signal **in-memory**
 directly into drafted **proposed specs** and **bug reports** — no intermediate
 hand-off buckets. It de-duplicates the drafts against the
 live queues, presents **one confirmation** showing every draft inline plus a
 dropped/parked list, and on `approve` branches, writes the specs into
-`docs/specs/_proposed/` and the reports into `docs/bugs/_reports/` (both with
+`.materia/docs/specs/_proposed/` and the reports into `.materia/docs/bugs/_reports/` (both with
 `source: retro-triage`), renames each consumed `retro.md` to
 `retro.processed.md`, and opens exactly one PR against the trunk
 (`MATERIA.md` § Version control).
@@ -25,13 +25,13 @@ from retro to reviewable proposal/report, all in one PR.
 
 The stack is markdown + `git` + `gh`/GitHub-MCP + the skill harness. Manual
 invocation only; single PR per run; no auto-merge. The retro template
-(`docs/specs/_templates/retro.md`) is the schema this skill's parser is built
+(`.materia/docs/specs/_templates/retro.md`) is the schema this skill's parser is built
 against; the `retro.md`/`retro.processed.md` naming is the
 idempotency-by-rename convention. This skill reads retros and writes queue
 artifacts + retro renames — it **never edits pipeline skills or product source**.
 
 **Lifecycle:** interactive checkpoint · branch-at-approve — per the shared
-producer contract at `docs/standards/skills.md` § Producer lifecycle (reply
+producer contract at `.materia/docs/standards/skills.md` § Producer lifecycle (reply
 verbs, cancel semantics, zero-work exit, id minting, consume-by-rename, link
 integrity, one PR + tooling, no session survival). Harvest + synthesis +
 drafting + de-dup all happen **in-memory**; an interrupted run leaves no trace,
@@ -53,11 +53,11 @@ front-load):
   § Procedure (step "Detect the input shape") — the H1 + H2 set `intake-spec`
   matches to adopt a proposal body verbatim.
 - **Bug-report body shape truth** — `plugins/materia/skills/report-bug/SKILL.md`
-  § Body and `docs/bugs/_templates/bug-report.md` (the 13-section format).
-- **Queue contracts** — `docs/specs/_proposed/README.md` and
-  `docs/bugs/_reports/README.md` (frontmatter shape, filename/folder pattern,
+  § Body and `.materia/docs/bugs/_templates/bug-report.md` (the 13-section format).
+- **Queue contracts** — `.materia/docs/specs/_proposed/README.md` and
+  `.materia/docs/bugs/_reports/README.md` (frontmatter shape, filename/folder pattern,
   producer responsibilities incl. de-duplication).
-- `docs/specs/_templates/retro.md` — the schema the parser is built against
+- `.materia/docs/specs/_templates/retro.md` — the schema the parser is built against
   (read-only).
 - Fixture — `${CLAUDE_PLUGIN_ROOT}/skills/triage-retros/resources/fixture-retro.md`
   (the classification rubric's synthetic input; see § Fixture verification).
@@ -89,20 +89,20 @@ created here** — discovery is a pure in-memory scan.
 **Glob** (results merged):
 
 ```bash
-git ls-files 'docs/specs/**/retro.md'
-git ls-files 'docs/bugs/**/retro.md'
+git ls-files '.materia/docs/specs/**/retro.md'
+git ls-files '.materia/docs/bugs/**/retro.md'
 ```
 
 **Filter:** the pattern already excludes `retro.processed.md`; additionally
 reject any basename matching `^retro\.processed(\..+)?\.md$` (belt-and-braces
 against variants), and reject any path containing a `/_templates/` segment —
-the glob matches the canonical stub at `docs/specs/_templates/retro.md`, a
+the glob matches the canonical stub at `.materia/docs/specs/_templates/retro.md`, a
 placeholder template, never a real retro (the same guard every producer
 carries). Filtered-out files count as "ignored" in the output.
 
 **Identity tuple** per surviving path: `{ path, slug, run_kind }` — `slug` is
-the parent folder's dated slug; `run_kind` is `spec run` for `docs/specs/**`,
-`bug run` for `docs/bugs/**`.
+the parent folder's dated slug; `run_kind` is `spec run` for `.materia/docs/specs/**`,
+`bug run` for `.materia/docs/bugs/**`.
 
 **Zero matches (zero-work exit):** report both globs' match/ignored counts and
 end the turn — **no branch, no files, no PR**. This is the only clean
@@ -123,7 +123,7 @@ bumps adjust one place. Implementation is section-regex over the raw markdown
 
 ```jsonc
 {
-  "path": "docs/specs/<dated-slug>/retro.md",
+  "path": ".materia/docs/specs/<dated-slug>/retro.md",
   "slug": "<dated-slug>",
   "header": { "schema_version": 1, "slug": "...", "branch": "...", "started_at": "...", "finalized_at": "...", "status": "completed" }, // fields null/best-effort when unparseable
   "entries": [
@@ -193,7 +193,7 @@ classification, drafting) lives in the parent's Synthesis.
 
 ```jsonc
 {
-  "retro_path": "docs/specs/<dated-slug>/retro.md",
+  "retro_path": ".materia/docs/specs/<dated-slug>/retro.md",
   "slug": "<dated-slug>",
   "parse_status": "ok",              // "ok" | "degraded"
   "parse_notes": [],
@@ -204,7 +204,7 @@ classification, drafting) lives in the parent's Synthesis.
 
 ### Sole-writer + return-only invariant
 
-Per `docs/standards/skills.md` § Retro touchpoint contract, applied here:
+Per `.materia/docs/standards/skills.md` § Retro touchpoint contract, applied here:
 **the parent is the sole writer and sole committer of every artifact.**
 Sub-agents are read-only (exactly one `retro.md`) and return-only (the
 envelope). **Deliberate divergence, stated loudly:** a triage-retros sub-agent
@@ -280,7 +280,7 @@ each queue's shape allows**. Consolidation means different things per artifact:
 For each consolidated cluster, draft the complete artifact **now** — full
 frontmatter + full body — per § File format. Mint a fresh `id` per draft so the
 confirmation can show it and the operator can `edit <id>` / `drop <id>` it.
-Ground every draft in the project's vocabulary (`docs/glossary.md`) and the
+Ground every draft in the project's vocabulary (`.materia/docs/glossary.md`) and the
 relevant standards so acceptance criteria / reproduction steps are **literally
 testable**, not vague. Every supporting reference carries a real `retro_path`,
 the verbatim entry `anchor`, and a short verbatim quote.
@@ -306,8 +306,8 @@ report**, and its pipeline/harness-friction entry must produce **no artifact**
 
 ## Producer de-duplication
 
-**Mandatory queue-contract invariant.** Both `docs/specs/_proposed/README.md`
-and `docs/bugs/_reports/README.md` require a producer to **not duplicate an
+**Mandatory queue-contract invariant.** Both `.materia/docs/specs/_proposed/README.md`
+and `.materia/docs/bugs/_reports/README.md` require a producer to **not duplicate an
 item already pending in the queue or recently shipped/fixed**. This is the one
 behavior most likely to ship wrong, because the retro loop was not a queue
 producer before this — do not skip it.
@@ -316,7 +316,7 @@ Load the live queues + the recent merge log, then filter every draft:
 
 **Specs — filter against:**
 
-1. Pending proposals: `git ls-files 'docs/specs/_proposed/*.md'` (minus
+1. Pending proposals: `git ls-files '.materia/docs/specs/_proposed/*.md'` (minus
    `README.md`) — read frontmatter + tagline + body for content-level dedupe.
 2. The recent merge log:
    `git log <trunk> --since='3 months ago' --grep='ship-spec\|_proposed\|triage-retros' --pretty=oneline`
@@ -325,7 +325,7 @@ Load the live queues + the recent merge log, then filter every draft:
 
 **Reports — filter against:**
 
-1. Pending reports: `git ls-files 'docs/bugs/_reports/*/report.md'` — read
+1. Pending reports: `git ls-files '.materia/docs/bugs/_reports/*/report.md'` — read
    frontmatter + summary for content-level dedupe.
 2. The recent merge log:
    `git log <trunk> --since='3 months ago' --grep='fix-bug\|_reports\|report-bug\|triage-retros' --pretty=oneline`
@@ -357,14 +357,14 @@ Triaged <K> retro(s) (<S> spec run, <B> bug run) into:
 
 Proposed specs (<P>):
   1. <id-1> — <title-1>
-     Will be written to: docs/specs/_proposed/<filename-1>
+     Will be written to: .materia/docs/specs/_proposed/<filename-1>
 
      <full inline body block — frontmatter + spec sections>
   …
 
 Bug reports (<R>):
   1. <id-a> — <title-a>  [severity: <low|medium|high|critical>]
-     Will be written to: docs/bugs/_reports/<dated-slug-a>/report.md
+     Will be written to: .materia/docs/bugs/_reports/<dated-slug-a>/report.md
 
      <full inline body — frontmatter + 13-section body>
   …
@@ -374,8 +374,8 @@ Dropped or parked (<D>):
   - …
 
 Retros to mark processed (renamed to retro.processed.md on approve):
-  - docs/specs/<slug>/retro.md          (spec run)
-  - docs/bugs/<slug>/retro.md           (bug run)
+  - .materia/docs/specs/<slug>/retro.md          (spec run)
+  - .materia/docs/bugs/<slug>/retro.md           (bug run)
   …
 
 Reply:
@@ -398,7 +398,7 @@ the retros (so they are not re-harvested forever) and carries the dropped list.
 This is **not** the zero-work exit; that is the zero-retros Discovery case,
 which opens no PR at all.
 
-**Reply verbs** (per `docs/standards/skills.md` § Producer lifecycle,
+**Reply verbs** (per `.materia/docs/standards/skills.md` § Producer lifecycle,
 interactive checkpoint mode):
 
 - `approve` (or the standing approve tokens) → advance to
@@ -444,10 +444,10 @@ repo; the branch is created now so an abandoned confirmation leaves no trace.
    changes).
 
 2. **Write each proposed spec** with the `Write` tool to
-   `docs/specs/_proposed/<filename>` (frontmatter + body per § File format).
+   `.materia/docs/specs/_proposed/<filename>` (frontmatter + body per § File format).
 
 3. **Write each bug report** with the `Write` tool to
-   `docs/bugs/_reports/<dated-slug>/report.md` (frontmatter + body per § File
+   `.materia/docs/bugs/_reports/<dated-slug>/report.md` (frontmatter + body per § File
    format). Id-collision handling per the lifecycle: on a filename/folder
    collision or an id already on disk in either queue or in the recent merge
    log, regenerate the id once and retry; a second collision halts with the
@@ -458,9 +458,9 @@ repo; the branch is created now so an abandoned confirmation leaves no trace.
 
    ```bash
    # spec-run retros:
-   git mv docs/specs/<retro-slug>/retro.md docs/specs/<retro-slug>/retro.processed.md
+   git mv .materia/docs/specs/<retro-slug>/retro.md .materia/docs/specs/<retro-slug>/retro.processed.md
    # bug-run retros:
-   git mv docs/bugs/<retro-slug>/retro.md docs/bugs/<retro-slug>/retro.processed.md
+   git mv .materia/docs/bugs/<retro-slug>/retro.md .materia/docs/bugs/<retro-slug>/retro.processed.md
    ```
 
    Append one footer line to each `retro.processed.md` (` · `-separated, one
@@ -484,10 +484,10 @@ repo; the branch is created now so an abandoned confirmation leaves no trace.
 
    ```bash
    # each authored spec, each authored report folder, each renamed retro:
-   git add docs/specs/_proposed/<filename-1>.md [ …more specs ] \
-           docs/bugs/_reports/<dated-slug-1>/ [ …more report folders ] \
-           docs/specs/<retro-slug>/retro.processed.md [ …more renamed retros ] \
-           docs/bugs/<retro-slug>/retro.processed.md
+   git add .materia/docs/specs/_proposed/<filename-1>.md [ …more specs ] \
+           .materia/docs/bugs/_reports/<dated-slug-1>/ [ …more report folders ] \
+           .materia/docs/specs/<retro-slug>/retro.processed.md [ …more renamed retros ] \
+           .materia/docs/bugs/<retro-slug>/retro.processed.md
    ```
 
 7. **Verify link integrity, then run the scope guard on the *staged* diff,
@@ -521,7 +521,7 @@ repo; the branch is created now so an abandoned confirmation leaves no trace.
      (spec/bug split, degraded ones flagged). Closing lines: "Build any spec
      with `/materia:ship-spec <id>`. Work any report with `/materia:fix-bug`."
      The body's last element is the **Materia sigil** naming `triage-retros` as
-     the caster (`docs/standards/skills.md` § PR attribution — the Materia
+     the caster (`.materia/docs/standards/skills.md` § PR attribution — the Materia
      sigil), followed by the standard `🤖 Generated with [Claude
      Code](https://claude.com/claude-code)` footer.
 
@@ -544,13 +544,13 @@ anchors keep the patterns from matching a queue `README.md` or an unrelated
 file swept in by formatting):
 
 ```
-^docs/specs/_proposed/[0-9]{4}-[0-9]{2}-[0-9]{2}-[^/]+\.md$        # authored proposed specs (dated filename)
-^docs/bugs/_reports/[0-9]{4}-[0-9]{2}-[0-9]{2}-[^/]+/report\.md$   # authored bug reports (dated folder + report.md)
-^docs/specs/[^/]+/retro\.(md|processed\.md)$                       # spec-run retro renames + footers
-^docs/bugs/[^/]+/retro\.(md|processed\.md)$                        # bug-run retro renames + footers
+^.materia/docs/specs/_proposed/[0-9]{4}-[0-9]{2}-[0-9]{2}-[^/]+\.md$        # authored proposed specs (dated filename)
+^.materia/docs/bugs/_reports/[0-9]{4}-[0-9]{2}-[0-9]{2}-[^/]+/report\.md$   # authored bug reports (dated folder + report.md)
+^.materia/docs/specs/[^/]+/retro\.(md|processed\.md)$                       # spec-run retro renames + footers
+^.materia/docs/bugs/[^/]+/retro\.(md|processed\.md)$                        # bug-run retro renames + footers
 ```
 
-Writing into `docs/bugs/_reports/**` is now **legitimate** — this skill is a
+Writing into `.materia/docs/bugs/_reports/**` is now **legitimate** — this skill is a
 producer for that queue (the old gather-only prohibition is gone), but only the
 run's **own** dated report folders (the `report.md` basename anchor rejects a
 stray edit to another producer's folder). Any staged path outside the
@@ -562,7 +562,7 @@ is clean.
 
 ## File format
 
-### Proposed specs → `docs/specs/_proposed/`
+### Proposed specs → `.materia/docs/specs/_proposed/`
 
 **Frontmatter:**
 
@@ -572,8 +572,8 @@ id: <fresh 6-char base36 token>
 schema_version: 3
 source: retro-triage
 source_refs:
-  - "docs/specs/<slug>/retro.processed.md § Entry 3 — implement-task"
-  - "docs/bugs/<slug>/retro.processed.md § Entry 2 — reproduce-bug"
+  - ".materia/docs/specs/<slug>/retro.processed.md § Entry 3 — implement-task"
+  - ".materia/docs/bugs/<slug>/retro.processed.md § Entry 2 — reproduce-bug"
 title: <one-line title; matches the body H1>
 date: <YYYY-MM-DD>
 status: proposed
@@ -584,7 +584,7 @@ surfaces: [ui]                     # optional; your best inference of the surfac
 Emit `surfaces:` as your best inference from the clustered retro signal —
 `[ui]`, `[data]`, `[ui, data]`, or `[]` if clearly neither. It's a suggestion
 the operator confirms or edits in the existing review flow. Vocabulary and
-semantics live in `docs/specs/_proposed/README.md` § Field roles →
+semantics live in `.materia/docs/specs/_proposed/README.md` § Field roles →
 `surfaces`.
 
 **Body:** the exact structure `intake-spec` produces / `propose-spec` § Body
@@ -595,7 +595,7 @@ defines — H1 + tagline blockquote + `## Problem`, `## Goals`, `## Non-goals`,
 even when thin** — `intake-spec`'s detector matches on the H1 plus `## Problem`,
 `## Goals`, `## User stories & acceptance criteria`, and `## Open questions`.
 Link paths follow `propose-spec` § Link paths: backtick/arrow prose only, e.g.
-`visual-language → docs/standards/visual-language.md` — never a relative link
+`visual-language → .materia/docs/standards/visual-language.md` — never a relative link
 (breaks when `intake-spec` adopts the body at a different folder depth) and
 never an absolute-from-repo-root path (`check-docs.sh` resolves links against
 the containing file's own directory, so a repo-root path doesn't resolve from
@@ -603,7 +603,7 @@ either location either).
 
 **Filename:** `<YYYY-MM-DD-HHMMSS>-<id>-<slug>.md`.
 
-### Bug reports → `docs/bugs/_reports/`
+### Bug reports → `.materia/docs/bugs/_reports/`
 
 **Frontmatter:**
 
@@ -614,14 +614,14 @@ schema_version: 1
 source: retro-triage
 severity: low | medium | high | critical   # closed enum; mirrors the body section
 source_refs:
-  - "docs/bugs/<slug>/retro.processed.md § Entry 2 — implement-task"
+  - ".materia/docs/bugs/<slug>/retro.processed.md § Entry 2 — implement-task"
 title: <one-line title; matches the body H1>
 date: <YYYY-MM-DD>
 status: reported
 ---
 ```
 
-**Body:** the 13-section format `report-bug` § Body / `docs/bugs/_templates/bug-report.md`
+**Body:** the 13-section format `report-bug` § Body / `.materia/docs/bugs/_templates/bug-report.md`
 define, every H2 verbatim and in order: `## Summary` · `## Environment` ·
 `## Steps to reproduce` · `## Expected` · `## Actual` · `## Reproducibility` ·
 `## Severity & impact` · `## Affected surface / route / module` ·
@@ -634,7 +634,7 @@ a placeholder line where the source data doesn't populate a field (e.g.
 Link paths are absolute-from-repo-root (`report-bug` § Link paths). The body
 **MUST NOT** repeat frontmatter metadata.
 
-**Folder:** `docs/bugs/_reports/<YYYY-MM-DD-HHMMSS>-<id>-<slug>/report.md`.
+**Folder:** `.materia/docs/bugs/_reports/<YYYY-MM-DD-HHMMSS>-<id>-<slug>/report.md`.
 
 ### Shared conventions
 
@@ -643,7 +643,7 @@ Link paths are absolute-from-repo-root (`report-bug` § Link paths). The body
   enum edit).
 - **`source_refs`** is **always a YAML list**, one entry per originating retro
   anchor, pointing at the retro's **post-run resting path**
-  (`docs/.../retro.processed.md § Entry N — <stage>`) — the retro is renamed in
+  (`.materia/docs/.../retro.processed.md § Entry N — <stage>`) — the retro is renamed in
   the **same commit**, so the `.processed.md` path is the one that resolves.
   The anchor is the heading's stable prefix (through the stage); grep'ing it as
   a substring in the linked file must find the source.
@@ -653,7 +653,7 @@ Link paths are absolute-from-repo-root (`report-bug` § Link paths). The body
   disk in the target queue or visible in the recent merge log; the `HHMMSS`
   filename prefix is minted alongside via `date -u +%Y-%m-%d-%H%M%S`.
 - **Slug** — derived from the title via the **normative kebab-slug algorithm**
-  in `docs/specs/_proposed/README.md` § Kebab-slug derivation. Do NOT invent a
+  in `.materia/docs/specs/_proposed/README.md` § Kebab-slug derivation. Do NOT invent a
   different algorithm.
 - **Retro footer** — one line per `retro.processed.md`, appended in the same
   commit as the artifacts it produced:

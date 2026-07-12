@@ -9,13 +9,13 @@
 // stderr + exit) across a fixture corpus. Its checking logic is the ground
 // truth: do not "fix" it to match the .sh — fix the .sh to match it.
 // Deterministic docs checker — no network, no AI. Three layers:
-//  1. Link check (CLAUDE.md + docs/**): every relative
+//  1. Link check (CLAUDE.md + .materia/docs/**): every relative
 //     Markdown link resolves to a real file on disk.
 //  2. Anchor check (agent-context docs only): every `#fragment` in a
 //     relative link resolves to a real heading in the target file.
-//  3. Style checks (CLAUDE.md + docs root + resources/ + standards/ +
+//  3. Style checks (CLAUDE.md + .materia/docs root + resources/ + standards/ +
 //     _templates/ only — the agent-context docs governed by
-//     docs/standards/docs.md): no change-narration phrases (matched across
+//     .materia/docs/standards/docs.md): no change-narration phrases (matched across
 //     line wraps), no over-long lines (mega table cells), no duplicated long
 //     lines, glossary stays alphabetical.
 // Exits non-zero (with the offending file:line) on any failure.
@@ -24,7 +24,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, dirname, resolve, relative, sep } from 'node:path'
 
-const ROOTS = ['CLAUDE.md', 'docs']
+const ROOTS = ['CLAUDE.md', '.materia/docs']
 
 const files = []
 function walk(p) {
@@ -59,11 +59,11 @@ const LINK = /\[(?:[^[\]]|\[[^\]]*\])*\]\(([^)]+)\)/g
 
 // Only the always-relevant agent-context docs; the run-artifact trees
 // (specs/bugs/epics/research) are historical records and exempt by design.
-const STYLE_DIRS = ['docs/resources', 'docs/standards', 'docs/_templates']
+const STYLE_DIRS = ['.materia/docs/resources', '.materia/docs/standards', '.materia/docs/_templates']
 const isStyleChecked = (f) =>
   f === 'CLAUDE.md' ||
   STYLE_DIRS.some((d) => f.startsWith(d + sep)) ||
-  (f.startsWith('docs' + sep) && !f.slice(5).includes(sep)) // docs/ root files
+  (f.startsWith('.materia/docs' + sep) && !f.slice(14).includes(sep)) // .materia/docs/ root files
 const isAnchorChecked = (f) => isStyleChecked(f)
 
 // GitHub-style heading slugs, normalized (runs of hyphens collapsed) so both
@@ -119,7 +119,7 @@ for (const f of files.sort()) {
 // -------------------------------------------------------------- style checks
 
 // Change-narration markers — docs describe the present state; git owns the
-// past (docs/standards/docs.md § Rule). Case-insensitive, matched across
+// past (.materia/docs/standards/docs.md § Rule). Case-insensitive, matched across
 // line wraps; text inside code fences or inline code is exempt.
 const NARRATION = [
   'renamed from',
@@ -152,7 +152,7 @@ for (const f of files.filter(isStyleChecked).sort()) {
     for (const m of prose.matchAll(phraseRe(phrase))) {
       const line = prose.slice(0, m.index).split('\n').length
       fail(
-        `${f}:${line} change-narration phrase "${phrase}" — describe the present state (docs/standards/docs.md)`,
+        `${f}:${line} change-narration phrase "${phrase}" — describe the present state (.materia/docs/standards/docs.md)`,
       )
     }
   const seen = new Map() // trimmed long line -> first line number
@@ -162,7 +162,7 @@ for (const f of files.filter(isStyleChecked).sort()) {
     const n = i + 1
     if (rawLine.length > MAX_LINE)
       fail(
-        `${f}:${n} line is ${rawLine.length} chars (max ${MAX_LINE}) — move detail out of the table cell (docs/standards/docs.md)`,
+        `${f}:${n} line is ${rawLine.length} chars (max ${MAX_LINE}) — move detail out of the table cell (.materia/docs/standards/docs.md)`,
       )
     const trimmed = rawLine.trim()
     if (trimmed.length >= DUP_MIN) {
@@ -174,7 +174,7 @@ for (const f of files.filter(isStyleChecked).sort()) {
 }
 
 // Glossary must stay alphabetical (ignoring case + markdown decoration).
-const GLOSSARY = 'docs/glossary.md'
+const GLOSSARY = '.materia/docs/glossary.md'
 if (existsSync(GLOSSARY)) {
   const terms = readFileSync(GLOSSARY, 'utf8')
     .split('\n')

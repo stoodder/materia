@@ -24,8 +24,9 @@
 // in ./lib/materia-contract.mjs, where that logic now lives.)
 //
 // Design-gate reporting layer (scanDesignGates, below) — an ADDITIONAL,
-// read-only report that scans the target's per-run docs/specs/<run>/design.md
-// approval blocks and surfaces runs paused at the design review gate. It is
+// read-only report that scans the target's per-run .materia/docs/specs/<run>/design.md
+// approval blocks (legacy docs/specs/ fallback for un-migrated repos) and surfaces
+// runs paused at the design review gate. It is
 // explicitly OUTSIDE the release/artifact compatibility contract: it adds NO
 // inspect() check id (inspect() is migrate-shared and its check-id set is pinned
 // by validate-plugin.mjs §7 — a docs/specs scan there is forbidden), never
@@ -67,7 +68,7 @@ and reports one of: healthy · warnings · action-needed · blocked · unknown.
 It also lists same-release changes available to adopt but not auto-verifiable
 (schema-invisible prose / per-run-artifact contracts), minus what the repo has
 already adopted or acknowledged — an informational listing outside the status/
-exit path. It also reports any run paused at the design review gate (docs/specs/
+exit path. It also reports any run paused at the design review gate (.materia/docs/specs/
 <run>/design.md with a pending/abandoned approval block) — a read-only note
 outside the compatibility contract that never affects the status or exit code.
 It writes nothing and never migrates.`
@@ -195,13 +196,22 @@ const parseApprovalBlock = (text) => {
   return out
 }
 
-// Scan docs/specs/<run>/design.md (top-level run folders only; skip _-prefixed
-// dirs like _templates/_proposed). Returns [] when docs/specs is absent.
+// Scan <specs>/<run>/design.md (top-level run folders only; skip _-prefixed
+// dirs like _templates/_proposed). The specs tree lives at the canonical
+// .materia/docs/specs/ post-0.4.0; a legacy (un-migrated) repo still keeps it at the
+// root docs/specs/, so fall back there — this is a report-only layer OUTSIDE the
+// compatibility contract (it adds no inspect() check id), so tolerating the legacy path
+// costs nothing. Returns [] when neither exists.
 const scanDesignGates = (targetRoot) => {
-  const specsDir = join(targetRoot, 'docs', 'specs')
-  let dirents
-  try { dirents = readdirSync(specsDir, { withFileTypes: true }) }
-  catch { return [] } // no docs/specs — silence
+  const canonSpecs = join(targetRoot, '.materia', 'docs', 'specs')
+  const legacySpecs = join(targetRoot, 'docs', 'specs')
+  const readEntries = (dir) => { try { return readdirSync(dir, { withFileTypes: true }) } catch { return null } }
+  // .materia/docs/specs takes precedence (the relocated tree); only an un-migrated repo
+  // with no canonical tree falls back to the root docs/specs.
+  let specsDir = canonSpecs
+  let dirents = readEntries(canonSpecs)
+  if (dirents === null) { specsDir = legacySpecs; dirents = readEntries(legacySpecs) }
+  if (dirents === null) return [] // neither specs tree — silence
   const out = []
   for (const de of dirents) {
     if (de.name.startsWith('_')) continue // _templates, _proposed

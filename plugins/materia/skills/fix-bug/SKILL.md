@@ -1,6 +1,6 @@
 ---
 name: fix-bug
-description: Drive a reported bug from docs/bugs/_reports/ to a merged TDD fix — reproduce RED first, then bug-analysis (adversarially stage-reviewed) → plan-tasks → implement-task → review → docs-sync → finalize to fix GREEN and open one PR. Consumes a bug report (menu or named <id>); produces one PR with the fix, the reproduction tests, and the dequeued report. Use when the operator wants to drive a captured bug report through the full fix pipeline.
+description: Drive a reported bug from .materia/docs/bugs/_reports/ to a merged TDD fix — reproduce RED first, then bug-analysis (adversarially stage-reviewed) → plan-tasks → implement-task → review → docs-sync → finalize to fix GREEN and open one PR. Consumes a bug report (menu or named <id>); produces one PR with the fix, the reproduction tests, and the dequeued report. Use when the operator wants to drive a captured bug report through the full fix pipeline.
 ---
 
 # fix-bug — the bug-fix orchestrator
@@ -11,11 +11,11 @@ review, docs-sync, and finalize. Runs in the operator session. Mostly
 autonomous: the operator picks a report (or names an `<id>`), the pipeline
 runs to a finished PR.
 
-Read `docs/bugs/README.md` and `docs/bugs/_reports/README.md` first.
+Read `.materia/docs/bugs/README.md` and `.materia/docs/bugs/_reports/README.md` first.
 
 ## Bug-run folder naming
 
-Every bug run lives at `docs/bugs/<dated-slug>/`, where `<dated-slug>` is:
+Every bug run lives at `.materia/docs/bugs/<dated-slug>/`, where `<dated-slug>` is:
 
 ```
 <yyyy-mm-dd-hhmmss>-<rand>-<slug>
@@ -23,7 +23,7 @@ Every bug run lives at `docs/bugs/<dated-slug>/`, where `<dated-slug>` is:
 
 — the UTC creation timestamp (to the second), a fresh 6-char base36 token,
 and a short kebab slug derived from the report's `title` field. Example:
-`docs/bugs/2026-06-20-101533-a3f2bc-set-log-undo-discards-wrong-row/`.
+`.materia/docs/bugs/2026-06-20-101533-a3f2bc-set-log-undo-discards-wrong-row/`.
 
 The branch uses the bare `fix/<slug>` prefix (not the dated folder name).
 Use the full `<dated-slug>` in every path you write or read; the bare `<slug>`
@@ -51,7 +51,7 @@ exists, **resume — do not restart**.
 
 **Match precedence** (first match wins):
 
-1. **`Bug-id` match** — if any `docs/bugs/*-<slug>/STATUS.md` carries
+1. **`Bug-id` match** — if any `.materia/docs/bugs/*-<slug>/STATUS.md` carries
    `Bug-id: <id>` matching the operator's input (interpreted as an id), resume
    that folder. The id match is the canonical resume key — it survives slug
    collisions.
@@ -81,7 +81,7 @@ When the operator invokes the skill, classify their input:
 | Input shape | Behavior |
 |---|---|
 | `/materia:fix-bug` (no args) | Enter the **menu** — list pending reports and ask the operator to pick. |
-| `/materia:fix-bug <id>` where `<id>` matches a frontmatter `id` under `docs/bugs/_reports/*/report.md` | Skip the menu, resolve to that report, advance. |
+| `/materia:fix-bug <id>` where `<id>` matches a frontmatter `id` under `.materia/docs/bugs/_reports/*/report.md` | Skip the menu, resolve to that report, advance. |
 | `/materia:fix-bug <slug>` matching a Resume case | Handled by the Resume gate above; never reaches selection. |
 
 ### Discovery
@@ -89,7 +89,7 @@ When the operator invokes the skill, classify their input:
 Glob the queue:
 
 ```bash
-git ls-files 'docs/bugs/_reports/*/report.md'
+git ls-files '.materia/docs/bugs/_reports/*/report.md'
 ```
 
 One `report.md` per report folder. For each surviving
@@ -103,9 +103,9 @@ warning so the operator sees why a file was skipped.
 
 ### In-flight pickup
 
-Before printing the menu, scan all `docs/bugs/*-*/STATUS.md` for `Bug-id:`
+Before printing the menu, scan all `.materia/docs/bugs/*-*/STATUS.md` for `Bug-id:`
 lines whose value matches any pending report's `id`. Mark those reports as
-**`(in flight — docs/bugs/<dated-slug>/)`** in the menu — picking one
+**`(in flight — .materia/docs/bugs/<dated-slug>/)`** in the menu — picking one
 re-enters the Resume gate for that folder rather than starting a parallel run.
 
 ### Empty queue → graceful exit
@@ -113,12 +113,12 @@ re-enters the Resume gate for that folder rather than starting a parallel run.
 Zero pending unclaimed reports AND no ad-hoc text:
 
 ```
-No pending bug reports under docs/bugs/_reports/.
+No pending bug reports under .materia/docs/bugs/_reports/.
 
 You can:
   - Run /materia:report-bug to capture a new reproducible bug report, or
-  - Hand-write a report at docs/bugs/_reports/<dated-slug>/report.md
-    (see docs/bugs/_reports/README.md for the contract).
+  - Hand-write a report at .materia/docs/bugs/_reports/<dated-slug>/report.md
+    (see .materia/docs/bugs/_reports/README.md for the contract).
 
 Exiting cleanly. No branch created, no files written.
 ```
@@ -140,7 +140,7 @@ If the discovery set is non-empty:
 ### Resolve the selection
 
 Given the operator's `<id>`, scan all frontmatter blocks under
-`docs/bugs/_reports/*/report.md` for a match. **Match by `id` only, never by
+`.materia/docs/bugs/_reports/*/report.md` for a match. **Match by `id` only, never by
 filename.** If zero matches, halt with `Unknown bug id: <id>` and end the
 turn. If multiple files share an id (contract violation), halt with the
 duplicate paths and end the turn.
@@ -149,11 +149,11 @@ duplicate paths and end the turn.
 
 See `ship-spec/SKILL.md` § "Frontmatter parser" for the normative BOM-aware,
 line-anchored parse algorithm. The same parser applies here (the bug report
-queue contract at `docs/bugs/_reports/README.md` § Consumer responsibilities
+queue contract at `.materia/docs/bugs/_reports/README.md` § Consumer responsibilities
 mandates the same `^---\r?\n` strip).
 
 For slug derivation, apply the `## Kebab-slug derivation` algorithm from
-`docs/specs/_proposed/README.md`
+`.materia/docs/specs/_proposed/README.md`
 to `frontmatter.title` — it is **normative** and shared; cite, don't re-state.
 
 ## Stake-and-mint
@@ -168,21 +168,21 @@ claim before spawning any subagent. This makes the pick durable on disk.
    slug derived from `frontmatter.title`.
 3. Create branch `fix/<slug>` off latest `<trunk>` (the trunk per
    `MATERIA.md` § Version control).
-4. `mkdir docs/bugs/<dated-slug>/`.
-5. Seed `STATUS.md` from `docs/bugs/_templates/status.md`, filling:
+4. `mkdir .materia/docs/bugs/<dated-slug>/`.
+5. Seed `STATUS.md` from `.materia/docs/bugs/_templates/status.md`, filling:
    - `Slug:` → `<dated-slug>`
    - `Branch:` → `fix/<slug>`
    - `Updated:` → today's date
    - `## Bug-report provenance` block:
      - `Bug-id:` → `frontmatter.id`
-     - `Bug-report:` → `docs/bugs/_reports/<dated-slug>/report.md`
+     - `Bug-report:` → `.materia/docs/bugs/_reports/<dated-slug>/report.md`
      - `Bug-source:` → `frontmatter.source`
      - `Bug-severity:` → `frontmatter.severity`
-6. Seed `retro.md` from `docs/specs/_templates/retro.md` (fill `slug`,
+6. Seed `retro.md` from `.materia/docs/specs/_templates/retro.md` (fill `slug`,
    `branch`, `started_at`).
 7. Commit:
    ```
-   fix-bug(stake): claim report <id> as docs/bugs/<dated-slug>/
+   fix-bug(stake): claim report <id> as .materia/docs/bugs/<dated-slug>/
    ```
 8. Push.
 
@@ -214,7 +214,7 @@ spawn, resolve the tier first and pass it as the `model` override — see
    tasks may run as parallel worktree-isolated subagents). Each task commits its
    own work and ticks `tasks.md`. No per-task adversarial review — implementers
    build to the standards and leave the local gate green. The spawn prompt adds:
-   the path to `docs/bugs/<dated-slug>/reproduction.md` (so the implementer
+   the path to `.materia/docs/bugs/<dated-slug>/reproduction.md` (so the implementer
    knows which tests must flip RED → GREEN) and the TDD exit condition:
    "reproduction test(s) from `reproduction.md` pass (green); full suite green."
 
@@ -225,11 +225,11 @@ spawn, resolve the tier first and pass it as the `model` override — see
    review loop exits clean. **The exact spawn-prompt substitution** (mirrors
    § plan-tasks input substitution — a content override, not a fork):
 
-   > Your run folder is `docs/bugs/<dated-slug>/`. Wherever your procedure
-   > reads `docs/specs/<dated-slug>/spec.md`, read the bug report body
+   > Your run folder is `.materia/docs/bugs/<dated-slug>/`. Wherever your procedure
+   > reads `.materia/docs/specs/<dated-slug>/spec.md`, read the bug report body
    > (provided below) instead; wherever it reads `architecture.md`, read
-   > `docs/bugs/<dated-slug>/bug-analysis.md`. All other inputs (the branch
-   > diff, `docs/contributing.md`'s touch-map, the named docs) are unchanged.
+   > `.materia/docs/bugs/<dated-slug>/bug-analysis.md`. All other inputs (the branch
+   > diff, `.materia/docs/contributing.md`'s touch-map, the named docs) are unchanged.
 
 7. **docs-audit** (`docs-audit`) → verify pass. **Orchestrator-managed
    loop identical to `ship-spec/SKILL.md` § Pipeline step 9:** on
@@ -281,7 +281,7 @@ must pause.
 After `bug-analysis` (stage 2) returns and its `bug-analysis.md` is verified
 and committed (per § "Each stage runs as a subagent"), and before
 `plan-tasks` (stage 3) spawns, the orchestrator runs the `architecture-stage`
-angles over `docs/bugs/<dated-slug>/bug-analysis.md` — the bug lane's arrival
+angles over `.materia/docs/bugs/<dated-slug>/bug-analysis.md` — the bug lane's arrival
 at `ship-spec/SKILL.md` § "Stage reviews (design & architecture)" —
 § "Architecture-stage review" Point 2, which names this file as the wiring's
 home. The angle set (`MATERIA.md` § Review angles registry rows carrying the
@@ -308,7 +308,7 @@ reproduction, not a UX design (§ Scope) — no `design` stage ever runs, so no
   test path(s) it names, when the artifact is `bug-analysis.md`
   (`spawn-contract.md` § Block 3a, the single home for that list). The spawn
   brief only names the artifact path,
-  `docs/bugs/<dated-slug>/bug-analysis.md`.
+  `.materia/docs/bugs/<dated-slug>/bug-analysis.md`.
 
 - **The angle checks apply unchanged.** Both `architecture-stage` registry
   rows — `architecture-grounding` and `architecture-coverage` — already carry
@@ -328,10 +328,10 @@ orchestrator parameterises the path in the spawn prompt.
 **The exact spawn prompt text to pass to `plan-tasks`:**
 
 > Your decomposition source ("architecture.md" in this skill's text) is
-> `docs/bugs/<dated-slug>/bug-analysis.md`. Read it wherever the procedure says
-> "architecture.md". Also read `docs/bugs/<dated-slug>/reproduction.md` (for the
+> `.materia/docs/bugs/<dated-slug>/bug-analysis.md`. Read it wherever the procedure says
+> "architecture.md". Also read `.materia/docs/bugs/<dated-slug>/reproduction.md` (for the
 > TDD exit condition) and the bug report body. Write `tasks.md` under
-> `docs/bugs/<dated-slug>/` and commit only that artifact — per your own
+> `.materia/docs/bugs/<dated-slug>/` and commit only that artifact — per your own
 > orchestrator-lane exception, do **not** tick or commit `STATUS.md`.
 > `bug-analysis.md`'s **Affected files** list is the "Affected existing
 > resources" set for your § step-3 reconciliation and pre-task grep validation.
@@ -355,7 +355,7 @@ is lossless:
 1. **`bug-analysis.md` must contain an "Affected files" section** (the
    "Affected existing resources" analogue) — otherwise `plan-tasks` step-3
    reconciliation has nothing to diff against. Enforced by the
-   `docs/bugs/_templates/bug-analysis.md` shape.
+   `.materia/docs/bugs/_templates/bug-analysis.md` shape.
 2. **Every task in the emitted `tasks.md` that touches code-under-test must
    carry the TDD exit AC**: "reproduction test(s) from `reproduction.md` pass
    (green); full suite green." The orchestrator's spawn prompt instructs
@@ -408,8 +408,8 @@ intact in the cumulative diff.
 `spawn-contract.md` Block 3 lists `spec.md` among the docs a reviewer may read
 as the change's intent ("…and `spec.md`"). A bug run has no `spec.md`; state in
 every reviewer spawn prompt that the intent oracle is instead the **bug report
-body + `docs/bugs/<dated-slug>/bug-analysis.md` +
-`docs/bugs/<dated-slug>/reproduction.md`** — the same remap this skill already
+body + `.materia/docs/bugs/<dated-slug>/bug-analysis.md` +
+`.materia/docs/bugs/<dated-slug>/reproduction.md`** — the same remap this skill already
 makes for docs-sync and plan-tasks.
 
 ## Finalize (dequeue + PR)
@@ -422,9 +422,9 @@ delta in finalize's procedure is the dequeue**, and it must be driven
 built-in step 3'.
 
 Why: `finalize`'s step 3' only recognizes the spec-pipeline `## Provenance`
-block and its `Proposed-spec:` field (pointing into `docs/specs/_proposed/`). A
+block and its `Proposed-spec:` field (pointing into `.materia/docs/specs/_proposed/`). A
 bug-run `STATUS.md` carries `## Bug-report provenance` / `Bug-report:`
-(pointing into `docs/bugs/_reports/`) instead, so `finalize`'s own step 3'
+(pointing into `.materia/docs/bugs/_reports/`) instead, so `finalize`'s own step 3'
 finds no spec proposal and skips silently. Relying on it would leave the report
 un-dequeued. Keeping `finalize` unforked means the orchestrator supplies the
 bug-queue dequeue procedure in the spawn prompt, mirroring finalize's step 3'
@@ -435,16 +435,16 @@ The spawn prompt must pass:
 - **Acceptance intent oracle (no `spec.md` in the bug lane):** `finalize`'s
   acceptance cross-check (its step 3) reads `spec.md`; a bug run has none.
   Instruct `finalize` to cross-check acceptance against the **bug report body +
-  `docs/bugs/<dated-slug>/bug-analysis.md` +
-  `docs/bugs/<dated-slug>/reproduction.md`** instead — the RED→GREEN
+  `.materia/docs/bugs/<dated-slug>/bug-analysis.md` +
+  `.materia/docs/bugs/<dated-slug>/reproduction.md`** instead — the RED→GREEN
   reproduction test(s) are the acceptance signal.
-- **Bug-run folder:** `docs/bugs/<dated-slug>/` (where docs-sync, the behavior
+- **Bug-run folder:** `.materia/docs/bugs/<dated-slug>/` (where docs-sync, the behavior
   re-check, and the PR-body artifact links point).
 - **Dequeue target:** the **parent folder** of the `Bug-report:` path from the
   bug-run `STATUS.md` `## Bug-report provenance` block. `Bug-report:` stores the
-  `report.md` file path (e.g. `docs/bugs/_reports/<dated-slug>/report.md`); strip
+  `report.md` file path (e.g. `.materia/docs/bugs/_reports/<dated-slug>/report.md`); strip
   the trailing `/report.md` to derive the report folder
-  `docs/bugs/_reports/<dated-slug>/`. That folder — not the `report.md` file — is
+  `.materia/docs/bugs/_reports/<dated-slug>/`. That folder — not the `report.md` file — is
   the dequeue target so that co-located evidence (`.png`, `.html`) is removed with it.
 
 And must instruct `finalize` to perform the dequeue **after** its gate (step 2)
@@ -455,7 +455,7 @@ dequeue) semantics over the bugs queue:
 2. Derive `<report-folder>` as the parent folder of the `Bug-report:` path (strip
    trailing `/report.md`). **Path guard:** before any `git rm`, verify the
    derived folder matches
-   `docs/bugs/_reports/<yyyy-mm-dd-hhmmss>-<id>-<slug>/` exactly (no `..`,
+   `.materia/docs/bugs/_reports/<yyyy-mm-dd-hhmmss>-<id>-<slug>/` exactly (no `..`,
    no leading `/`, confined to `_reports/`) — a STATUS field is data, not a
    trusted path. Quote it. Then stage the removal: `git rm -r <report-folder>`. If the
    folder is already gone (operator removed it mid-run), skip the `git rm -r` and
@@ -468,7 +468,7 @@ dequeue) semantics over the bugs queue:
 
 The dequeue commit message pattern: `fix-bug(stake): dequeue report <id> from _reports/`.
 
-The PR description links: `docs/bugs/<dated-slug>/` artifacts (STATUS.md,
+The PR description links: `.materia/docs/bugs/<dated-slug>/` artifacts (STATUS.md,
 reproduction.md, bug-analysis.md, tasks.md), the reproduction test path(s), and
 the bug report via git history (the report file is removed in this PR).
 
@@ -485,13 +485,13 @@ See `ship-spec/SKILL.md` § "Retrospective capture (per-run `retro.md`)" —
 the schema, touchpoints, flush discipline, and robustness rules are identical.
 
 **Bug-run specifics:**
-- `retro.md` lives at `docs/bugs/<dated-slug>/retro.md` (sibling to
-  `STATUS.md`, seeded from `docs/specs/_templates/retro.md`).
+- `retro.md` lives at `.materia/docs/bugs/<dated-slug>/retro.md` (sibling to
+  `STATUS.md`, seeded from `.materia/docs/specs/_templates/retro.md`).
 - Stage-id vocabulary for entries extends to: `reproduce-bug`, `bug-analysis`,
   `plan-tasks`, `implement-task:T<n>`, `docs-sync`, `docs-audit`, `finalize`,
   `orchestrator (pipeline-level)` — Stage ids stay bare per
-  `docs/standards/skills.md` § Namespace prefix.
-- `triage-retros` harvests `docs/bugs/**/retro.md` alongside spec retros
+  `.materia/docs/standards/skills.md` § Namespace prefix.
+- `triage-retros` harvests `.materia/docs/bugs/**/retro.md` alongside spec retros
   (its Discovery globs both trees), so this retro joins the same
   retro-triage loop that feeds the project's backlog.
 
@@ -522,7 +522,7 @@ This skill:
 - Keep `STATUS.md`, `tasks.md`, and `retro.md` live + pushed after every stage
   — they are the resume state and audit trail.
 - Every code change follows the standards + Definition of Done
-  (`docs/contributing.md`); update docs in the same change.
+  (`.materia/docs/contributing.md`); update docs in the same change.
 - Never force-push the shared branch. Open exactly one PR (in finalize).
 - **RED-before-fix invariant:** the orchestrator never advances past
   `reproduce-bug` until it has verified the committed RED artifacts

@@ -13,7 +13,7 @@ human design gate after the design stage (§ Design gate) — `--auto`
 (autopilot) and `--approve-design` runs don't pause there — then it runs to a
 finished PR for human review.
 
-Read `docs/specs/README.md` and `docs/README.md` first. Shared resources this
+Read `.materia/docs/specs/README.md` and `.materia/docs/README.md` first. Shared resources this
 skill leans on (read at the phase that needs them):
 
 - `MATERIA.md` § Tiers — the tier vocabulary, model availability, fallback,
@@ -43,7 +43,7 @@ pays a discovery-and-recovery pass before task work can start.
 
 ## Spec folder naming
 
-Every spec lives at `docs/specs/<dated-slug>/`, where `<dated-slug>` is
+Every spec lives at `.materia/docs/specs/<dated-slug>/`, where `<dated-slug>` is
 
 ```
 <yyyy-mm-dd-hhmmss>-<rand>-<slug>
@@ -52,7 +52,7 @@ Every spec lives at `docs/specs/<dated-slug>/`, where `<dated-slug>` is
 — the UTC creation timestamp (to the second), a fresh 6-char base36 token,
 and a short kebab slug (see
 `intake-spec` for the full rule). Example:
-`docs/specs/2026-06-13-142530-ab24f9-csv-export/`. Use the full dated form in every
+`.materia/docs/specs/2026-06-13-142530-ab24f9-csv-export/`. Use the full dated form in every
 path you write or read; the bare `<slug>` is only the human-readable suffix.
 
 ## Resume (run this first, every time)
@@ -63,10 +63,10 @@ restart**.
 
 **Match precedence** (first match wins):
 
-1. **`Proposed-id` match** — if any `docs/specs/*-<slug>/STATUS.md` carries
+1. **`Proposed-id` match** — if any `.materia/docs/specs/*-<slug>/STATUS.md` carries
    `Proposed-id: <id>` matching the user's input (interpreted as an id), and
    `Proposed-spec:` still points at an existing file under
-   `docs/specs/_proposed/`, resume that folder. The id match is the canonical
+   `.materia/docs/specs/_proposed/`, resume that folder. The id match is the canonical
    resume key — it survives slug collisions.
 2. **Slug suffix match** — match by the kebab `<slug>` suffix of the spec
    folder (the timestamp+rand prefix can be anything). If multiple folders share a
@@ -174,7 +174,7 @@ Then:
    (`--auto`).
 
 Fresh feature: run **§ Proposal selection** first — the run's entry point is
-the proposed-specs queue at `docs/specs/_proposed/`. Selection chooses one
+the proposed-specs queue at `.materia/docs/specs/_proposed/`. Selection chooses one
 proposal (or accepts an explicit ad-hoc spec); ship-spec then mints the
 dated-slug, creates `STATUS.md` with the proposal's provenance, commits +
 pushes, and only then spawns intake with the proposal body. The branch name
@@ -185,7 +185,7 @@ uses the bare `<slug>`; the spec folder uses the full `<dated-slug>`.
 `--auto` is a presence-only invocation argument with leading-dash
 normalization and fail-open parsing (near-misses are treated as NOT PRESENT;
 posture stays `off` — the normalization rule lives in
-`docs/standards/skills.md` § The `--auto` argument). It is the operator's **per-run grant of end-to-end
+`.materia/docs/standards/skills.md` § The `--auto` argument). It is the operator's **per-run grant of end-to-end
 autonomy**: run the pipeline on grounded defaults, open the PR, ride it to
 green, and **merge it** — without pausing at the operator checkpoints.
 
@@ -233,7 +233,7 @@ the operator saying up front "don't wait for me."
 
 Every fresh invocation begins here (after the Resume gate has ruled out an
 in-flight run). The shared intake surface at
-`docs/specs/_proposed/` (`docs/specs/_proposed/README.md`) is the
+`.materia/docs/specs/_proposed/` (`.materia/docs/specs/_proposed/README.md`) is the
 default source; the freeform-spec path is the **ad-hoc fallback**.
 
 ### Inputs to dispatch on
@@ -241,7 +241,7 @@ default source; the freeform-spec path is the **ad-hoc fallback**.
 | Input shape | Behavior |
 |---|---|
 | `/materia:ship-spec` (no args) | Enter the **menu** — list pending proposals and ask the operator to pick. |
-| `/materia:ship-spec <id>` matching a frontmatter id under `docs/specs/_proposed/*.md` | Skip the menu, resolve to that proposal, advance. `Proposed-id-selection: named-arg` in STATUS.md. |
+| `/materia:ship-spec <id>` matching a frontmatter id under `.materia/docs/specs/_proposed/*.md` | Skip the menu, resolve to that proposal, advance. `Proposed-id-selection: named-arg` in STATUS.md. |
 | `/materia:ship-spec <slug>` matching a Resume case | Handled by the Resume gate; never reaches selection. |
 | `/materia:ship-spec` with a body of raw spec text | **Ad-hoc fallback** — treat the text as today's freeform spec. `Provenance` block filled with `—` so `finalize` skips the dequeue. |
 
@@ -249,7 +249,7 @@ Precedence on ambiguity: an explicit `<id>` arg wins over any trailing text.
 
 ### Discovery
 
-`git ls-files 'docs/specs/_proposed/*.md'` — top-level files only
+`git ls-files '.materia/docs/specs/_proposed/*.md'` — top-level files only
 (underscore-prefixed subdirectories are producer bookkeeping), **excluding
 `README.md`**. Parse each frontmatter (§ Frontmatter parser) and validate
 required fields (`id`, `title`, `source`, `date`, `status: proposed`;
@@ -261,9 +261,9 @@ fields, so a non-conforming one is dropped like a parse failure, never
 `status` isn't `proposed`, with a one-line warning each so the operator sees
 why a file was skipped.
 
-**In-flight pickup:** before printing the menu, scan `docs/specs/*-*/STATUS.md`
+**In-flight pickup:** before printing the menu, scan `.materia/docs/specs/*-*/STATUS.md`
 for `Proposed-id:` lines matching any pending proposal's `id`; mark those
-proposals **`(in flight — docs/specs/<dated-slug>/)`** in the menu — picking
+proposals **`(in flight — .materia/docs/specs/<dated-slug>/)`** in the menu — picking
 one re-enters the Resume gate rather than starting a parallel run. When the
 claimed run's `Next:` is `design-abandoned (parked)`, annotate the entry
 **`(parked — abandoned design)`** instead of the plain in-flight annotation;
@@ -273,7 +273,7 @@ spec folder is the operator's manual release path.
 **Empty queue** (zero pending unclaimed proposals AND no ad-hoc text): exit
 cleanly — no branch, no files — telling the operator their options
 (`/materia:triage-retros` to mine retros into proposals, `/materia:propose-spec`
-or hand-write a proposal per `docs/specs/_proposed/README.md`, or re-invoke with
+or hand-write a proposal per `.materia/docs/specs/_proposed/README.md`, or re-invoke with
 a freeform spec). End the turn.
 
 ### Present the menu
@@ -307,7 +307,7 @@ defaults are never baked silently.
 
 ### Resolve the selection
 
-Scan all frontmatter blocks under `docs/specs/_proposed/*.md`. **Match by
+Scan all frontmatter blocks under `.materia/docs/specs/_proposed/*.md`. **Match by
 `id` only, never by filename.** Zero matches → halt with
 `Unknown proposal id: <id>` and end the turn. Multiple files sharing an id
 (contract violation) → halt with the duplicate paths.
@@ -326,7 +326,7 @@ mis-parsed).
 ### Derive the feature slug
 
 Apply the `## Kebab-slug derivation` algorithm from
-`docs/specs/_proposed/README.md` to
+`.materia/docs/specs/_proposed/README.md` to
 `frontmatter.title` — it is **normative**; producers and this consumer must
 agree on filenames.
 
@@ -339,10 +339,10 @@ fills the `## Provenance` block with `—`):
 2. Create branch `<type>/<slug>` off latest `<trunk>` (the trunk branch per
    `MATERIA.md` § Version control; bare feature slug, `<type>` defaults to
    `feat`).
-3. `mkdir docs/specs/<dated-slug>/`.
-4. Seed `STATUS.md` from `docs/specs/_templates/status.md`, filling `Slug:`,
+3. `mkdir .materia/docs/specs/<dated-slug>/`.
+4. Seed `STATUS.md` from `.materia/docs/specs/_templates/status.md`, filling `Slug:`,
    `Branch:`, `Updated:`, and the `## Provenance` block: `Proposed-id:` ←
-   `frontmatter.id` · `Proposed-spec:` ← `docs/specs/_proposed/<filename>` ·
+   `frontmatter.id` · `Proposed-spec:` ← `.materia/docs/specs/_proposed/<filename>` ·
    `Proposed-source:` ← `frontmatter.source` · `Proposed-source-refs:` ←
    `frontmatter.source_refs[]` joined by `,` · `Proposed-id-selection:` ←
    `manual | named-arg | auto-deferred` · `Epic-id:` ← `frontmatter.epic`
@@ -350,18 +350,18 @@ fills the `## Provenance` block with `—`):
    consumed id (a non-conforming value halts the stake naming the offending
    key) — else `—` (this sets the § Epic gate). Additionally fill
    `## Autopilot posture` at this same moment: `on` if the invocation carried
-   `--auto` (post dash-normalization per `docs/standards/skills.md` § The
+   `--auto` (post dash-normalization per `.materia/docs/standards/skills.md` § The
    `--auto` argument), else `off`.
 
    **Capture `surfaces:` at stake (the declared path of the § UI-surface
    gate).** When `frontmatter.surfaces` is present, write the `Surfaces:`
-   § Notes line now (convention: `docs/specs/_templates/status.md` § Notes).
+   § Notes line now (convention: `.materia/docs/specs/_templates/status.md` § Notes).
    The § Frontmatter parser is simple `key: value`, so `surfaces: [ui]`
    arrives as the raw string `[ui]` — interpret the flow-list tokens (`ui`,
    `data`) yourself, and keep the **key-absent** case (no `surfaces:` key →
    "unknown"; write no `Surfaces:` line, or `—`) strictly distinct from the
    literal **`[]`** case (declared "none" → write `Surfaces: []`); never
-   collapse one into the other (semantics per `docs/specs/_proposed/README.md`
+   collapse one into the other (semantics per `.materia/docs/specs/_proposed/README.md`
    § Field roles → `surfaces`). A present value is **authoritative and
    short-circuits before intake**: also record the declared-path decision
    `ui-surface (predictive): <positive|negative> (declared surfaces: […])` —
@@ -374,13 +374,13 @@ fills the `## Provenance` block with `—`):
    **Capture `design_gate:` at stake (the gate-off knob's frontmatter rung).**
    When the proposal frontmatter declares `design_gate:`, append the pinned
    `design-gate: <on|off> (proposal frontmatter)` line to § Notes now — durable
-   through dequeue, like `Surfaces:` (semantics: `docs/specs/_proposed/README.md`
+   through dequeue, like `Surfaces:` (semantics: `.materia/docs/specs/_proposed/README.md`
    § Field roles → `design_gate`; consumed at gate arrival per § Design gate).
    Absent key → write no line (fall through the precedence chain).
 
    **Record the `--approve-design` arm at stake.** When the invocation carried
    `--approve-design` (§ `--approve-design`; contract in
-   `docs/standards/skills.md`), append
+   `.materia/docs/standards/skills.md`), append
    `design-gate: auto-approve armed (--approve-design)` to § Notes here — stake
    is the earliest durable moment (a pre-stake proposal-menu pause cannot
    persist the arm).
@@ -398,7 +398,7 @@ orchestrator sets `## Autopilot posture` to `on` on its own first post-intake
 
 In both paths the **input** to `intake-spec` is the spec body (stripped
 proposal body or freeform text). The proposal path additionally signals
-`pre-created-folder: docs/specs/<dated-slug>/` so intake writes `spec.md` into
+`pre-created-folder: .materia/docs/specs/<dated-slug>/` so intake writes `spec.md` into
 the existing folder and leaves the provenance lines read-only.
 
 Also pass a **`surfaces:` spawn signal** (modeled on `pre-created-folder:`):
@@ -431,12 +431,12 @@ resolve the tier and pass it as the `model` override (§ Tier routing), and
 assemble the spawn prompt from `resources/spawn-contract.md` — its Block 1
 carries the standing authoring rule (never write a live `[text](path)` link to
 a non-resolving path, even in backticks; use arrow form) that has repeatedly
-broken `check:docs` from inside `docs/specs/**`.
+broken `check:docs` from inside `.materia/docs/specs/**`.
 
 The numbered list below uses the **logical-stage scale** (review is stage 7,
 finalize is stage 10); `STATUS.md` checkboxes use the **STATUS-checkbox scale**
 (review has no checkbox, finalize is row 9) — see
-`docs/specs/_templates/status.md` § Stages.
+`.materia/docs/specs/_templates/status.md` § Stages.
 `design` (logical stage 2) and `ui-test-plan` (logical stage 3) are
 **UI-gated**: spawned only when the run is UI-affecting (§ Review —
 § UI-surface gate, **predictive form** — one per-run decision covering both
@@ -506,7 +506,7 @@ commit + push.
 ### Epic gate — reconcile-epic (between stages 9 and 10)
 
 When the run's proposal is a member of an epic
-(see `docs/epics/README.md`), the epic must be synced — and its remaining
+(see `.materia/docs/epics/README.md`), the epic must be synced — and its remaining
 pending members cascaded — **in the same PR that ships this member**, so the
 epic record and the queue never drift from what actually merged.
 
@@ -522,8 +522,8 @@ epic record and the queue never drift from what actually merged.
   passing: the
   `<dated-slug>`, the `Epic-id`, and the pipeline-mode input line from
   `reconcile-epic/SKILL.md` § Pipeline mode. The stage edits the epic folder
-  under `docs/epics/` and the epic's still-pending member proposals under
-  `docs/specs/_proposed/`, committing on the run's branch — no branch, PR, or
+  under `.materia/docs/epics/` and the epic's still-pending member proposals under
+  `.materia/docs/specs/_proposed/`, committing on the run's branch — no branch, PR, or
   operator checkpoint of its own (the run's PR is the review gate; the stage
   cascades conservatively and surfaces anything uncertain as notes for the PR
   body). Then record
@@ -595,8 +595,8 @@ The human design-review gate that runs after the `design` stage returns
 `design.md` on an **interactive, design-bearing** run — the third
 pause-by-ending-turn checkpoint (after the proposal menu and intake `partial`).
 This section is the **normative home** for the whole mechanism; the status
-template, `MATERIA.md` § Design tool, `docs/specs/_proposed/README.md`
-(`design_gate:` field), and `docs/standards/skills.md` § The `--approve-design`
+template, `MATERIA.md` § Design tool, `.materia/docs/specs/_proposed/README.md`
+(`design_gate:` field), and `.materia/docs/standards/skills.md` § The `--approve-design`
 argument reference it.
 
 ### Gate resolution (the gate-off chain)
@@ -748,7 +748,7 @@ marker (see `design/SKILL.md`), so the baseline is uniform.
 
 At the moment of stamping approval/auto-approval, if the working tree is dirty
 in paths **other than the gate's own artifacts** — `design.md` and
-`docs/specs/<dated-slug>/design/` — **refuse the stamp and say why; do not
+`.materia/docs/specs/<dated-slug>/design/` — **refuse the stamp and say why; do not
 stash**. A dirty `design.md` is operator revision content (verb rules); a dirty
 `design/` is the sync/export output. Evaluate this **after** the
 path-scoped feedback commit (if any) and **before** the orchestrator's own
@@ -849,7 +849,7 @@ never overwrites operator-authored descriptive edits (`design/SKILL.md`
 run detection; if the canvas changed (per the detection preference order
 defined earlier in this section), the sync unit re-derives the canvas-owned
 sections (and, when the adapter can `export`/reconstruct, also re-derives the
-committed snapshot at `docs/specs/<dated-slug>/design/` — same actor as the body
+committed snapshot at `.materia/docs/specs/<dated-slug>/design/` — same actor as the body
 re-derivation (§ Actor split), riding the **same** terminal carve-out that
 already governs the body-only case, never a new countable event) with its
 outputs committed **before** the stamp commit — **not** a counted round (the
@@ -906,7 +906,7 @@ With these mechanics:
   `## Feedback log` entry and the § Notes line, never in the block). Set
   `Next: design-approval (awaiting operator)`, append the § Notes line
   `design-revision (architecture): <reason> (bounce <n>/2)` (short-form reason;
-  convention in `docs/specs/_templates/status.md` § Notes), and commit with the
+  convention in `.materia/docs/specs/_templates/status.md` § Notes), and commit with the
   gate marker (§ Gate commits). The re-presented design then routes through this
   gate **normally** (§ Gate arrival · § The gate is ternary): the human sees what
   architecture forced. On an autopilot run the re-armed arrival auto-resolves per
@@ -955,7 +955,7 @@ configurations:
    repo record beneath.
 2. **Committed snapshot** (adapters with `export` or `read`-reconstruction).
    When a `design/` snapshot was committed for this run, print a one-line
-   serve command (e.g. `npx serve docs/specs/<dated-slug>/design`) — the
+   serve command (e.g. `npx serve .materia/docs/specs/<dated-slug>/design`) — the
    path itself is already printed by rung 1 when rung 1 applies (its own
    instruction above already names the snapshot path), so don't print it
    twice. When rung 1 (the canvas link) is unavailable, print the path here
@@ -1027,7 +1027,7 @@ and backfill `Branch:`.
 
 ### `--approve-design`
 
-The argument contract lives in `docs/standards/skills.md`
+The argument contract lives in `.materia/docs/standards/skills.md`
 § The `--approve-design` argument (restated here only gate-side). At
 invocation, record `design-gate: auto-approve armed (--approve-design)` in
 § Notes at the **earliest durable moment = stake** (an invocation pausing at
@@ -1344,7 +1344,7 @@ the same in one line). The loop, angle set, spawn, and commit format are
 - **The visual half — what the `design-fidelity` reviewer sees.** The other two
   `design-stage` angles read `design.md` alone; `design-fidelity`
   (`MATERIA.md § Review angles`) also weighs the design's **visual half**. When
-  a committed snapshot exists at `docs/specs/<dated-slug>/design/` it is the
+  a committed snapshot exists at `.materia/docs/specs/<dated-slug>/design/` it is the
   **primary** visual artifact the reviewer reviews (the live canvas only
   supplementary) — whenever this review runs at all. What further canvas
   evidence the reviewer gets is gated on `MATERIA.md § Design tool`'s `read`
@@ -1528,7 +1528,7 @@ orchestrator records the lane decision and the fresh-context deviation in
 **The design-conformance gate.** `design-bearing` is positive **iff** all three
 hold: the run resolved to a **design-bearing (UI) surface** (the recorded
 `ui-surface (predictive)` decision — § UI-surface gate; the design-bearing set
-is defined in `docs/specs/_proposed/README.md` § Field roles → `surfaces`),
+is defined in `.materia/docs/specs/_proposed/README.md` § Field roles → `surfaces`),
 `design.md` exists with a **non-empty `## Assertions` block**, and `MATERIA.md`
 § Eyes is not `none`. This is an **artifact/config** predicate, not a diff
 predicate — which is why the collapse paths drop it (above) and why it is
@@ -1547,7 +1547,7 @@ fan-out message the orchestrator:
 
 1. Runs the harness in the behavioral-verify lane: provision per `MATERIA.md`
    § Eyes, drive both sides, write the findings JSON (the gitignored diagnostic)
-   plus the labeled captures under `docs/specs/<dated-slug>/design-conformance/
+   plus the labeled captures under `.materia/docs/specs/<dated-slug>/design-conformance/
    captures/`, then tear down — teardown is **its own command**, never chained
    with follow-up work (§ Orchestrator behavioral-verify lane).
 2. Spawns the `design-conformance` reviewer in the same fan-out message as every
@@ -1625,7 +1625,7 @@ change any screen, page, component, or `composables/ui/` hook such that the
 eventual diff matches the patterns above? The predictive form is a **single
 per-run decision gating both stages**, and it is **positive iff the run's
 resolved surfaces include a design-bearing surface** (today `ui`; the
-design-bearing set is defined in `docs/specs/_proposed/README.md` § Field
+design-bearing set is defined in `.materia/docs/specs/_proposed/README.md` § Field
 roles → `surfaces` — reference it, don't restate). The diff form above
 remains the single canonical definition of "UI-affecting" and the
 post-implementation authority; a declared/resolved value is triage input to
@@ -1664,7 +1664,7 @@ pass is cheaper than an undesigned UI change. A recorded
 `ui-surface (predictive):` decision is **honored on resume** — never
 re-derived from a now-absent `Surfaces:` line and flipped. (Namesake caution:
 this `surfaces:` field is unrelated to the release ledger's `Change.surfaces`
-array — nothing shared but the word; see `docs/specs/_proposed/README.md`
+array — nothing shared but the word; see `.materia/docs/specs/_proposed/README.md`
 § Field roles → Two namesakes.)
 
 **The absent paths (2–4) resolve only the UI dimension.** The "does this ship
@@ -1705,7 +1705,7 @@ angle.
 On a UI-affecting run, committed screenshots are a **mandatory review
 deliverable**, not a best-effort by-product of `ui-review`. After the
 `ui-review` angle returns (each round it ran), the orchestrator verifies that
-`docs/specs/<dated-slug>/ui-proof/` contains at least one committed PNG.
+`.materia/docs/specs/<dated-slug>/ui-proof/` contains at least one committed PNG.
 
 - **PNGs present** → note `ui-proof: <n> screenshots committed` in
   `STATUS.md` § Notes and continue.
@@ -1896,7 +1896,7 @@ see step 7 first, before any watching):
    (<failing check>)`, no merge, surface to the human.
 4. **Merge conflict** (`mergeable: CONFLICTING`) → merge `<baseline>` into
    the branch — **never rebase, never force-push** — resolve (the
-   `docs/specs/README.md` Index table is the recurring trivial conflict:
+   `.materia/docs/specs/README.md` Index table is the recurring trivial conflict:
    keep both rows, per `finalize/SKILL.md`), re-run the local gate, push,
    re-watch. A conflict in product code this run didn't author gets a
    conservative resolution; if the safe resolution isn't obvious, write a
@@ -1991,7 +1991,7 @@ design stage is still live; banner-cordon once it isn't.
 ## Retrospective capture (per-run `retro.md`)
 
 This pipeline keeps a per-run retrospective at
-`docs/specs/<dated-slug>/retro.md`. The orchestrator owns it end-to-end —
+`.materia/docs/specs/<dated-slug>/retro.md`. The orchestrator owns it end-to-end —
 stages just respond when asked. The retro is the raw data `triage-retros`
 later consumes to author project backlog items (proposed specs + bug reports).
 
@@ -2002,7 +2002,7 @@ the orchestrator parses, numbers, appends, and flushes.
 
 ### File and identity
 
-- **Location:** `docs/specs/<dated-slug>/retro.md` (one per run, sibling to
+- **Location:** `.materia/docs/specs/<dated-slug>/retro.md` (one per run, sibling to
   `spec.md` / `STATUS.md`).
 - **Header (frontmatter):** `schema_version`, `slug`, `branch`, `started_at`,
   `finalized_at`, `status`. `schema_version` is informational — nothing
@@ -2010,7 +2010,7 @@ the orchestrator parses, numbers, appends, and flushes.
   `running → completed | blocked | failed | aborted` and is rewritten on every
   flush so a partial file is always self-describing.
 - **Created** by the orchestrator immediately after `intake` returns, seeded
-  from `docs/specs/_templates/retro.md`. If intake fails partway but the
+  from `.materia/docs/specs/_templates/retro.md`. If intake fails partway but the
   folder exists, still create `retro.md` and record the failure as Entry 1.
 - **Forward-compat:** resuming a folder that predates this feature (no
   `retro.md`) → create it at resume time and append from the resumed stage;
@@ -2168,6 +2168,6 @@ blocker is cleared.
   resume state. Keep `retro.md` flushed + pushed after every touchpoint — it
   is the run's audit trail and the downstream aggregator's input.
 - Every code change follows the standards + Definition of Done
-  (`docs/contributing.md`); update docs in the same change.
+  (`.materia/docs/contributing.md`); update docs in the same change.
 - Never force-push the shared branch. Open exactly one PR (in finalize).
 - If a stage contradicts the spec, stop and ask rather than guess.

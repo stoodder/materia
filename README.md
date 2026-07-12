@@ -29,7 +29,7 @@ spec-to-ship pipeline tailored to your tech stack:
   pipeline itself ships as a versioned plugin and does not rewrite its own
   skills.
 - **A docs system built for agent context** — a progressive-disclosure read
-  order (`CLAUDE.md` → `docs/README.md` → standards + resources → code),
+  order (`CLAUDE.md` → `.materia/docs/README.md` → standards + resources → code),
   present-state-only authoring rules, and a deterministic `check:docs` gate
   that keeps it all true.
 
@@ -44,7 +44,7 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
 ```
 /plugin marketplace add stoodder/materia
 /plugin install materia@materia
-/materia:init            # scaffolds MATERIA.md + CLAUDE.md + docs/ into this repo
+/materia:init            # scaffolds MATERIA.md + CLAUDE.md + .materia/docs/ into this repo
 ```
 
 1. **Add the marketplace, then install the plugin** (the two commands above).
@@ -52,13 +52,13 @@ a Nuxt app, a Rails app, or a CLI tool — only the companion doc changes.
    `materia` — and installs the skills into its plugin cache.
 2. **Run `/materia:init`** in the target repo. It interviews you about what
    you're building, helps you pick a stack, then writes `MATERIA.md`,
-   `CLAUDE.md`, and the `docs/` skeleton into place — sections your stack
+   `CLAUDE.md`, and the `.materia/docs/` skeleton into place — sections your stack
    doesn't need (no UI → § UI-affecting: none) are marked `none` and the
    corresponding skills self-gate at runtime instead of being pruned. Materia
-   reserves `docs/` and `.materia/` (plus `MATERIA.md`/`CLAUDE.md` at the root) in the target repo;
-   it adopts cleanly where those paths are free and layers onto an existing
-   `docs/` rather than replacing it.
-3. `/materia:init` finishes by seeding `docs/specs/_proposed/` with a
+   reserves `.materia/` (plus `MATERIA.md`/`CLAUDE.md` at the root) in the target repo;
+   it adopts cleanly where that path is free, and leaves any pre-existing root
+   `docs/` alone — that stays yours.
+3. `/materia:init` finishes by seeding `.materia/docs/specs/_proposed/` with a
    **bootstrap epic**: the scaffolding of your app skeleton, CI, and gates as
    the pipeline's own first specs. Run `/materia:ship-spec` and the harness
    builds your app from commit one.
@@ -157,7 +157,7 @@ never overwritten.
   hardened over many runs and ship verbatim. `/materia:init` fills slots; it does not
   redraft contracts.
 - **One home per fact.** Stack specifics live in `MATERIA.md` and the
-  generated `docs/standards/*`; skills point at them instead of restating.
+  generated `.materia/docs/standards/*`; skills point at them instead of restating.
 - **The PR is the review gate.** Every repo-changing pipeline run ends at
   exactly one PR — the named exceptions are the read-only/operator tools
   (`/materia:doctor`, which writes nothing; `/materia:migrate --apply`, which

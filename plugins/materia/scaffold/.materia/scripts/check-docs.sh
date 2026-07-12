@@ -1,11 +1,11 @@
 #!/bin/sh
 # Deterministic docs checker — no network, no AI. Portable POSIX sh + awk;
 # the reference implementation of the Materia docs contract. Three layers:
-#   1. Link check (CLAUDE.md + docs/**): every relative Markdown link resolves
+#   1. Link check (CLAUDE.md + .materia/docs/**): every relative Markdown link resolves
 #      to a real file on disk.
 #   2. Anchor check (agent-context docs only): every `#fragment` in a relative
 #      link resolves to a real GitHub-slug heading in the target file.
-#   3. Style checks (CLAUDE.md + docs root + resources/ + standards/ +
+#   3. Style checks (CLAUDE.md + .materia/docs root + resources/ + standards/ +
 #      _templates/ only): no change-narration phrases (matched across line
 #      wraps), no over-long lines, no duplicated long lines, glossary stays
 #      alphabetical.
@@ -29,14 +29,14 @@ set -u
 # mawk, busybox awk, and gawk regardless of the ambient locale.
 export LC_ALL=C
 
-# File discovery: ROOTS = CLAUDE.md + docs. `find` then LC_ALL=C sort (byte
+# File discovery: ROOTS = CLAUDE.md + .materia/docs. `find` then LC_ALL=C sort (byte
 # order == Node's default String.sort for ASCII paths). Roots are passed
-# verbatim so paths come out shaped `CLAUDE.md` / `docs/standards/x.md` with no
+# verbatim so paths come out shaped `CLAUDE.md` / `.materia/docs/standards/x.md` with no
 # `./` prefix; a defensive strip happens in awk regardless. `-L` follows
 # symlinks so symlinked `.md` files/dirs are walked too (mjs statSync/walk
 # follows links) — the `N files` count then matches mjs. Same cyclic-symlink
 # fragility as mjs, by design.
-FILELIST=$(find -L CLAUDE.md docs -type f -name '*.md' 2>/dev/null | LC_ALL=C sort)
+FILELIST=$(find -L CLAUDE.md .materia/docs -type f -name '*.md' 2>/dev/null | LC_ALL=C sort)
 export FILELIST
 
 AWK_BIN=${AWK:-awk}
@@ -267,13 +267,13 @@ function joinNormalize(dir, path,   combined, n, i, tok, sp, res) {
 }
 
 # isStyleChecked / isAnchorChecked (identical): CLAUDE.md, or under
-# docs/resources|docs/standards|docs/_templates, or a docs/ root file.
+# .materia/docs/resources|.materia/docs/standards|.materia/docs/_templates, or a .materia/docs/ root file.
 function isStyle(f) {
   if (f == "CLAUDE.md") return 1
-  if (f ~ /^docs\/resources\//) return 1
-  if (f ~ /^docs\/standards\//) return 1
-  if (f ~ /^docs\/_templates\//) return 1
-  if (substr(f, 1, 5) == "docs/" && index(substr(f, 6), "/") == 0) return 1
+  if (f ~ /^\.materia\/docs\/resources\//) return 1
+  if (f ~ /^\.materia\/docs\/standards\//) return 1
+  if (f ~ /^\.materia\/docs\/_templates\//) return 1
+  if (substr(f, 1, 14) == ".materia/docs/" && index(substr(f, 15), "/") == 0) return 1
   return 0
 }
 
@@ -483,7 +483,7 @@ BEGIN {
         st = base + RSTART
         pfx = substr(lprose, 1, st - 1)
         ln = countNL(pfx) + 1
-        fail(f ":" ln " change-narration phrase \"" phrase "\" \342\200\224 describe the present state (docs/standards/docs.md)")
+        fail(f ":" ln " change-narration phrase \"" phrase "\" \342\200\224 describe the present state (.materia/docs/standards/docs.md)")
         adv = RSTART + (RLENGTH > 0 ? RLENGTH : 1)
         base = base + (adv - 1)
         restp = substr(restp, adv)
@@ -498,7 +498,7 @@ BEGIN {
       if (wsTrim(FL[i]) == "" && wsTrim(RL[i]) != "") continue    # inside a fence
       llen = cpLen(RL[i])
       if (llen > 600)
-        fail(f ":" i " line is " llen " chars (max 600) \342\200\224 move detail out of the table cell (docs/standards/docs.md)")
+        fail(f ":" i " line is " llen " chars (max 600) \342\200\224 move detail out of the table cell (.materia/docs/standards/docs.md)")
       # dup key = mjs rawLine.trim(): strip Unicode ws at ENDS only, interior
       # bytes (incl. NBSP) intact — a space-vs-NBSP interior pair is not a dup.
       tr = wsTrim(RL[i])
@@ -511,7 +511,7 @@ BEGIN {
   }
 
   # ---- glossary order ------------------------------------------------------
-  GLOSSARY = "docs/glossary.md"
+  GLOSSARY = ".materia/docs/glossary.md"
   if (exists(GLOSSARY)) {
     n = mysplit(readFile(GLOSSARY), GL)
     nt = 0

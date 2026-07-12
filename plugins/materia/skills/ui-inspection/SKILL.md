@@ -1,16 +1,16 @@
 ---
 name: ui-inspection
-description: Run on demand to inspect the whole running app for UI/UX quality and file one consolidated checklist bug report into docs/bugs/_reports/. Provisions the Eyes toolchain on-demand per MATERIA.md § Eyes, drives every surface in docs/surface-map.md (§ Pages for a web app; § Commands for a CLI/TUI) at the canonical viewport, takes a capture + structural snapshot per surface in the formats § Eyes defines, judges each against the repo's visual standards docs, and writes one bug report with source ui-inspection. Observe-and-report only — never edits product code, never fixes anything, never opens a ship-spec or fix-bug run. Reach for it before a polish pass when you want a prioritized punch-list of UI/UX cleanups.
+description: Run on demand to inspect the whole running app for UI/UX quality and file one consolidated checklist bug report into .materia/docs/bugs/_reports/. Provisions the Eyes toolchain on-demand per MATERIA.md § Eyes, drives every surface in .materia/docs/surface-map.md (§ Pages for a web app; § Commands for a CLI/TUI) at the canonical viewport, takes a capture + structural snapshot per surface in the formats § Eyes defines, judges each against the repo's visual standards docs, and writes one bug report with source ui-inspection. Observe-and-report only — never edits product code, never fixes anything, never opens a ship-spec or fix-bug run. Reach for it before a polish pass when you want a prioritized punch-list of UI/UX cleanups.
 ---
 
 # ui-inspection — drive the whole app, file one UI/UX punch-list
 
 A single-shot **producer** skill. It drives the live local app across every
-surface in `docs/surface-map.md` (§ Pages for a web app; § Commands for a
+surface in `.materia/docs/surface-map.md` (§ Pages for a web app; § Commands for a
 CLI/TUI) at the canonical viewport
 (`MATERIA.md` § Eyes), judges each page against the repo's visual standards
 docs, and files **one** consolidated, checklist-style bug report into the bug
-queue at `docs/bugs/_reports/` (`docs/bugs/_reports/README.md`). It
+queue at `.materia/docs/bugs/_reports/` (`.materia/docs/bugs/_reports/README.md`). It
 runs in the operator's session — it is **not** a `ship-spec` stage, and it is
 distinct from [`ui-review`](../ui-review/SKILL.md): `ui-review` is the
 in-pipeline `ui` review angle scoped to a single feature diff and feeds the
@@ -23,7 +23,7 @@ is observe-only: its sole side effects are the report file it writes and the
 producer-bookkeeping screenshots it captures.
 
 **Lifecycle:** autonomous (PR-is-the-gate) — per the shared producer contract
-at `docs/standards/skills.md` § Producer lifecycle (zero-work exit, id
+at `.materia/docs/standards/skills.md` § Producer lifecycle (zero-work exit, id
 minting, link integrity, one PR + tooling, no session survival); the clean
 exits below (Phase 0 abort, instability degrade) are its zero-work paths.
 
@@ -34,12 +34,12 @@ exits below (Phase 0 abort, instability degrade) are its zero-work paths.
   it is **not** already running, Phase 0 **starts it** (per the § Run it
   recipe, falling back to the § Eyes provisioning recipe) rather than
   aborting; the operator no longer has to bring it up by hand first.
-- **`docs/surface-map.md`** (§ Pages for a web app; § Commands for a CLI/TUI) —
+- **`.materia/docs/surface-map.md`** (§ Pages for a web app; § Commands for a CLI/TUI) —
   the inventory of surfaces to visit, in the order listed there.
 - **The repo's visual standards docs** (the visual-language / UI-components
-  standards under `docs/standards/`) — the judgment basis for findings.
+  standards under `.materia/docs/standards/`) — the judgment basis for findings.
 - **The queue contract:
-  `docs/bugs/_reports/README.md`** — the
+  `.materia/docs/bugs/_reports/README.md`** — the
   frontmatter shape, filename pattern, body sections, and bookkeeping convention
   the written report MUST conform to.
 
@@ -47,7 +47,7 @@ There are no prior-stage artifacts — this is a producer, not a pipeline stage.
 
 ## Outputs
 
-- **Exactly one bug-report folder** in `docs/bugs/_reports/`, at
+- **Exactly one bug-report folder** in `.materia/docs/bugs/_reports/`, at
   `<dated-slug>/report.md` per the queue contract, with frontmatter
   `source: ui-inspection`. One report per run, with a fresh `id`.
 - **Captures co-located in the report folder** as `<surface-slug>.<capture-ext>`
@@ -99,7 +99,7 @@ outermost guard — nothing upstream has already filtered by UI.)
      "App not reachable. Start it with the § Run it recipe, then re-run." —
      and exit cleanly **without writing any file** (the original safe-exit
      behaviour, preserved as the final fallback).
-3. Read `docs/surface-map.md` (§ Pages for a web app; § Commands for a CLI/TUI)
+3. Read `.materia/docs/surface-map.md` (§ Pages for a web app; § Commands for a CLI/TUI)
    and announce the run plan: "App reachable.
    N surfaces to inspect at the canonical viewport."
 4. **Interactive abort prompt.** Present a single yes/no checkpoint before
@@ -145,20 +145,20 @@ outermost guard — nothing upstream has already filtered by UI.)
    6-char base36 `id` (`LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c 6`),
    derive the `<slug>` from the fixed title `UI/UX inspection — <YYYY-MM-DD>`
    via the normative kebab-slug algorithm in
-   `docs/specs/_proposed/README.md` § Kebab-slug derivation, mint the
+   `.materia/docs/specs/_proposed/README.md` § Kebab-slug derivation, mint the
    timestamp prefix with `date -u +%Y-%m-%d-%H%M%S`, and assemble
    `<dated-slug>` as `<YYYY-MM-DD-HHMMSS>-<id>-<slug>`. This is the same mint recipe
    used in Phase 4 (formerly step 1 of Phase 4; it now lives here so captures
    can reference it immediately).
 
-1. Visit each surface from `docs/surface-map.md` (§ Pages for a web app;
+1. Visit each surface from `.materia/docs/surface-map.md` (§ Pages for a web app;
    § Commands for a CLI/TUI) **in surface-map order**, at the **canonical
    viewport** (`MATERIA.md` § Eyes).
 2. For each surface, take a **capture and a structural snapshot**, in the formats
    `MATERIA.md` § Eyes defines (the same "capture so judgment is grounded in
    observed output, not inference" technique `ui-review` uses), into the report
-   folder as `docs/bugs/_reports/<dated-slug>/<surface-slug>.<capture-ext>` and
-   `docs/bugs/_reports/<dated-slug>/<surface-slug>.<snapshot-ext>` (for a browser
+   folder as `.materia/docs/bugs/_reports/<dated-slug>/<surface-slug>.<capture-ext>` and
+   `.materia/docs/bugs/_reports/<dated-slug>/<surface-slug>.<snapshot-ext>` (for a browser
    toolchain, a PNG capture + an HTML snapshot).
 3. **Per-surface error recovery.** If a surface returns an HTTP error, fails to
    render, or its capture fails, record a note under the report's
@@ -170,7 +170,7 @@ outermost guard — nothing upstream has already filtered by UI.)
 ### Phase 3 — Judge
 
 1. Evaluate each captured surface against the visual rubric — **only** the
-   repo's visual-language and UI-components standards under `docs/standards/`
+   repo's visual-language and UI-components standards under `.materia/docs/standards/`
    (token discipline, surface conventions, semantic color roles, component
    rules). Anchor every finding to a **named standard** it violates — no
    free-floating opinions.
@@ -194,7 +194,7 @@ outermost guard — nothing upstream has already filtered by UI.)
    body required by the queue contract (see § Report shape below). The findings
    checklist lives **inside `## Evidence`**; the per-finding format and the
    drop note are documented below.
-3. **Write the report file** to `docs/bugs/_reports/<dated-slug>/report.md`. If
+3. **Write the report file** to `.materia/docs/bugs/_reports/<dated-slug>/report.md`. If
    the write fails, **surface the OS error to the operator** — do not silently
    discard findings.
 4. **Branch / commit / open the PR** — the run is autonomous past the Phase 0
@@ -209,7 +209,7 @@ outermost guard — nothing upstream has already filtered by UI.)
    (`MATERIA.md` § Version control § Forge; title `ui-inspection: <title>`,
    body with the rendered report inline, a closing "Triage with
    `/materia:fix-bug <id>` once this PR lands", and the Materia sigil last —
-   `docs/standards/skills.md` § PR attribution — the Materia sigil). The
+   `.materia/docs/standards/skills.md` § PR attribution — the Materia sigil). The
    only terminal paths that do **not** open a PR are the clean exits defined
    earlier: the Phase 0 abort / unreachable-app exit, and the Phase 1
    instability degrade (which writes a stub report and stops).
@@ -223,7 +223,7 @@ outermost guard — nothing upstream has already filtered by UI.)
 ### Report shape
 
 The report uses the **standard 13-section body** required by
-`docs/bugs/_reports/README.md` (Summary · Environment · Steps to reproduce ·
+`.materia/docs/bugs/_reports/README.md` (Summary · Environment · Steps to reproduce ·
 Expected · Actual · Reproducibility · Severity & impact · Affected surface /
 route / module · Preconditions / data setup · Evidence · Regression window ·
 Workaround · Open questions), every H2 present and in order. The
@@ -232,7 +232,7 @@ inspection-specific sections are filled as follows:
 - **Frontmatter** — `source: ui-inspection`; `severity` = the **highest**
   severity among all findings (`low` if zero findings); `title: UI/UX
   inspection — <YYYY-MM-DD>`; `source_refs:` points at
-  `docs/bugs/_reports/<dated-slug>/` when any captures exist.
+  `.materia/docs/bugs/_reports/<dated-slug>/` when any captures exist.
 - **`## Steps to reproduce`** — describes the inspection run: provision,
   authenticate with the dev credentials, visit each surface at the canonical
   viewport.
@@ -289,7 +289,7 @@ This skill is **observe-and-report only**. It does **NOT**:
 
 - **Edit product files.** It never touches product source, schema, styles, or
   any other product code or UI. Its **only writes** are the one report folder
-  in `docs/bugs/_reports/<dated-slug>/` — the `report.md` file and its
+  in `.materia/docs/bugs/_reports/<dated-slug>/` — the `report.md` file and its
   co-located captures (`<surface-slug>.<capture-ext>` +
   `<surface-slug>.<snapshot-ext>`, formats per `MATERIA.md` § Eyes).
 - **Fix anything.** It records UI/UX violations; it never remedies them.
@@ -298,7 +298,7 @@ This skill is **observe-and-report only**. It does **NOT**:
   `/materia:fix-bug <id>` after the report PR lands.
 - **Wire into `ship-spec`'s review loop** — that remains `ui-review`'s job. This
   is a standalone producer.
-- **Modify the `docs/bugs/_reports/` contract**, baseline visual regressions, or
+- **Modify the `.materia/docs/bugs/_reports/` contract**, baseline visual regressions, or
   pixel-diff. Judgment stays qualitative against the visual standards docs.
 - **Survive session interruption.** It is not resumable mid-run; re-invoke from
   scratch (a fresh `id` is minted). An orphaned **report folder** from a crashed
@@ -344,10 +344,10 @@ This skill is **observe-and-report only**. It does **NOT**:
   the abort gate honored (interactive) or auto-proceeded (Auto Mode).
 - The Eyes toolchain was provisioned (or the instability / failure degrade
   path was taken and a stub report written).
-- Each surface in `docs/surface-map.md` (§ Pages for a web app; § Commands for a
+- Each surface in `.materia/docs/surface-map.md` (§ Pages for a web app; § Commands for a
   CLI/TUI) was visited and captured (or its
   error recorded), and findings were judged and capped.
-- Exactly one conformant bug report was written to `docs/bugs/_reports/` with
+- Exactly one conformant bug report was written to `.materia/docs/bugs/_reports/` with
   `source: ui-inspection`, and — on any run that completes past the Phase 0 gate
   without taking the instability degrade path — the branch was pushed and a PR
   opened.

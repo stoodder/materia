@@ -19,7 +19,7 @@ trusted on its own. Findings use category `design-fidelity`.
   demand — `design.md` is context the canvas cannot say, never a
   re-rendering of it (the paired-artifact doctrine). The bar is that the
   halves have not forked, not that one restates the other.
-- **Committed-snapshot integrity** — when `docs/specs/<dated-slug>/design/`
+- **Committed-snapshot integrity** — when `.materia/docs/specs/<dated-slug>/design/`
   exists: it is self-contained per the directory contract — opening
   `index.html` straight from disk renders correctly, assets co-located or
   inlined, no network fetches; `README.md` is present per the snapshot-readme

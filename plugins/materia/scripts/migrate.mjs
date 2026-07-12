@@ -20,20 +20,28 @@
 // The ledger is the script's sibling ../release; the TARGET project is a separate
 // root (positional arg, default cwd) — never the plugin cache.
 //
-// v0 / dogfood-grade: TWO implemented migrations. `init-project-state` (reserved in
+// v0 / dogfood-grade: THREE implemented migrations. `init-project-state` (reserved in
 // `0.2.0-project-state-file`.migrations) initializes .materia/project.json for a
 // detectable pre-tracking ("untracked-legacy") install. `install-check-docs` (reserved
 // in `0.3.0-check-docs-sh-gate` + `0.3.0-scripts-relocation`.migrations) puts the binding
 // check:docs gate script at its canonical .materia/scripts/check-docs.sh — renaming a
 // legacy scripts/check-docs.sh in place (preserving any local edits) or copying it from
 // the plugin scaffold when absent — then stamps artifact schema 3 in the project-state
-// file. Every other ledger-declared migration is reported as skipped/manual until a
-// handler exists. Guardrails: plan writes nothing; apply performs file ops FIRST and the
-// project.json stamp LAST (an interrupted apply leaves a recoverable schema-behind state,
-// never a stamped-but-unmoved orphan), writes project.json atomically, NEVER overwrites an
-// existing gate script or a non-schema-2 project-state file, and never DELETES anything
-// (a superseded root copy or a stale scripts/check-docs.mjs is surfaced as a manual
-// cleanup item, not removed); nothing auto-runs from startup hooks.
+// file. `relocate-docs` (reserved in `0.4.0-docs-relocation`.migrations) moves the
+// agent-facing docs tree from the legacy root docs/ to the canonical .materia/docs/ (when a
+// legacy docs/README.md router is present and .materia/docs/ is absent), then stamps artifact
+// schema 4 — and on ANY disposition where a canonical gate script exists it REFRESHES that
+// gate from the plugin scaffold so a stale old-roots checker cannot survive the stamp and
+// later lint the user's own human docs/. Every other ledger-declared migration is reported as
+// skipped/manual until a handler exists. Guardrails: plan writes nothing; apply performs file
+// ops FIRST and the project.json stamp LAST (an interrupted apply leaves a recoverable
+// schema-behind state, never a stamped-but-unmoved orphan), writes project.json atomically,
+// NEVER overwrites a project-state file it did not create at the expected schema, and never
+// DELETES anything (a superseded root copy or a stale scripts/check-docs.mjs is surfaced as a
+// manual cleanup item, not removed). The ONE deliberate overwrite is relocate-docs' gate
+// refresh — and even it never destroys bytes: it copies the old gate to
+// .materia/scripts/check-docs.sh.pre-schema4 (a create, never a clobber) before overwriting,
+// and no-ops when the bytes already match. Nothing auto-runs from startup hooks.
 //
 // A THIRD mode, --acknowledge <change-id> (repeatable), is an explicit, TARGETED write
 // — distinct from plan/apply's schema-window migrations. It records that the operator
@@ -62,7 +70,7 @@
 //        file --acknowledge will not write to)
 import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync, readdirSync, statSync, copyFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
-import { inspect, readLedger, relevantChanges, isInt, readJson, MIG } from './lib/materia-contract.mjs'
+import { inspect, readLedger, relevantChanges, isInt, isDir, readJson, MIG } from './lib/materia-contract.mjs'
 
 // ---- migration registry -----------------------------------------------------
 // One entry per implemented, stable migration id. Each migration:
@@ -111,6 +119,20 @@ const CHECK_DOCS_SCHEMA = 3
 const CHECK_DOCS_CANON = join('.materia', 'scripts', 'check-docs.sh')
 const CHECK_DOCS_ROOT = join('scripts', 'check-docs.sh')
 const CHECK_DOCS_MJS = join('scripts', 'check-docs.mjs')
+// `relocate-docs` stamps schema 4 — the schema of the change that reserves it
+// (0.4.0-docs-relocation). It relocates the agent-facing docs tree from the legacy root
+// `docs/` to the canonical `.materia/docs/` (DOCS_CANON), keyed on the legacy router
+// DOCS_ROUTER, and — on ANY disposition where a canonical gate script exists — refreshes
+// that gate from the plugin scaffold (backing the old bytes up to GATE_BACKUP first) so a
+// stale old-roots gate can't linger behind a schema-4 stamp and later lint the user's own
+// human `docs/`. The scaffold gate it copies is SCAFFOLD_GATE (the same source
+// install-check-docs installs). Never deletes; the backup is a create, never a clobber.
+const RELOCATE_DOCS_SCHEMA = 4
+const DOCS_CANON = join('.materia', 'docs')
+const DOCS_ROOT = 'docs'
+const DOCS_ROUTER = join('docs', 'README.md')
+const GATE_BACKUP = join('.materia', 'scripts', 'check-docs.sh.pre-schema4')
+const SCAFFOLD_GATE = resolve(import.meta.dirname, '../scaffold/.materia/scripts/check-docs.sh')
 
 const initProjectState = {
   id: MIG.INIT_PROJECT_STATE, // shared source of truth (== 'init-project-state'); keeps REGISTRY in sync with KNOWN_MIGRATION_IDS
@@ -273,7 +295,163 @@ const installCheckDocs = {
   },
 }
 
-const REGISTRY = { [initProjectState.id]: initProjectState, [installCheckDocs.id]: installCheckDocs }
+// `relocate-docs` — moves the agent-facing docs tree to `.materia/docs/` and stamps schema 4.
+// Its dispositions ALIGN 1:1 with the shared docs-location detector (materia-contract.mjs) for
+// every contract-valid project state, so doctor never points a repo at a migrate that would
+// refuse: every state docs-location reads `ok` is stamp-only applicable, the one drift state is
+// an auto-move, and the ONLY manual bucket is the project-state floor (a present hand-authored
+// schema<2 / unknown state migrate refuses to touch — the same never-overwrite guarantee
+// init-project-state and install-check-docs enforce). The drift/ok signal is READ from the
+// inspect() report's docs-location check (never re-derived here — one detector, shared with
+// doctor); only auxiliary facts for the manual notes (a coexisting root docs/, whether the gate
+// needs refreshing) are read straight off the filesystem, the way install-check-docs reads
+// atCanon/atRoot.
+const relocateDocs = {
+  id: MIG.RELOCATE_DOCS, // shared source of truth (== 'relocate-docs')
+  title: 'Relocate the agent-facing docs tree to .materia/docs/ (schema 4)',
+  touchesExistingFiles: true, // moves the repo's docs tree; may refresh (backup+overwrite) the gate script
+  // Consumer references the relocation leaves stale: the deep, unambiguous run-folder prefixes
+  // ONLY, all autoFix:false (list-only). A bare `docs/` token would false-positive on the word
+  // "docs" and on the user's OWN human docs/, and `exclude` cannot express a directory; the
+  // human-collision-prone shallow names (docs/README.md, docs/standards, docs/product.md,
+  // docs/glossary.md, …) are owned by manualMigration prose, never swept mechanically. autoFix
+  // is false throughout: even a deep prefix needs the skill's/human's judgement (a repo may
+  // legitimately keep its own docs/specs), so the engine LISTS, never rewrites.
+  referenceSweep: [
+    { from: 'docs/specs', to: '.materia/docs/specs', autoFix: false },
+    { from: 'docs/bugs', to: '.materia/docs/bugs', autoFix: false },
+    { from: 'docs/epics', to: '.materia/docs/epics', autoFix: false },
+    { from: 'docs/research', to: '.materia/docs/research', autoFix: false },
+  ],
+  classify (report, targetRoot) {
+    if (!report.materiaEnabled)
+      return { disposition: 'not-applicable', files: [],
+        reason: 'repo is not Materia-enabled (no MATERIA.md / .materia/) — no docs tree to relocate. If you expected a Materia repo, run /materia:init.' }
+    // 1. project-state FLOOR — a present, parsed state with integer schema < 2, or an
+    //    unknown/null schema -> MANUAL for BOTH the move and the stamp (mirrors
+    //    install-check-docs disposition 1 / init-project-state's refusal). migrate never
+    //    file-ops or stamps over a stale state it refuses to touch elsewhere; docs-location's
+    //    drift wording says move-by-hand for exactly these states (materia-contract.mjs).
+    if (!report.missing && !report.malformed &&
+        (report.currentSchema === null || (isInt(report.currentSchema) && report.currentSchema < INIT_STATE_SCHEMA)))
+      return { disposition: 'manual', files: [],
+        reason: `${STATE_REL} records ${report.currentSchema === null ? 'an unknown schema' : `schema ${report.currentSchema}`} (expected >= ${INIT_STATE_SCHEMA}) — review by hand; migrate will not relocate docs or stamp a hand-authored stale state.` }
+    // 2. Defensive: at/above the schema this migration stamps it is not even discovered
+    //    (empty window), so this is only reached by a direct classify() caller.
+    if (isInt(report.currentSchema) && report.currentSchema >= RELOCATE_DOCS_SCHEMA)
+      return { disposition: 'satisfied', files: [],
+        reason: `${DOCS_CANON} — already at schema ${report.currentSchema}; nothing to relocate.` }
+    // The shared drift signal comes from the docs-location check (never re-derived here).
+    const docsCheck = (report.checks ?? []).find((c) => c.id === 'docs-location')
+    const drift = !!docsCheck && docsCheck.severity !== 'ok'
+    const hasRootDocs = existsSync(join(targetRoot, DOCS_ROOT))
+    // isDir, not existsSync — the shared detector keys "relocated" on a real DIRECTORY at the
+    // canonical path (materia-contract.mjs docs-location); classify must read the same truth
+    // or plan and doctor diverge on a non-directory squatter at .materia/docs.
+    const hasMateriaDocs = isDir(join(targetRoot, DOCS_CANON))
+    const note = this._followUps(targetRoot, { moving: drift, bothExist: hasRootDocs && hasMateriaDocs })
+    if (drift)
+      // 3. DRIFT — legacy docs/README.md router present, .materia/docs/ absent -> AUTO-MOVE
+      //    the tree, then stamp. The gate script (if any) is refreshed by apply().
+      return { disposition: 'applicable',
+        files: [DOCS_CANON, ...(this._gateWillRefresh(targetRoot) ? [CHECK_DOCS_CANON] : []), STATE_REL],
+        reason: `a legacy docs/README.md router is present but ${DOCS_CANON}/ is absent — will relocate the agent-facing docs tree to ${DOCS_CANON}/ (git-mv-equivalent, contents intact), then stamp artifact schema ${RELOCATE_DOCS_SCHEMA}.`,
+        manualNote: note }
+    // 4. OK (any docs-location ok state — already relocated, both absent, or router-less
+    //    root docs/) -> STAMP-ONLY. No tree move; the gate may still be refreshed.
+    return { disposition: 'applicable',
+      files: [...(this._gateWillRefresh(targetRoot) ? [CHECK_DOCS_CANON] : []), STATE_REL],
+      reason: hasMateriaDocs
+        ? `${DOCS_CANON}/ already present — will stamp artifact schema ${RELOCATE_DOCS_SCHEMA}.`
+        : `no materia-shaped docs tree to relocate — will stamp artifact schema ${RELOCATE_DOCS_SCHEMA}.`,
+      manualNote: note }
+  },
+  // Whether apply() would refresh the installed gate: a canonical script exists AND its bytes
+  // differ from the current scaffold gate. Read-only; classify + apply both consult it so the
+  // plan's files/notes match what apply does. (At plan time on an untracked-legacy repo the
+  // canonical gate does not exist yet — install-check-docs creates it during the same apply —
+  // so the plan honestly shows no refresh; apply re-checks and refreshes for real.)
+  _gateWillRefresh (targetRoot) {
+    const gateAbs = join(targetRoot, CHECK_DOCS_CANON)
+    if (!existsSync(gateAbs)) return false
+    try { return !readFileSync(gateAbs).equals(readFileSync(SCAFFOLD_GATE)) } catch { return false }
+  },
+  // Compose the by-hand follow-ups this migration will NOT perform itself (the sweep is
+  // list-only; apply never rewrites file CONTENTS): the relocated tree's now-short escaping
+  // links, the gate-script backup, and a coexisting root docs/. Joined into one manual item.
+  _followUps (targetRoot, { moving, bothExist }) {
+    const parts = []
+    if (moving)
+      parts.push(`the relocated tree was materialized from the pre-relocation scaffold, so its tree-escaping relative links (e.g. ${DOCS_CANON}/README.md's ../MATERIA.md, ${DOCS_CANON}/standards/skills.md's ../../CLAUDE.md) now sit one directory short of resolving — run the refreshed gate (\`sh ${CHECK_DOCS_CANON}\`) to enumerate the breakages and repair the paths by hand (path-only mechanical repair is permitted inside frozen dated run folders — the freeze protects content, not byte-stasis against a harness move)`)
+    if (this._gateWillRefresh(targetRoot))
+      parts.push(`the installed ${CHECK_DOCS_CANON} scanned the pre-relocation docs roots; it is backed up to ${GATE_BACKUP} and refreshed from the plugin scaffold — re-apply any local edits you still need from that backup`)
+    if (bothExist)
+      parts.push(`a root ${DOCS_ROOT}/ tree coexists with ${DOCS_CANON}/ — if it is a leftover pre-relocation materia tree, verify its contents moved and remove it by hand; if it is your own human ${DOCS_ROOT}/, no action`)
+    return parts.length ? `${MIG.RELOCATE_DOCS} manual follow-ups: ${parts.join('; ')}.` : undefined
+  },
+  apply (targetRoot) {
+    const created = []
+    // FILE OPS FIRST — never a stamp before the moves (an interrupted apply then leaves a
+    // recoverable schema-behind state, never a stamped-but-unmoved orphan). Never DELETES.
+    // 1. Relocate the tree when in the drift state (router present, canonical absent).
+    const materiaDocsAbs = join(targetRoot, DOCS_CANON)
+    if (!existsSync(materiaDocsAbs) && existsSync(join(targetRoot, DOCS_ROUTER))) {
+      const materiaDir = join(targetRoot, '.materia')
+      if (!existsSync(materiaDir)) mkdirSync(materiaDir, { recursive: true })
+      renameSync(join(targetRoot, DOCS_ROOT), materiaDocsAbs) // whole tree, contents intact
+      created.push(DOCS_CANON)
+    }
+    // 2. Gate refresh (any disposition): a canonical gate whose bytes differ from the current
+    //    scaffold is backed up (create, NEVER clobber an existing backup) then overwritten, so
+    //    a stale old-roots gate can't survive the schema-4 stamp. Byte-equal already (a
+    //    completed re-apply) -> no-op, keeping re-apply byte-stable, backup included.
+    const gateAbs = join(targetRoot, CHECK_DOCS_CANON)
+    if (existsSync(gateAbs)) {
+      let differs = false
+      try { differs = !readFileSync(gateAbs).equals(readFileSync(SCAFFOLD_GATE)) } catch { differs = false }
+      if (differs) {
+        const backupAbs = join(targetRoot, GATE_BACKUP)
+        if (!existsSync(backupAbs)) { copyFileSync(gateAbs, backupAbs); created.push(GATE_BACKUP) } // no-clobber
+        copyFileSync(SCAFFOLD_GATE, gateAbs)
+        if (!created.includes(CHECK_DOCS_CANON)) created.push(CHECK_DOCS_CANON)
+      }
+    }
+    // NEVER stamp while the docs axis is still in drift (router present, no directory at the
+    // canonical path). The one way to get here is a non-directory squatter at .materia/docs
+    // blocking the move above: stamping would close the migration window while doctor stays
+    // blocked — a stuck repo with no offered remedy. Skipping the stamp instead leaves the
+    // recoverable schema-behind state this whole section is designed around.
+    if (!isDir(materiaDocsAbs) && existsSync(join(targetRoot, DOCS_ROUTER)))
+      return { created, state: null }
+    // STAMP LAST — re-read project.json from DISK (init-project-state / install-check-docs may
+    // have created/stamped it earlier in the SAME apply run; version files sort 0.2.0 < 0.3.0 <
+    // 0.4.0, so those migrations are discovered and applied before this one). Stamp ONLY a
+    // parsed, integer, 2 <= schema < 4 state; append the id only if absent (idempotent re-apply
+    // is byte-stable). An interrupted apply that stopped before this leaves a recoverable
+    // schema-behind state (doctor suggests migrate; a re-apply finishes it).
+    let state = null
+    const statePath = join(targetRoot, STATE_REL)
+    if (existsSync(statePath)) {
+      const p = readJson(statePath)
+      if (!p.error && isInt(p.value.artifactSchema) &&
+          p.value.artifactSchema >= INIT_STATE_SCHEMA && p.value.artifactSchema < RELOCATE_DOCS_SCHEMA) {
+        state = { ...p.value, artifactSchema: RELOCATE_DOCS_SCHEMA }
+        const applied = Array.isArray(p.value.appliedMigrations) ? p.value.appliedMigrations.slice() : []
+        if (!applied.includes(this.id)) applied.push(this.id)
+        state.appliedMigrations = applied
+        const dir = join(targetRoot, '.materia')
+        const tmp = join(dir, `.project.json.tmp-${process.pid}`)
+        writeFileSync(tmp, JSON.stringify(state, null, 2) + '\n')
+        try { renameSync(tmp, statePath) }
+        catch (e) { rmSync(tmp, { force: true }); throw e }
+        created.push(STATE_REL)
+      }
+    }
+    return { created, state }
+  },
+}
+
+const REGISTRY = { [initProjectState.id]: initProjectState, [installCheckDocs.id]: installCheckDocs, [relocateDocs.id]: relocateDocs }
 
 // ---- arg parsing ------------------------------------------------------------
 // --acknowledge <change-id> is VALUE-BEARING and REPEATABLE: each occurrence consumes
@@ -326,14 +504,21 @@ Usage: node migrate.mjs [targetPath] [--plan|--apply] [--acknowledge <change-id>
   --json               emit the structured report as JSON
   --help, -h           show this help
 
-Default is --plan. Apply implements two migrations: init-project-state, which
+Default is --plan. Apply implements three migrations: init-project-state, which
 initializes .materia/project.json for a pre-tracking (untracked-legacy) install;
-and install-check-docs, which puts the check:docs gate script at its canonical
+install-check-docs, which puts the check:docs gate script at its canonical
 .materia/scripts/check-docs.sh (renaming a legacy scripts/check-docs.sh in place,
-or copying it from the plugin scaffold) and stamps artifact schema 3. Apply does
-file ops first and the project.json stamp last, never overwrites an existing gate
-script or a non-schema-2 state file, and never deletes anything (a superseded root
-copy or stale scripts/check-docs.mjs is surfaced as a manual cleanup item).
+or copying it from the plugin scaffold) and stamps artifact schema 3; and
+relocate-docs, which moves the agent-facing docs tree from the legacy root docs/ to
+.materia/docs/ (when a legacy docs/README.md router is present and .materia/docs/ is
+absent) and stamps artifact schema 4, refreshing a stale-roots gate script from the
+scaffold along the way (old bytes backed up to .materia/scripts/check-docs.sh.pre-schema4
+first). Apply does file ops first and the project.json stamp last, never overwrites a
+state file it did not create at the expected schema, and never deletes anything (a
+superseded root copy or stale scripts/check-docs.mjs is surfaced as a manual cleanup
+item). relocate-docs never rewrites file CONTENTS: the moved tree's now-short escaping
+links and other stale consumers are LISTED (run the refreshed gate to enumerate them),
+not auto-edited.
 
 Both --plan and --apply also run a deterministic, no-AI reference sweep: they scan
 the target repo for stale references to a relocated/replaced artifact (e.g. a
@@ -406,13 +591,17 @@ const scanReferences = (targetRoot, mig) => {
       const childRel = rel ? `${rel}/${e.name}` : e.name
       if (e.isDirectory()) {
         if (e.name === '.git' || e.name === 'node_modules') continue
-        // Frozen dated run folders: only a DATED-slug dir directly under docs/specs/ or
-        // docs/bugs/_reports/ is exempt — not the sibling README.md / _proposed/ /
-        // _templates/, which are present-state and stay in the scan. Canonical
-        // single-repo layout assumed: a nested packages/x/docs/specs/<slug>/ (monorepo)
-        // or a bare-date folder (no trailing slug hyphen) is NOT exempt — Materia's
-        // docs tree is repo-root-rooted, so those shapes are not run artifacts it wrote.
-        if ((rel === 'docs/specs' || rel === 'docs/bugs/_reports') && DATED_SLUG.test(e.name)) continue
+        // Frozen dated run folders: only a DATED-slug dir directly under the specs/ or
+        // bugs/_reports/ run trees is exempt — not the sibling README.md / _proposed/ /
+        // _templates/, which are present-state and stay in the scan. BOTH the legacy root
+        // (docs/specs, docs/bugs/_reports) and the relocated (.materia/docs/specs,
+        // .materia/docs/bugs/_reports) prefixes are covered, so a repo mid- or post-relocation
+        // still has its frozen history protected. Canonical single-repo layout assumed: a
+        // nested packages/x/docs/specs/<slug>/ (monorepo) or a bare-date folder (no trailing
+        // slug hyphen) is NOT exempt — Materia's docs tree is repo-root-rooted, so those shapes
+        // are not run artifacts it wrote.
+        if ((rel === 'docs/specs' || rel === 'docs/bugs/_reports' ||
+             rel === '.materia/docs/specs' || rel === '.materia/docs/bugs/_reports') && DATED_SLUG.test(e.name)) continue
         walk(childAbs, childRel)
       } else if (e.isFile()) {
         let content

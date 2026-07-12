@@ -1,6 +1,6 @@
 ---
 name: init
-description: Materialize the Materia harness into this repo. Interviews the engineer through a staged eight-chapter intake (concept → goals & success → audience & market → branding → visual taste → voice & tone → tech stack → capability probes), driven by batched AskUserQuestion rounds where every non-essential question is explicitly skippable, then writes MATERIA.md + CLAUDE.md + the docs/product.md product brief, generates the stack-specific standards docs, materializes the docs skeleton, check-docs.sh, the .materia/review-angles/ review-angle library, and the .materia/project.json project-state file, and seeds docs/specs/_proposed/ with a bootstrap epic so the pipeline's own first /materia:ship-spec run scaffolds the app. Reads its sources from the plugin's bundled scaffold at ${CLAUDE_PLUGIN_ROOT}/scaffold; copies no skills into the repo (they run from the installed materia plugin) and prunes nothing. Run once on a fresh repo after installing the materia plugin; idempotent to re-run before the first bootstrap spec ships.
+description: Materialize the Materia harness into this repo. Interviews the engineer through a staged eight-chapter intake (concept → goals & success → audience & market → branding → visual taste → voice & tone → tech stack → capability probes), driven by batched AskUserQuestion rounds where every non-essential question is explicitly skippable, then writes MATERIA.md + CLAUDE.md + the .materia/docs/product.md product brief, generates the stack-specific standards docs, materializes the docs skeleton, check-docs.sh, the .materia/review-angles/ review-angle library, and the .materia/project.json project-state file, and seeds .materia/docs/specs/_proposed/ with a bootstrap epic so the pipeline's own first /materia:ship-spec run scaffolds the app. Reads its sources from the plugin's bundled scaffold at ${CLAUDE_PLUGIN_ROOT}/scaffold; copies no skills into the repo (they run from the installed materia plugin) and prunes nothing. Run once on a fresh repo after installing the materia plugin; idempotent to re-run before the first bootstrap spec ships.
 ---
 
 # init — materialize Materia into this repo
@@ -13,7 +13,7 @@ first epic, so the harness dogfoods from commit one.
 The pipeline skills are **installed globally** with the `materia` plugin and
 run from that read-only cache — init copies **no** skills into the repo and
 prunes **nothing**. What init writes into the user repo (MATERIA.md, CLAUDE.md,
-`docs/**`, `.materia/**`) it reads from the plugin's bundled scaffold
+`.materia/docs/**`, `.materia/**`) it reads from the plugin's bundled scaffold
 at `${CLAUDE_PLUGIN_ROOT}/scaffold/` — the canonical, battle-tested sources.
 **Init fills slots; it does not redraft contracts.** The queue frontmatter
 contracts, producer lifecycle, RED gate, sole-writer retro rule, and the tier
@@ -38,9 +38,9 @@ Read tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path) — e.g.
 
 - `${CLAUDE_PLUGIN_ROOT}/scaffold/MATERIA.md`, `${CLAUDE_PLUGIN_ROOT}/scaffold/CLAUDE.md`
   — the slotted companion-doc and guide templates.
-- `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/**` — the docs-system skeleton (contracts,
+- `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/docs/**` — the docs-system skeleton (contracts,
   `_templates/`, canonical standards, stubs), including the
-  `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/product.md` brief template.
+  `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/docs/product.md` brief template.
 - `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/scripts/check-docs.sh` — the portable docs checker.
 - `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/review-angles/**` — the review-angle
   library (the twelve canonical angle definitions + the directory `README.md`),
@@ -65,7 +65,7 @@ branch-and-PR discipline — there is nothing to diff against yet):
 - `MATERIA.md` (repo root) — every section filled, `none` where a capability
   is absent.
 - `CLAUDE.md` (repo root) — the always-loaded guide, slots filled.
-- `docs/**` — the skeleton, the filled `docs/product.md` product brief, plus
+- `.materia/docs/**` — the skeleton, the filled `.materia/docs/product.md` product brief, plus
   the generated stack-specific standards.
 - `.materia/scripts/check-docs.sh`.
 - `.materia/review-angles/**` — the review-angle library (twelve canonical
@@ -77,8 +77,8 @@ branch-and-PR discipline — there is nothing to diff against yet):
   `/materia:doctor` starts quiet — it was born already carrying everything
   that array names).
 - `.claude/settings.json` — seeded with this repo's dev permissions (Phase 3).
-- `docs/epics/<dated-slug>/` + 2–N member proposals in
-  `docs/specs/_proposed/` — the **bootstrap epic** (see Phase 4).
+- `.materia/docs/epics/<dated-slug>/` + 2–N member proposals in
+  `.materia/docs/specs/_proposed/` — the **bootstrap epic** (see Phase 4).
 - `README.md` rewritten for the app.
 
 init writes **nothing** into `.claude/skills/` — the pipeline skills run from
@@ -96,12 +96,12 @@ the materialize phases need; where each chapter's answers land:
 
 | # | Chapter | Lands in |
 |---|---|---|
-| 1 | Concept & description | `MATERIA.md` § Identity · `CLAUDE.md` § What this is · `docs/product.md` § Audience & market's usage-context bullet · glossary, surface-map, and workflow seeds |
-| 2 | Goals & success | `docs/product.md` § Goals & success + § Product principles |
-| 3 | Audience & market | `docs/product.md` § Audience & market |
-| 4 | Branding & identity | `docs/product.md` § Name & positioning |
-| 5 | Visual design & taste (UI repos) | `docs/product.md` § Design feel & taste |
-| 6 | Voice & tone | `docs/product.md` § Voice & tone (+ glossary vocabulary) |
+| 1 | Concept & description | `MATERIA.md` § Identity · `CLAUDE.md` § What this is · `.materia/docs/product.md` § Audience & market's usage-context bullet · glossary, surface-map, and workflow seeds |
+| 2 | Goals & success | `.materia/docs/product.md` § Goals & success + § Product principles |
+| 3 | Audience & market | `.materia/docs/product.md` § Audience & market |
+| 4 | Branding & identity | `.materia/docs/product.md` § Name & positioning |
+| 5 | Visual design & taste (UI repos) | `.materia/docs/product.md` § Design feel & taste |
+| 6 | Voice & tone | `.materia/docs/product.md` § Voice & tone (+ glossary vocabulary) |
 | 7 | Tech stack | `MATERIA.md` § Stack, § Run it, § Gate |
 | 8 | Capabilities & operations | the `MATERIA.md` capability sections (probe table below) |
 
@@ -134,7 +134,7 @@ the materialize phases need; where each chapter's answers land:
   Push for an opinion before accepting a skip (offer a guess to react to);
   the skip is an escape hatch, not the default path.
 - **Recording a skip.** In the brief-bound chapters (2–6) a skipped question
-  lands in `docs/product.md` as a literal
+  lands in `.materia/docs/product.md` as a literal
   `*Not yet decided — <what was asked>.*` line — an honest gap, never an
   invented default (the brief's init comment states the same convention).
   Chapters 7–8 are `MATERIA.md`-bound and keep that file's **binary
@@ -172,7 +172,7 @@ load-bearing for materialization. Resolve:
   the glossary and the first resource docs when the bootstrap epic ships).
 - The **surface vocabulary** — how the outside world reaches the app: HTTP
   routes + pages, CLI commands, a public API/exports, events. This drives
-  `docs/surface-map.md`'s table shape, the resource-doc template's layer
+  `.materia/docs/surface-map.md`'s table shape, the resource-doc template's layer
   sections, and which docs-router phrasings apply.
 - Deploy intent (local-only, a PaaS, containers, serverless) — shapes the
   workflow standard and CI spec.
@@ -322,7 +322,7 @@ compressed Chapter 4 on non-UI repos), **the skipped-question tally — every
 epic's proposed member specs (titles + one-liners). Recap it **chapter by
 chapter** (the interview's own structure), not as one flat list — the
 engineer reviews against what they remember answering. Reply verbs, with producer-lifecycle semantics
-(`docs/standards/skills.md` § Producer lifecycle once materialized):
+(`.materia/docs/standards/skills.md` § Producer lifecycle once materialized):
 `approve` · `edit: <feedback>` · `cancel`. Nothing is written until
 `approve`.
 
@@ -333,10 +333,10 @@ On approve, in this order. Every source path below is under
 active read or copy (`cp "$CLAUDE_PLUGIN_ROOT/scaffold/..." ...`) — the Read
 tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
 
-1. **Copy the skeleton:** `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/**` → `docs/`; and
+1. **Copy the skeleton:** `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/docs/**` → `.materia/docs/`; and
    `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/**` → `.materia/` (the review-angle
    library — angle definitions are **config**, read at runtime from the repo
-   like `docs/`, not skills — plus `project.json`, the project-state file that
+   like `.materia/docs/`, not skills — plus `project.json`, the project-state file that
    tracks artifact schema + applied migrations, and `.materia/scripts/check-docs.sh`,
    the portable docs-gate script that now travels under `.materia/scripts/`; all
    copied verbatim, no slots).
@@ -345,9 +345,9 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
    of its own and there is nothing to prune or deregister. Every producer stays
    advertised in the queue tables and skill rosters exactly as the scaffold
    ships them.
-2. **Adapt the doc skeleton to the stack:** adapt `docs/surface-map.md`'s
+2. **Adapt the doc skeleton to the stack:** adapt `.materia/docs/surface-map.md`'s
    tables to the surface vocabulary, and prune/rename
-   `docs/_templates/resource.md`'s layer sections to the layers this stack
+   `.materia/docs/_templates/resource.md`'s layer sections to the layers this stack
    actually has (delete Data model on persistence-less repos, Client API /
    UI on repos without them) — per that template's own init comment.
 3. **Write `MATERIA.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/MATERIA.md`: fill
@@ -362,8 +362,8 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
 4. **Write `CLAUDE.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/CLAUDE.md`: same
    treatment. The folder map documents the *intended* layout the bootstrap epic
    will create.
-5. **Generate the stack-specific standards** under `docs/standards/`, using
-   `docs/_templates/standard.md`'s spine (Rule / Why / How / Where it lives /
+5. **Generate the stack-specific standards** under `.materia/docs/standards/`, using
+   `.materia/docs/_templates/standard.md`'s spine (Rule / Why / How / Where it lives /
    Related):
    - **Always:** `architecture.md` (folder rules, layering, naming — the
      kind-purity and one-export-per-file ethos adapted to the stack),
@@ -375,9 +375,9 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
      types/enums), each stating the conventions the interview settled.
    - **UI repos:** `ui-components.md` + `visual-language.md` seeds — thin at
      init (the design language barely exists yet); they grow via `docs-sync`.
-   - Register every generated standard as a row in `docs/README.md`
-     § Standards and in `docs/contributing.md`'s touch-map slot.
-6. **Write `docs/product.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/product.md`:
+   - Register every generated standard as a row in `.materia/docs/README.md`
+     § Standards and in `.materia/docs/contributing.md`'s touch-map slot.
+6. **Write `.materia/docs/product.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/.materia/docs/product.md`:
    every section filled from Chapters 2–6 (plus, from Chapter 1: the
    § Identity one-liner copied verbatim, and the usage-context answer into
    § Audience & market's usage-context bullet) — opinionated where answered, a literal
@@ -386,9 +386,9 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
    either way. When the repo ships UI, derive the `visual-language.md` seed
    from its § Design feel & taste (brand colors, density, motion stance) so
    the two never start contradictory.
-7. **Fill the remaining doc slots:** `docs/README.md`, `docs/contributing.md`
-   (DoD + touch-map rows), `docs/glossary.md` (seed the Chapter 1 entities +
-   the § Voice & tone vocabulary), and delete `docs/surface-map.md`'s init
+7. **Fill the remaining doc slots:** `.materia/docs/README.md`, `.materia/docs/contributing.md`
+   (DoD + touch-map rows), `.materia/docs/glossary.md` (seed the Chapter 1 entities +
+   the § Voice & tone vocabulary), and delete `.materia/docs/surface-map.md`'s init
    comment (its tables were already adapted in step 2). **Seed the user repo's
    `.claude/settings.json`** (create it if absent) with a base `permissions.allow`
    of routine git/gh/docs-check commands, then extend it with this stack's own
@@ -402,7 +402,7 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
    surfaced (database drop/reset, `compose down -v`-style teardowns). This is
    the user repo's own settings, unrelated to the plugin install.
 8. **Rewrite `README.md`** for the app: name, one-liner, run-it, a short
-   "how changes ship here" section pointing at `docs/specs/README.md` and
+   "how changes ship here" section pointing at `.materia/docs/specs/README.md` and
    the skill roster.
 9. **Interim check:** run `sh .materia/scripts/check-docs.sh` and fix every failure
    it reports. This is the *interim* pass — the **binding** self-check runs at
@@ -418,10 +418,10 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
 
 ### Phase 4 — Seed the bootstrap epic
 
-Write the app's first epic per the `docs/epics/README.md` contract —
+Write the app's first epic per the `.materia/docs/epics/README.md` contract —
 `epic.md` (+ a brief `research.md` when Chapter 7 involved real trade-off
 research; **if you skip `research.md`, also remove `epic.md`'s templated
-link to it**) — and 2–N member proposals into `docs/specs/_proposed/` with
+link to it**) — and 2–N member proposals into `.materia/docs/specs/_proposed/` with
 `source: epic`, `epic: <epic-id>`, and a `depends_on` graph. **Link hygiene:**
 in **member-proposal bodies**, write any reference to another repo file in
 backtick/arrow form (`` text → path ``), never as a live markdown link —
@@ -437,12 +437,12 @@ final self-check must catch). Shape the members as genuinely
 single-shippable units; the typical decomposition:
 
 - **S1 — App skeleton + local gate:** framework init, folder layout per
-  `docs/standards/architecture.md`, every § Gate row real and green, the
+  `.materia/docs/standards/architecture.md`, every § Gate row real and green, the
   § Run it recipe working, and the `MATERIA.md` § Gate Bootstrap-grace
   marker (and its paragraph) deleted in the same PR — each of these an
   explicit acceptance criterion.
 - **S2 — CI:** the full gate + `check:docs` on every PR (per
-  `docs/standards/workflow.md`).
+  `.materia/docs/standards/workflow.md`).
 - **S3 (UI repos) — Eyes provisioning + first e2e:** the § Eyes provisioning
   recipe as a real script, one smoke e2e, the `test:e2e` gate row live.
 - **S4+ —** the first thin vertical slice of the actual product, per
@@ -479,10 +479,10 @@ Re-running init **before any bootstrap spec has shipped** is safe and needs no
 restore: the pipeline skills live in the installed `materia` plugin (nothing was
 moved out of the repo) and init does not remove itself, so there is nothing to
 restore and nothing self-removed. It re-enters the interview with the previous
-`MATERIA.md` / `docs/product.md` answers as chapter defaults (a previously
+`MATERIA.md` / `.materia/docs/product.md` answers as chapter defaults (a previously
 recorded `Not yet decided` line is re-asked, not re-recorded blindly) and
 rewrites the materialized files (MATERIA.md,
-CLAUDE.md, `docs/**`, `.materia/scripts/check-docs.sh`, `.materia/review-angles/**`)
+CLAUDE.md, `.materia/docs/**`, `.materia/scripts/check-docs.sh`, `.materia/review-angles/**`)
 wholesale from the bundled scaffold at `${CLAUDE_PLUGIN_ROOT}/scaffold/`.
 
 After the pipeline has started shipping, init refuses to run wholesale (the repo

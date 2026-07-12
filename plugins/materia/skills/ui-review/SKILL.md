@@ -16,10 +16,10 @@ implement-task has committed the feature.
 
 ## Inputs
 
-- `docs/specs/<dated-slug>/spec.md` — the feature spec (scope, user stories).
-- `docs/specs/<dated-slug>/ui-test-plan.md` — the enumerated flows and per-state
+- `.materia/docs/specs/<dated-slug>/spec.md` — the feature spec (scope, user stories).
+- `.materia/docs/specs/<dated-slug>/ui-test-plan.md` — the enumerated flows and per-state
   assertions to drive during the review.
-- `docs/specs/<dated-slug>/design.md` § Cohesion anchors — the existing sibling
+- `.materia/docs/specs/<dated-slug>/design.md` § Cohesion anchors — the existing sibling
   screens each new/changed screen must visually match (see § Procedure step 5;
   absent on runs whose design predates the section — skip the comparison and
   note it).
@@ -35,7 +35,7 @@ implement-task has committed the feature.
 - `STATUS.md` updated with `ui-review: ran` on success, or
   `ui-review: skipped (eyes-instability — degrade path)` on the degrade
   path.
-- **`docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png`** — one PNG per
+- **`.materia/docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png`** — one PNG per
   captured flow/state, committed to the feature branch (see § Procedure step 4
   and the discrete commit step that follows step 5). **Screenshots are a
   mandatory deliverable of this angle, not a by-product of the e2e run** — the
@@ -92,11 +92,11 @@ acting on them wastes context.
      screenshot (or structural snapshot for text-heavy assertions) so the judgment in
      step 5 is grounded in observed output, not inference.
    - **Persist each captured screenshot to disk** at
-     `docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png`:
+     `.materia/docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png`:
      - `<flow>` = kebab-slug of the `## Flow <N>` heading text in
        `ui-test-plan.md`, with the leading `Flow N —` prefix stripped, derived
        using the normative kebab-slug algorithm from
-       `docs/specs/_proposed/README.md` § Kebab-slug derivation.
+       `.materia/docs/specs/_proposed/README.md` § Kebab-slug derivation.
      - `<state>` ∈ the closed set `loading` · `empty` · `error` · `ready`,
        matching the state the screenshot was taken in.
      - Files are keyed by `<flow>-<state>`, so a re-spawned `ui-review`
@@ -120,7 +120,7 @@ acting on them wastes context.
      § Notes — an empty `ui-proof/` must always carry a recorded reason.
 
 5. **Judge rendered output against the repo's visual standards docs** (the
-   visual-language / UI-components standards under `docs/standards/`). The
+   visual-language / UI-components standards under `.materia/docs/standards/`). The
    rubric covers:
    - **Token discipline** — surfaces use the design-system tokens the visual
      standard names; raw literals that bypass the token system are findings.
@@ -151,7 +151,7 @@ acting on them wastes context.
    judgement, and before returning findings to the orchestrator:
 
    ```bash
-   git add docs/specs/<dated-slug>/ui-proof/
+   git add .materia/docs/specs/<dated-slug>/ui-proof/
    git commit -m "ui-review: persist captured screenshots to ui-proof/"
    ```
 
@@ -228,7 +228,7 @@ This skill does **not**:
 - The `test:e2e` run completed (or the instability degrade was recorded in
   STATUS.md, or the repo has no `test:e2e` gate and the step was skipped).
 - Screenshots/structural snapshots captured for each `ui-test-plan.md` flow and
-  persisted to `docs/specs/<dated-slug>/ui-proof/` (or absent/empty on the
+  persisted to `.materia/docs/specs/<dated-slug>/ui-proof/` (or absent/empty on the
   degrade path — **with the reason note written to `STATUS.md`**).
 - The `ui-proof/` commit step completed (or was a no-op on the degrade path).
 - Findings returned to the orchestrator as a structured list with

@@ -29,7 +29,7 @@ inapplicable one is present-but-inert, not absent.
 
 {{language(s) · framework(s) · package manager · database/ORM · styling ·
 test runners · deploy target — one line each, the way an engineer would say
-it. Depth belongs in docs/standards/*, not here.}}
+it. Depth belongs in .materia/docs/standards/*, not here.}}
 
 ## Run it
 
@@ -184,13 +184,13 @@ UI work — the toolchain behind `design`, `ui-test-plan`, `ui-review`,
 - **Viewport / surface:** {{the canonical viewport or terminal size all
   captures use, e.g. Pixel-5 390×844}}
 - **Capture:** {{how to take a screenshot/snapshot and where proofs land —
-  keep the `docs/specs/<dated-slug>/ui-proof/` convention}}
+  keep the `.materia/docs/specs/<dated-slug>/ui-proof/` convention}}
 
 ### Design conformance harness
 
 The deterministic half of the `design-conformance` review angle (§ Review angles):
 a computed-layer comparison between the committed design snapshot
-(`docs/specs/<dated-slug>/design/`, per § Design tool's `export` capability) and the
+(`.materia/docs/specs/<dated-slug>/design/`, per § Design tool's `export` capability) and the
 implemented screen. **A procedure the orchestrator drives through this toolchain — not an
 installed script.** It runs in the § Orchestrator behavioral-verify lane
 (`ship-spec/SKILL.md`), because it needs the app up; the angle then reads only its output.
@@ -199,7 +199,7 @@ drift or `#1a4d8f` vs `#2a5d9f` is a machine's job, and a gate cannot rest on a 
 a colour match by eye.
 
 **Compare only the faithful layer — scoped by the snapshot's fabrication contract.** The
-snapshot's `README.md` (from `docs/specs/_templates/design-snapshot-readme.md`) states, per run,
+snapshot's `README.md` (from `.materia/docs/specs/_templates/design-snapshot-readme.md`) states, per run,
 what is `fabricated` vs `faithful` and records `semantic-structure: yes/no`. Comparing the
 fabricated layer manufactures false positives on a perfect build, so the harness reads that
 README first and scopes to what it declares faithful:
@@ -227,7 +227,7 @@ checked."
 `review-r<N>.json`). The angle never reads that path — the orchestrator inlines its *content*
 into the angle's brief (reviewers are forbidden `.claude/review-logs/`; the inline follows the
 dismissed-findings carry-forward precedent). Labeled captures land under the run folder at
-`docs/specs/<dated-slug>/design-conformance/captures/` — a reviewer-readable path, never under
+`.materia/docs/specs/<dated-slug>/design-conformance/captures/` — a reviewer-readable path, never under
 `.claude/review-logs/` — and the orchestrator names it in the brief.
 
 **Capture hygiene.** Identical viewport and `deviceScaleFactor` on both sides (the canonical
@@ -330,7 +330,7 @@ the same value.
   makes direct-on-canvas edits a syncable feedback channel.
 - `export` — the tool can emit the canvas as static HTML/CSS/assets to a
   filesystem path; what makes a committed snapshot possible. The path is
-  `docs/specs/<dated-slug>/design/` (normative home: design/SKILL.md § Canvas
+  `.materia/docs/specs/<dated-slug>/design/` (normative home: design/SKILL.md § Canvas
   authoring & the paired artifact for the directory contract and mechanics). A
   tool that cannot export but can `read` is marked `export: via-read` — the
   snapshot is reconstructed from reads, at the cost the adapter note records.
@@ -624,7 +624,7 @@ UI/Data-surface gates — over the cumulative diff, per `MATERIA.md § Surface
 gates`. `design-bearing` is evaluated per `ship-spec/SKILL.md` § Review (the
 design-conformance gate): the run resolved to a design-bearing (UI) surface
 (the `ui-surface (predictive)` decision recorded in `STATUS.md`; the
-design-bearing set is defined in `docs/specs/_proposed/README.md` § Field roles
+design-bearing set is defined in `.materia/docs/specs/_proposed/README.md` § Field roles
 → `surfaces`), `design.md` carries a non-empty `## Assertions` block, and § Eyes
 is not `none`. Unlike the diff-surface gates
 it is **artifact-based** — it inspects declared surfaces and design artifacts,

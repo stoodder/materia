@@ -347,6 +347,6 @@ silently proceed:
 - Does **not** merge — it stops at an open PR.
 - Is **not** shipped in the distributed `materia` plugin (it's a repo-local tool), and
   does not touch the plugin's own tier machinery (`MATERIA.md` § Tiers governs the
-  plugin's pipeline, not this skill), `docs/specs/`, `STATUS.md`, or `retro.md`.
+  plugin's pipeline, not this skill), `.materia/docs/specs/`, `STATUS.md`, or `retro.md`.
 - Does **not** replace `/materia:ship-spec` — that ships product features where Materia is
   installed; `evolve` changes Materia itself.

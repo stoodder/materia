@@ -1,6 +1,6 @@
 ---
 name: ui-test-plan
-description: From a feature spec and UX design, enumerate the UI flows worth guarding and produce a standalone ui-test-plan.md artifact at docs/specs/<dated-slug>/ui-test-plan.md. UI-gated pipeline stage inserted after design and before architecture; usable standalone after design returns. Stage 3 of the ship-spec pipeline (UI-gated — skipped and recorded on non-UI runs, sharing one predictive-form gate decision with the design stage).
+description: From a feature spec and UX design, enumerate the UI flows worth guarding and produce a standalone ui-test-plan.md artifact at .materia/docs/specs/<dated-slug>/ui-test-plan.md. UI-gated pipeline stage inserted after design and before architecture; usable standalone after design returns. Stage 3 of the ship-spec pipeline (UI-gated — skipped and recorded on non-UI runs, sharing one predictive-form gate decision with the design stage).
 ---
 
 # ui-test-plan — enumerate UI flows and write the test plan
@@ -15,9 +15,9 @@ owns the timing and resolution); usable standalone after `design` returns.
 
 ## Inputs
 
-- `docs/specs/<dated-slug>/spec.md` — the feature spec (user stories, scope,
+- `.materia/docs/specs/<dated-slug>/spec.md` — the feature spec (user stories, scope,
   goals).
-- `docs/specs/<dated-slug>/design.md` — the UX design (flows, screens, and their
+- `.materia/docs/specs/<dated-slug>/design.md` — the UX design (flows, screens, and their
   loading/empty/error/ready states).
 
 ## Harness noise
@@ -27,7 +27,7 @@ acting on them wastes context.
 
 ## Outputs
 
-- `docs/specs/<dated-slug>/ui-test-plan.md` — the UI test plan artifact written
+- `.materia/docs/specs/<dated-slug>/ui-test-plan.md` — the UI test plan artifact written
   into the spec folder.
 - `STATUS.md` — stage 3 checkbox ticked (or recorded as "skipped (non-UI)" if
   the orchestrator evaluated the gate and this skill was not spawned) and `Next:`
@@ -54,8 +54,8 @@ adapt the "one section per guarded flow" template to say so at length: write a
 state changes."), tick stage 3 in `STATUS.md`, commit + push, and return. Use the
 full procedure below only when at least one flow is worth guarding.
 
-1. **Read** `docs/specs/<dated-slug>/spec.md` and
-   `docs/specs/<dated-slug>/design.md` in full. Identify every user flow defined
+1. **Read** `.materia/docs/specs/<dated-slug>/spec.md` and
+   `.materia/docs/specs/<dated-slug>/design.md` in full. Identify every user flow defined
    in `design.md` (each flow corresponds to a section or named path in the
    design document).
 
@@ -87,11 +87,11 @@ full procedure below only when at least one flow is worth guarding.
      lane that checks them — fold each into the flow section it belongs to,
      as an assertion for the relevant state. (The statically-checkable lines
      belong to the `design-conformance` review angle, not this plan.)
-   - **Seed values** — note any seeded data values (`docs/standards/testing.md`
+   - **Seed values** — note any seeded data values (`.materia/docs/standards/testing.md`
      seed-value assertion convention) the assertions should use.
 
-4. **Read** `docs/specs/_templates/ui-test-plan.md` for the output shape. Then
-   **Write** `docs/specs/<dated-slug>/ui-test-plan.md`. Use a top-level heading
+4. **Read** `.materia/docs/specs/_templates/ui-test-plan.md` for the output shape. Then
+   **Write** `.materia/docs/specs/<dated-slug>/ui-test-plan.md`. Use a top-level heading
    matching the feature name. Open with a one-sentence summary of how many flows
    are covered and link to `design.md` for the source. Then list each flow
    section from step 3.

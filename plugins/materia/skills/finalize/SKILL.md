@@ -1,6 +1,6 @@
 ---
 name: finalize
-description: "Final gate for a feature — re-run `verify` for any tasks that deferred behavior checks, then run lint/typecheck/tests/check:docs; fix everything they expose; confirm acceptance criteria; open the pull request. Stage 10 of the ship-spec pipeline (STATUS checkbox row 9 in the spec template, row 8 in the bug template — stage numbering: see docs/specs/_templates/status.md § Stages)."
+description: "Final gate for a feature — re-run `verify` for any tasks that deferred behavior checks, then run lint/typecheck/tests/check:docs; fix everything they expose; confirm acceptance criteria; open the pull request. Stage 10 of the ship-spec pipeline (STATUS checkbox row 9 in the spec template, row 8 in the bug template — stage numbering: see .materia/docs/specs/_templates/status.md § Stages)."
 ---
 
 # finalize — gate, behavior re-check, and ship
@@ -17,7 +17,7 @@ same rule: run the live-stack verify in your own foreground lane.
 
 ## Inputs
 
-- `docs/specs/<dated-slug>/tasks.md` (tasks `[x]`) + `spec.md` (acceptance
+- `.materia/docs/specs/<dated-slug>/tasks.md` (tasks `[x]`) + `spec.md` (acceptance
   criteria).
 - The branch's changes (full diff vs the trunk — `<baseline>`, per
   `MATERIA.md` § Version control).
@@ -88,7 +88,7 @@ acting on them wastes context.
    rather than claiming they passed — `check:docs` remains the gate of record
    either way.
 
-3. **Acceptance.** Cross-check `docs/specs/<dated-slug>/spec.md` — every
+3. **Acceptance.** Cross-check `.materia/docs/specs/<dated-slug>/spec.md` — every
    acceptance criterion is met. Mark all tasks `[x]` in `tasks.md` if not
    already.
 
@@ -100,11 +100,11 @@ acting on them wastes context.
      step 4.
    - Otherwise, stage the dequeue without committing. **Path guard:** the
      `Proposed-spec:` value is data, not a trusted path — verify it matches
-     `docs/specs/_proposed/<yyyy-mm-dd-hhmmss>-<id>-<slug>.md` exactly (no
+     `.materia/docs/specs/_proposed/<yyyy-mm-dd-hhmmss>-<id>-<slug>.md` exactly (no
      `..`, no leading `/`, confined to `_proposed/`) before use, and quote it:
 
      ```bash
-     git rm docs/specs/_proposed/<filename-from-Proposed-spec>
+     git rm .materia/docs/specs/_proposed/<filename-from-Proposed-spec>
      ```
 
      If the file is already gone (operator manually deleted it mid-run),
@@ -123,8 +123,8 @@ acting on them wastes context.
 
      If red — something in the repo linked to the proposal file (a
      contract violation; docs-sync should prohibit it) — unstage with
-     `git restore --staged docs/specs/_proposed/<filename>` + `git
-     checkout -- docs/specs/_proposed/<filename>`, set
+     `git restore --staged .materia/docs/specs/_proposed/<filename>` + `git
+     checkout -- .materia/docs/specs/_proposed/<filename>`, set
      `Blocker: dequeue tripped check:docs — <broken-link path>` in
      STATUS.md, and stop. The operator removes the offending link, then
      re-invokes finalize.
@@ -161,7 +161,7 @@ acting on them wastes context.
        `ui-coverage-waiver` recorded in STATUS.md". Commit + push, and **stop**
        — do not proceed to step 4. Resume once the blocker is cleared.
 
-**Concurrent-run Index conflict (trivial merge).** `docs/specs/README.md`'s Index
+**Concurrent-run Index conflict (trivial merge).** `.materia/docs/specs/README.md`'s Index
 table is a recurring low-grade merge conflict for concurrent ship-spec runs —
 when `<trunk>` advances mid-run, the colliding hunk is almost always another run's
 Index-table row addition. Resolve it as a **trivial merge: keep both rows** (yours
@@ -177,8 +177,8 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
    the approach, the tasks shipped, and the gate status (lint/typecheck/tests/docs
    green; behavior re-verified for deferred tasks; docs were reconciled + audited
    by the preceding docs-sync ⇄ docs-audit stages; e2e coverage present or waived).
-   Link the `docs/specs/<dated-slug>/` artifacts. Close the body with the
-   Materia sigil (`docs/standards/skills.md` § PR attribution — the Materia
+   Link the `.materia/docs/specs/<dated-slug>/` artifacts. Close the body with the
+   Materia sigil (`.materia/docs/standards/skills.md` § PR attribution — the Materia
    sigil), naming the driving orchestrator (`ship-spec` /
    `fix-bug`) as the caster; it stays the last element through every
    later body edit.
@@ -216,7 +216,7 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
      **absolute raw-content URL** of the form:
 
      ```
-     https://<host>/<owner>/<repo>/raw/<sha>/docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png
+     https://<host>/<owner>/<repo>/raw/<sha>/.materia/docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png
      ```
 
      **URL construction (new — no existing precedent in the skills; follow
@@ -400,7 +400,7 @@ follow from it:
   body is rendered.** When `ui-review` ran in the orchestrator lane, its
   screenshots often live only in the orchestrator scratchpad and never reach the
   branch, so the PR body can only describe them. Before finalize renders the PR
-  body, **copy those screenshots into `docs/specs/<dated-slug>/ui-proof/` and
+  body, **copy those screenshots into `.materia/docs/specs/<dated-slug>/ui-proof/` and
   commit them to the branch** so the `## UI proof` block can embed real images
   via the raw-content URLs (step 4) instead of degrading to the
   screenshots-unavailable note.

@@ -1,22 +1,10 @@
 {
-  "artifactSchema": 3,
+  "artifactSchema": 4,
   "pluginVersion": null,
   "source": "scaffold",
   "appliedMigrations": [],
   "acknowledgedChanges": [
-    "0.3.0-acknowledged-changes-field",
-    "0.3.0-canvas-authoring",
-    "0.3.0-check-docs-sh-gate",
-    "0.3.0-design-conformance-angle",
-    "0.3.0-design-review-gate",
-    "0.3.0-design-snapshot-export",
-    "0.3.0-design-tool-section",
-    "0.3.0-forge-merge-strategy",
-    "0.3.0-proposed-spec-design-gate-field",
-    "0.3.0-proposed-spec-surfaces-field",
-    "0.3.0-queue-readme-prose",
-    "0.3.0-review-angles-calibration-xref",
-    "0.3.0-scripts-relocation",
+    "0.4.0-docs-relocation",
     "0.4.0-init-staged-intake",
     "0.4.0-stage-reviews"
   ]

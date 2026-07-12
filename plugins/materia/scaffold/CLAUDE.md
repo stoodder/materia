@@ -1,9 +1,9 @@
 # CLAUDE.md
 
 <!-- init: fill every {{slot}} from the interview + generated standards, then
-     delete these comments. Keep this file lean — depth lives in docs/. -->
+     delete these comments. Keep this file lean — depth lives in .materia/docs/. -->
 
-The always-loaded guide. Keep it lean — depth lives in `docs/`. Read this,
+The always-loaded guide. Keep it lean — depth lives in `.materia/docs/`. Read this,
 then follow the context protocol below **before writing anything**.
 
 ## What this is
@@ -13,14 +13,14 @@ then follow the context protocol below **before writing anything**.
 agent's orientation.}}
 
 Product depth — goals, audience, market, design feel & taste, voice,
-principles: [docs/product.md](docs/product.md).
+principles: [.materia/docs/product.md](.materia/docs/product.md).
 
 ## Context protocol — build context in this order, every time
 
 1. **This file** — the rules in brief + the map below. (You're here.)
-2. **[`docs/README.md`](docs/README.md)** — the router. Pick the standards +
+2. **[`.materia/docs/README.md`](.materia/docs/README.md)** — the router. Pick the standards +
    resource docs that match your change.
-3. **`docs/standards/*` + `docs/resources/*`** — read the relevant ones
+3. **`.materia/docs/standards/*` + `.materia/docs/resources/*`** — read the relevant ones
    **before touching code**. Each resource doc ends with the exact code files
    it covers.
 4. **The code** — open those files last, now that you know the shape and the
@@ -44,49 +44,49 @@ surface gates, eyes): [MATERIA.md](MATERIA.md).
 {{the MATERIA.md § Run it command}}
 ```
 
-Commands + deploy: [docs/standards/workflow.md](docs/standards/workflow.md).
+Commands + deploy: [.materia/docs/standards/workflow.md](.materia/docs/standards/workflow.md).
 
 ## Folder map (kind-pure — one kind of thing per folder)
 
 ```
 {{one line per folder: path, then what single kind of thing lives there.
 End with:
-docs/          ← the context map; start at docs/README.md}}
+.materia/docs/ ← the context map; start at .materia/docs/README.md}}
 ```
 
 ## Non-negotiables (depth behind each link)
 
 <!-- init: generate one bullet per stack-specific standard you write into
-     docs/standards/, each linking to its doc. Always keep the final two
+     .materia/docs/standards/, each linking to its doc. Always keep the final two
      universal bullets. -->
 
-{{stack-specific one-liners → docs/standards/*.md}}
+{{stack-specific one-liners → .materia/docs/standards/*.md}}
 
 - **Comments** — only when *why* is non-obvious; never narrate what the code
   does.
 - **Docs** — docs are agent context: present-state only (no change narration),
   one home per fact, short table cells; `check:docs` enforces the checkable
   subset; `/materia:librarian` sweeps and fixes accumulated drift on demand or on a
-  schedule. → [docs](docs/standards/docs.md)
+  schedule. → [docs](.materia/docs/standards/docs.md)
 
 ## Resources (one doc per entity — read the one you're touching)
 
 {{list the resource docs as they come to exist — /materia:init seeds this empty;
 docs-sync adds entries as the app grows}} — all under
-[docs/resources/](docs/resources/).
+[.materia/docs/resources/](.materia/docs/resources/).
 
-Reference: [glossary](docs/glossary.md) · [surface-map](docs/surface-map.md).
+Reference: [glossary](.materia/docs/glossary.md) · [surface-map](.materia/docs/surface-map.md).
 
 **Building or fixing via the pipelines?** Two orchestrators, two queues, and a
 retro-triage loop that feeds the backlog — the full map (stage chains,
 producer/consumer tables, flow graphs) lives at
-[docs/specs/README.md](docs/specs/README.md); read that, not this paragraph,
+[.materia/docs/specs/README.md](.materia/docs/specs/README.md); read that, not this paragraph,
 for the details.
 
 - `/materia:ship-spec` builds a feature end-to-end from the proposed-specs queue
-  ([docs/specs/_proposed/](docs/specs/_proposed/README.md)); `/materia:fix-bug`
+  ([.materia/docs/specs/_proposed/](.materia/docs/specs/_proposed/README.md)); `/materia:fix-bug`
   drives a bug report from the bug queue
-  ([docs/bugs/_reports/](docs/bugs/_reports/README.md)) to a RED→GREEN TDD
+  ([.materia/docs/bugs/_reports/](.materia/docs/bugs/_reports/README.md)) to a RED→GREEN TDD
   fix. On an interactive, design-bearing (UI) run, `/materia:ship-spec` pauses
   at a design gate for your approval before continuing (`--auto` runs don't
   pause there). Both are resumable and open exactly one PR. With `--auto`
@@ -94,14 +94,14 @@ for the details.
   resolving merge conflicts — and merges it.
 - **Producers** fill the queues; **maintainers** (`/materia:janitor`, `/materia:librarian`)
   fix drift directly instead of filing queue entries — the roster and shared
-  lifecycle live in [skills](docs/standards/skills.md).
-- **Epics** ([docs/epics/](docs/epics/README.md)) group multiple specs under
+  lifecycle live in [skills](.materia/docs/standards/skills.md).
+- **Epics** ([.materia/docs/epics/](.materia/docs/epics/README.md)) group multiple specs under
   one researched initiative with a dependency graph.
 - Every run leaves a `retro.md`; `/materia:triage-retros` clusters that signal
   and authors it directly into the project's backlog — proposed specs into
-  [docs/specs/_proposed/](docs/specs/_proposed/README.md) and bug reports into
-  [docs/bugs/_reports/](docs/bugs/_reports/README.md) (`source: retro-triage`) —
-  in one PR. Authoring or changing any skill → [skills](docs/standards/skills.md).
+  [.materia/docs/specs/_proposed/](.materia/docs/specs/_proposed/README.md) and bug reports into
+  [.materia/docs/bugs/_reports/](.materia/docs/bugs/_reports/README.md) (`source: retro-triage`) —
+  in one PR. Authoring or changing any skill → [skills](.materia/docs/standards/skills.md).
 
 ## Before you finish
 
@@ -110,4 +110,4 @@ pass locally — CI runs the same checks on every PR.
 {{known gate gotchas + their one-line fixes, from MATERIA.md § Environment
 preflight}}
 Definition of Done + which docs to update:
-[docs/contributing.md](docs/contributing.md).
+[.materia/docs/contributing.md](.materia/docs/contributing.md).

@@ -1,6 +1,6 @@
 ---
 name: migrate
-description: "Explicit, plan-first project upgrade for a Materia-installed repo. Runs the deterministic engine (plugins/materia/scripts/migrate.mjs) against a target repo — reading this plugin's release/artifact ledger and the repo's .materia/project.json — and by default PLANS the migration (writes nothing): current vs target artifact schema, which ledger migrations can be safely applied, which need manual/operator judgement, which are skipped and why, the files it would create/update, and whether local edits could be affected. With --apply it applies only safe, deterministic, idempotent migrations; v0 implements two, init-project-state (initializes .materia/project.json for a detectable pre-tracking untracked-legacy install) and install-check-docs (puts the check:docs gate script at its canonical .materia/scripts/check-docs.sh — renaming a legacy scripts/check-docs.sh in place or copying it from the plugin scaffold — then stamps artifact schema 3). Apply does file ops first and the project.json stamp last, never overwrites an existing gate script or a non-schema-2 state file, never deletes anything, invents no state for a non-Materia repo. With --acknowledge <change-id> (repeatable, mutually exclusive with --apply) it records that a change from /materia:doctor's windowless availableAdoptions listing was adopted or considered, unioning the id(s) into project.json's acknowledgedChanges; --plan --acknowledge previews without writing. Both plan and apply also run a deterministic, no-AI reference sweep — scanning the target repo for stale consumer references to a relocated/replaced artifact (referenceFollowUps); the engine reports the hits and this skill performs the bounded post-apply sweep, then re-runs the repo's check:docs gate. Run it in an operator session when /materia:doctor reports a stale or legacy project — doctor reports, migrate plans, the operator applies."
+description: "Explicit, plan-first project upgrade for a Materia-installed repo. Runs the deterministic engine (plugins/materia/scripts/migrate.mjs) against a target repo — reading this plugin's release/artifact ledger and the repo's .materia/project.json — and by default PLANS the migration (writes nothing): current vs target artifact schema, which ledger migrations can be safely applied, which need manual/operator judgement, which are skipped and why, the files it would create/update, and whether local edits could be affected. With --apply it applies only safe, deterministic, idempotent migrations; v0 implements three, init-project-state (initializes .materia/project.json for a detectable pre-tracking untracked-legacy install), install-check-docs (puts the check:docs gate script at its canonical .materia/scripts/check-docs.sh — renaming a legacy scripts/check-docs.sh in place or copying it from the plugin scaffold — then stamps artifact schema 3), and relocate-docs (moves the agent-facing docs tree from the legacy root docs/ to .materia/docs/ when a legacy docs/README.md router is present and .materia/docs/ is absent, refreshes a stale-roots check-docs.sh from the scaffold with the old bytes backed up to .materia/scripts/check-docs.sh.pre-schema4, then stamps artifact schema 4). Apply does file ops first and the project.json stamp last, never overwrites a state file it did not create at the expected schema, never deletes anything, invents no state for a non-Materia repo; relocate-docs' gate refresh is the one deliberate overwrite (old bytes backed up first, no-op when already current) and it never rewrites file contents — the moved tree's now-short escaping links and other stale consumers are listed for by-hand repair. With --acknowledge <change-id> (repeatable, mutually exclusive with --apply) it records that a change from /materia:doctor's windowless availableAdoptions listing was adopted or considered, unioning the id(s) into project.json's acknowledgedChanges; --plan --acknowledge previews without writing. Both plan and apply also run a deterministic, no-AI reference sweep — scanning the target repo for stale consumer references to a relocated/replaced artifact (referenceFollowUps); the engine reports the hits and this skill performs the bounded post-apply sweep, then re-runs the repo's check:docs gate. Run it in an operator session when /materia:doctor reports a stale or legacy project — doctor reports, migrate plans, the operator applies."
 ---
 
 # migrate — upgrade a Materia-installed project's artifacts
@@ -202,14 +202,21 @@ flags the adopted drift. Two bookkeeping states are worth naming:
   to `.materia/project.json`'s `acknowledgedChanges` — bare `--acknowledge`
   writes by default (that write is the point), and `--plan --acknowledge <id>`
   previews it instead. The two write modes are mutually exclusive.
-- **Two migrations in v0.** `init-project-state` (reserved in
+- **Three migrations in v0.** `init-project-state` (reserved in
   `0.2.0-project-state-file`) initializes `.materia/project.json` for a detectable
   pre-tracking (untracked-legacy) install. `install-check-docs` (reserved in
   `0.3.0-check-docs-sh-gate` + `0.3.0-scripts-relocation`) puts the check:docs gate
   script at its canonical `.materia/scripts/check-docs.sh` — renaming a legacy
   `scripts/check-docs.sh` in place (preserving local edits) or copying it from the
-  plugin scaffold — then stamps artifact schema 3. Every other ledger change is
-  reported as manual or skipped until a handler ships. No template rewrites,
+  plugin scaffold — then stamps artifact schema 3. `relocate-docs` (reserved in
+  `0.4.0-docs-relocation`) moves the agent-facing docs tree from the legacy root
+  `docs/` to the canonical `.materia/docs/` (when a legacy `docs/README.md` router is
+  present and `.materia/docs/` is absent), refreshes a stale-roots `check-docs.sh` from
+  the plugin scaffold (backing the old bytes up to
+  `.materia/scripts/check-docs.sh.pre-schema4`), then stamps artifact schema 4 — it
+  never rewrites file contents, so the moved tree's now-short escaping links and other
+  stale consumers are LISTED for by-hand repair, not auto-edited. Every other ledger
+  change is reported as manual or skipped until a handler ships. No template rewrites,
   scaffold normalization, or conflict resolution in this version.
 - **Acknowledge is a third, targeted mode — not a migration.** It records that
   the operator adopted or considered a change from `/materia:doctor`'s
@@ -227,13 +234,18 @@ flags the adopted drift. Two bookkeeping states are worth naming:
   not override it or fabricate state the script marked manual/unknown.
 - **Plan writes nothing.** Never edit files in plan mode; never run `--apply`
   without explicit operator intent.
-- **Never overwrite local edits.** Apply never overwrites an existing gate script
-  or a project-state file it did not create at the expected schema: it *creates* a
-  missing `.materia/project.json`, *renames* (never rewrites) a legacy gate script,
-  and *stamps* only a schema-2 state; an existing/malformed state or a
-  hand-authored stale schema is reported manual, never clobbered. It never deletes
-  anything — a superseded root `scripts/check-docs.sh` or stale legacy
-  `check-docs.mjs` is surfaced as a manual cleanup item.
+- **Never overwrite local edits (one guarded exception).** Apply never overwrites a
+  project-state file it did not create at the expected schema: it *creates* a missing
+  `.materia/project.json`, *renames* (never rewrites) a legacy gate script when
+  installing it, and *stamps* only a state at the expected schema; an existing/malformed
+  state or a hand-authored stale schema is reported manual, never clobbered. The ONE
+  deliberate overwrite is `relocate-docs`' gate refresh: after the docs tree moves to
+  `.materia/docs/`, a `check-docs.sh` still scanning the old `docs/` roots would lint the
+  user's own human `docs/`, so it is refreshed from the scaffold — but its old bytes are
+  first copied to `.materia/scripts/check-docs.sh.pre-schema4` (a create, never a clobber),
+  and the refresh no-ops when the bytes already match. It never deletes anything — a
+  superseded root `scripts/check-docs.sh` or stale legacy `check-docs.mjs` is surfaced as
+  a manual cleanup item.
 - **Acknowledge is held to the same floor.** Every given id must resolve
   against some release-ledger version file — an unknown id refuses, nothing
   written. The target project-state file must be present, parsed, and record
@@ -249,9 +261,9 @@ flags the adopted drift. Two bookkeeping states are worth naming:
   schema-behind state (doctor suggests migrate again), never a stamped-but-unmoved
   orphan.
 - **Stable, ledger-referenced migration ids.** Applied migrations use the exact
-  ids the release ledger reserves (`init-project-state`, `install-check-docs`),
-  recorded in the project-state file's `appliedMigrations` so re-runs and future
-  migrations can detect what has already been applied.
+  ids the release ledger reserves (`init-project-state`, `install-check-docs`,
+  `relocate-docs`), recorded in the project-state file's `appliedMigrations` so
+  re-runs and future migrations can detect what has already been applied.
 - **The sweep edits only within the engine's `referenceFollowUps`.** It never scans
   or rewrites a file the engine did not name, only auto-fixes `autoFix: true` hits,
   and always re-runs the repo's `check:docs` gate (resolved from `MATERIA.md

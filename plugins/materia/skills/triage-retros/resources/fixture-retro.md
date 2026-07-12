@@ -18,7 +18,7 @@ Synthetic retro carrying one unambiguous signal of each kind — pipeline/harnes
 - **Subagent return:** ok
 
 ### What went well
-- The discovery glob correctly identified retros across both docs/specs and docs/bugs trees
+- The discovery glob correctly identified retros across both .materia/docs/specs and .materia/docs/bugs trees
 
 ### What could be improved
 - The intake-spec skill lacks a fallback mechanism when a deferred tool is not available in the AutoMode tool list during mid-stage clarification — the skill should document a graceful AskUserQuestion handling path for when the tool is missing

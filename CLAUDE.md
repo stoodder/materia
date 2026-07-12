@@ -14,7 +14,7 @@ here is contract review. The validator exists to pin that consistency
 mechanically.
 
 This repo is **not** a Materia-installed repo. `plugins/materia/scaffold/**`
-files (MATERIA.md, CLAUDE.md, docs/…) are *templates that ship to user repos*,
+files (MATERIA.md, CLAUDE.md, .materia/docs/…) are *templates that ship to user repos*,
 not this repo's own configuration. Do not run `/materia:ship-spec`,
 `/materia:init`, or the other product pipelines here; they are exercised in
 separate Materia-installed repos.
@@ -44,7 +44,7 @@ intake → plan → adversarial review → operator approval → reviewed execut
 exactly one PR, never auto-merged. A small change still uses `/evolve` (it
 scales the ceremony down); only a single obvious edit (a typo) skips it.
 
-This repo carries no `docs/specs/_proposed/` queue — that queue shape belongs
+This repo carries no `.materia/docs/specs/_proposed/` queue — that queue shape belongs
 to Materia-installed repos, not the harness source.
 
 ## Gates — run before every commit
@@ -99,7 +99,7 @@ that SKIP locally are hard failures there.
   comments (why a guard exists, what a pin protects). Match it — the next
   reader is an agent that only sees the file.
 - **The scaffold ships no per-run outputs** (validator §1f): only
-  `_`-prefixed dirs + `README.md` under the scaffold's `docs/{specs,bugs,
+  `_`-prefixed dirs + `README.md` under the scaffold's `.materia/docs/{specs,bugs,
   epics,research}/`. Per-run artifacts are templates (`_templates/`), never
   materialized examples.
 - **doctor and migrate share one detector** (`scripts/lib/materia-contract.mjs

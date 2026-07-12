@@ -1,6 +1,6 @@
 ---
 name: docs-audit
-description: Verify docs against the branch's code diff after `docs-sync` edits — audit coverage, accuracy, consistency, authoring-standard conformance (docs/standards/docs.md), and the mechanical `check:docs` gate (`MATERIA.md § Gate`; links + style); return HIGH/MEDIUM/LOW findings or a clean verdict. Spawned by `ship-spec` as a sibling stage after `docs-sync` (never by a subagent). Stage 9 of the ship-spec pipeline.
+description: Verify docs against the branch's code diff after `docs-sync` edits — audit coverage, accuracy, consistency, authoring-standard conformance (.materia/docs/standards/docs.md), and the mechanical `check:docs` gate (`MATERIA.md § Gate`; links + style); return HIGH/MEDIUM/LOW findings or a clean verdict. Spawned by `ship-spec` as a sibling stage after `docs-sync` (never by a subagent). Stage 9 of the ship-spec pipeline.
 ---
 
 # docs-audit — verify docs against the final branch state
@@ -19,12 +19,12 @@ Runs as a **fresh-context subagent** spawned by `ship-spec` — never by
 - The full branch diff vs the trunk (`git diff <baseline>...HEAD`, `<baseline>`
   per `MATERIA.md` § Version control).
 - The post-edit working tree (staged doc edits from `docs-sync`).
-- `docs/contributing.md` (the **touch-X→update-Y** map — the authoritative
+- `.materia/docs/contributing.md` (the **touch-X→update-Y** map — the authoritative
   definition of what "docs" means for a given change; `docs-audit` verifies
   coverage *against* it, never re-derives it from scratch).
-- `docs/standards/docs.md` (the **authoring standard** — check 5 judges
+- `.materia/docs/standards/docs.md` (the **authoring standard** — check 5 judges
   `docs-sync`'s edits against it).
-- The relevant `docs/**` files as they stand post-`docs-sync` edits.
+- The relevant `.materia/docs/**` files as they stand post-`docs-sync` edits.
 - **Dismissed-findings carry-forward (rounds ≥ 2).** A structured list the
   orchestrator passes in from prior audit rounds: each entry is
   `{ id, file, finding, dismissal_rationale }` for a finding the orchestrator
@@ -66,11 +66,11 @@ Runs as a **fresh-context subagent** spawned by `ship-spec` — never by
    code changes; verify the doc that should describe them now does.
    Sampling is explicit: full doc-vs-code verification is not feasible at
    this scale; silent-oracle paths are trusted (logged), not verified.
-3. **Consistency** — `CLAUDE.md`, `docs/README.md` indexes,
-   `docs/surface-map.md`, `docs/glossary.md` reflect new resources / routes /
+3. **Consistency** — `CLAUDE.md`, `.materia/docs/README.md` indexes,
+   `.materia/docs/surface-map.md`, `.materia/docs/glossary.md` reflect new resources / routes /
    terms that the matrix produced.
 4. **Mechanical gate** — run the `check:docs` gate (`MATERIA.md § Gate`; read-only; it verifies
-   links across `CLAUDE.md` + `docs/**`, `#anchor`
+   links across `CLAUDE.md` + `.materia/docs/**`, `#anchor`
    fragments, and style over the agent-context docs: change-narration
    phrases, >600-char lines, duplicated long lines, glossary alphabetical
    order). `docs-sync` runs it before committing, so a failure
@@ -78,13 +78,13 @@ Runs as a **fresh-context subagent** spawned by `ship-spec` — never by
    finding (`finalize`'s gate also runs it; fix in the loop so the gate stays
    green).
 5. **Authoring-standard conformance** — judge the docs `docs-sync` edited on
-   this branch against `docs/standards/docs.md` for what the mechanical
+   this branch against `.materia/docs/standards/docs.md` for what the mechanical
    checker can't catch:
    - **Delta-appended prose** — an edit bolted onto old text ("now also
      supports…", "gained a prop", a section that reads as a change log)
      instead of folded into the present-state description.
    - **Duplicated facts** — the same fact restated in a second doc instead of
-     linked to its owning doc (ownership map in `docs/standards/docs.md`).
+     linked to its owning doc (ownership map in `.materia/docs/standards/docs.md`).
    - **Cell bloat** — multi-sentence prose growing inside table cells (under
      the 600-char backstop but past the "one–two short sentences" rule) that
      belongs in bullets below the table.

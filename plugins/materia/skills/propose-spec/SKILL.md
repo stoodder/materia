@@ -1,33 +1,33 @@
 ---
 name: propose-spec
-description: Take a user's raw idea and produce a well-formed proposed-spec file in docs/specs/_proposed/. The skill reads the project context (CLAUDE.md, docs/, existing specs) and uses sensible defaults to draft the full spec in one shot, then asks the user to confirm or adjust — minimizing the questions the user has to answer. The Q&A is in-memory; once the user confirms the draft, the skill syncs the latest trunk, branches, writes the proposal file(s), commits, pushes, and opens a PR.
+description: Take a user's raw idea and produce a well-formed proposed-spec file in .materia/docs/specs/_proposed/. The skill reads the project context (CLAUDE.md, .materia/docs/, existing specs) and uses sensible defaults to draft the full spec in one shot, then asks the user to confirm or adjust — minimizing the questions the user has to answer. The Q&A is in-memory; once the user confirms the draft, the skill syncs the latest trunk, branches, writes the proposal file(s), commits, pushes, and opens a PR.
 ---
 
 # propose-spec — capture an idea, produce a proposal file
 
 A simple, single-shot skill that turns a raw idea into a proposed-spec file
 in the shared queue at
-`docs/specs/_proposed/` (`docs/specs/_proposed/README.md`). Conforms
+`.materia/docs/specs/_proposed/` (`.materia/docs/specs/_proposed/README.md`). Conforms
 to the queue's shared contract (frontmatter shape, filename pattern, body
 shape).
 
 **Philosophy: defaults beat questions.** The user's job is to bring an
 idea; the skill's job is to flesh it out using everything it can learn
-from the project — `CLAUDE.md`, `docs/glossary.md`, `docs/standards/`, the
-surface-map, and the existing specs in `docs/specs/`. The user only
+from the project — `CLAUDE.md`, `.materia/docs/glossary.md`, `.materia/docs/standards/`, the
+surface-map, and the existing specs in `.materia/docs/specs/`. The user only
 answers what genuinely can't be inferred. A typical run is **one drafting
 turn followed by one confirmation turn** — not a multi-round
 interrogation.
 
 **Lifecycle:** interactive checkpoint · branch-at-approve — per the shared
-producer contract at `docs/standards/skills.md` § Producer lifecycle (reply
+producer contract at `.materia/docs/standards/skills.md` § Producer lifecycle (reply
 verbs, cancel semantics, id minting, link integrity, one PR + tooling, no
 session survival). The Q&A is in-memory — an abandoned conversation leaves no
 trace; on `approve` the skill branches, writes, commits, pushes, and opens the
 PR.
 
 Read
-`docs/specs/_proposed/README.md`
+`.materia/docs/specs/_proposed/README.md`
 (the shared contract) and `${CLAUDE_PLUGIN_ROOT}/skills/intake-spec/SKILL.md` § Detect
 the input shape (the structured-body shape the proposal must hit so
 `intake-spec` adopts it verbatim) before changing this skill.
@@ -56,27 +56,27 @@ breadth over depth — most defaults come from a few canonical docs.
 
 - `CLAUDE.md` — the project guide. Stack, conventions, the always-loaded
   rules.
-- `docs/README.md` — the router. Names every standards + resource doc and
+- `.materia/docs/README.md` — the router. Names every standards + resource doc and
   what's covered where.
-- `docs/glossary.md` — so you use the project's vocabulary in the
+- `.materia/docs/glossary.md` — so you use the project's vocabulary in the
   proposal.
-- `docs/specs/_proposed/README.md` — the shared contract this proposal
+- `.materia/docs/specs/_proposed/README.md` — the shared contract this proposal
   must conform to.
 
 **Read selectively** based on the idea's surface area:
 
-- Touches UI / a screen / a component? → `docs/standards/ui-components.md`,
-  `docs/standards/visual-language.md`, `docs/surface-map.md`.
+- Touches UI / a screen / a component? → `.materia/docs/standards/ui-components.md`,
+  `.materia/docs/standards/visual-language.md`, `.materia/docs/surface-map.md`.
 - Touches an API / route / contract? →
-  `docs/standards/server-routes.md`,
-  `docs/standards/api-layer.md`,
-  `docs/standards/contracts-and-models.md`.
+  `.materia/docs/standards/server-routes.md`,
+  `.materia/docs/standards/api-layer.md`,
+  `.materia/docs/standards/contracts-and-models.md`.
 - Touches data / a model / a migration? →
-  `docs/standards/data-and-loads.md` + the relevant resource docs.
+  `.materia/docs/standards/data-and-loads.md` + the relevant resource docs.
 - Touches the workflow / commands / deploy? →
-  `docs/standards/workflow.md`.
+  `.materia/docs/standards/workflow.md`.
 
-**Read for exemplars:** glance at 1–2 existing specs in `docs/specs/`
+**Read for exemplars:** glance at 1–2 existing specs in `.materia/docs/specs/`
 (e.g. `2026-06-13-091215-230ee-csv-export/spec.md`,
 `2026-06-14-103007-3b4d3-csv-export/spec.md`) so the proposal matches the
 quality bar set by what already shipped.
@@ -90,11 +90,11 @@ forces a correction at intake (or worse, ships stale). Before drafting, ground
 the proposal in current reality: (a) **identifiers** — grep each
 model/type/route/path name you intend to use against the live schema + code so
 the proposal never names a symbol that has since been renamed; (b)
-**already-shipped scan** — skim recently-shipped specs under `docs/specs/` for
+**already-shipped scan** — skim recently-shipped specs under `.materia/docs/specs/` for
 the same feature, and if it already shipped, tell the user rather than drafting
 a duplicate; (c) **sibling references** — when the proposal references another
-spec, write the stable `docs/specs/<dated-slug>/` path (if consumed) rather than
-a transient `docs/specs/_proposed/<id>` path that disappears at intake.
+spec, write the stable `.materia/docs/specs/<dated-slug>/` path (if consumed) rather than
+a transient `.materia/docs/specs/_proposed/<id>` path that disappears at intake.
 
 ### 3. Draft the complete proposal in one shot
 
@@ -107,10 +107,10 @@ wherever the project context makes the answer obvious:
 | Tagline / one-liner | Inferred from the user's idea. |
 | `## Problem` | Often inferable from the idea alone; the user named the friction. Pad with context from CLAUDE.md / standards if relevant. |
 | `## Goals` | Inferable from the idea + the project's existing patterns. Default to one outcome per coherent feature. |
-| `## Non-goals` | Project-wide defaults: the `docs/product.md` § Audience & market "Not for" list, plus whatever the § Product principles exclude — unless the idea explicitly wants one. List the ones most likely to be scope creep for *this* idea. |
-| `## Users & context` | The app's universal usage context from `docs/product.md` § Audience & market (one-liner: `MATERIA.md` § Identity) |
+| `## Non-goals` | Project-wide defaults: the `.materia/docs/product.md` § Audience & market "Not for" list, plus whatever the § Product principles exclude — unless the idea explicitly wants one. List the ones most likely to be scope creep for *this* idea. |
+| `## Users & context` | The app's universal usage context from `.materia/docs/product.md` § Audience & market (one-liner: `MATERIA.md` § Identity) |
 | `## User stories & acceptance criteria` | Infer ≥2 user stories from the idea and the relevant standards. Write **testable** ACs (the standards docs make this easier — they spell out what observable behavior to expect from each layer). |
-| `## Constraints` | Always include: follows existing standards (linked) plus the standing constraints from `docs/product.md` § Design feel & taste and § Product principles that bear on this idea. |
+| `## Constraints` | Always include: follows existing standards (linked) plus the standing constraints from `.materia/docs/product.md` § Design feel & taste and § Product principles that bear on this idea. |
 | `## Open questions` | Use this section for the few things you genuinely can't infer. Aim for **≤3 bullets**; if you have more, you're probably under-using project context. |
 
 A complete draft is the goal here, not an outline. Don't write
@@ -134,7 +134,7 @@ dependency-graph machinery this one deliberately lacks.
 Glob the queue for substantive overlap:
 
 ```bash
-git ls-files 'docs/specs/_proposed/*.md'
+git ls-files '.materia/docs/specs/_proposed/*.md'
 ```
 
 For each pending proposal, read frontmatter + tagline. Compare to the
@@ -154,19 +154,19 @@ Show the operator everything in one turn:
 Drafted <N> proposal(s) from your idea + project context.
 
   1. <id-1> — <title-1>
-     Will be written to: docs/specs/_proposed/<filename-1>
+     Will be written to: .materia/docs/specs/_proposed/<filename-1>
 
      <full inline body block — frontmatter + spec sections>
 
   2. <id-2> — <title-2>
-     Will be written to: docs/specs/_proposed/<filename-2>
+     Will be written to: .materia/docs/specs/_proposed/<filename-2>
 
      <full inline body block>
 
 Defaults I applied (you can override any of these):
-  - Users & context: the project default from docs/product.md § Audience & market.
+  - Users & context: the project default from .materia/docs/product.md § Audience & market.
   - Constraints: the repo's standards plus the standing product constraints,
-    optimistic save per docs/standards/api-layer.md.
+    optimistic save per .materia/docs/standards/api-layer.md.
   - Split into <N> proposals because <one-line reason> (if >1).
   - <other notable assumptions in 1–3 more bullets>
 
@@ -238,7 +238,7 @@ abandoned Q&A above this step leaves no stray branch behind.
    (Dirty-pull and branch-name collisions per the lifecycle.)
 
 2. **Write each proposal file** with the `Write` tool to
-   `docs/specs/_proposed/<filename>`.
+   `.materia/docs/specs/_proposed/<filename>`.
 
    (Id-collision handling per the lifecycle.)
 
@@ -248,7 +248,7 @@ abandoned Q&A above this step leaves no stray branch behind.
    the command in `MATERIA.md § Gate`; fix any links the new files introduce), then commit:
 
    ```bash
-   git add docs/specs/_proposed/<filename-1>[ <filename-2> ...]
+   git add .materia/docs/specs/_proposed/<filename-1>[ <filename-2> ...]
    git commit -m "propose-spec: add proposal <id-1>[ + <id-2> ...]"
    ```
 
@@ -275,8 +275,8 @@ Print the closing report:
 
 ```
 Wrote <N> proposal(s):
-  - docs/specs/_proposed/<filename-1>  (id <id-1>)
-  - docs/specs/_proposed/<filename-2>  (id <id-2>)
+  - .materia/docs/specs/_proposed/<filename-1>  (id <id-1>)
+  - .materia/docs/specs/_proposed/<filename-2>  (id <id-2>)
 
 Branch: propose/<branch-slug>
 PR:     <URL from the open-PR op>
@@ -312,7 +312,7 @@ Emit `surfaces:` as your best inference from the drafted spec — `[ui]` if it
 adds/changes UI, `[data]` if it only touches data/persistence, `[ui, data]` if
 both, `[]` if it clearly touches none.
 It's a suggestion the operator confirms or edits in the existing review flow.
-Vocabulary and semantics live in `docs/specs/_proposed/README.md` § Field
+Vocabulary and semantics live in `.materia/docs/specs/_proposed/README.md` § Field
 roles → `surfaces`.
 
 `source_refs` is **always a YAML list**, even with a single human-readable
@@ -334,7 +334,7 @@ re-drafting it from the template.
 
 ## Problem
 
-<paragraph(s) using project vocabulary from docs/glossary.md>
+<paragraph(s) using project vocabulary from .materia/docs/glossary.md>
 
 ## Goals
 
@@ -346,7 +346,7 @@ re-drafting it from the template.
 
 ## Users & context
 
-<paragraph; project default: docs/product.md § Audience & market's usage context>
+<paragraph; project default: .materia/docs/product.md § Audience & market's usage context>
 
 ## User stories & acceptance criteria
 
@@ -357,8 +357,8 @@ re-drafting it from the template.
 
 ## Constraints
 
-- Follows existing standards (`docs/standards/`).
-- <standing product constraints from docs/product.md that bear on this idea>
+- Follows existing standards (`.materia/docs/standards/`).
+- <standing product constraints from .materia/docs/product.md that bear on this idea>
 
 ## Open questions
 
@@ -371,18 +371,18 @@ heading itself MUST be present so `intake-spec`'s detector matches.
 ### Link paths
 
 **Never write a live markdown link to another repo file in a proposal
-body.** Proposal files live under `docs/specs/_proposed/<file>.md`, but
+body.** Proposal files live under `.materia/docs/specs/_proposed/<file>.md`, but
 `intake-spec` adopts the body **verbatim** into
-`docs/specs/<dated-slug>/spec.md` at a different folder depth — a relative
+`.materia/docs/specs/<dated-slug>/spec.md` at a different folder depth — a relative
 link that resolves from one location is broken from the other, and
 `check-docs.sh` resolves every link against the containing file's own
 directory (repo-root-style paths do NOT resolve from either location).
 
 Reference repo files in backtick/arrow prose form instead —
-`visual-language → docs/standards/visual-language.md` — which `check:docs`
+`visual-language → .materia/docs/standards/visual-language.md` — which `check:docs`
 exempts and which reads correctly from any depth. This matches the standing
 spawn-contract authoring rule the pipeline already applies to
-`docs/specs/**` text.
+`.materia/docs/specs/**` text.
 
 ### Filename
 
@@ -397,7 +397,7 @@ filename.
 
 `<slug>` is derived from the title via the **normative kebab-slug
 algorithm** in
-`docs/specs/_proposed/README.md`
+`.materia/docs/specs/_proposed/README.md`
 § Kebab-slug derivation — the same algorithm `ship-spec` uses to re-derive
 the spec-folder slug. Do NOT invent a different algorithm.
 

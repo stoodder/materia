@@ -1,6 +1,6 @@
 ---
 name: bug-analysis
-description: Synthesise reproduction.md and the bug report into bug-analysis.md — the architecture.md analogue for the bug loop that plan-tasks decomposes. Consumes docs/bugs/<dated-slug>/reproduction.md plus the bug report body (frontmatter stripped), produces docs/bugs/<dated-slug>/bug-analysis.md. Stage 2 of the fix-bug pipeline; usable standalone given a reproduction.md + report.
+description: Synthesise reproduction.md and the bug report into bug-analysis.md — the architecture.md analogue for the bug loop that plan-tasks decomposes. Consumes .materia/docs/bugs/<dated-slug>/reproduction.md plus the bug report body (frontmatter stripped), produces .materia/docs/bugs/<dated-slug>/bug-analysis.md. Stage 2 of the fix-bug pipeline; usable standalone given a reproduction.md + report.
 ---
 
 # bug-analysis — synthesise reproduction into a structured fix plan
@@ -17,22 +17,22 @@ does **not** re-derive the reproduction (that is `reproduce-bug`'s role).
 
 ## Inputs
 
-- `docs/bugs/<dated-slug>/reproduction.md` — the failing test path(s), repro
+- `.materia/docs/bugs/<dated-slug>/reproduction.md` — the failing test path(s), repro
   steps, expected vs actual, and the RED evidence from stage 1.
 - Bug report body (frontmatter stripped) — the full original description,
-  affected surface, and severity from the report file in `docs/bugs/_reports/`.
-- `docs/bugs/<dated-slug>/STATUS.md` — the bug run's live state. **Standalone**,
+  affected surface, and severity from the report file in `.materia/docs/bugs/_reports/`.
+- `.materia/docs/bugs/<dated-slug>/STATUS.md` — the bug run's live state. **Standalone**,
   this skill ticks stage 2 here on completion; **in the `/materia:fix-bug`
   orchestrator lane it leaves `STATUS.md` to the orchestrator** (see § Rules).
 - (Read-only) The resource/standards docs for the affected files — for naming
   the fix approach and the standards the fix tasks must read. Resolved by
   reading the "Affected surface" in the report and cross-referencing
-  `docs/surface-map.md` and the `docs/resources/` + `docs/standards/` docs.
+  `.materia/docs/surface-map.md` and the `.materia/docs/resources/` + `.materia/docs/standards/` docs.
 
 ## Outputs
 
-- `docs/bugs/<dated-slug>/bug-analysis.md` filled per
-  `docs/bugs/_templates/bug-analysis.md` — root cause, affected files, fix
+- `.materia/docs/bugs/<dated-slug>/bug-analysis.md` filled per
+  `.materia/docs/bugs/_templates/bug-analysis.md` — root cause, affected files, fix
   approach (including the standards/resource docs the fix tasks must read),
   test impact, and out-of-scope boundary.
 
@@ -53,10 +53,10 @@ does **not** re-derive the reproduction (that is `reproduce-bug`'s role).
 
 1. **Load context.** Read `reproduction.md` in full. Read the bug report body.
    Note the "Affected surface / route / module" section in the report.
-   Cross-reference `docs/surface-map.md` to find the matching resource and
+   Cross-reference `.materia/docs/surface-map.md` to find the matching resource and
    standards docs, then read the relevant ones (for naming the fix approach
    in repo terms — what existing patterns the fix should follow). Read
-   `docs/bugs/_templates/bug-analysis.md` for the output shape.
+   `.materia/docs/bugs/_templates/bug-analysis.md` for the output shape.
 
 2. **Identify the root cause.** From the RED evidence in `reproduction.md`
    (the failing test + verbatim output) and the report's description, reason

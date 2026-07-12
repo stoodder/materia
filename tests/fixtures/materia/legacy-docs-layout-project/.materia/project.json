@@ -1,0 +1,9 @@
+{
+  "artifactSchema": 3,
+  "pluginVersion": null,
+  "source": "hand",
+  "appliedMigrations": [
+    "init-project-state",
+    "install-check-docs"
+  ]
+}

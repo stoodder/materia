@@ -1,6 +1,6 @@
 ---
 name: plan-tasks
-description: Decompose an architecture document into a dependency-ordered list of small, independently shippable tasks with testable acceptance criteria at docs/specs/<dated-slug>/tasks.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export). Stage 5 of the ship-spec pipeline.
+description: Decompose an architecture document into a dependency-ordered list of small, independently shippable tasks with testable acceptance criteria at .materia/docs/specs/<dated-slug>/tasks.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export). Stage 5 of the ship-spec pipeline.
 ---
 
 # plan-tasks — architecture → ordered tasks
@@ -11,7 +11,7 @@ usable standalone.
 
 ## Inputs
 
-- `docs/specs/<dated-slug>/architecture.md`; `docs/standards/workflow.md` (the
+- `.materia/docs/specs/<dated-slug>/architecture.md`; `.materia/docs/standards/workflow.md` (the
   end-to-end route recipe sets the natural task order).
 
 ## Harness noise
@@ -21,7 +21,7 @@ acting on them wastes context.
 
 ## Outputs
 
-- `docs/specs/<dated-slug>/tasks.md` (statuses initialized to `[ ]`) — `STATUS.md`
+- `.materia/docs/specs/<dated-slug>/tasks.md` (statuses initialized to `[ ]`) — `STATUS.md`
   updated, committed and pushed.
 
 ## Environment
@@ -35,13 +35,13 @@ standalone runs apply it on first use.
 
 ## Procedure
 
-1. **Read** `docs/specs/<dated-slug>/architecture.md` and
-   `docs/specs/_templates/tasks.md`. Skim `docs/standards/workflow.md` (the
+1. **Read** `.materia/docs/specs/<dated-slug>/architecture.md` and
+   `.materia/docs/specs/_templates/tasks.md`. Skim `.materia/docs/standards/workflow.md` (the
    end-to-end route recipe sets the natural task order).
 
 2. **Decompose** into small tasks. Order by dependency, generally following the
    repo's layer direction (lowest layer first — the dependency layering
-   `docs/standards/architecture.md` defines, e.g. types → wire contracts →
+   `.materia/docs/standards/architecture.md` defines, e.g. types → wire contracts →
    server → client state → presentation), plus schema/migration first when
    present. Each task should be a coherent vertical or layer slice that can be
    reviewed and committed on its own.
@@ -74,13 +74,13 @@ standalone runs apply it on first use.
    `MATERIA.md` § Tiers § Skill routing **Default** row (`opus/high`).
 
    The **docs-scope floor** is the minimum set of docs the task must update at
-   commit time, derived from `docs/contributing.md`'s touch-X→update-Y rows
+   commit time, derived from `.materia/docs/contributing.md`'s touch-X→update-Y rows
    applied to the task's anticipated file set. It includes:
 
    - The **directly-coupled resource and standards docs** the task's files
      touch (the obvious application of touch-X→update-Y).
-   - **Any cross-cutting doc** (`CLAUDE.md`, `docs/README.md` index,
-     `docs/surface-map.md`, `docs/glossary.md`) that `architecture.md`
+   - **Any cross-cutting doc** (`CLAUDE.md`, `.materia/docs/README.md` index,
+     `.materia/docs/surface-map.md`, `.materia/docs/glossary.md`) that `architecture.md`
      § Affected existing resources flagged as touched by this task's code
      surface. The legacy default of "defer all cross-cutting docs to
      `docs-sync`" is overridden when architecture has already named the
@@ -91,9 +91,9 @@ standalone runs apply it on first use.
      untouched files.** If a task edits a file that a standards/cross-cutting
      doc describes, that doc is in-floor — don't push it to `docs-sync`. Two
      concrete heuristics that recur: a task that **touches `types/**`** carries
-     a `docs/standards/types-enums.md` floor; and a **cross-pipeline change**
+     a `.materia/docs/standards/types-enums.md` floor; and a **cross-pipeline change**
      (editing one pipeline's skills/docs that a sibling pipeline references)
-     must enumerate the **sibling-pipeline docs** (e.g. `docs/bugs/**`) as
+     must enumerate the **sibling-pipeline docs** (e.g. `.materia/docs/bugs/**`) as
      registration surfaces, not just the SKILL.md files.
    - **Enumerate every depiction of a changed structure, not just the
      canonical one.** When a structure (a pipeline graph, a stage/flow table)
@@ -113,8 +113,8 @@ standalone runs apply it on first use.
    **Cross-reference: `implement-task`'s hard doc-exclusion list.** When
    composing a floor, read it against `implement-task/SKILL.md` § Persist
    (step 6), which hard-excludes the cross-cutting docs (`CLAUDE.md`,
-   `docs/README.md` index tables, `docs/surface-map.md`,
-   `docs/glossary.md`) from per-task edits and defers them to
+   `.materia/docs/README.md` index tables, `.materia/docs/surface-map.md`,
+   `.materia/docs/glossary.md`) from per-task edits and defers them to
    `finalize` → `docs-sync`. A floor entry for a cross-cutting doc is only
    actionable per-task under the architecture-flagged override above —
    resolve that reconciliation here, at planning time, instead of making
@@ -153,7 +153,7 @@ standalone runs apply it on first use.
      land, so a mid-pipeline task can't satisfy them literally. Phrase them
      as the task's own contribution ("contributes 0 broken links"; "> 0"
      rather than an exact hit count), and exclude generated migration
-     directories, `docs/**`, and absence-asserting tests from any grep-zero AC. Route
+     directories, `.materia/docs/**`, and absence-asserting tests from any grep-zero AC. Route
      pure grep/case checks to the review pass or to spy assertions — a
      runtime `it()` doing a naive substring test self-matches the assertion
      literal or the file's own comments naming the forbidden API.
@@ -180,10 +180,10 @@ standalone runs apply it on first use.
 4. **Mark parallelism** — tasks with no interdependency can run concurrently
    (the orchestrator may fan them out to subagents).
 
-5. **Write** `docs/specs/<dated-slug>/tasks.md` with statuses initialized to `[ ]`.
+5. **Write** `.materia/docs/specs/<dated-slug>/tasks.md` with statuses initialized to `[ ]`.
 
    **Cross-references use arrow/prose form, never bracket-paren/wikilink syntax.**
-   Any doc reference inside `tasks.md` (e.g. to `docs/specs/README.md`) must be
+   Any doc reference inside `tasks.md` (e.g. to `.materia/docs/specs/README.md`) must be
    written as `text → path`, not `[text](path)` or `[[wikilink]]` — `check:docs`
    extracts links from inline code spans too, so a bracket-paren cross-reference
    pointing at a non-link path fails the gate. Authors default to wikilink
@@ -253,7 +253,7 @@ apply. Defaults:
   edits of one markdown file (e.g. `plugins/materia/skills/<name>/SKILL.md`); serial
   order is the natural default.
 - **Docs-scope floor is usually `[]`.** Cross-cutting docs (`CLAUDE.md`,
-  `docs/README.md`, `surface-map.md`, `glossary.md`) are still deferred to
+  `.materia/docs/README.md`, `surface-map.md`, `glossary.md`) are still deferred to
   `finalize` → `docs-sync` exactly as in product runs.
 - **`Tests:` field can be `none — verification is read-against-spec`.**
   Markdown tasks have no test files; the spec-adherence reviewer is
@@ -274,11 +274,11 @@ The e2e-authoring task must:
 
 1. **Scope.** Target file in the repo's e2e suite directory, named for the
    feature slug (the directory and naming convention:
-   `docs/standards/testing.md` § End-to-end).
+   `.materia/docs/standards/testing.md` § End-to-end).
 
 2. **Register the new spec with the e2e runner in the same task.** If the
    repo's e2e runner enumerates specs explicitly (a `testMatch`-style list
-   rather than a glob — `docs/standards/testing.md` § End-to-end says which),
+   rather than a glob — `.materia/docs/standards/testing.md` § End-to-end says which),
    the task must add the new spec's entry to that list. This edit is
    **required scope**, not a separate task.
 
@@ -290,7 +290,7 @@ The e2e-authoring task must:
    forgotten.
 
 4. **Follow testing conventions.** The derived task's acceptance criteria and
-   specification must reference `docs/standards/testing.md` § End-to-end —
+   specification must reference `.materia/docs/standards/testing.md` § End-to-end —
    seed-value assertions against known fixture values, and the canonical
    viewport/surface from `MATERIA.md` § Eyes.
 

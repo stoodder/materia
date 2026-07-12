@@ -45,6 +45,7 @@ export const KNOWN_CHECK_IDS = [
   'materia-enabled',
   'check-docs-sh-present',
   'check-docs-sh-location',
+  'docs-location',
   'project-state-present',
   'project-state-parses',
   'artifact-schema-known',
@@ -54,7 +55,7 @@ export const KNOWN_CHECK_IDS = [
 // MIG, so the implemented migration set can never drift from KNOWN_MIGRATION_IDS; and the
 // validator resolves a ledger change's `migrations` against this list by importing it from
 // HERE (a pure module) rather than from migrate.mjs (whose top-level runs a CLI main()).
-export const MIG = { INIT_PROJECT_STATE: 'init-project-state', INSTALL_CHECK_DOCS: 'install-check-docs' }
+export const MIG = { INIT_PROJECT_STATE: 'init-project-state', INSTALL_CHECK_DOCS: 'install-check-docs', RELOCATE_DOCS: 'relocate-docs' }
 export const KNOWN_MIGRATION_IDS = Object.values(MIG)
 
 // ---- safe JSON read ---------------------------------------------------------
@@ -216,11 +217,14 @@ const surfaceWindowless = (report, versions, currentSchema, emittedChecks, state
 // points it at its own ../release sibling in the plugin cache; `targetRoot` is
 // the separate user-repo root. Reads only; writes nothing.
 //
-// Check ID <-> ledger correspondence: three checks are the canonical detectors the
+// Check ID <-> ledger correspondence: four checks are the canonical detectors the
 // ledger reserves in a change's `doctorChecks` — `project-state-present` for
 // `0.2.0-project-state-file`, `check-docs-sh-present` for `0.3.0-check-docs-sh-gate`,
-// and `check-docs-sh-location` for `0.3.0-scripts-relocation`. The adopted-drift filter
-// (isAdopted) keys on each firing `ok` to spare a repo that already carries the change.
+// `check-docs-sh-location` for `0.3.0-scripts-relocation`, and `docs-location` for
+// `0.4.0-docs-relocation` (the agent-docs tree move to `.materia/docs/`). The adopted-drift
+// filter (isAdopted) keys on each firing `ok` to spare a repo that already carries the change
+// — a docs-less repo (both trees absent) reads `docs-location` ok, so the breaking relocation
+// is filtered as adopted and never escalates its status.
 // `artifact-schema-current` REMAINS change-agnostic (it fires on schema-1 repos too and
 // is listed in NO ledger change's doctorChecks — that would be a ledger-data change; the
 // schema-behind branch reuses it to carry the doctor↔migrate adopted-but-unstamped bridge
@@ -339,6 +343,53 @@ export const inspect = (targetRoot, releaseDir) => {
   } else {
     add('check-docs-sh-location', 'check:docs gate script at canonical location', 'info',
       'absent — see check-docs-sh-present.')
+  }
+
+  // 3c. docs-location — the 0.4.0 agent-docs relocation detector. Change-agnostic like the
+  //     gate-script pair above and emitted on the SAME shared path (before any branch
+  //     return) so it is already in the checks array when the adopted-drift filter runs at
+  //     either bucketing site below — isAdopted keys on it firing `ok` to spare a repo that
+  //     has nothing to relocate. Keys on the tree DIRECTORY + the router file ONLY, never a
+  //     nested run-folder path: §7b's guard is a bare substring test for the specs run-folder
+  //     prefix, and its relocated form CONTAINS that same substring, so this migrate-shared
+  //     module must name NEITHER form — directory + router presence is the whole signal.
+  //     Precedence and docs-less adoptability:
+  //       - .materia/docs/ present -> ok (already relocated; any root docs/ is the repo's
+  //         OWN from here on — the relocation exists precisely to stop confusing the two).
+  //       - both absent -> ok (nothing to relocate; keeps a docs-less install adoptable and
+  //         never nagged — the legacy fixtures live here).
+  //       - router-less root docs/ (no docs/README.md) ∧ no .materia/docs/ -> ok (not a
+  //         materia-shaped tree; treated as the user's own docs/).
+  //       - legacy router docs/README.md present ∧ no .materia/docs/ -> DRIFT. Severity is the
+  //         ledger impact of 0.4.0-docs-relocation (breaking -> blocked), the same way the
+  //         gate checks carry their change's severity; drift drives `overall` so a
+  //         schema-current repo that never relocated is still caught (schema currency
+  //         certifies only .materia/project.json, not tree layout).
+  const hasMateriaDocs = isDir(join(targetRoot, '.materia', 'docs'))
+  const hasLegacyRouter = existsSync(join(targetRoot, 'docs', 'README.md'))
+  if (hasMateriaDocs) {
+    add('docs-location', 'Agent docs at canonical location', 'ok',
+      'the agent-facing docs tree is at the canonical .materia/docs/ (any root docs/ is the repo\'s own from here on).')
+  } else if (!hasLegacyRouter) {
+    add('docs-location', 'Agent docs at canonical location', 'ok',
+      'no materia-shaped docs tree to relocate — nothing at .materia/docs/ and no legacy docs/README.md router (any root docs/ is the repo\'s own).')
+  } else {
+    overall = worst(overall, 'blocked')
+    // Same move-by-hand-vs-migrate wording split as check-docs-sh-location: point at migrate
+    // ONLY where relocate-docs is actually applicable — a MISSING (untracked-legacy) state,
+    // or a recorded schema in [2, latest) migrate will relocate/stamp. A present hand-authored
+    // schema<2 / unknown / at-or-past-latest state migrate refuses (project-state floor, or an
+    // empty window), so it gets move-by-hand wording and never a command migrate would
+    // decline. The `2` mirrors migrate's INIT_STATE_SCHEMA stamp floor. recordedSchema /
+    // statePeekPresent are the read-only peek from the gate-location wording above; the
+    // authoritative parse still happens once, gated, at step 5.
+    const migrateApplicable = !statePeekPresent ||
+      (recordedSchema !== null && recordedSchema >= 2 && recordedSchema < ledger.latestSchema)
+    const fix = migrateApplicable
+      ? 'run /materia:migrate --plan to relocate it to .materia/docs/.'
+      : 'move the docs tree to .materia/docs/ by hand (this repo\'s recorded state is not one migrate will modify — see /materia:migrate --plan\'s manual items).'
+    add('docs-location', 'Agent docs at canonical location', 'blocked',
+      `a legacy docs/README.md router is present but .materia/docs/ is absent — the agent-facing docs tree predates the .materia/docs/ relocation; ${fix}`)
   }
 
   // 4. project-state-present — .materia/project.json.

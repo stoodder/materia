@@ -1,6 +1,6 @@
 ---
 name: reconcile-epic
-description: Sync an epic in docs/epics/ with shipped reality — reads the as-built spec folders of shipped members, updates the epic (member statuses, decisions, dependency graph, change log), and cascades any invalidated content into the epic's remaining pending member proposals in docs/specs/_proposed/. Dual-mode. Pipeline mode — ship-spec spawns it automatically between docs-audit and finalize whenever the proposal being shipped carries an epic key (the epic gate), so the sync + cascades ride the member's own PR. Standalone mode — run it anytime as a backstop or for an epic status board; idempotent, exits clean when nothing changed, one PR per run when there is anything to write. Reports which members are unblocked and ready to ship next.
+description: Sync an epic in .materia/docs/epics/ with shipped reality — reads the as-built spec folders of shipped members, updates the epic (member statuses, decisions, dependency graph, change log), and cascades any invalidated content into the epic's remaining pending member proposals in .materia/docs/specs/_proposed/. Dual-mode. Pipeline mode — ship-spec spawns it automatically between docs-audit and finalize whenever the proposal being shipped carries an epic key (the epic gate), so the sync + cascades ride the member's own PR. Standalone mode — run it anytime as a backstop or for an epic status board; idempotent, exits clean when nothing changed, one PR per run when there is anything to write. Reports which members are unblocked and ready to ship next.
 ---
 
 # reconcile-epic — cascade shipped reality back through an epic
@@ -27,22 +27,22 @@ The skill is **dual-mode**:
   (manual changes, `fix-bug` runs touching epic ground, a run whose epic
   gate failed and degraded), for retiring members/epics, or just to see
   what's unblocked. **Lifecycle:** interactive checkpoint · branch-at-approve
-  — per the shared producer contract at `docs/standards/skills.md`
+  — per the shared producer contract at `.materia/docs/standards/skills.md`
   § Producer lifecycle. All analysis is in-memory; nothing touches the repo
   until `approve`. Idempotent: a run that finds no drift and no status
   change is a zero-work exit, so running it "too often" is safe.
 
-Read `docs/epics/README.md` (the epic
+Read `.materia/docs/epics/README.md` (the epic
 contract — especially § Who writes what, which sanctions this skill's edits
 to queued proposals) and
-`docs/specs/_proposed/README.md`
+`.materia/docs/specs/_proposed/README.md`
 before changing this skill.
 
 ## Inputs / Outputs
 
 | | |
 |---|---|
-| **Inputs** | An epic `id` (or no args → menu of `active` epics); the epic's `epic.md`; its pending member proposals in `docs/specs/_proposed/`; the spec folders of shipped/in-flight members (resolved via `STATUS.md` `Proposed-id:`), including their `spec.md` and `retro.md`. |
+| **Inputs** | An epic `id` (or no args → menu of `active` epics); the epic's `epic.md`; its pending member proposals in `.materia/docs/specs/_proposed/`; the spec folders of shipped/in-flight members (resolved via `STATUS.md` `Proposed-id:`), including their `spec.md` and `retro.md`. |
 | **Outputs** | One PR (when there is work): updated `epic.md` (statuses, `Shipped as` paths, decision revisions, change-log entry, possibly `status:` flip) + cascade edits to pending member proposals. Always: a printed member-status board with the ready-to-ship-next list. |
 
 ## Procedure
@@ -51,7 +51,7 @@ before changing this skill.
 
 | Input shape | Behavior |
 |---|---|
-| `/materia:reconcile-epic <id>` matching a `docs/epics/*/epic.md` frontmatter id | Advance with that epic. |
+| `/materia:reconcile-epic <id>` matching a `.materia/docs/epics/*/epic.md` frontmatter id | Advance with that epic. |
 | `/materia:reconcile-epic` (no args) | List `status: active` epics (id · title · members shipped/total) and ask the operator to pick; no active epics → print that and end the turn. |
 | `<id>` matches nothing | Print the id and the available epic ids; end the turn. |
 
@@ -62,9 +62,9 @@ Resolve by frontmatter `id`, never by folder name.
 For each row in the epic's `## Member specs` table, determine the observed
 state:
 
-- **pending** — a top-level `docs/specs/_proposed/*.md` file carries that
+- **pending** — a top-level `.materia/docs/specs/_proposed/*.md` file carries that
   proposal `id` in frontmatter.
-- **in-flight / shipped** — some `docs/specs/*/STATUS.md` carries
+- **in-flight / shipped** — some `.materia/docs/specs/*/STATUS.md` carries
   `Proposed-id: <id>`; read that folder's `STATUS.md` to tell in-flight
   (stages incomplete, no merged PR) from shipped.
 - **gone** — neither; the proposal was deleted (rejected) or the folder was
@@ -144,15 +144,15 @@ Print the closing report (board, PR URL, ready-next list) and end the turn.
 ## Pipeline mode (spawned by ship-spec)
 
 The § Epic gate spawns this skill with the input line
-`pipeline-mode: docs/specs/<dated-slug>/ · epic: <epic-id>`. The procedure
+`pipeline-mode: .materia/docs/specs/<dated-slug>/ · epic: <epic-id>`. The procedure
 above applies with these deltas:
 
 - **Step 1 is skipped** — the epic id is given; resolve it directly (an id
-  that matches no `docs/epics/*/epic.md` is returned as a failure, never
+  that matches no `.materia/docs/epics/*/epic.md` is returned as a failure, never
   guessed around).
 - **The current run's member counts as shipped.** The spec folder named by
   `pipeline-mode:` is the member being shipped right now: mark its table row
-  `shipped` with `Shipped as: docs/specs/<dated-slug>/`, even though its
+  `shipped` with `Shipped as: .materia/docs/specs/<dated-slug>/`, even though its
   proposal file still sits in the queue (finalize dequeues it later in the
   same PR) and the PR is not yet merged (the edit only lands if it merges —
   see the gate's consistency note). Its as-built truth is the folder's
@@ -175,7 +175,7 @@ above applies with these deltas:
 
 - Does NOT ship, build, or fix anything — it edits planning artifacts only.
 - Does NOT touch shipped spec folders, `STATUS.md` files, or anything under
-  `docs/specs/<dated-slug>/` — as-built artifacts are read-only history.
+  `.materia/docs/specs/<dated-slug>/` — as-built artifacts are read-only history.
 - Does NOT touch proposals whose `epic:` key names a different epic or is
   absent — other producers' files stay untouched, per the epic contract's
   § Who writes what.
