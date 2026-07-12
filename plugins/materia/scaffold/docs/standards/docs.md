@@ -38,7 +38,7 @@
 | An entity's schema, wire shapes, routes, client API, UI, invariants, gotchas, canonical files | `resources/<entity>.md` |
 | A cross-cutting convention (how we build anything) | the matching `standards/*.md` |
 | The surface inventory (routes/pages, commands, or public API) | [surface-map.md](../surface-map.md) — an index: one row per surface, detail stays in the resource doc |
-| Product identity (name, audience, feel & taste, voice, principles) | [product.md](../product.md) — the depth behind `MATERIA.md` § Identity's one-liner |
+| Product identity (name, goals, audience, feel & taste, voice, principles) | [product.md](../product.md) — the depth behind `MATERIA.md` § Identity's one-liner |
 | A term definition | [glossary.md](../glossary.md) — one line + Detail link |
 | Definition of Done, touch-X→update-Y map | [contributing.md](../contributing.md) |
 | The always-loaded rules-in-brief | `CLAUDE.md` — one-line summaries that link to the standards |
