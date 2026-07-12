@@ -300,6 +300,8 @@ plugins/materia/
                                       library + project.json) that /materia:init materializes into your repo
   release/                           the plugin's own release/migration ledger (semver +
                                       artifact-schema contract; not materialized into repos)
+  scripts/                           doctor.mjs + migrate.mjs + their shared detector lib
+                                      (ship in the plugin; read the ledger above)
 scripts/validate-plugin.mjs          validates the marketplace + plugin manifests and the scaffold
 ```
 

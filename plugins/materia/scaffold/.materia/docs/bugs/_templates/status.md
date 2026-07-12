@@ -91,6 +91,15 @@
      (post-implementation): no STATUS.md checkbox row changes and no new
      retro touchpoints — only these § Notes lines. -->
 
+<!-- ui-coverage-waiver convention — when a UI-affecting fix intentionally
+     ships without tests/e2e/ coverage, the operator records this line here:
+       ui-coverage-waiver: <reason>
+     The finalize skill reads this line (its e2e-coverage gate runs unchanged
+     on bug runs); if it is present, finalize renders "No e2e coverage added —
+     rationale: <reason>" in the PR body and the e2e-coverage gate passes. If
+     a UI-affecting fix has no tests/e2e/ coverage and no ui-coverage-waiver
+     line, finalize writes a Blocker and stops. -->
+
 ## Forward-compatible defaults
 
 <!-- For bug runs created before these fields existed:

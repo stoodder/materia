@@ -20,7 +20,7 @@ implement-task has committed the feature.
 - `.materia/docs/specs/<dated-slug>/ui-test-plan.md` — the enumerated flows and per-state
   assertions to drive during the review.
 - `.materia/docs/specs/<dated-slug>/design.md` § Cohesion anchors — the existing sibling
-  screens each new/changed screen must visually match (see § Procedure step 5;
+  screens each new/changed screen must visually match (see § Procedure step 4;
   absent on runs whose design predates the section — skip the comparison and
   note it).
 - A provisioned Eyes environment (`MATERIA.md` § Eyes — provisioning recipe run
@@ -36,8 +36,8 @@ implement-task has committed the feature.
   `ui-review: skipped (eyes-instability — degrade path)` on the degrade
   path.
 - **`.materia/docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png`** — one PNG per
-  captured flow/state, committed to the feature branch (see § Procedure step 4
-  and the discrete commit step that follows step 5). **Screenshots are a
+  captured flow/state, committed to the feature branch (see § Procedure step 3
+  and the discrete commit step that follows step 4). **Screenshots are a
   mandatory deliverable of this angle, not a by-product of the e2e run** — the
   PR's `## UI proof` block is built from them, and runs have shipped without
   visual proof when this was treated as best-effort. Any outcome that leaves
@@ -79,18 +79,18 @@ acting on them wastes context.
    § Instability degrade path) and stop. Any other non-zero exit code is a
    genuine test failure — surface it as a HIGH finding with
    `category: "ui"` and `recommendation: "revert"` naming the failing spec(s),
-   then **continue to step 4 anyway**: screenshot capture does not depend on
+   then **continue to step 3 anyway**: screenshot capture does not depend on
    the suite passing, and a red suite plus screenshots is strictly more
    information for the remediation loop than a red suite alone. (When
    `MATERIA.md` § Gate has no `test:e2e` row, skip this step and proceed to
    capture — the judgement pass still runs.)
 
-4. **Capture screenshots and structural snapshots** per the flows enumerated in
+3. **Capture screenshots and structural snapshots** per the flows enumerated in
    `ui-test-plan.md`. For each flow section in `ui-test-plan.md`:
    - Navigate to the flow's entry point.
    - At each loading/empty/error/ready state the plan names, capture a
      screenshot (or structural snapshot for text-heavy assertions) so the judgment in
-     step 5 is grounded in observed output, not inference.
+     step 4 is grounded in observed output, not inference.
    - **Persist each captured screenshot to disk** at
      `.materia/docs/specs/<dated-slug>/ui-proof/<flow>-<state>.png`:
      - `<flow>` = kebab-slug of the `## Flow <N>` heading text in
@@ -109,7 +109,7 @@ acting on them wastes context.
      persisted as `ui-proof/anchor-<screen-slug>.png` (same kebab-slug
      derivation). Anchor shots do **not** count against the ≤4-per-flow cap.
      When `design.md` has no `## Cohesion anchors` section (a run whose design
-     predates it), skip anchor capture and the step-5 comparison, and note
+     predates it), skip anchor capture and the step-4 comparison, and note
      `cohesion anchors absent (pre-cohesion design)` in the findings summary.
    - **Non-instability capture failure** (navigation timeout, write error
      mid-loop): write whatever was captured so far, commit the partial set in
@@ -119,7 +119,7 @@ acting on them wastes context.
      additionally write `ui-proof: capture failed — <reason>` to `STATUS.md`
      § Notes — an empty `ui-proof/` must always carry a recorded reason.
 
-5. **Judge rendered output against the repo's visual standards docs** (the
+4. **Judge rendered output against the repo's visual standards docs** (the
    visual-language / UI-components standards under `.materia/docs/standards/`). The
    rubric covers:
    - **Token discipline** — surfaces use the design-system tokens the visual
@@ -147,7 +147,7 @@ acting on them wastes context.
    `ship-spec/SKILL.md` § Structured finding schema with `category: "ui"`.
    Reference that schema by location — do NOT copy the schema inline here.
 
-6. **Commit `ui-proof/` to the branch** — after the capture loop and
+5. **Commit `ui-proof/` to the branch** — after the capture loop and
    judgement, and before returning findings to the orchestrator:
 
    ```bash
@@ -164,8 +164,8 @@ acting on them wastes context.
    run proceeds and `finalize` renders the degraded note). This commit does
    **not** open a PR; `finalize` opens the single PR later.
 
-7. **Return findings** to the orchestrator as the structured finding list
-   described in step 5. The orchestrator feeds these into the existing ≤3-round
+6. **Return findings** to the orchestrator as the structured finding list
+   described in step 4. The orchestrator feeds these into the existing ≤3-round
    remediation loop and severity rubric defined in `ship-spec/SKILL.md` § Review.
 
 ## Instability degrade path
@@ -177,7 +177,7 @@ product bug):
 1. Write the following line to `STATUS.md` under `## Notes`:
    `ui-review: skipped (eyes-instability — degrade path)`
 2. **No screenshots are written.** `ui-proof/` is absent or empty — this is the
-   degrade signal that `finalize` reads (see § Outputs). The commit step (step 6)
+   degrade signal that `finalize` reads (see § Outputs). The commit step (step 5)
    is a no-op because zero files are staged.
 3. Return an **empty findings list** to the orchestrator.
 4. Do **not** block the remediation loop or the proceed-to-finalize decision.
