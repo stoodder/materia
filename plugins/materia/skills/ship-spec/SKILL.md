@@ -1,6 +1,6 @@
 ---
 name: ship-spec
-description: "Run the full spec-to-PR pipeline for a new product spec or feature request — intake → design (adversarially stage-reviewed before the human gate) → architecture (stage-reviewed) → task breakdown → autonomous implementation → post-implementation multi-angle review → lint/typecheck/test gate → docs → pull request. Supports `--auto` (autopilot): operator checkpoints accept grounded defaults, and after the PR opens the orchestrator watches CI, fixes failures, resolves merge conflicts, and merges once green. Captures a per-run retrospective (`retro.md`) at each touchpoint so a downstream skill can aggregate them into pipeline improvements. Resumable across sessions. Interactive design-bearing runs pause at the human design gate (`--approve-design` or `--auto` skips it). Use when the user hands over a product spec or feature to build end-to-end."
+description: "Run the full spec-to-PR pipeline for a new product spec or feature request — intake → design (adversarially stage-reviewed before the human gate) → architecture (stage-reviewed) → task breakdown → autonomous implementation → post-implementation multi-angle review → lint/typecheck/test gate → docs → pull request. After the PR opens the orchestrator watches CI, fixes failures, and resolves merge conflicts on every run, surfacing the PR at green for review; `--auto` (autopilot) additionally accepts grounded defaults at the operator checkpoints and merges once green. Captures a per-run retrospective (`retro.md`) at each touchpoint so a downstream skill can aggregate them into pipeline improvements. Resumable across sessions. Interactive design-bearing runs pause at the human design gate (`--approve-design` or `--auto` skips it). Use when the user hands over a product spec or feature to build end-to-end."
 ---
 
 # ship-spec — the spec-to-ship orchestrator
@@ -214,7 +214,8 @@ the operator saying up front "don't wait for me."
   - **Every other operator-optional pause** (non-blocking design calls,
     default confirmations) resolves to the documented default, recorded in
     `STATUS.md` § Notes and the retro entry that made the call.
-  - **After finalize** — § Merge watch runs, through to the merge.
+  - **After finalize** — the § PR watch runs (as on every run); autopilot's
+    terminal is **merge** rather than surface-at-green.
   - **PR transparency** — instruct finalize (spawn prompt) to append one line
     to the PR body (above the closing Materia sigil, which stays last):
     `> Autopilot run (--auto): operator checkpoints
@@ -224,7 +225,7 @@ the operator saying up front "don't wait for me."
   docs ≤2, gate ≤3,
   design-gate ≤3, architecture-bounce ≤2, CI-fix ≤3), skips a gate (e2e-coverage, screenshot-presence,
   epic, UI-surface, data-surface), force-pushes, or **merges under bootstrap
-  grace** (§ Merge watch step 6 — graced CI is not green CI). Autopilot also
+  grace** (§ PR watch — graced CI is not green CI). Autopilot also
   **never un-abandons a parked design** — resuming an `abandoned` gate is an
   operator decision even under `--auto`; record the refusal and stop cleanly.
   Autopilot removes **waits**, not safety.
@@ -496,9 +497,11 @@ non-epic run it is skipped and the decision recorded in `STATUS.md`.
 10. **finalize** (`finalize`) → behavior re-check, gate, dequeue, PR;
     `check:docs` guaranteed satisfied by the preceding doc loop.
 
-After finalize, an **autopilot run only** continues into § Merge watch
-(autopilot) — a no-checkbox orchestrator-lane phase, like `review` and the
-epic gate; a non-autopilot run ends at the open PR as always.
+After finalize, **every run** continues into § PR watch — a no-checkbox
+orchestrator-lane phase, like `review` and the epic gate. The terminal differs
+by posture: an interactive run **surfaces the green PR** for the human to review
+and merge (it no longer ends at the just-opened PR), while an autopilot run
+**merges** once green.
 
 After each stage/task: update `STATUS.md` (tick the stage, set `Next`), then
 commit + push.
@@ -1871,29 +1874,59 @@ choice in the review-loop commit message
 § Skill routing — resolve it through § Tier routing (availability per
 `MATERIA.md` § Tiers § Model set).
 
-## Merge watch (autopilot runs only)
+## PR watch
 
-On a non-autopilot run the pipeline ends where it always has: finalize opens
-the PR and the human reviews and merges. On an autopilot run (§ Autopilot)
-the orchestrator continues in its own lane after finalize returns (but if
-`MATERIA.md` § Version control § Forge is `none`, autopilot cannot merge —
-see step 7 first, before any watching):
+Every run continues into this phase after finalize returns: finalize opens the
+PR, and the orchestrator then watches it in its own lane. The watch work itself —
+polling CI, fixing failures on the branch, resolving merge conflicts (steps 2–4)
+— is **shared**; only the **terminal** differs by posture. An interactive run
+**surfaces at green** — it hands the finished, green PR back for the human to
+review and merge, and does **not** merge. An autopilot run (§ Autopilot)
+**merges** on green — the end-to-end autonomy the operator granted with `--auto`.
+(If `MATERIA.md` § Version control § Forge is `none` there is no PR to watch or
+merge in either posture — see step 7 first, before any watching.)
 
-1. **Flush the run record first.** Append the orchestrator self-review retro
-   entry, set `Next: merge (autopilot)` in `STATUS.md`, note
-   `auto-merge: watching PR #<n>` in § Notes, commit + push. The branch must
-   carry the complete run record **before** any merge — nothing can land in
-   the spec folder afterward without a new PR.
+1. **Flush the run record first — before any terminal.** Append the
+   orchestrator self-review retro entry, commit + push. The branch must carry
+   the complete run record **before** either terminal fires — nothing can land
+   in the spec folder afterward without a new PR. The STATUS vocabulary is
+   **mode-parameterized** — write the pair that matches this run's actual
+   terminal, never the other posture's:
+   - **autopilot → merge terminal:** set `Next: merge (autopilot)` in
+     `STATUS.md`, note `auto-merge: watching PR #<n>` in § Notes.
+   - **interactive → notify terminal:** set `Next: review + merge` in
+     `STATUS.md`, note `pr-watch: watching PR #<n>` in § Notes.
+
+   Never emit the autopilot vocabulary (`Next: merge (autopilot)` /
+   `auto-merge:`) on an interactive run, nor the interactive vocabulary
+   (`Next: review + merge` / `pr-watch:`) on an autopilot run — the STATUS
+   posture must read true to the terminal the run will actually take.
 2. **Watch the PR.** Poll `gh pr checks <n>` and
    `gh pr view <n> --json mergeable,mergeStateStatus` in the foreground with
    explicit exit-code capture — the PR-status op, `MATERIA.md` § Version
    control § Forge (which routes the tool to its GitHub-MCP twin in a
    `gh`-less environment). Between polls, wait on the CI's actual cadence
    rather than spinning.
+
+   **Notify terminal — stuck-pending bound.** Autopilot's watch is
+   **unbounded by design**: the operator granted end-to-end autonomy, so it
+   waits as long as CI legitimately takes. The interactive notify terminal
+   instead bounds the *stuck-pending interval*, so a default-on run is never
+   pinned forever on perpetually-pending CI (a queued-forever check, a
+   manual-approval gate, a required check that never posts). Bound the interval
+   **with no check-state progress** — roughly **20 minutes of wall-clock (or
+   the equivalent poll budget at the CI's cadence) during which no check
+   changes state** — **not** total watch time: a productive CI-fix push
+   legitimately cycles pending → red → pending, and each such state change
+   **resets** the stuck-pending interval, so real progress is never cut off.
+   On exhaustion of the ceiling: note `pr-watch: CI still pending after ~20 min
+   with no progress — PR open for review` in § Notes, set `Next: review +
+   merge`, and RETURN the PR-open handoff (surface the PR link + pending status
+   in the final turn) — do **not** keep spinning.
 3. **CI failure** → read the failing job's log, fix on the branch, commit +
-   push, re-watch. **≤3 fix rounds**; non-convergence →
-   `Blocker: auto-merge — CI would not converge after 3 fix rounds
-   (<failing check>)`, no merge, surface to the human.
+   push, re-watch. **≤3 fix rounds** (shared by both terminals); non-convergence
+   → `Blocker: pr-watch — CI would not converge after 3 fix rounds
+   (<failing check>)`, no terminal fires, surface to the human.
 4. **Merge conflict** (`mergeable: CONFLICTING`) → merge `<baseline>` into
    the branch — **never rebase, never force-push** — resolve (the
    `.materia/docs/specs/README.md` Index table is the recurring trivial conflict:
@@ -1901,40 +1934,84 @@ see step 7 first, before any watching):
    re-watch. A conflict in product code this run didn't author gets a
    conservative resolution; if the safe resolution isn't obvious, write a
    `Blocker` instead of guessing.
-5. **Merge.** When every check is green, the PR is mergeable, and no human
-   has left review comments on it, merge through the **merge-PR op**
-   (`MATERIA.md` § Version control § Forge), using the `<strategy>` from that
-   section's **Merge strategy** knob when it names a concrete value — no
-   merge-strategy row (or `per-skill default`) → this skill's default `merge`
-   (a merge commit — matches this repo's history):
 
-   ```bash
-   gh pr merge <n> --merge --delete-branch
-   ```
+Once the shared watch reaches a settled state — every check green and the PR
+mergeable — the run takes its posture's **terminal**:
 
-   Report the merge SHA to the operator in the final turn message.
-6. **Never merge** over a `Blocker`, a red or pending check, or unresolved
-   human PR comments — if the operator commented mid-run, stop and surface
-   the comments instead. **Never merge while `MATERIA.md` § Gate carries the
-   Bootstrap-grace marker** — green CI under grace can mean only `check:docs`
-   ran; write `Blocker: auto-merge — bootstrap grace active (gates not yet
-   real)` and surface to the human. Sole exception — verified
-   **mechanically, both conditions**: this run's `STATUS.md` `Proposed-id`
-   equals the proposal id named in the marker line itself, AND the PR diff
-   deletes the marker while making every § Gate row real. A PR that merely
-   deletes the marker line without being the named gate spec does not
-   qualify. Autopilot's merge authority is exactly the
-   operator's explicit `--auto` at invocation, nothing broader.
-7. **No forge, no merge (`none`).** Checked before watching: this section
-   exists only to poll checks and merge a PR through the forge, so when
-   `MATERIA.md` § Version control § Forge is `none` there is no PR to watch
-   or merge — yet `--auto` asked for one. Autopilot **cannot** merge here.
-   Refuse the autopilot merge and degrade to the non-autopilot path:
-   finalize has already opened/prepared the PR handoff (drafted title/body +
-   branch for the operator), and the run stops there. Record why —
-   `Blocker: auto-merge — no forge (§ Forge = none); nothing to watch or
-   merge, PR handoff prepared for the operator` — and surface to the human.
-   Never silently no-op the merge.
+5. **Terminal (posture fork).**
+   - **Notify (interactive — the default).** When every check is green, the PR
+     is mergeable, and no human has left review comments, **surface at green**:
+     note `pr-watch: green — PR #<n> ready for review + merge` in § Notes, set
+     `Next: review + merge`, surface the PR link + green status in the
+     final-turn operator message, and **do not merge** — the human reviews and
+     merges. This is *passive surfacing* in the final turn + STATUS, not an
+     out-of-band push: a skill is provider-agnostic prose and cannot assume a
+     harness ping tool. (An operator who wants an actual notification can wire a
+     Stop hook.)
+     - **Bootstrap-grace caveat.** If `MATERIA.md` § Gate carries the
+       Bootstrap-grace marker (step 6), still surface at green — notify never
+       merges, so grace does not gate it — **but** state the caveat prominently
+       in **both** the `pr-watch:` line and the final-turn message: "green under
+       bootstrap grace = only `check:docs` ran; gates not yet real." Don't let
+       the operator be lulled into merging on a non-real green.
+     - **Human-engaged exit.** If the human comments on **or** merges the PR
+       mid-watch, stop watching and surface — never keep auto-fixing under a
+       human who has engaged the PR.
+   - **Merge (`--auto` only).** When every check is green, the PR is mergeable,
+     and no human has left review comments on it, merge through the **merge-PR
+     op** (`MATERIA.md` § Version control § Forge), using the `<strategy>` from
+     that section's **Merge strategy** knob when it names a concrete value — no
+     merge-strategy row (or `per-skill default`) → this skill's default `merge`
+     (a merge commit — matches this repo's history):
+
+     ```bash
+     gh pr merge <n> --merge --delete-branch
+     ```
+
+     Report the merge SHA to the operator in the final turn message. This
+     terminal is autopilot-only.
+6. **Merge-terminal guards (mode-parameterized).** These guards gate the
+   **merge** terminal; the notify terminal never merges, so they do not gate it.
+   **Never merge** over a `Blocker`, a red or pending check, or unresolved
+   human PR comments — if the operator commented mid-run, stop and surface the
+   comments instead (in notify mode that surfacing is the step-5 human-engaged
+   exit). **Never merge while `MATERIA.md` § Gate carries the Bootstrap-grace
+   marker** — green CI under grace can mean only `check:docs` ran; write
+   `Blocker: auto-merge — bootstrap grace active (gates not yet real)` and
+   surface to the human. (In notify mode bootstrap grace is instead a *caveat on
+   the surfaced green* — step 5 — never a Blocker, since notify never merges.)
+   Sole exception to the grace guard — verified **mechanically, both
+   conditions**: this run's `STATUS.md` `Proposed-id` equals the proposal id
+   named in the marker line itself, AND the PR diff deletes the marker while
+   making every § Gate row real. A PR that merely deletes the marker line
+   without being the named gate spec does not qualify. Autopilot's merge
+   authority is exactly the operator's explicit `--auto` at invocation, nothing
+   broader.
+7. **No forge, nothing to watch or merge (`none`).** Checked before watching:
+   with no forge there is no PR to watch in either posture, so when
+   `MATERIA.md` § Version control § Forge is `none`, finalize has already
+   opened/prepared the PR handoff (drafted title/body + branch for the operator)
+   and the run stops there. **Mode-parameterized, like step 6** — the outcome
+   is a clean terminal for notify but a `Blocker` for the merge posture:
+   - **Notify (interactive) — clean stop, no Blocker.** A no-forge interactive
+     run simply ends at finalize's prepared handoff: that *is* the notify
+     terminal (surface the handoff for the human), not a failure. This is the
+     same place a non-autopilot run has always ended — do **not** write a
+     `Blocker`, and do **not** treat the missing forge as drift.
+   - **Merge (`--auto`) — Blocker.** Autopilot **cannot** merge here — its
+     `--auto` asked for a merge the forge can't provide. Record why —
+     `Blocker: pr-watch — no forge (§ Forge = none); nothing to watch or merge,
+     PR handoff prepared for the operator` — and surface to the human. Never
+     silently no-op the autopilot merge.
+
+**Resume durability (make the implicit property explicit).** `§ PR watch` is a
+**live-session best-effort**, no-checkbox orchestrator-lane phase (like `review`
+and the epic gate). Its terminal STATUS states — `Next: review + merge` (notify)
+and `Next: merge (autopilot)` — are **terminal**: a session that dies mid-watch
+**ends the watch**. On re-invocation, Resume sees the PR open and every
+`tasks.md` row checked ⇒ the run is **done**; the watch is **not** re-entered.
+This is exactly the durability the autopilot merge terminal has always had —
+stated here, not changed.
 
 ## Course corrections (mid-pipeline)
 

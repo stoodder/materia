@@ -48,10 +48,11 @@ the design gate, which pauses for your approve / revise / abandon call after
 the design stage (`ship-spec/SKILL.md` § Design gate) and can pause again per
 revision round — then the run continues through to a finished PR for you to
 review. `--auto` (autopilot) and `--approve-design` runs don't pause at the
-gate. Autopilot goes further still: checkpoints accept grounded defaults, and
-after the PR opens the orchestrator watches CI, fixes failures, resolves merge
-conflicts, and merges once green — see the ship-spec skill's Autopilot +
-Merge watch sections.
+gate. After the PR opens, the orchestrator watches CI, fixes failures, and
+resolves merge conflicts on **every** run — surfacing the PR at green for you
+to review. Autopilot goes further still: checkpoints accept grounded defaults,
+and once the watch reaches green it **additionally merges** — see the ship-spec
+skill's Autopilot + PR watch sections.
 
 | Stage | Skill | Produces |
 |---|---|---|
@@ -66,7 +67,7 @@ Merge watch sections.
 | 9. docs-audit | `docs-audit` | HIGH/MEDIUM/LOW findings or clean verdict; loop back to docs-sync on HIGH/MEDIUM |
 | 9½. reconcile-epic | `reconcile-epic` | **epic-gated** (spawned only when the proposal carries an `epic:` key; skipped+recorded otherwise): syncs the member's epic under [`.materia/docs/epics/`](../epics/README.md) and cascades invalidated content into its pending sibling proposals — the edits ride this run's PR |
 | 10. Finalize | `finalize` | re-runs `verify` for `behavior-deferred` tasks, then the gate (lint + typecheck + tests + `check:docs`), PR opened |
-| — Orchestrate | `ship-spec` | runs 1→10 (pausing at the design gate on interactive design-bearing runs — not on `--auto`/`--approve-design` runs; and, on `--auto` runs, the post-finalize merge watch: CI fixes → conflict resolution → merge on green) |
+| — Orchestrate | `ship-spec` | runs 1→10 (pausing at the design gate on interactive design-bearing runs — not on `--auto`/`--approve-design` runs; and, on every run, the post-finalize § PR watch: CI fixes → conflict resolution → surface at green for review; on `--auto` it additionally merges) |
 
 The pipeline **builds on this repo's docs system**: the architecture stage uses
 the progressive-disclosure read order ([../README.md](../README.md)), the

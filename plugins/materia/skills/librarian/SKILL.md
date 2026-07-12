@@ -164,7 +164,7 @@ Repeat until merged, **bounded at 3 rounds**:
 
 1. **Conflicts?** If GitHub reports the branch un-mergeable:
    `git fetch <remote> <trunk> && git merge <baseline>` — **merge, never
-   rebase, never force-push** (the same rule as ship-spec's merge watch; the
+   rebase, never force-push** (the same rule as ship-spec's § PR watch; the
    shipped permission rules deny force spellings). Resolve conflicts by
    taking the trunk's content as the new base and re-deriving the fix against
    it — re-verify the underlying claim against the code before re-applying; if

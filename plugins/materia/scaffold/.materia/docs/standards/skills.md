@@ -118,9 +118,10 @@ normalization does not cover (wrong case, single dash, typo) is treated as
 NOT PRESENT; posture stays `off` — every ambiguity resolves toward *not*
 granting autonomy. Its semantics live entirely in `ship-spec`: posture `on`
 auto-accepts the run's operator checkpoints (intake defaults, non-blocking
-judgement calls), and after finalize opens the PR the orchestrator watches
-CI, fixes failures, resolves merge conflicts, and **merges once green** — see
-`ship-spec/SKILL.md` § Autopilot and § Merge watch. Every other skill accepts
+judgement calls). After finalize opens the PR the orchestrator **always**
+watches CI, fixes failures, and resolves merge conflicts — surfacing the PR at
+green for review; `--auto` **additionally merges once green** — see
+`ship-spec/SKILL.md` § Autopilot and § PR watch. Every other skill accepts
 the flag syntactically as a documented no-op.
 
 The posture persists in `STATUS.md` § Autopilot posture so a resumed run

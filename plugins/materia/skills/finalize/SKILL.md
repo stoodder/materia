@@ -331,7 +331,7 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
    notice it provides into the PR body, above the closing Materia sigil
    (which stays last), so reviewers know the PR auto-merges on
    green (see `ship-spec/SKILL.md` § Autopilot). Finalize itself never
-   merges; the merge belongs to the orchestrator's § Merge watch.
+   merges; the merge is the `--auto` terminal of the orchestrator's § PR watch.
 
    **Provenance block in the PR body.** If STATUS.md's `## Provenance`
    block has any non-`—` field, render a `## Provenance` section in the
@@ -344,7 +344,22 @@ would remove this conflict class is out-of-scope here (deferred to its own spec)
    template, row 8 in the bug template), set `PR:` to the link and `Next:
    merge`; commit + push the status update.
 
-6. **Hand off.** Report the PR link; offer to watch CI / autofix failures.
+6. **Hand off to § PR watch.** Report the PR link. Finalize does not "offer" a
+   watch — once the PR is open (or handed to the orchestrator to open), the
+   orchestrator's always-on `ship-spec/SKILL.md § PR watch` phase takes over on
+   **every** run: it watches CI, fixes failures (≤3), and resolves conflicts,
+   then takes its posture terminal — **surface the green PR** on an interactive
+   run, **merge** on `--auto`. Note in the handoff that § PR watch now carries
+   the run to green; finalize's own job ends at the open PR.
+
+   **Standalone invocation (no orchestrator).** § PR watch is an
+   orchestrator-lane phase driven by the pipeline orchestrator, so a standalone
+   finalize can't run it — and must not grow its own watch loop, because that
+   machinery has exactly one home (`ship-spec/SKILL.md § PR watch`). End by
+   surfacing the open PR for the operator to take forward, noting that the
+   watch-to-green phase (§ PR watch) is what an orchestrated `ship-spec` /
+   `fix-bug` run performs after this point; a standalone finalize simply hands
+   off the open PR.
 
 ## Fresh-context fallback (no nested subagents)
 

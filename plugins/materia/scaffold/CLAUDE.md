@@ -89,9 +89,10 @@ for the details.
   ([.materia/docs/bugs/_reports/](.materia/docs/bugs/_reports/README.md)) to a RED→GREEN TDD
   fix. On an interactive, design-bearing (UI) run, `/materia:ship-spec` pauses
   at a design gate for your approval before continuing (`--auto` runs don't
-  pause there). Both are resumable and open exactly one PR. With `--auto`
-  (autopilot), `/materia:ship-spec` also rides that PR to green — fixing CI,
-  resolving merge conflicts — and merges it.
+  pause there). Both are resumable and open exactly one PR. After the PR
+  opens, `/materia:ship-spec` watches it to green on **every** run — fixing CI,
+  resolving merge conflicts — and surfaces it for your review; with `--auto`
+  (autopilot) it additionally merges once green.
 - **Producers** fill the queues; **maintainers** (`/materia:janitor`, `/materia:librarian`)
   fix drift directly instead of filing queue entries — the roster and shared
   lifecycle live in [skills](.materia/docs/standards/skills.md).
