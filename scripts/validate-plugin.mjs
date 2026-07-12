@@ -359,8 +359,9 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
     return /MATERIA\.md[`"']?\s*§\s*Version control/.test(t.replace(/\s+/g, ' '))
   }
   const VC_CITERS = [
-    'janitor', 'librarian', 'ship-spec', 'finalize', 'propose-spec', 'propose-epic',
-    'report-bug', 'reconcile-epic', 'ui-inspection', 'triage-retros', 'fix-bug',
+    'janitor', 'librarian', 'curator', 'concierge', 'ship-spec', 'finalize',
+    'propose-spec', 'propose-epic', 'report-bug', 'reconcile-epic',
+    'triage-retros', 'fix-bug',
   ]
   for (const s of VC_CITERS) {
     const f = `plugins/materia/skills/${s}/SKILL.md`
@@ -421,10 +422,17 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
   }
   const GATE_CITERS = [
     'implement-task', 'report-bug', 'librarian', 'propose-spec', 'docs-audit',
-    'docs-sync', 'fix-bug', 'architecture', 'ui-inspection', 'finalize', 'triage-retros',
+    'docs-sync', 'fix-bug', 'architecture', 'finalize', 'triage-retros',
     // migrate joins the citers: its reference sweep re-runs the repo's check:docs gate,
     // resolved from MATERIA.md § Gate (the pin's own logic — a gate-runner must cite it).
     'migrate',
+    // janitor's Preflight verifies the full local gate is runnable and its verify
+    // step runs it — a gate-runner, so it must cite MATERIA.md § Gate in prose (its
+    // in-fence gate mention is blanked before matching, §1e's fence rule).
+    'janitor',
+    // the UI maintainers run the full local gate in their verify step
+    // (§ Maintainer lifecycle step 6), so each must cite MATERIA.md § Gate in prose.
+    'curator', 'concierge',
   ]
   for (const s of GATE_CITERS) {
     const f = `plugins/materia/skills/${s}/SKILL.md`
@@ -589,18 +597,19 @@ for (const [skill, angle] of MIRRORS) {
 console.log(`  ✓ mirror pins: ${MIRRORS.length} cross-table mirror(s) hold`)
 
 // ---- 2c. UI self-gate registry + placement ----------------------------------
-// init no longer prunes skills — the four UI skills install in EVERY repo,
+// init no longer prunes skills — the five UI skills install in EVERY repo,
 // including no-UI ones. Each MUST carry a runtime self-gate that exits cleanly
 // when MATERIA.md § Surface gates § UI-affecting is `none`, and — most safety-
-// critically for ui-inspection — that gate must run BEFORE the liveness
-// probe / autostart so a no-UI repo never starts the dev stack. Presence alone
-// is too weak (a gutted or relocated gate that kept the heading would pass), so
-// this pins BOTH a distinctive marker AND placement:
+// critically for the UI maintainers (curator/concierge, which drive the live
+// app) — that gate must run BEFORE the liveness probe / autostart so a no-UI
+// repo never starts the dev stack. Presence alone is too weak (a gutted or
+// relocated gate that kept the heading would pass), so this pins BOTH a
+// distinctive marker AND placement:
 //  - Marker: the bold gate lead-in `**UI self-gate` — a prose mention of "UI
 //    self-gate" (e.g. design's § Scope) is NOT bolded, so it can never
 //    satisfy the check (closes the accidental word-wrap false-green).
 //  - Placement: the marker's offset must precede the skill's first side-effect
-//    anchor. For ui-inspection that anchor IS the liveness/autostart
+//    anchor. For the UI maintainers that anchor IS the liveness/autostart
 //    step, mechanically enforcing "gate before autostart"; for the other three
 //    it is the first provisioning/read/short-circuit, enforcing "gate first".
 // Repurposes the former UI_PRUNE set (skill → first-side-effect anchor).
@@ -609,7 +618,8 @@ const UI_SELF_GATE = {
   'design': '.materia/docs/specs/_templates/design.md',   // step 1: first spec read
   'ui-test-plan': 'Pure non-behavioral change',           // the zero-flow waiver short-circuit (first write)
   'ui-review': 'Provision the Eyes environment',          // step 1: Eyes provisioning
-  'ui-inspection': 'Probe the running app for liveness',  // Phase 0 step 1: liveness probe / autostart
+  'curator': 'Probe the running app for liveness',        // step 2: liveness probe / autostart (live-app drive)
+  'concierge': 'Probe the running app for liveness',      // step 2: liveness probe / autostart (live-app drive)
 }
 const gateBefore = failures
 for (const [skill, anchor] of Object.entries(UI_SELF_GATE)) {
@@ -621,7 +631,7 @@ for (const [skill, anchor] of Object.entries(UI_SELF_GATE)) {
   else if (side === -1)
     fail(`UI self-gate: ${skill}/SKILL.md placement anchor "${anchor}" not found — cannot verify the gate runs before the first side-effect (did the anchor text change?)`)
   else if (mark > side)
-    fail(`UI self-gate: ${skill}/SKILL.md gate marker is AFTER "${anchor}" — the gate must run before the first side-effect (for ui-inspection, before the liveness probe / autostart) or a no-UI repo acts before it self-gates`)
+    fail(`UI self-gate: ${skill}/SKILL.md gate marker is AFTER "${anchor}" — the gate must run before the first side-effect (for the UI maintainers, before the liveness probe / autostart) or a no-UI repo acts before it self-gates`)
 }
 if (failures === gateBefore)
   console.log(`  ✓ UI self-gate: ${Object.keys(UI_SELF_GATE).length} UI skills carry the "${GATE_MARKER}" gate before their first side-effect`)

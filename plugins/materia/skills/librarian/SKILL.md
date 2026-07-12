@@ -1,24 +1,33 @@
 ---
 name: librarian
-description: "Periodic maintenance sweep of the living docs (docs root + resources/ + standards/ + _templates/, CLAUDE.md, README.md) — seeks out drift against the codebase and the docs-authoring standard, fixes it directly, opens one docs-only PR, rides it to green (resolving merge conflicts and CI failures as they come up), and auto-merges. The docs counterpart to `/materia:janitor`: the janitor sweeps the code, the librarian sweeps the docs; both land their own fixes, but only the librarian auto-merges (its diff is mechanically docs-only). Fully autonomous; zero-drift runs exit clean with no branch or PR. Use on demand or on a schedule when the docs should be re-trued against reality."
+description: "Periodic maintenance sweep of the living docs (docs root + resources/ + standards/ + _templates/, CLAUDE.md, README.md) — seeks out drift against the codebase and the docs-authoring standard, fixes bounded drift directly, files oversized doc work as a proposed spec (`source: librarian`) in the same PR, opens one docs-only PR, hardens it with a pre-PR adversarial review, rides it to green (resolving merge conflicts and CI failures as they come up), and auto-merges — unless the run trips a forfeit (a queue entry written, MATERIA.md touched, or a large/deleting diff), which keeps the green PR for human review. The docs counterpart to `/materia:janitor`: the janitor sweeps the code, the librarian sweeps the docs; both land their own bounded fixes, but only the librarian auto-merges (its diff is mechanically docs-only). Fully autonomous; zero-drift runs exit clean with no branch or PR. Use on demand or on a schedule when the docs should be re-trued against reality."
 ---
 
 # librarian — docs-drift sweep that lands its own fix
 
 A single-shot, operator-run (or scheduled) maintenance skill that sweeps the
 **living docs** for drift against the code and against
-`.materia/docs/standards/docs.md`, applies the fixes
-directly, and drives one docs-only PR all the way to merge. It is the docs
-counterpart to `/materia:janitor` — the janitor sweeps the code, the librarian sweeps
-the docs; both fix drift in place, but the librarian's docs-only diff is
-cheap and mechanically bounded, so it alone verifies and merges its own PR.
+`.materia/docs/standards/docs.md`, applies the bounded fixes directly, and
+drives one docs-only PR all the way to merge. It is the docs counterpart to
+`/materia:janitor` — the janitor sweeps the code, the librarian sweeps the
+docs. Both follow the shared maintainer lifecycle
+(`.materia/docs/standards/skills.md` § Maintainer lifecycle) — fix bounded
+drift in place, file an oversized finding as a queue entry, note the ambiguous
+rest — but the librarian's docs-only diff is cheap and mechanically bounded, so
+it alone verifies and merges its own PR. This file states only what is
+librarian-specific and cites that section for the shared machinery.
 
-**Deliberate divergence from the producer lifecycle:** this skill
+**Deliberate divergence from the other maintainers:** this skill
 **auto-merges its own PR**. That is safe only because its diff is mechanically
 confined to docs (see § The docs-only envelope) and gated by CI; the moment
 anything outside the envelope would need to change, the librarian stops
-instead. It is NOT a producer (writes no queue entries), NOT a pipeline stage
-(no tier; runs in the operator's session), and never touches product code.
+instead. Its one queue-entry path is narrow — **proposed specs only**
+(`source: librarian`), for doc work too large to fix inline; a normative
+code-vs-doc conflict stays a needs-human note, never a bug report (its "nothing
+is the oracle for normative text" rule, § Rules, is unchanged) — and any run
+that files one **forfeits auto-merge** (§ The docs-only envelope). It is NOT a
+pipeline stage (no tier; runs in the operator's session), and never touches
+product code.
 
 ## Invocation
 
@@ -31,7 +40,8 @@ instead. It is NOT a producer (writes no queue entries), NOT a pipeline stage
   for a human.
 - Default — full sweep: fix → PR → ride CI → merge.
 
-No mid-run checkpoint (the lifecycle is autonomous, like `ui-inspection`);
+No mid-run checkpoint (the maintainer lifecycle runs autonomously past
+preflight — `.materia/docs/standards/skills.md` § Maintainer lifecycle);
 `--dry-run` is the preview mechanism. Judgment is therefore conservative: an
 ambiguous fix is skipped and noted, never guessed at (§ Rules).
 
@@ -50,18 +60,27 @@ ambiguous fix is skipped and noted, never guessed at (§ Rules).
   code would have demanded which doc).
 - the `check:docs` gate — its command in `MATERIA.md § Gate` (the mechanical gate).
 
-**Not inputs, never edited:** `.materia/docs/specs/**`, `.materia/docs/bugs/**`,
-`.materia/docs/epics/**`, `.materia/docs/research/**` — historical run artifacts, exempt by the
-same rule that exempts them from `check:docs` style checks.
+**Not inputs, never edited:** the historical trees `.materia/docs/specs/**`,
+`.materia/docs/bugs/**`, `.materia/docs/epics/**`, `.materia/docs/research/**` —
+historical run artifacts, exempt by the same rule that exempts them from
+`check:docs` style checks. The one carve-out is a **new** file under
+`.materia/docs/specs/_proposed/` when the run files an oversized finding as a
+proposed spec (§ The docs-only envelope; `.materia/docs/standards/skills.md`
+§ Maintainer lifecycle § Oversized findings) — a creation, never an edit or
+removal of an existing artifact.
 
 ## Outputs
 
 - One squash-merged PR (branch `librarian/sweep-<YYYY-MM-DD>`) containing only
-  docs edits — or an **unmerged** green PR when the scale guard or MATERIA.md
-  forfeit applies (§ The docs-only envelope) — with the PR body listing every fix, every **skipped** ambiguous
-  finding with a one-line rationale, and any **needs-human** notes (suspected
-  code bugs surfaced by normative doc statements — surfaced, not acted on).
-- Zero-drift run: a short "nothing to fix" report; no branch, no PR.
+  docs edits — or an **unmerged** green PR when any auto-merge forfeit applies
+  (§ The docs-only envelope § Auto-merge forfeits: a queue entry written,
+  MATERIA.md touched, or a large/deleting diff) — with the PR body listing every
+  fix, every **skipped** ambiguous finding with a one-line rationale, every
+  **proposed spec** filed for oversized doc work, and any **needs-human** notes
+  (suspected code bugs surfaced by normative doc statements — surfaced, not
+  acted on).
+- Zero-drift run: a short "nothing to fix — the stacks are in order" report; no
+  branch, no PR.
 - `--dry-run`: the drift plan printed to the session; no other output.
 
 ## Procedure
@@ -123,12 +142,22 @@ For each finding, decide the fix direction using **code as the oracle**:
 | Normative ("must", "never", an invariant, a wire shape) | yes | **Do NOT fix either side.** Record a needs-human note in the PR body — the code may be the regression. |
 | Ambiguous / can't verify cheaply | — | **Skip** with a one-line rationale in the PR body. |
 
+A descriptive fix too large to apply and verify inline — a doc that needs
+wholesale restructuring, or a batch of interlinked doc changes that is really a
+work item — is **oversized**: file it as a **proposed spec**
+(`source: librarian`) committed in the same PR (§ The docs-only envelope;
+`.materia/docs/standards/skills.md` § Maintainer lifecycle § Oversized findings)
+rather than attempting it in a sweep. This is the librarian's **only**
+queue-entry path — a normative conflict is still a note, never a bug report —
+and any run that files one forfeits auto-merge.
+
 Cap the run at roughly **20 coherent fixes** (one root cause = one fix, even
 across files); prioritize by leverage (CLAUDE.md and index/inventory drift
 first, prose accuracy second, conformance polish last) and list what was
-deferred so the next run picks it up. Zero fixes planned → print the
-zero-drift report and exit — no branch, no PR. `--dry-run` → print the full
-plan (fixes, skips, needs-human notes) and exit.
+deferred so the next run picks it up. Zero fixes **and zero queue entries**
+planned → print the zero-drift report and exit — no branch, no PR. `--dry-run`
+→ print the full plan (fixes, skips, proposed specs, needs-human notes) and
+exit.
 
 ### 4. Fix
 
@@ -141,11 +170,35 @@ present-state, one home per fact, cells stay short, glossary one-liners at
 alphabetical position). Commit in small scoped commits
 (`librarian: <what> (<why it was drift>)`).
 
-### 5. Gate locally, then PR
+An oversized doc finding is written here as a **new** proposed-spec file under
+`.materia/docs/specs/_proposed/`, conforming to that queue's
+frontmatter/filename contract and id-minting rules (`source: librarian`), in
+its own commit (`librarian: file <id> (oversized doc work)`). This is the only
+non-docs write the librarian makes, and it forfeits auto-merge (§ The docs-only
+envelope).
+
+### 5. Gate locally
 
 ```bash
 <check:docs — MATERIA.md § Gate> && <lint — MATERIA.md § Gate>   # links/style + formatting over the .md diff
 git diff <baseline>...HEAD --name-only     # § The docs-only envelope — assert now
+```
+
+### 6. Pre-PR review rounds
+
+Before opening the PR, harden the sweep diff with fresh-context adversarial
+reviewer(s) spawned at the `librarian: reviewer` row (`MATERIA.md` § Tiers
+§ Skill routing), running the bounded loop in
+`.materia/docs/standards/skills.md` § Maintainer lifecycle § Pre-PR review
+rounds: **≤3 rounds** to convergence (no material `Blocker`/`Major`), findings
+folded and re-gated (§ 5) between rounds. A trivially small single-cluster diff
+may converge in one round; a contested fix still unresolved after 3 rounds is
+dropped to a needs-human note and the rest proceeds. These rounds are distinct
+from the post-PR ride-to-green loop (§ 8).
+
+### 7. Open the PR
+
+```bash
 git push -u <remote> librarian/sweep-<YYYY-MM-DD>
 # open the PR — MATERIA.md § Version control § Forge (open-PR op)
 gh pr create --title "librarian: docs-drift sweep <YYYY-MM-DD>" --body "<body>"
@@ -155,10 +208,11 @@ The `<body>` closes with the Materia sigil naming `librarian` as the
 caster (`.materia/docs/standards/skills.md` § PR attribution — the Materia sigil).
 
 The PR body carries: the fix list (one line each, with the oracle that proved
-the drift), the skipped list with rationales, the needs-human notes, and the
-deferred remainder.
+the drift), the skipped list with rationales, every proposed spec filed for
+oversized doc work (with its `id`), the needs-human notes, and the deferred
+remainder.
 
-### 6. Ride the PR to green — the resolution loop
+### 8. Ride the PR to green — the resolution loop
 
 Repeat until merged, **bounded at 3 rounds**:
 
@@ -184,8 +238,11 @@ Repeat until merged, **bounded at 3 rounds**:
      PR open, comment on it (post-PR-comment op, same § Forge) naming the
      failing job and why it looks unrelated, and report to the operator.
      Never merge over a red check.
-4. **Green?** Re-assert the docs-only envelope on the final diff, then merge
-   through the **merge-PR op** (`MATERIA.md` § Version control § Forge), using the
+4. **Green?** Re-assert the docs-only envelope **and the auto-merge forfeits**
+   (§ The docs-only envelope) on the final diff. If any forfeit applies — a
+   queue entry written, `MATERIA.md` touched, or a large/deleting diff — stop
+   and report the green PR URL, exactly as a `--no-merge` run would. Otherwise
+   merge through the **merge-PR op** (`MATERIA.md` § Version control § Forge), using the
    `<strategy>` from that section's **Merge strategy** knob when it names a
    concrete value — no merge-strategy row (or `per-skill default`) → this skill's
    default `squash`:
@@ -209,10 +266,10 @@ Repeat until merged, **bounded at 3 rounds**:
 If the loop exhausts 3 rounds without merging, stop, leave the PR open with a
 comment summarizing the state, and report to the operator.
 
-### 7. Close
+### 9. Close
 
-Print the closing report: fixes landed, skips, needs-human notes, deferred
-remainder, PR URL + merge state. End the turn.
+Print the closing report: fixes landed, proposed specs filed, skips,
+needs-human notes, deferred remainder, PR URL + merge state. End the turn.
 
 ## The docs-only envelope (binding)
 
@@ -222,46 +279,67 @@ Before **every push** and again **immediately before merge**, assert that
 ```
 CLAUDE.md
 README.md
-MATERIA.md                (sweepable — but touching it forfeits auto-merge)
+MATERIA.md                         (sweepable — but touching it forfeits auto-merge)
 .materia/docs/*.md                 (root files)
 .materia/docs/resources/**
 .materia/docs/standards/**
 .materia/docs/_templates/**
+.materia/docs/specs/_proposed/*.md (NEW files only — an oversized-finding queue entry; forfeits auto-merge)
 ```
 
-Anything else in the diff — any source or config file, anything under
-`.claude/`, `.materia/docs/specs/`, `.materia/docs/bugs/`, `.materia/docs/epics/`, `.materia/docs/research/` —
-means the run has escaped its envelope: **revert the offending change and if
-the fix genuinely requires it, drop that fix with a needs-human note.** The
-auto-merge privilege exists only inside this envelope.
+A path under `.materia/docs/specs/_proposed/` is envelope-legal **only when it
+is a file addition** (`git diff <baseline>...HEAD --name-status` shows `A` for
+it) — a modification or deletion of any existing `specs/` file is out. Anything
+else in the diff — any source or config file, anything under `.claude/`,
+`.materia/docs/bugs/`, `.materia/docs/epics/`, `.materia/docs/research/`, or any
+**edit to an existing file** under `.materia/docs/specs/` — means the run has
+escaped its envelope: **revert the offending change and if the fix genuinely
+requires it, drop that fix with a needs-human note.** The auto-merge privilege
+exists only inside this envelope.
 
-**Scale guard (mechanical, same assertion points).** The envelope constrains
-file *kind*; this constrains *magnitude*. Compute
-`git diff <baseline>...HEAD --numstat` and use the **deleted-lines column**
-(insertions never offset deletions — a balanced rewrite is still a rewrite),
-plus `git diff <baseline>...HEAD --name-status --diff-filter=D` for whole-file
-deletions (numstat alone can't distinguish them).
-If the deletion filter reports **any file**, numstat shows a **binary
-entry** (`-`), or the diff deletes
-more than **50 lines from any single file**, or deletes more than **150
-lines in total**, the run keeps its PR but **forfeits auto-merge** — report
-the PR URL and stop, exactly as a `--no-merge` run would. Whole-doc removals
-and large rewrites are human decisions; a drift sweep that big is a signal,
-not a chore.
+### Auto-merge forfeits (one mechanism)
 
-**MATERIA.md forfeit (same mechanism).** A diff that touches `MATERIA.md`
-is envelope-legal but **never auto-merges** — its § Gate and § Tiers are
-enforcement configuration, not prose; a human reviews every change to them.
+The auto-merge privilege is **standing** but conditional: inside the envelope
+above, a clean docs-only sweep auto-merges. **Any one** of the following
+forfeits it — the run **keeps its green PR but does not auto-merge**, reporting
+the PR URL and stopping exactly as a `--no-merge` run would. All are checked at
+the **same assertion points** (before every push, and again immediately before
+merge); any combination still yields the single outcome of an unmerged green PR
+reported to the operator:
+
+- **Scale guard.** Compute `git diff <baseline>...HEAD --numstat` and use the
+  **deleted-lines column** (insertions never offset deletions — a balanced
+  rewrite is still a rewrite), plus
+  `git diff <baseline>...HEAD --name-status --diff-filter=D` for whole-file
+  deletions (numstat alone can't distinguish them). Forfeit if the deletion
+  filter reports **any file**, numstat shows a **binary entry** (`-`), the diff
+  deletes more than **50 lines from any single file**, or deletes more than
+  **150 lines in total**. Whole-doc removals and large rewrites are human
+  decisions; a drift sweep that big is a signal, not a chore.
+- **MATERIA.md touched.** A diff that touches `MATERIA.md` is envelope-legal
+  but never auto-merges — its § Gate and § Tiers are enforcement
+  configuration, not prose; a human reviews every change to them.
+- **Queue entry written.** A run that files an oversized finding — a **new**
+  proposed spec under `.materia/docs/specs/_proposed/` (`source: librarian`;
+  `.materia/docs/standards/skills.md` § Maintainer lifecycle § Oversized
+  findings) — keeps its PR for human review; a queued proposal is a product
+  decision, not a docs chore.
 
 ## Scope (what this skill does NOT do)
 
 - **NEVER edits product code, tests, CI config, or skills** — even to "fix"
-  CI. A CI failure that demands a non-docs change ends the run (§ Procedure 6).
-- **NEVER edits the historical trees** (`.materia/docs/specs/**`, `.materia/docs/bugs/**`,
-  `.materia/docs/epics/**`, `.materia/docs/research/**`).
-- **Writes no queue entries** — suspected code bugs become needs-human notes
-  in the PR body, not `.materia/docs/bugs/_reports/` files. If a note warrants a
-  report, the operator runs `/materia:report-bug` afterward.
+  CI. A CI failure that demands a non-docs change ends the run (§ Procedure 8).
+- **NEVER edits or removes an existing artifact in the historical trees**
+  (`.materia/docs/specs/**`, `.materia/docs/bugs/**`, `.materia/docs/epics/**`,
+  `.materia/docs/research/**`) — the sole carve-out is creating a **new**
+  `_proposed/` proposed spec for an oversized finding (§ The docs-only envelope).
+- **Writes no bug reports** — a suspected code bug or normative code-vs-doc
+  conflict becomes a needs-human note in the PR body, never a
+  `.materia/docs/bugs/_reports/` file (nothing is the oracle for normative
+  text, § Rules). Oversized *doc* work is the librarian's only queue entry, and
+  only as a **proposed spec** (§ The docs-only envelope § Auto-merge forfeits);
+  if a note warrants a bug report, the operator runs `/materia:report-bug`
+  afterward.
 - **Invents no docs.** A missing resource doc for a new entity is a
   needs-human note — authoring a doc from scratch needs intent the librarian
   doesn't have (that's `docs-sync`'s job inside a feature's own run).

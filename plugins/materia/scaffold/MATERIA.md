@@ -173,9 +173,9 @@ manually". Never block.
 ## Eyes
 
 How an agent **sees** the running app to design against, review, and verify
-UI work — the toolchain behind `design`, `ui-test-plan`, `ui-review`,
-`ui-inspection`, and behavioral verification. `none` if § Surface gates
-§ UI-affecting is `none`.
+UI work — the toolchain behind `design`, `ui-test-plan`, `ui-review`, the UI
+maintainers (`curator`, `concierge`), and behavioral verification. `none` if
+§ Surface gates § UI-affecting is `none`.
 
 - **Toolchain:** {{e.g. Playwright (Chromium) · a TUI snapshot harness ·
   screenshot tooling}}
@@ -498,11 +498,12 @@ per-task-field cases) live in § Fallback.
 **internal role only**, never its parent skill dir. A skill's parent dir is
 accounted for by **either** a plain § Skill routing row **or** an entry in the
 **Operator-session skills (rowless by design)** list below — never both. So the
-four orchestrator parents that also spawn a routed role (`janitor`, `ship-spec`,
-`propose-epic`, `triage-retros`) appear in **both** forms — a role row for the
-spawned unit and the operator-session list for the parent — which is coverage,
-not duplication. `reconcile-epic` is not in that list: its own plain row (whose
-Notes cell records the standalone operator-session mode) is its accounting.
+operator-session parents that also spawn a routed role (`janitor`, `librarian`,
+`curator`, `concierge`, `ship-spec`, `propose-epic`, `triage-retros`) appear in
+**both** forms — a role row for the spawned unit and the operator-session list
+for the parent — which is coverage, not duplication. `reconcile-epic` is not in that list: its own plain
+row (whose Notes cell records the standalone operator-session mode) is its
+accounting.
 
 | Skill / role | Model | Effort | Fallback Model | Notes |
 |---|---|---|---|---|
@@ -524,6 +525,10 @@ Notes cell records the standalone operator-session mode) is its accounting.
 | `triage-retros: sub-agent` | `sonnet` | `low` | `opus` | mechanical parse + quote of one retro into an insight envelope; the clustering/drafting reasoning stays in the parent |
 | `janitor: scan` | `sonnet` | `low` | `opus` | read-only standards-drift scan fan-out; findings-only, mechanical pattern-match (mirrors `triage-retros: sub-agent`) |
 | `janitor: implementer` | `sonnet` | `medium` | `opus` | optional single subagent for a large mechanical cluster; the parent stays sole committer (mirrors `implement-task`) |
+| `janitor: reviewer` | `sonnet` | `medium` | `opus` | pre-PR adversarial review of the sweep diff, ≤3 rounds to convergence; mirrors the other review spawns (`ship-spec: review/tiebreaker`) |
+| `librarian: reviewer` | `sonnet` | `medium` | `opus` | pre-PR adversarial review of the docs-sweep diff, ≤3 rounds to convergence; mirrors the other review spawns |
+| `curator: reviewer` | `sonnet` | `medium` | `opus` | pre-PR adversarial review of the live-app visual sweep diff, ≤3 rounds to convergence; mirrors the other review spawns |
+| `concierge: reviewer` | `sonnet` | `medium` | `opus` | pre-PR adversarial review of the live-app experience sweep diff, ≤3 rounds to convergence; mirrors the other review spawns |
 | `propose-epic: research` | per-question (§ Model set) | per-question | `opus` | one subagent per question; model+effort picked together per § Model set (default / ceiling defined in the skill body) |
 
 #### Operator-session skills (rowless by design)
@@ -535,14 +540,15 @@ parent reads as intentional, not missing:
 - `init` — runs in the operator's session (materializes the harness); never spawned, so no row.
 - `propose-spec` — operator-session producer; drafts a proposed-spec, no spawn.
 - `report-bug` — operator-session producer; drafts a bug report, no spawn.
-- `librarian` — operator-session docs maintainer; sweeps and fixes docs in place, no spawn.
-- `ui-inspection` — operator-session; inspects the running app and files one report, no spawn.
+- `librarian` — operator-session docs maintainer; sweeps and fixes docs in place; its pre-PR review role has a row (`librarian: reviewer`), but the parent itself is rowless.
+- `curator` — operator-session UI maintainer; sweeps the live app's visuals and fixes drift in place; its pre-PR review role has a row (`curator: reviewer`), but the parent itself is rowless.
+- `concierge` — operator-session UI maintainer; sweeps the live app's experience and fixes drift in place; its pre-PR review role has a row (`concierge: reviewer`), but the parent itself is rowless.
 - `doctor` — operator-session; non-destructive health check that runs the deterministic inspector and reports, no spawn.
 - `migrate` — operator-session; plan-first project upgrade that runs the deterministic engine (plans by default, applies only safe migrations on `--apply`), no spawn.
 - `ship-spec` — orchestrator parent; runs in the operator session and spawns its stages (each stage has its own row); the parent itself has no row.
 - `fix-bug` — orchestrator parent; same rationale as `ship-spec`.
 - `propose-epic` — orchestrator parent; its research fan-out has the `propose-epic: research` row, but the parent itself is rowless.
-- `janitor` — orchestrator parent; its scan/implementer roles now have rows (`janitor: scan`, `janitor: implementer`), but the parent itself is rowless.
+- `janitor` — orchestrator parent; its scan/implementer/reviewer roles now have rows (`janitor: scan`, `janitor: implementer`, `janitor: reviewer`), but the parent itself is rowless.
 - `triage-retros` — orchestrator parent; its `triage-retros: sub-agent` role has a row, but the parent itself is rowless.
 
 ### Fallback

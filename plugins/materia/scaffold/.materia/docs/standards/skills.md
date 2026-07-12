@@ -163,11 +163,14 @@ anyway); passing both is legal and changes nothing.
 |---|---|---|---|
 | **Orchestrator** | operator session | none (dispatches others) | `ship-spec`, `fix-bug`, `triage-retros` |
 | **Sub-skill** | a fresh-context subagent the orchestrator spawns | its row in `MATERIA.md` § Skill routing | `intake-spec`, `design`, `ui-test-plan`, `architecture`, `plan-tasks`, `implement-task`, `finalize`, `docs-sync`, `docs-audit`, `reproduce-bug`, `bug-analysis`, `ui-review` |
-| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `report-bug`, `triage-retros`, `ui-inspection` — each writes into a queue under that queue's contract (`.materia/docs/specs/_proposed/` for spec proposals; `.materia/docs/bugs/_reports/` for bug reports) with a distinct `source:` key. `triage-retros` writes into **both** queues in one run, under `source: retro-triage` |
-| **Maintainer** | operator session (or scheduled) | none | `librarian` (sweeps the living docs) and `janitor` (sweeps the code against `.materia/docs/standards/`) — each fixes drift directly and opens one PR instead of filing queue entries. Only the librarian **auto-merges its own PR**: a standing exception to the "no auto-merge" invariant, valid only behind a mechanical diff envelope + green CI (its § The docs-only envelope); the janitor's diff is product code, so it stops for human review. Per-run exception: `--auto` (§ The `--auto` argument). |
+| **Producer** | operator session | none | `propose-spec`, `propose-epic`, `report-bug`, `triage-retros` — each writes into a queue under that queue's contract (`.materia/docs/specs/_proposed/` for spec proposals; `.materia/docs/bugs/_reports/` for bug reports) with a distinct `source:` key. `triage-retros` writes into **both** queues in one run, under `source: retro-triage` |
+| **Maintainer** | operator session (or scheduled) | none | `librarian` (docs), `janitor` (code), and the UI maintainers `curator` (visuals) / `concierge` (experience) — each fixes bounded drift directly, files oversized findings as queue entries, notes the rest, and opens one PR after pre-PR review rounds (§ Maintainer lifecycle). Only the librarian **auto-merges** — behind its docs-only envelope + green CI, forfeited on any forfeit-tripping run (§ The docs-only envelope); the others stop for review. `--auto` is a per-run exception (§ The `--auto` argument). |
 
 A producer additionally MUST conform to the queue's frontmatter/filename
-contract and register its `source` key — see § Registration surfaces.
+contract and register its `source` key — see § Registration surfaces. A
+**maintainer** that files an oversized finding as a queue entry
+(§ Maintainer lifecycle) does the same for that write: the same
+frontmatter/filename contract and the same `source`-key registration.
 
 **Dual-mode exception:** `reconcile-epic` is a producer-lifecycle skill when
 run standalone but a routed sub-skill when `ship-spec`'s epic gate
@@ -176,43 +179,28 @@ tier comes from its `MATERIA.md` § Skill routing row, applied only in that mode
 
 ### Producer lifecycle — the shared contract
 
-Every producer follows one lifecycle; each SKILL.md states its two mode
-choices and points here instead of restating the machinery. Skill-specific
+Every producer follows one lifecycle; each SKILL.md names its checkpoint and
+branch timing and points here instead of restating the machinery. Skill-specific
 content (what it discovers, how it triages, its file format) stays in the
 skill.
 
-**Checkpoint mode** — one of:
+**Checkpoint mode — interactive.** `report-bug`, `propose-spec`, `propose-epic`,
+`reconcile-epic` standalone, and `triage-retros` all draft everything
+in-memory, present one confirmation block, then pause. Reply verbs, with
+exactly these semantics: `approve` (write + ship), `edit: <feedback>`
+(adjust all drafts, re-present), `edit <id>: <feedback>` (adjust one),
+`drop <id>` (remove one from the batch), `cancel` (exit cleanly — nothing
+written, and if a branch was already created, switch to the trunk branch
+(`MATERIA.md` § Version control) and delete it). Fold-and-re-present loops
+until `approve`; usually one round — on round 5+ prefer a fresh re-draft
+over incremental edits. Silence is fine; nothing lands until `approve`.
 
-- **Interactive** (`report-bug`, `propose-spec`, `propose-epic`,
-  `reconcile-epic` standalone, `triage-retros`): draft everything
-  in-memory, present one confirmation block, then pause. Reply verbs, with
-  exactly these semantics: `approve` (write + ship), `edit: <feedback>`
-  (adjust all drafts, re-present), `edit <id>: <feedback>` (adjust one),
-  `drop <id>` (remove one from the batch), `cancel` (exit cleanly — nothing
-  written, and if a branch was already created, switch to the trunk branch
-  (`MATERIA.md` § Version control) and delete it). Fold-and-re-present loops
-  until `approve`; usually one round — on round 5+ prefer a fresh re-draft
-  over incremental edits. Silence is fine;
-  nothing lands until `approve`.
-- **Autonomous** (`ui-inspection`): no mid-run checkpoint —
-  the PR is the operator's review gate, so triage MUST be conservative (when
-  in doubt, drop and list it; a false entry costs more than a missed one).
-
-**Branch timing** — one of:
-
-- **Branch-at-discovery** (autonomous producers with no interactive
-  checkpoint — `ui-inspection`): once the run commits to writing a report,
-  `git checkout <trunk> && git pull <remote> <trunk>` (`<trunk>`/`<remote>` per
-  `MATERIA.md` § Version control) then branch, write, and open the PR in one
-  pass; the PR is the review gate, so there is no `approve` to defer the branch to.
-- **Branch-at-approve** (in-memory producers — `report-bug`, `propose-spec`,
-  `propose-epic`, `reconcile-epic` standalone, `triage-retros`): the whole
-  draft (Q&A, or `triage-retros`'s harvest + synthesis) is in-memory; the
-  branch is created only on `approve`, so an abandoned run leaves no trace.
-
-Either way: if `git pull` is blocked by local uncommitted changes, halt and
-surface the conflict; if the branch name already exists locally (same-day
-rerun), append a short hex suffix (`openssl rand -hex 2`).
+**Branch timing — branch-at-approve.** The whole draft (Q&A, or
+`triage-retros`'s harvest + synthesis) is in-memory; the branch is created only
+on `approve`, so an abandoned run leaves no trace. If `git pull` is blocked by
+local uncommitted changes, halt and surface the conflict; if the branch name
+already exists locally (same-day rerun), append a short hex suffix
+(`openssl rand -hex 2`).
 
 **Invariants (all producers):**
 
@@ -258,6 +246,191 @@ rerun), append a short hex suffix (`openssl rand -hex 2`).
 - **No session survival** — an interrupted run is re-invoked fresh; a stray
   pre-push branch is deleted or pushed manually by the operator.
 
+### Maintainer lifecycle — the shared contract
+
+Every **maintainer** (§ Skill kinds) follows one lifecycle; each SKILL.md
+points here for the shared machinery and states only its skill-specific
+content (what it sweeps, its judgment basis, its verify shape, its merge
+posture). Maintainers come in kinds — a **code** maintainer, a **docs**
+maintainer, and **UI** maintainers — and the spine below is written so every
+kind reads alike; where a step differs by kind it says so.
+
+The spine, in order:
+
+1. **Preflight** — `git checkout <trunk> && git pull <remote> <trunk>`
+   (`<trunk>`/`<remote>` per `MATERIA.md` § Version control; halt and surface
+   if local changes block the pull). Confirm the forge is reachable
+   (`MATERIA.md` § Version control § Forge; skipped when the forge is `none`)
+   and that the maintainer's verify tooling is runnable — the relevant rows of
+   `MATERIA.md` § Gate for a code/docs maintainer, the live app for a UI
+   maintainer. Read the standards the sweep judges against, **both live
+   queues**, and the recent merge log (for dedup).
+2. **Sweep** — scan the maintainer's surface for drift against its standards.
+   A finding already covered by a pending queue entry, a recent merge, or a
+   sibling maintainer's open sweep PR is dropped naming the overlap.
+3. **Classify** each finding into exactly one of:
+   - **Bounded fix** — behavior-preserving and small enough to apply and
+     verify in this run → fix directly.
+   - **Oversized** — too large or too behavioral to fix inline → a **queue
+     entry** filed in the same PR (§ Oversized findings, below).
+   - **Ambiguous / unverifiable** → a **needs-human note** in the PR body,
+     never guessed at.
+4. **Branch** — `git checkout -b <skill>/sweep-<YYYY-MM-DD>` (append a short
+   hex suffix on a same-day rerun).
+5. **Fix** — apply the bounded fixes in small scoped commits
+   (`<skill>: <what> (<rule it violated>)`), each carrying the doc updates the
+   touch-X→update-Y map (`.materia/docs/contributing.md`) demands; write any
+   queue entries (§ Oversized findings) in their own commits. One writer: the
+   parent is the sole committer (a large mechanical cluster may be delegated to
+   a single implementer subagent, never two writers at once).
+6. **Verify** — re-establish that the diff is sound, by the maintainer's kind:
+   a **code** maintainer runs the full local gate (`MATERIA.md` § Gate); a
+   **docs** maintainer runs the docs gate; a **UI** maintainer re-drives each
+   affected surface and captures the result **and** still runs the full local
+   gate (re-capture is the primary evidence, not a substitute for the gate). A
+   fix that can't be made sound is reverted and demoted to a needs-human note.
+7. **Pre-PR review rounds** — before the PR exists, harden the diff with
+   fresh-context adversarial reviewer(s) (§ Pre-PR review rounds, below).
+8. **One PR** — push the branch and open exactly one PR (open-PR op,
+   `MATERIA.md` § Version control § Forge). The body lists every fix (with the
+   rule that proved the drift), every skip, every queue entry filed, every
+   needs-human note, and the deferred remainder, and closes with the Materia
+   sigil naming the casting skill (§ PR attribution — the Materia sigil).
+9. **Ride CI to green** — the post-PR resolution loop, **bounded at 3 rounds**:
+   resolve conflicts by **merge, never rebase, never force-push**; watch CI;
+   fix a diff-caused failure on the branch and re-verify; re-run an unrelated
+   failure once, else stop with a comment. This loop is **distinct from the
+   pre-PR review rounds** (step 7) — that one hardens the diff before the PR
+   exists; this one carries the open PR to green — and the two are separately
+   bounded at 3 rounds each.
+10. **Merge posture** — per skill: most maintainers stop at a green PR for
+    human review (the same terminal shape as a `ship-spec` `finalize`); the
+    librarian alone auto-merges behind its mechanical docs-only envelope, and
+    forfeits that privilege on any run that trips a forfeit (its § The
+    docs-only envelope).
+
+A run with **no fixes and no queue entries** planned exits clean at classify —
+print the zero-drift report (including any notes) and end the turn: no branch,
+no PR, no review rounds. A run that plans only queue entries (no direct fixes)
+still branches and opens a PR to carry them.
+
+#### Pre-PR review rounds
+
+On a non-trivial diff, before the PR is opened, spawn
+fresh-context adversarial reviewer(s) at the skill's `<skill>: reviewer`
+routing row (`MATERIA.md` § Tiers § Skill routing) on the sweep diff; fold
+their findings and re-verify (step 6) between rounds; **bounded at 3 rounds** to
+convergence (no material `Blocker`/`Major` left). The gate is the diff's size:
+a run with nothing to review skips the rounds entirely (there is no branch or
+PR), and a run whose whole diff is one trivially small mechanical cluster may
+converge in a single round. A contested fix still unresolved after 3 rounds is
+dropped to a needs-human note and the rest proceeds. These rounds are separate
+from — and run before — the post-PR ride-to-green loop.
+
+#### Oversized findings — queue entries in the same PR
+
+A finding too large or
+too behavioral to fix inline does not vanish into a note: it becomes a **queue
+entry committed in the same sweep PR** — a proposed spec under the
+`.materia/docs/specs/_proposed/` contract, or a bug report under the
+`.materia/docs/bugs/_reports/` contract — carrying `source: <skill>` and
+following that queue's frontmatter, filename/folder, and id-minting rules (the
+queue READMEs are the one home for those rules; don't restate them). The
+maintainer's `source` key is registered in the target queue's producers table
+(§ Registration surfaces), exactly as a producer's is — an authoring-time
+registration made once when the skill gains the capability, never a per-run
+edit by the sweep itself. **Librarian exception
+(binding):** the librarian files **proposed specs only** — a normative
+code-vs-doc conflict stays a needs-human PR-body note, never a bug report (its
+"nothing is the oracle for normative text" rule is unchanged); doc work too
+large to fix inline is its one queue-entry path.
+
+The queue-entry write is drawn precisely: a maintainer may create **new files
+under `.materia/docs/specs/_proposed/`** and **new report folders under
+`.materia/docs/bugs/_reports/`** only. Editing or removing any existing
+historical artifact under `.materia/docs/specs/**`, `.materia/docs/bugs/**`,
+`.materia/docs/epics/**`, or `.materia/docs/research/**` stays forbidden — the
+carve-out authorizes new queue entries and nothing else.
+
+#### UI maintainers — the live-app envelope
+
+A **UI maintainer** (`curator`, `concierge`) sweeps the **running app** rather
+than the tree, so it carries machinery the code/docs maintainers do not:
+provisioning the Eyes toolchain, driving surfaces, and re-capturing after each
+fix. That machinery lives here **once**; both UI maintainers cite this
+subsection and add only their judgment basis and skill-specific tables. The
+spine above still holds; this subsection refines the kind-specific steps and is
+the one home for all shared UI-maintainer mechanics.
+
+- **UI self-gate — first action, before any liveness probe.** Read
+  `MATERIA.md` § Surface gates § UI-affecting. If it is `none` — a repo with no
+  user-facing surface (`MATERIA.md` § Eyes is `none` too) — print one line and
+  end cleanly, writing nothing and starting nothing. This runs **before** the
+  liveness probe so a no-UI repo never autostarts a dev stack. (A UI maintainer
+  is operator-invoked, so this gate is its outermost guard — nothing upstream
+  has filtered by UI.)
+- **Liveness probe + autostart (interactive or `--yes` runs only).** Probe the
+  dev URL (`MATERIA.md` § Run it) for liveness. If it is already up, continue.
+  Autostart is an operator-visible machine-state change, so a non-interactive
+  run (Auto Mode / scheduled, no `--yes`) with a down app takes the clean
+  remediation exit instead. On an interactive (or `--yes`) run, **record every
+  service and process the run starts** (for teardown), bring the app up via the
+  first path that applies — the § Run it recipe (preferred), else the § Eyes
+  provisioning recipe plus § Environment preflight — and re-probe on a bounded
+  wait (~120s). If neither path makes it reachable, first tear down anything the
+  attempt started, then print the § Run it remediation step and exit cleanly
+  without writing anything.
+- **Eyes provisioning is always step 1 of provisioning** (`MATERIA.md` § Eyes)
+  — never skipped even when the environment looks provisioned (the recipe is
+  idempotent). **Export the service env block the recipe names in the same
+  command as the drive** (shell state does not persist between tool calls), and
+  **authenticate** with the dev credentials (`MATERIA.md` § Run it) to reach
+  authenticated surfaces (skip when the app has no auth).
+- **Canonical-viewport drive + capture.** Visit every surface in
+  `.materia/docs/surface-map.md` (§ Pages for a web app; § Commands for a
+  CLI/TUI) **in map order**, at the canonical viewport (`MATERIA.md` § Eyes).
+  Per surface take a **capture and a structural snapshot** in the formats
+  § Eyes defines (a browser toolchain writes a PNG capture + an HTML snapshot).
+  A surface that errors, fails to render, or fails to capture is **noted and
+  skipped** — record it and continue to the next; the drive never aborts.
+- **The presentation-layer edit envelope (binding).** A UI maintainer's fixes
+  touch the **presentation layer only** — markup structure, styles, design
+  tokens, component usage and **presentational** props (a prop that gates
+  behavior or data flow is out of envelope), and static display copy. It
+  **never** edits logic, data derivation, event handlers, schema, or wire
+  shapes. Anything a fix would need beyond that boundary is **oversized** (a
+  queue entry, § Oversized findings) or a needs-human note — the same "note,
+  don't fix" line the other maintainers draw, drawn here at the presentation
+  boundary.
+- **Sibling routing — a drop is a note, never a discard.** When a finding
+  belongs to the sibling UI maintainer's territory, "drop" means a
+  **named-overlap note in the PR body** — never a silent discard. And the
+  routing carries an observability exception: a finding owned by the sibling
+  but observable **only in this skill's own drive** (a token or spacing defect
+  that manifests only in an error/disabled state or mid-flow, which a
+  default-render drive never renders) is **not** dropped — the skill that saw
+  it surfaces it itself, as a needs-human note or a queue entry naming the
+  owner, because the owner's sweep will never observe it.
+- **Re-capture verification (binding — the UI verify step).** This is the
+  heart of the spine's step-6 verify for a UI maintainer — run alongside the
+  full local gate (`MATERIA.md` § Gate), which still must pass — and it is
+  **primary over the diff-review rounds**. After each fix, **re-drive the
+  affected surface and capture it again**; the before/after capture pairs ride
+  the PR — committed under the sweep branch in the run's capture folder,
+  `.materia/captures/<skill>-sweep-<YYYY-MM-DD>/` (a committed run output
+  outside the docs trees, linked from the PR body; the operator may delete it
+  once the PR is decided) — so the human gate judges **observed output**, not
+  the diff alone. A fix whose re-capture does not show the intended change (or
+  shows a regression) is reverted and demoted to a needs-human note.
+- **Instability degrade.** If provisioning fails or the § Eyes drive exits with
+  a signature `MATERIA.md` § Eyes names as known environment instability (not a
+  product bug), print a short note, tear down anything the run started, and stop
+  clean — **never crash the operator's session.**
+- **Teardown what the run started** (its own command, never chained with
+  follow-up work). Stop exactly the processes/services the run recorded at
+  autostart/provisioning (the backgrounded dev server, containers this run
+  launched) and nothing that pre-existed.
+
 ### PR attribution — the Materia sigil
 
 Every PR any Materia skill opens closes its body with the **sigil** — the
@@ -267,7 +440,7 @@ after a horizontal rule, with the casting skill's name substituted:
 ```markdown
 ---
 
-🔮 Forged with [Materia](https://github.com/stoodder/materia) · cast by `<skill>` · *every run feeds the backlog*
+🔮 Forged with [Materia](https://github.com/stoodder/materia) · cast by `<skill>` · *base matter → gold, every run feeds the backlog*
 ```
 
 - `<skill>` = the bare name of the skill that opened the PR (`finalize` names
@@ -277,10 +450,14 @@ after a horizontal rule, with the casting skill's name substituted:
   body edits never duplicate or reposition it.
 - The sigil is attribution, not content: skills never cite it, and reviewers
   can ignore it. Keep the line's shape stable so it stays greppable
-  (`Forged with [Materia]`).
-- The "feeds the backlog" clause is literal: each run leaves a `retro.md`, and
-  `triage-retros` triages the batch into proposed specs and bug reports that it
-  authors directly into `.materia/docs/specs/_proposed/` and `.materia/docs/bugs/_reports/`
+  (`Forged with [Materia]` — the anchor is unchanged; only the closing italic
+  clause carries flavor).
+- The closing clause carries the harness's alchemy arc, and only its second
+  half is a contract: `base matter → gold` is flavor — the *prima materia*
+  transmutation the README opens on — while **`every run feeds the backlog` is
+  literal**: each run leaves a `retro.md`, and `triage-retros` triages the batch
+  into proposed specs and bug reports that it authors directly into
+  `.materia/docs/specs/_proposed/` and `.materia/docs/bugs/_reports/`
   (`source: retro-triage`), reaching the project's backlog in one PR.
 
 ### Registration surfaces — update in the same change
@@ -294,7 +471,7 @@ touch-X→update-Y map:
 | The repo's skill-roster surface — `CLAUDE.md`'s pipeline paragraph and, when the repo keeps one, a README flow graph/tables | any skill is added / renamed / retired, or its model or role changes |
 | [`CLAUDE.md`](../../../CLAUDE.md) — the spec-to-ship pipeline paragraph | the pipeline's shape or the producer count changes |
 | [`.materia/docs/specs/README.md`](../specs/README.md) — pipeline / closing-loop / producers tables | a stage, sibling, or producer skill changes |
-| The **target queue's** producers table + `source` key (e.g. [`.materia/docs/specs/_proposed/README.md`](../specs/_proposed/README.md) for spec proposals, [`.materia/docs/bugs/_reports/README.md`](../bugs/_reports/README.md) for bug reports); the epic family additionally keeps [`.materia/docs/epics/README.md`](../epics/README.md) true | a **producer** skill is added or its source key changes |
+| The **target queue's** producers table + `source` key (e.g. [`.materia/docs/specs/_proposed/README.md`](../specs/_proposed/README.md) for spec proposals, [`.materia/docs/bugs/_reports/README.md`](../bugs/_reports/README.md) for bug reports); the epic family additionally keeps [`.materia/docs/epics/README.md`](../epics/README.md) true | a **producer** skill is added or its source key changes, **or** a **maintainer** begins filing oversized findings into a queue (§ Maintainer lifecycle) — it registers its `source` key here too |
 | The skill's row in `MATERIA.md` § Skill routing (and § Model set when the model catalog changes) | a sub-skill's model/effort changes |
 | This standard (including `### Retro touchpoint contract` below) | the authoring convention itself changes, **including** any change to the retro touchpoint sole-writer invariant or the ` ```retro ` fenced-block contract |
 
