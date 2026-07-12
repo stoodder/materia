@@ -31,6 +31,6 @@ architecture uses for its own bounce.
 
 ## Gate rationale
 
-Same condition as its sibling design-stage angle: relevant only when the run
-produced a design artifact for a design-bearing (UI) surface, reviewed once
-before the human design gate sees it.
+Same condition as its sibling angle, design-coherence: relevant only when the
+run produced a design artifact for a design-bearing (UI) surface, reviewed
+once before the human design gate sees it.
