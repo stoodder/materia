@@ -86,8 +86,9 @@ Reachable-from line records for this repo — verify that line, don't assume:
 
 The same split governs **every** canvas touch — authoring, revision, read-back
 sync, and export alike. In both worlds "re-spawn the design stage; it produces
-a new body" (`ship-spec/SKILL.md § Design gate`) stays literally true; only
-*who holds the MCP connection* varies. The **canvas-pointer frontmatter keys**
+a new body" (`ship-spec/SKILL.md § Design gate`; likewise its § Stage reviews
+(design & architecture) — § Design-stage review re-spawns) stays literally
+true; only *who holds the MCP connection* varies. The **canvas-pointer frontmatter keys**
 (the `canvas:` reference/version keys of the design template's frontmatter
 contract) are written by whichever actor owns canvas I/O — the spawned stage in
 the first world, the orchestrator in the second — as metadata, like the
