@@ -142,7 +142,7 @@ Repeat until green, **bounded at 3 rounds**:
 
 1. **Conflicts?** `git fetch <remote> <trunk> && git merge <baseline>` —
    **merge, never rebase, never force-push** (same rule as the librarian and
-   ship-spec's merge watch; the shipped permission rules deny force
+   ship-spec's § PR watch; the shipped permission rules deny force
    spellings); re-derive each conflicted fix against the trunk's content (drop
    it if moot), then push normally.
 2. **Wait for CI:** `gh pr checks <n> --watch` (PR-status op,

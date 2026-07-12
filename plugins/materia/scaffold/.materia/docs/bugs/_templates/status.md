@@ -65,6 +65,14 @@
 
 <!-- Anything the next subagent/session needs to know to pick up cleanly. -->
 
+<!-- PR-watch convention — after finalize opens the PR the fix-bug run watches
+     it here on every run (notify terminal only; see ship-spec/SKILL.md
+     § PR watch). fix-bug has no `--auto`, so it surfaces the PR at green and
+     never merges — it never emits the autopilot `auto-merge:` vocabulary:
+       pr-watch: watching PR #<n>
+       pr-watch: green — PR #<n> ready for review + merge
+       pr-watch: CI still pending after ~20 min with no progress — PR open for review -->
+
 <!-- Stage-review convention (ship-spec/SKILL.md § Stage reviews (design &
      architecture) is the normative home for the loop, angle set, spawn, and
      commit-subject format; fix-bug/SKILL.md § Bug-analysis stage review is

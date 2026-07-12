@@ -37,9 +37,9 @@
      run start from the `--auto` invocation flag; the Resume gate preserves it
      (an explicit `--auto` on a resume upgrades off → on; nothing downgrades
      implicitly). `on` ⇒ operator checkpoints auto-accept grounded defaults
-     and, after finalize, the run continues into ship-spec's § Merge watch
-     (CI fixes, conflict resolution, merge on green). See
-     ship-spec/SKILL.md § Autopilot. -->
+     and, after finalize, the run's § PR watch (which runs on every run —
+     CI fixes, conflict resolution) additionally merges once green. See
+     ship-spec/SKILL.md § Autopilot and § PR watch. -->
 
 - **auto:** off (no `--auto` at invocation)
   <!-- or: on (`--auto` passed at invocation) -->
@@ -179,12 +179,18 @@
                  orchestrator-lane recapture; finalize blocks on an empty
                  ui-proof/ with no such note and no degrade/waiver line) -->
 
-<!-- Autopilot merge-watch convention — on an --auto run the orchestrator
-     records merge-watch progress here (pre-merge; see ship-spec/SKILL.md
-     § Merge watch):
-       auto-merge: watching PR #<n>
-       auto-merge: CI fix round <n> — <summary>
-       auto-merge: conflict resolved (<baseline> merged) -->
+<!-- PR-watch convention — after finalize opens the PR the orchestrator
+     watches it here on every run (see ship-spec/SKILL.md § PR watch). Two
+     terminals, two vocabularies:
+       Interactive runs (surface-at-green, no merge) use `pr-watch:`:
+         pr-watch: watching PR #<n>
+         pr-watch: green — PR #<n> ready for review + merge
+         pr-watch: CI still pending after ~20 min with no progress — PR open for review
+       Autopilot (--auto) runs additionally merge, and record pre-merge
+       progress with `auto-merge:`:
+         auto-merge: watching PR #<n>
+         auto-merge: CI fix round <n> — <summary>
+         auto-merge: conflict resolved (<baseline> merged) -->
 
 <!-- Design-gate convention (ship-spec/SKILL.md § Design gate is the
      normative home — the exact strings below are pinned there too):
