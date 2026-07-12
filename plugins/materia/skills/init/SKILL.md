@@ -115,11 +115,19 @@ the materialize phases need; where each chapter's answers land:
   **ceiling, not a quota** — a chapter already covered by earlier
   conversation resolves in one short round or none; never re-ask what's
   answered, never pad a round to reach 4 questions. Later rounds probe only
-  what earlier answers left open.
+  what earlier answers left open. Across all eight chapters the whole
+  interview should land around **20–35 questions (~8–12 rounds) total** —
+  the per-chapter ceilings draw on that shared budget, they are not
+  independent allowances.
 - **Lead every option list with a grounded recommendation** inferred from
   everything heard so far — a concrete wrong guess draws out taste faster
   than a blank prompt. Free-form discussion between rounds is welcome;
-  chapters stage the ground to cover, they are not a rigid form.
+  chapters stage the ground to cover, they are not a rigid form. A
+  multi-value probe (five feel adjectives, 2–4 taste references, success
+  metrics) doesn't fit four short option labels — pre-bundle it into 2–3
+  named candidate combinations (e.g. three complete "vibes") and refine the
+  picked bundle with free text, rather than atomizing it into one question
+  per value.
 - **Every non-essential question carries an explicit skip**: a
   "Skip — decide later" option (`AskUserQuestion`) or a numbered skip option
   (Auto Mode). Essential questions — marked per chapter — never offer one.
@@ -132,9 +140,10 @@ the materialize phases need; where each chapter's answers land:
   Chapters 7–8 are `MATERIA.md`-bound and keep that file's **binary
   conventions**: a concrete value or `none`, never free-text — a skippable
   stack/capability sub-question maps onto the existing `none`/absent
-  affordance (§ Gate rows, § Eyes, § Design tool, § Data layer), and an
-  answer with no such affordance (see Chapter 7) is essential precisely
-  because nothing legal can stand in for it.
+  affordance (§ Gate rows, § Design tool, § Data layer), and an answer with
+  no such affordance (the Chapter 7 essentials; § Eyes on a UI repo — see
+  Chapter 8) is essential precisely because nothing legal can stand in for
+  it.
 - **If `AskUserQuestion` is unavailable**, degrade to Auto Mode: the same
   staged chapters as plain text with numbered options, the recommended
   default marked per question.
@@ -142,6 +151,9 @@ the materialize phases need; where each chapter's answers land:
   the skip in the Phase 2 confirmation), Chapter 4 compresses to name +
   tagline + positioning, and Chapters 2 and 6 run in full — goals,
   principles, and voice exist regardless (CLI/API output has tone too).
+  A structurally inapplicable section records `*N/A — no user-facing UI.*`,
+  not `Not yet decided` — the latter promises a revisit; a UI-less repo has
+  nothing to revisit.
 
 #### Chapter 1 — Concept & description (all essential)
 
@@ -164,6 +176,11 @@ load-bearing for materialization. Resolve:
   sections, and which docs-router phrasings apply.
 - Deploy intent (local-only, a PaaS, containers, serverless) — shapes the
   workflow standard and CI spec.
+
+Chapter 1 always **starts unstructured** — the free-form pass comes first;
+then close whichever of the five resolve items it left open with a single
+`AskUserQuestion` round (deploy intent and surface vocabulary are naturally
+closed-set). It still obeys the shared round budget.
 
 Product depth (goals, market, branding, taste) gets its own chapters next —
 don't rush it here; Chapter 1 establishes *what*, Chapters 2–6 establish
@@ -220,17 +237,19 @@ playful or neutral, error-message temperament; the words it always/never
 uses (feeds the glossary). Every question skippable. Runs on every repo —
 CLI/API output has tone too.
 
-#### Chapter 7 — Tech stack
+#### Chapter 7 — Tech stack (stack, dev-run recipe, gate commands essential)
 
 Recommend a stack **grounded in Chapters 1–2**, not a menu of everything.
 Present 2–3 coherent options (framework + language + persistence + styling
 + test runners + package manager), each with a one-line rationale tied to
 what they're building, and a clear recommendation. The engineer may also
-name their stack outright — never argue them out of a stack they know. The
-recommendation menu is skippable; **the resolution is not** — the chapter
-does not exit until these are settled, concretely enough to write
-`MATERIA.md` § Stack, § Run it, and § Gate (essential; no legal empty value
-exists for them):
+name their stack outright — never argue them out of a stack they know, and
+naming one bypasses the recommendation menu entirely. **The resolution
+itself is not bypassable**: never offer a "Skip — decide later" option on
+the stack, dev-run recipe, or gate-command questions — the chapter does not
+exit until these are settled, concretely enough to write `MATERIA.md`
+§ Stack, § Run it, and § Gate (essential; no legal empty value exists for
+them):
 
 - Language(s) + framework(s) + package manager.
 - The dev-run recipe (command, URL/port, dev credentials if any) —
@@ -252,7 +271,7 @@ affordance:
 - Persistence + ORM/driver (or none).
 - Test runners: unit/integration, and e2e (or none).
 
-#### Chapter 8 — Capabilities & operations
+#### Chapter 8 — Capabilities & operations (UI, persistence, and — on UI repos — Eyes essential)
 
 init installs no skills and prunes none — the whole roster ships with the plugin.
 Each probe therefore only **sets a MATERIA.md section**: an absent capability
@@ -262,8 +281,19 @@ rest). No skill is removed from the repo. The first two probes (UI,
 persistence) are usually already settled by Chapter 1's surface vocabulary
 and Chapter 7's persistence answer — confirm, don't re-ask; they are
 essential either way (they gate skills and chapters, and `none` is itself a
-concrete answer, not a skip). The remaining probes follow the chapter skip
-rules, recording `none`/absent.
+concrete answer, not a skip). Two probes' legality depends on the UI answer:
+
+- **Eyes:** `MATERIA.md` § Eyes may be `none` **only when § UI-affecting is
+  `none`** — on a UI repo there is no legal empty value (the UI skills
+  self-gate on § UI-affecting and then run § Eyes' recipe as written), so
+  the Eyes question is **essential on UI repos**: a skip attempt falls back
+  to the stated default toolchain (Playwright for web), never to `none`.
+  On a non-UI repo, skip the question — § Eyes is `none` by consequence.
+- **Design tool:** deterministically `none` on a non-UI repo (the design
+  stage never runs) — set it without asking. Only UI repos get the question,
+  where a skip records `none` per the section's own default.
+
+The remaining probes follow the chapter skip rules, recording `none`/absent.
 
 | Probe | Section | When absent |
 |---|---|---|
@@ -289,7 +319,9 @@ from Chapter 8), the sections that will be marked `none` (and which
 UI/data-gated skills that makes inert — including a skipped Chapter 5 /
 compressed Chapter 4 on non-UI repos), **the skipped-question tally — every
 `Not yet decided` line that will be written, verbatim** — and the bootstrap
-epic's proposed member specs (titles + one-liners). Reply verbs, with producer-lifecycle semantics
+epic's proposed member specs (titles + one-liners). Recap it **chapter by
+chapter** (the interview's own structure), not as one flat list — the
+engineer reviews against what they remember answering. Reply verbs, with producer-lifecycle semantics
 (`docs/standards/skills.md` § Producer lifecycle once materialized):
 `approve` · `edit: <feedback>` · `cancel`. Nothing is written until
 `approve`.
@@ -346,11 +378,13 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
    - Register every generated standard as a row in `docs/README.md`
      § Standards and in `docs/contributing.md`'s touch-map slot.
 6. **Write `docs/product.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/product.md`:
-   every section filled from Chapters 2–6 — opinionated where answered, a
-   literal `*Not yet decided — <what was asked>.*` line where skipped,
-   `{{slots}}` gone either way. When the repo ships UI, derive the
-   `visual-language.md` seed from its § Design feel & taste (brand colors,
-   density, motion stance) so the two never start contradictory.
+   every section filled from Chapters 2–6 (plus the § Identity one-liner
+   copied verbatim from Chapter 1) — opinionated where answered, a literal
+   `*Not yet decided — <what was asked>.*` line where skipped, `*N/A — no
+   user-facing UI.*` where structurally inapplicable, `{{slots}}` gone
+   either way. When the repo ships UI, derive the `visual-language.md` seed
+   from its § Design feel & taste (brand colors, density, motion stance) so
+   the two never start contradictory.
 7. **Fill the remaining doc slots:** `docs/README.md`, `docs/contributing.md`
    (DoD + touch-map rows), `docs/glossary.md` (seed the Chapter 1 entities +
    the § Voice & tone vocabulary), and delete `docs/surface-map.md`'s init
