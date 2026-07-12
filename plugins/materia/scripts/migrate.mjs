@@ -70,7 +70,7 @@
 //        file --acknowledge will not write to)
 import { writeFileSync, readFileSync, renameSync, rmSync, mkdirSync, existsSync, readdirSync, statSync, copyFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
-import { inspect, readLedger, relevantChanges, isInt, readJson, MIG } from './lib/materia-contract.mjs'
+import { inspect, readLedger, relevantChanges, isInt, isDir, readJson, MIG } from './lib/materia-contract.mjs'
 
 // ---- migration registry -----------------------------------------------------
 // One entry per implemented, stable migration id. Each migration:
@@ -345,7 +345,10 @@ const relocateDocs = {
     const docsCheck = (report.checks ?? []).find((c) => c.id === 'docs-location')
     const drift = !!docsCheck && docsCheck.severity !== 'ok'
     const hasRootDocs = existsSync(join(targetRoot, DOCS_ROOT))
-    const hasMateriaDocs = existsSync(join(targetRoot, DOCS_CANON))
+    // isDir, not existsSync — the shared detector keys "relocated" on a real DIRECTORY at the
+    // canonical path (materia-contract.mjs docs-location); classify must read the same truth
+    // or plan and doctor diverge on a non-directory squatter at .materia/docs.
+    const hasMateriaDocs = isDir(join(targetRoot, DOCS_CANON))
     const note = this._followUps(targetRoot, { moving: drift, bothExist: hasRootDocs && hasMateriaDocs })
     if (drift)
       // 3. DRIFT — legacy docs/README.md router present, .materia/docs/ absent -> AUTO-MOVE
@@ -413,6 +416,13 @@ const relocateDocs = {
         if (!created.includes(CHECK_DOCS_CANON)) created.push(CHECK_DOCS_CANON)
       }
     }
+    // NEVER stamp while the docs axis is still in drift (router present, no directory at the
+    // canonical path). The one way to get here is a non-directory squatter at .materia/docs
+    // blocking the move above: stamping would close the migration window while doctor stays
+    // blocked — a stuck repo with no offered remedy. Skipping the stamp instead leaves the
+    // recoverable schema-behind state this whole section is designed around.
+    if (!isDir(materiaDocsAbs) && existsSync(join(targetRoot, DOCS_ROUTER)))
+      return { created, state: null }
     // STAMP LAST — re-read project.json from DISK (init-project-state / install-check-docs may
     // have created/stamped it earlier in the SAME apply run; version files sort 0.2.0 < 0.3.0 <
     // 0.4.0, so those migrations are discovered and applied before this one). Stamp ONLY a
