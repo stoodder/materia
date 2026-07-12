@@ -142,9 +142,9 @@ that entry describes, so it is born already-considered and surfaces nothing.
 `/materia:init` materializes and doctor checks for presence and canonical location. It does
 **not** track **per-run product outputs**: the files a pipeline run emits into a dated run
 folder — `spec.md`, `design.md`, `architecture.md`, `tasks.md`, `retro.md`, and the run's
-`STATUS.md` under `docs/specs/<dated-slug>/`; the analogous per-run bug artifacts under
-`docs/bugs/`; and the `epic.md`/`research.md` an epic run mints under `docs/epics/<dated-slug>/`
-(`docs/research/` is reserved for the same class). These are authored per run, live in dated run
+`STATUS.md` under `.materia/docs/specs/<dated-slug>/`; the analogous per-run bug artifacts under
+`.materia/docs/bugs/`; and the `epic.md`/`research.md` an epic run mints under `.materia/docs/epics/<dated-slug>/`
+(`.materia/docs/research/` is reserved for the same class). These are authored per run, live in dated run
 folders, and are freely edited by the project. Their **format** changing — a new `design.md`
 section, a new frontmatter block, a new prototype output — is a `scaffold` template change
 classified `optional`/`recommended`, **never an `artifactSchema` bump.** (The bundled scaffold
