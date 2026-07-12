@@ -836,8 +836,9 @@ follows the identical assignment: when MCP is operator-session-only, the
 orchestrator — which already executes the design stage's canvas-authoring
 plan onto the canvas over MCP in that world (`design/SKILL.md` § Canvas
 authoring & the paired artifact — "The lane split") — performs that first
-export itself too, immediately after authoring, before the gate-arrival
-commit-together step (§ Gate arrival) runs.
+export itself too, immediately after authoring, before the design-stage review
+spawns (§ Stage reviews (design & architecture) — § Design-stage review) — and
+thus before the gate-arrival commit-together step (§ Gate arrival) runs.
 
 **Precedence.** Operator hand-edits to the body are **authoritative** for the
 sections they touch; the sync unit re-derives **only** canvas-owned content and
@@ -1331,13 +1332,52 @@ as § Review's are. Decisions and rounds are recorded via § Notes lines —
 
 ### Design-stage review
 
-Point 1 — the `design-stage` angles over the freshly-authored `design.md`, run
-**once**, before the design gate's **first** arrival only. It does **not**
-re-run on the gate's operator revision rounds, and an **architecture bounce
-does not re-trigger it** (an intake decision — the bounced design still returns
-to the human gate; § Architecture bounce states the same in one line). The
-loop, angle set, spawn, and commit format are § Stage reviews above; the
-design-point specifics:
+Point 1 — the `design-stage` angles over the freshly-authored design (the
+descriptive `design.md`, plus the **visual half** the `design-fidelity` angle
+also reviews — see below), run **once**, before the design gate's **first**
+arrival only. It does **not** re-run on the gate's operator revision rounds,
+and an **architecture bounce does not re-trigger it** (an intake decision — the
+bounced design still returns to the human gate; § Architecture bounce states
+the same in one line). The loop, angle set, spawn, and commit format are
+§ Stage reviews above; the design-point specifics:
+
+- **The visual half — what the `design-fidelity` reviewer sees.** The other two
+  `design-stage` angles read `design.md` alone; `design-fidelity`
+  (`MATERIA.md § Review angles`) also weighs the design's **visual half**. When
+  a committed snapshot exists at `docs/specs/<dated-slug>/design/` it is the
+  **primary** visual artifact the reviewer reviews (the live canvas only
+  supplementary) — whenever this review runs at all. What further canvas
+  evidence the reviewer gets is gated on `MATERIA.md § Design tool`'s `read`
+  **capability** together with its Reachable-from line — never reachability
+  alone:
+  1. Adapter has **`read`** **and** the Reachable-from line records MCP inside
+     Agent spawns → the reviewer reads canvas state directly.
+  2. Adapter has **`read`** but MCP is **operator-session-only** → the
+     orchestrator inlines its serialized canvas read-back into the reviewer's
+     brief (the § Gate-arrival sync Actor-split precedent for who holds the
+     canvas read; briefs carry inlined content — never a path into a forbidden
+     directory — per the design-conformance precedent in § Reviewer fan-out).
+  3. Adapter **lacks `read`** (e.g. a native-`export` tool with no read) → the
+     committed snapshot is the whole visual half the reviewer sees — consistent
+     with the no-`read` posture `MATERIA.md § Design tool` already takes (canvas
+     edits can't be seen), not a new rung.
+  4. **No visual half at all** — no `author` adapter (a repo-side design), or no
+     snapshot **and** no read path → the orchestrator **skips** the
+     `design-fidelity` angle and records
+     `stage-review(design-stage): design-fidelity skipped (<reason>)` in
+     § Notes; never an error (the two sibling `design-stage` angles still review
+     the descriptive half). A capability-driven per-angle skip, sibling to
+     § Stage reviews' missing-angle-file skip.
+
+  **Export ordering.** The first committed-snapshot export must complete
+  **before the design-stage review spawns**, so round 1 reviews it. When MCP is
+  reachable inside spawns the design stage's own step-9 export
+  (`design/SKILL.md` § Persist step 9) already precedes its return; when MCP is
+  operator-session-only the orchestrator performs that first export — the duty
+  pinned in § Gate-arrival sync's last paragraph. Each stage-review revision
+  re-exports via the existing full-revision rule (`design/SKILL.md` § Persist
+  step 9's committed-snapshot paragraph), so every round reviews the current
+  snapshot.
 
 - **Pre-gate — the gate's counter is untouched.** This review runs before the
   approval block exists (the design stage never writes it; the gate arrival
@@ -1426,8 +1466,8 @@ up-to-date base.
 ### Reviewer fan-out
 
 Spawn reviewers as a **single message**, one `Agent` call per **applicable**
-angle. **Iterate the `MATERIA.md` § Review angles registry** — of its eleven
-canonical rows the **seven post-implementation rows** iterate here (the four
+angle. **Iterate the `MATERIA.md` § Review angles registry** — of its twelve
+canonical rows the **seven post-implementation rows** iterate here (the five
 stage-review rows are excluded — see step 1), and any repo-specific rows append
 below, iterated the same way (one reviewer per applicable row; there is no
 separate "repo-specific angles" step). For each row:

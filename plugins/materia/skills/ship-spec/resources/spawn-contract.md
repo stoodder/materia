@@ -112,9 +112,16 @@ design-stage and architecture-stage angle spawns.
 > (`spec.md`; also `design.md` when the artifact under review is
 > `architecture.md`; on the bug lane, the bug report body **plus**
 > `reproduction.md` and the reproduction test path(s) it names, when the
-> artifact is `bug-analysis.md`); the standards and
+> artifact is `bug-analysis.md`); the **committed design snapshot**
+> (`docs/specs/<dated-slug>/design/`, its `README.md` fabrication contract
+> included) when the artifact under review is `design.md`; the standards and
 > resource docs plus `docs/product.md`; and the **repo and its code**, to
-> ground-truth the artifact's evidence and reuse claims. You must NOT read:
+> ground-truth the artifact's evidence and reuse claims. On a `design.md`
+> review you see the visual half per `ship-spec/SKILL.md` § Stage reviews
+> (design & architecture) — § Design-stage review: the canvas directly when the
+> adapter has `read` and MCP is reachable inside spawns, else the serialized
+> canvas read-back the orchestrator inlined in your brief, else the committed
+> snapshot alone. You must NOT read:
 > `STATUS.md`, `retro.md`, other reviewers' outputs, prior-round reviewer
 > logs, anything under `.claude/review-logs/`, or the authoring stage's spawn
 > conversation.
