@@ -610,11 +610,11 @@ directory's `README.md` for the file schema and how to add an angle). This
 table owns the File → Gate → Tier mapping; the angle file itself carries only
 `name`, `description`, and body.
 
-The eleven canonical rows (seven post-implementation + four stage-review) ship
-**pre-filled** and are **not** stack-specific — they ship verbatim, like §
-Skill routing. Repo-specific angles (a11y, perf budgets, compliance) are
+The twelve canonical rows (seven post-implementation + five stage-review)
+ship **pre-filled** and are **not** stack-specific — they ship verbatim, like
+§ Skill routing. Repo-specific angles (a11y, perf budgets, compliance) are
 appended as additional rows by /materia:init or the operator; by default
-there are none beyond the canonical eleven.
+there are none beyond the canonical twelve.
 
 **Gate** is when the angle runs: `always` (every run, subject to ship-spec's
 markdown-only exemption and trivial-diff collapse), `ui-affecting`,
@@ -665,10 +665,11 @@ Stage reviews (design & architecture)'s rules.
 | `design-conformance` | `design-conformance.md` | `design-bearing` | `opus/high` |
 | `design-coherence` | `design-coherence.md` | `design-stage` | `sonnet/high` |
 | `design-feasibility` | `design-feasibility.md` | `design-stage` | `opus/high` |
+| `design-fidelity` | `design-fidelity.md` | `design-stage` | `opus/high` |
 | `architecture-grounding` | `architecture-grounding.md` | `architecture-stage` | `sonnet/high` |
 | `architecture-coverage` | `architecture-coverage.md` | `architecture-stage` | `opus/high` |
 
-Repo-specific angles go in additional rows below the canonical eleven.
+Repo-specific angles go in additional rows below the canonical twelve.
 
 The `spec-adherence` angle drops to `haiku/low` on ship-spec's markdown-only
 exemption path (binding rule stated in `ship-spec` § Review).
