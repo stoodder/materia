@@ -2389,6 +2389,12 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
       writeFileSync(join(dir, 'docs', 'specs', '2026-07-01-run', 'x.md'), 'ran `sh scripts/check-docs.sh` then\n')
       mkdirSync(join(dir, 'docs', 'bugs', '2026-07-02-fix'), { recursive: true })
       writeFileSync(join(dir, 'docs', 'bugs', '2026-07-02-fix', 'STATUS.md'), 'gate: `sh scripts/check-docs.sh`\n')
+      // …and the RELOCATED-prefix twins (.materia/docs/…): a post-relocation repo's frozen
+      // history must stay protected through the same exemption's second prefix set.
+      mkdirSync(join(dir, '.materia', 'docs', 'specs', '2026-07-03-run'), { recursive: true })
+      writeFileSync(join(dir, '.materia', 'docs', 'specs', '2026-07-03-run', 'x.md'), 'ran `sh scripts/check-docs.sh` then\n')
+      mkdirSync(join(dir, '.materia', 'docs', 'bugs', '2026-07-04-fix'), { recursive: true })
+      writeFileSync(join(dir, '.materia', 'docs', 'bugs', '2026-07-04-fix', 'STATUS.md'), 'gate: `sh scripts/check-docs.sh`\n')
       const snap = snapshot(dir)
       const { r, report } = runMigrate(dir)
       const problems = []
@@ -2405,6 +2411,7 @@ const lintLedger = ({ latest, versions, knownCheckIds, knownMigrationIds }) => {
           if (!sh.hits.some((h) => h.file === 'run-docs.md')) problems.push('relative-dot ./scripts/check-docs.sh consumer missed — the optional ./ group regressed')
           if (sh.hits.some((h) => h.file.startsWith('docs/specs/2026-07-01-run/'))) problems.push('frozen dated run folder surfaced in hits — the historical-artifact exclusion regressed (the sweep would rewrite frozen history)')
           if (sh.hits.some((h) => h.file.startsWith('docs/bugs/2026-07-02-fix/'))) problems.push('frozen bug-run folder surfaced in hits — the bug-lane historical-artifact exclusion regressed (fix-bug run folders are permanent frozen history)')
+          if (sh.hits.some((h) => h.file.startsWith('.materia/docs/specs/2026-07-03-run/') || h.file.startsWith('.materia/docs/bugs/2026-07-04-fix/'))) problems.push('relocated-prefix frozen run folder surfaced in hits — the .materia/docs/… half of the historical-artifact exclusion regressed')
         }
       }
       const changed = diffKeys(snap, snapshot(dir))

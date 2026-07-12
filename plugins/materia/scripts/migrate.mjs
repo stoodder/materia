@@ -598,8 +598,11 @@ const scanReferences = (targetRoot, mig) => {
         // frozen classes are covered: spec run folders (docs/specs/<slug>/), fix-bug run
         // folders (docs/bugs/<slug>/ — permanent history whose STATUS.md provenance fields
         // legitimately carry old-era paths), and queued bug reports (docs/bugs/_reports/<slug>/
-        // — immutable once filed). The epics/ and research/ trees are deliberately NOT exempt:
-        // reconcile-epic keeps epics living present-state docs, so their stale refs are real.
+        // — immutable once filed). The epics/ tree is deliberately NOT exempt: reconcile-epic
+        // keeps epic.md a living present-state doc (its member table carries live run-folder
+        // paths), so stale refs there are real. research/ holds flat dated FILES (a standing
+        // reference corpus, per its README), so this directory-shaped exemption never applied
+        // to it in the first place — its notes are scanned like any other present-state doc.
         // BOTH the legacy root (docs/…) and the relocated (.materia/docs/…) prefixes are
         // covered, so a repo mid- or post-relocation still has its frozen history protected.
         // Canonical single-repo layout assumed: a nested packages/x/docs/specs/<slug>/
