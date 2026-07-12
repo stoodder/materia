@@ -96,7 +96,7 @@ the materialize phases need; where each chapter's answers land:
 
 | # | Chapter | Lands in |
 |---|---|---|
-| 1 | Concept & description | `MATERIA.md` § Identity · `CLAUDE.md` § What this is · glossary, surface-map, and workflow seeds |
+| 1 | Concept & description | `MATERIA.md` § Identity · `CLAUDE.md` § What this is · `docs/product.md` § Audience & market's usage-context bullet · glossary, surface-map, and workflow seeds |
 | 2 | Goals & success | `docs/product.md` § Goals & success + § Product principles |
 | 3 | Audience & market | `docs/product.md` § Audience & market |
 | 4 | Branding & identity | `docs/product.md` § Name & positioning |
@@ -378,8 +378,9 @@ tool does not expand a literal `${CLAUDE_PLUGIN_ROOT}` path:
    - Register every generated standard as a row in `docs/README.md`
      § Standards and in `docs/contributing.md`'s touch-map slot.
 6. **Write `docs/product.md`** from `${CLAUDE_PLUGIN_ROOT}/scaffold/docs/product.md`:
-   every section filled from Chapters 2–6 (plus the § Identity one-liner
-   copied verbatim from Chapter 1) — opinionated where answered, a literal
+   every section filled from Chapters 2–6 (plus, from Chapter 1: the
+   § Identity one-liner copied verbatim, and the usage-context answer into
+   § Audience & market's usage-context bullet) — opinionated where answered, a literal
    `*Not yet decided — <what was asked>.*` line where skipped, `*N/A — no
    user-facing UI.*` where structurally inapplicable, `{{slots}}` gone
    either way. When the repo ships UI, derive the `visual-language.md` seed
