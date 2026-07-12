@@ -1,6 +1,6 @@
 {
   "name": "materia",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A spec-to-ship Claude Code development harness: two orchestrators (ship-spec, fix-bug), pipeline sub-stages, producers, maintainers, a docs system, and an init scaffolder that materializes the harness into your repo.",
   "author": { "name": "Rick Allen" },
   "homepage": "https://github.com/stoodder/materia",
