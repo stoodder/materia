@@ -1,8 +1,12 @@
 # Review angles
 
-Canonical review-angle definitions for the `ship-spec` Review fan-out. Each
-`<slug>.md` file describes one angle — what it checks and how to run it. The
-fan-out spawns one reviewer per angle after the implement loop completes.
+Canonical review-angle definitions for the pipeline's review points: the
+post-implementation `ship-spec` Review fan-out, and the stage-review points
+after the `design` stage and after the `architecture`/`bug-analysis` stage.
+Each `<slug>.md` file describes one angle — what it checks and how to run it.
+The fan-out spawns one reviewer per applicable angle after the implement loop
+completes; each stage-review point spawns one reviewer per applicable angle
+right after that stage returns its artifact.
 
 This README is a plain doc, not an angle: it carries no `name` / `description`
 front matter.
@@ -49,6 +53,9 @@ Every file path is backtick prose, never a live markdown link.
 ## Canonical angles are special-cased in ship-spec
 
 The `ship-spec` **markdown-only exemption** and **trivial-diff threshold**
-special-case the canonical angle slugs (`correctness`, `security`,
-`spec-adherence`, `behavior`). A project that renames or removes a canonical
-angle must update `ship-spec` § Review too.
+special-case four of the canonical post-implementation angle slugs
+(`correctness`, `security`, `spec-adherence`, `behavior`) — the fan-out's own
+exemption set; stage-review angles are a separate mechanism with their own
+gating (`ship-spec/SKILL.md` § Stage reviews (design & architecture)). A
+project that renames or removes one of these four must update `ship-spec` §
+Review too.
