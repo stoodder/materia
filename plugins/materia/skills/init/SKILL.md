@@ -90,6 +90,12 @@ itself (it is an installed plugin skill, not a file in the repo). Nothing under
 
 ### Phase 1 — The interview: eight chapters
 
+**Open the interview with a brief welcome** — one or two lines, before
+Chapter 1: what init is here to do is *slot the Materia orb into this repo* —
+one conversation that equips it with the full spec-to-ship pipeline, tuned to
+their stack. Note that this is the single interactive step (everything
+downstream runs autonomously on what it resolves), then enter Chapter 1.
+
 The intake is staged as **eight chapters**, each a vertical that fills in one
 part of the product-and-project picture. Together they produce every input
 the materialize phases need; where each chapter's answers land:
@@ -459,7 +465,8 @@ three is the exit criterion; init never hands over a repo that fails its own
 docs gate.
 
 Commit the epic + members to the default branch (still bootstrap), then hand
-off: tell the engineer to run `/materia:ship-spec` (or `/materia:ship-spec --auto`) — from this point
+off: the orb is slotted and the pipeline is live — tell the engineer to run
+`/materia:ship-spec` (or `/materia:ship-spec --auto`) — from this point
 every change flows through the pipeline and lands via PR.
 
 ### Phase 5 — Report

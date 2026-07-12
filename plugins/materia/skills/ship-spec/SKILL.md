@@ -1943,7 +1943,8 @@ mergeable — the run takes its posture's **terminal**:
      is mergeable, and no human has left review comments, **surface at green**:
      note `pr-watch: green — PR #<n> ready for review + merge` in § Notes, set
      `Next: review + merge`, surface the PR link + green status in the
-     final-turn operator message, and **do not merge** — the human reviews and
+     final-turn operator message — the spec transmuted to a green PR, handed
+     back for the human — and **do not merge** — the human reviews and
      merges. This is *passive surfacing* in the final turn + STATUS, not an
      out-of-band push: a skill is provider-agnostic prose and cannot assume a
      harness ping tool. (An operator who wants an actual notification can wire a
@@ -1968,8 +1969,8 @@ mergeable — the run takes its posture's **terminal**:
      gh pr merge <n> --merge --delete-branch
      ```
 
-     Report the merge SHA to the operator in the final turn message. This
-     terminal is autopilot-only.
+     Report the merge SHA to the operator in the final turn message — the spec
+     transmuted, forged, and merged. This terminal is autopilot-only.
 6. **Merge-terminal guards (mode-parameterized).** These guards gate the
    **merge** terminal; the notify terminal never merges, so they do not gate it.
    **Never merge** over a `Blocker`, a red or pending check, or unresolved

@@ -72,7 +72,11 @@ action-needed, `2` blocked).
    a non-zero exit is a normal report outcome here, not a skill failure.
 
 2. **Summarize the result** for the operator from the script's own output (see
-   Rules). Lead with the overall status and whether the repo is Materia-enabled,
+   Rules). A single light framing line may open the summary — the resident
+   alchemist's read on the repo's workbench — but everything below it is the
+   script's verdict verbatim (the status word, schema numbers, per-check results,
+   and next command are relayed exactly, never re-voiced). Lead with the overall
+   status and whether the repo is Materia-enabled,
    then the current vs latest artifact schema, the project-state location (or
    that it is missing/malformed), and any required/recommended/optional changes
    plus manual action items the script listed. When the report carries an

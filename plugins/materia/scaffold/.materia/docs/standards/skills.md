@@ -440,7 +440,7 @@ after a horizontal rule, with the casting skill's name substituted:
 ```markdown
 ---
 
-🔮 Forged with [Materia](https://github.com/stoodder/materia) · cast by `<skill>` · *every run feeds the backlog*
+🔮 Forged with [Materia](https://github.com/stoodder/materia) · cast by `<skill>` · *base matter → gold, every run feeds the backlog*
 ```
 
 - `<skill>` = the bare name of the skill that opened the PR (`finalize` names
@@ -450,10 +450,14 @@ after a horizontal rule, with the casting skill's name substituted:
   body edits never duplicate or reposition it.
 - The sigil is attribution, not content: skills never cite it, and reviewers
   can ignore it. Keep the line's shape stable so it stays greppable
-  (`Forged with [Materia]`).
-- The "feeds the backlog" clause is literal: each run leaves a `retro.md`, and
-  `triage-retros` triages the batch into proposed specs and bug reports that it
-  authors directly into `.materia/docs/specs/_proposed/` and `.materia/docs/bugs/_reports/`
+  (`Forged with [Materia]` — the anchor is unchanged; only the closing italic
+  clause carries flavor).
+- The closing clause carries the harness's alchemy arc, and only its second
+  half is a contract: `base matter → gold` is flavor — the *prima materia*
+  transmutation the README opens on — while **`every run feeds the backlog` is
+  literal**: each run leaves a `retro.md`, and `triage-retros` triages the batch
+  into proposed specs and bug reports that it authors directly into
+  `.materia/docs/specs/_proposed/` and `.materia/docs/bugs/_reports/`
   (`source: retro-triage`), reaching the project's backlog in one PR.
 
 ### Registration surfaces — update in the same change

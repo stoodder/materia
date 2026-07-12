@@ -76,7 +76,8 @@ fix is noted, never guessed at (§ Rules).
   lists every fix (with the standard it re-trued), every skip with a rationale,
   every queue entry filed (with its `id` and target queue), every needs-human
   note, and the deferred remainder.
-- Zero-drift run (no fixes, no queue entries): a short "nothing to fix" report;
+- Zero-drift run (no fixes, no queue entries): a short "nothing to fix — the
+  floor's running smoothly" report;
   no branch, no PR.
 - `--dry-run`: the fix plan printed to the session; no other output.
 

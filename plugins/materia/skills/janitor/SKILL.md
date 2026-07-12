@@ -66,9 +66,9 @@ behavior-affecting fix is noted, never guessed at (§ Rules).
   proved the drift), every skip with a one-line rationale, every queue entry
   filed (with its `id` and target queue), every needs-human note, and the
   deferred remainder.
-- Zero-drift run (no fixes, no queue entries): a short "nothing to fix" report;
-  no branch, no PR. Notes with no fixes or entries to carry them are printed in
-  the session report instead.
+- Zero-drift run (no fixes, no queue entries): a short "nothing to fix — the
+  workshop's already swept" report; no branch, no PR. Notes with no fixes or
+  entries to carry them are printed in the session report instead.
 - `--dry-run`: the fix plan printed to the session; no other output.
 
 ## Procedure

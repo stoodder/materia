@@ -525,10 +525,10 @@ repo; the branch is created now so an abandoned confirmation leaves no trace.
      sigil), followed by the standard `🤖 Generated with [Claude
      Code](https://claude.com/claude-code)` footer.
 
-Print the closing report — the PR URL, the specs written (id + path), the
-reports written (id + path), the retros consumed (spec/bug split), the
-dropped/parked count, and the reminder that human review merges the PR. End the
-turn.
+Print the closing report — this run's retros transmuted into backlog signal —
+the PR URL, the specs written (id + path), the reports written (id + path), the
+retros consumed (spec/bug split), the dropped/parked count, and the reminder
+that human review merges the PR. End the turn.
 
 On PR-open failure (auth, protections, network): halt with the error — the
 branch and commit are intact and pushed; the operator retries the PR open or

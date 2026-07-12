@@ -79,7 +79,8 @@ removal of an existing artifact.
   **proposed spec** filed for oversized doc work, and any **needs-human** notes
   (suspected code bugs surfaced by normative doc statements — surfaced, not
   acted on).
-- Zero-drift run: a short "nothing to fix" report; no branch, no PR.
+- Zero-drift run: a short "nothing to fix — the stacks are in order" report; no
+  branch, no PR.
 - `--dry-run`: the drift plan printed to the session; no other output.
 
 ## Procedure
