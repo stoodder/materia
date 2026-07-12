@@ -305,14 +305,21 @@ the same value.
   counted by `approval.rounds` across **all** channels — the revise verb, an
   operator hand-edit, a detected direct canvas edit, an architecture-requested
   revision — of which at most 2 may be architecture-requested (their own ≤2
-  bound). Those bounces count *inside* the 3, not on top of it. The normative
-  counting mechanics live in ship-spec/SKILL.md § Design gate; this is the cost
-  posture you budget against, not a restatement. On an `export: via-read`
+  bound). Those bounces count *inside* the 3, not on top of it. **Before** that
+  gate bound, the pre-gate **design-stage review** (ship-spec/SKILL.md § Stage
+  reviews (design & architecture) — § Design-stage review) can add up to **3
+  further authoring touches** on top of the ≤4 — but only for findings
+  expressing **visual intent**, since the design stage's visual-vs-descriptive
+  judgment applies: the expected case is **0–1** extra touches, worst case 3.
+  The normative counting mechanics live in ship-spec/SKILL.md § Design gate;
+  this is the cost posture you budget against, not a restatement. On an `export: via-read`
   adapter (the recommended `claude-design` included), each of those ≤4 touches
   also pays a reconstruction-read cost for the committed snapshot — paginated
   `read_file` calls, per the init-comment catalog below — but this rides the
   same cadence, so the existing ≤4-touch bound already caps it; no separate
-  counter needed.
+  counter needed. A pre-gate stage-review touch that re-authored the canvas
+  pays the same per-touch reconstruction-read cost, capped by that loop's own
+  ≤3 bound — so the worst-case total is 4 + 3 touches, each priced alike.
 
 **Capability meanings** — the contract skills gate on:
 
@@ -593,17 +600,21 @@ it never re-coerces in a loop. Never block the run for a bad tier value.
 
 ## Review angles
 
-The single registry of every review angle the `ship-spec` § Review fan-out
-runs. Each angle's **definition** — what it checks and how to run it — lives in
-its file at `.materia/review-angles/<File>` (materialized by /materia:init; see
-that directory's `README.md` for the file schema and how to add an angle). This
+The single registry of every review angle the pipeline runs — both the
+post-implementation `ship-spec` § Review fan-out and the stage-review points
+after the `design` stage and after the `architecture`/`bug-analysis` stage
+(`ship-spec/SKILL.md` § Stage reviews (design & architecture)). Each angle's
+**definition** — what it checks and how to run it — lives in its file at
+`.materia/review-angles/<File>` (materialized by /materia:init; see that
+directory's `README.md` for the file schema and how to add an angle). This
 table owns the File → Gate → Tier mapping; the angle file itself carries only
 `name`, `description`, and body.
 
-The seven canonical rows ship **pre-filled** and are **not** stack-specific —
-they ship verbatim, like § Skill routing. Repo-specific angles (a11y, perf
-budgets, compliance) are appended as additional rows by /materia:init or the
-operator; by default there are none beyond the canonical seven.
+The twelve canonical rows (seven post-implementation + five stage-review)
+ship **pre-filled** and are **not** stack-specific — they ship verbatim, like
+§ Skill routing. Repo-specific angles (a11y, perf budgets, compliance) are
+appended as additional rows by /materia:init or the operator; by default
+there are none beyond the canonical twelve.
 
 **Gate** is when the angle runs: `always` (every run, subject to ship-spec's
 markdown-only exemption and trivial-diff collapse), `ui-affecting`,
@@ -622,10 +633,26 @@ collapse **drop** it (a design-bearing run whose diff is trivial is nearly a
 contradiction) rather than keeping it alive the way an independently-positive
 diff-surface gate keeps `data-safety`.
 
+Two further Gate tokens mark **stage-review** angles: `design-stage` and
+`architecture-stage`. A row carrying either token runs at a stage-review
+point — an adversarial review of the stage's just-authored artifact — not in
+the post-implementation fan-out; stage-token rows are **never** evaluated by
+that fan-out. `design-stage` is relevant after the `design` stage authors
+`design.md`, before the human design gate's first arrival (design-bearing
+runs only, definitionally). `architecture-stage` is relevant after the
+technical-plan stage returns its artifact — `architecture.md` in `ship-spec`,
+`bug-analysis.md` in `fix-bug`. Evaluation, loop mechanics, and
+non-convergence routing for both tokens are owned by `ship-spec/SKILL.md` §
+Stage reviews (design & architecture) — cited by name here, restated nowhere.
+
 **Tier** is a `<model>/<effort>` pair resolved like any other (model drawn from
 § Model set; § Effort set for the guidance sentence). These angles carry no
 `Fallback Model` of their own — a `Tier` that coerces falls to the § Skill
-routing **Default** row (`opus`), per § Coercion.
+routing **Default** row (`opus`), per § Coercion. For stage-review angles the
+row's Tier is the **default**: the orchestrator may override a spawn's tier
+per run based on the work (recorded as a `tier-override:` note in
+`STATUS.md`), and may adjust the per-run stage-review angle set, both per §
+Stage reviews (design & architecture)'s rules.
 
 | Angle | File | Gate | Tier |
 |---|---|---|---|
@@ -636,8 +663,13 @@ routing **Default** row (`opus`), per § Coercion.
 | `ui` | `ui.md` | `ui-affecting` | `opus/high` |
 | `data-safety` | `data-safety.md` | `data-affecting` | `sonnet/high` |
 | `design-conformance` | `design-conformance.md` | `design-bearing` | `opus/high` |
+| `design-coherence` | `design-coherence.md` | `design-stage` | `sonnet/high` |
+| `design-feasibility` | `design-feasibility.md` | `design-stage` | `opus/high` |
+| `design-fidelity` | `design-fidelity.md` | `design-stage` | `opus/high` |
+| `architecture-grounding` | `architecture-grounding.md` | `architecture-stage` | `sonnet/high` |
+| `architecture-coverage` | `architecture-coverage.md` | `architecture-stage` | `opus/high` |
 
-Repo-specific angles go in additional rows below the canonical seven.
+Repo-specific angles go in additional rows below the canonical twelve.
 
 The `spec-adherence` angle drops to `haiku/low` on ship-spec's markdown-only
 exemption path (binding rule stated in `ship-spec` § Review).

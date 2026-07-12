@@ -36,7 +36,7 @@ See the Producers table in [`_reports/README.md`](_reports/README.md).
 `docs/bugs/_reports/` through the full fix pipeline and opens a PR:
 
 ```
-reproduce-bug (RED gate) → bug-analysis → plan-tasks
+reproduce-bug (RED gate) → bug-analysis (stage-reviewed) → plan-tasks
   → implement-task(s) → post-impl review → docs-sync ⇄ docs-audit → finalize (dequeue + PR)
 ```
 

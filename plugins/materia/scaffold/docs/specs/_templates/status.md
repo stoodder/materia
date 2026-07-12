@@ -207,6 +207,23 @@
          frontmatter declares `design_gate:`; durable through dequeue,
          like the `Surfaces:` line above) -->
 
+<!-- Stage-review convention (ship-spec/SKILL.md § Stage reviews (design &
+     architecture) is the normative home for both points' angle set, spawn,
+     loop, and commit-subject format — the exact line shapes below are
+     pinned there too). One line per point per outcome, `<point>` ∈
+     `design-stage` (before the design gate's first arrival, design-bearing
+     runs only) | `architecture-stage` (after `architecture` returns `ok`,
+     before `plan-tasks`):
+       stage-review(<point>): converged at round <N>
+       stage-review(<point>): skipped (<reason>)
+       stage-review(<point>): angle set adjusted — <reason>
+     A stage-review spawn may also carry a tier-override line, same format
+     as any other tier override (§ Tier routing):
+       tier-override: <unit> <artifact-value> → <override-value>
+     Stage reviews are orchestrator-lane phases like `review`
+     (post-implementation): no STATUS.md checkbox row changes and no new
+     retro touchpoints — only these § Notes lines. -->
+
 <!-- Architecture-bounce convention (ship-spec/SKILL.md § Design gate —
      Architecture bounce is the normative home): when the architecture stage
      finds the approved design infeasible, the orchestrator records one line

@@ -12,9 +12,10 @@ spec-to-ship pipeline tailored to your tech stack:
 - **Two queues** — a proposed-specs queue and a bug-reports queue, each a
   transient intake surface with a strict frontmatter/filename contract.
 - **Two orchestrators** — `/materia:ship-spec` drives a proposal through intake →
-  design → architecture → tasks → implementation → multi-angle review → docs →
-  one PR; `/materia:fix-bug` drives a bug report through a RED-first TDD loop that
-  reuses the same mid-stages.
+  design (stage-reviewed, then human gate) → architecture (stage-reviewed) →
+  tasks → implementation → multi-angle review → docs → one PR; `/materia:fix-bug`
+  drives a bug report through a RED-first TDD loop that reuses the same
+  mid-stages.
 - **Producers** — skills that fill the queues from every signal source you
   have: your ideas (`/materia:propose-spec`, `/materia:propose-epic`), your own eyes
   (`/materia:report-bug`), the app's UI (`/materia:ui-inspection`), and the pipeline's own

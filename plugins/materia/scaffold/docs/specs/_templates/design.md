@@ -199,7 +199,9 @@
 <!-- Unresolved UX/scope questions for the operator; remove the section if none. -->
 
 <!-- ## Feedback log — not shipped here; appended by the design stage on the
-     first design-gate revision round (see ship-spec/SKILL.md § Design gate),
+     first revision round through either channel — a design-gate revision
+     round or a pre-gate stage-review revision round (see ship-spec/SKILL.md
+     § Design gate and § Stage reviews (design & architecture)) —
      never materialized as an empty section up front. Design-stage-owned
      design content (like the body above it), not orchestrator-owned like the
      approval block. Per round: round number, what was asked, what changed —

@@ -56,12 +56,12 @@ Merge watch sections.
 | Stage | Skill | Produces |
 |---|---|---|
 | 1. Intake | `intake-spec` | `spec.md` (asks clarifying questions) |
-| 2. Design | `design` | `design.md` (UI-gated; skipped+recorded if non-UI), plus `design/` (a committed canvas snapshot — present iff the adapter can export/reconstruct) |
+| 2. Design | `design` | `design.md` (UI-gated; skipped+recorded if non-UI), plus `design/` (a committed canvas snapshot — present iff the adapter can export/reconstruct); stage-reviewed adversarially before the human gate — the `design-stage` angles |
 | 3. UI-test-plan | `ui-test-plan` | `ui-test-plan.md` (UI-gated; skipped+recorded if non-UI) |
-| 4. Architecture | `architecture` | `architecture.md` (reads `docs/`, reuses resources; on non-UI runs also carries the operator-surface enumeration design would) |
+| 4. Architecture | `architecture` | `architecture.md` (reads `docs/`, reuses resources; on non-UI runs also carries the operator-surface enumeration design would); stage-reviewed — the `architecture-stage` angles |
 | 5. Plan | `plan-tasks` | `tasks.md` |
 | 6. Implement | `implement-task` | code + tests per task (no per-task review — see row 7) |
-| 7. Review | — (orchestrator-spawned review fan-out) | the angles in the `MATERIA.md` § Review angles registry, each defined in `.materia/review-angles/` (correctness · security · spec-adherence+regression · behavior · ui UI-gated · data-safety data-gated · design-conformance design-gated seed the library); remediation tasks loop back; UI runs must land committed `ui-proof/` screenshots (screenshot-presence check) |
+| 7. Review | — (orchestrator-spawned review fan-out) | the seven post-implementation angles in the `MATERIA.md` § Review angles registry, each defined in `.materia/review-angles/` (correctness · security · spec-adherence+regression · behavior · ui UI-gated · data-safety data-gated · design-conformance design-gated); the registry's other five angles (design-coherence · design-feasibility · design-fidelity gated to `design-stage`, architecture-grounding · architecture-coverage gated to `architecture-stage`) are stage-review angles that already ran earlier, at rows 2 and 4 — not part of this fan-out; remediation tasks loop back; UI runs must land committed `ui-proof/` screenshots (screenshot-presence check) |
 | 8. docs-sync | `docs-sync` | doc edits committed (cross-cutting docs reconciled under intent-oracle rules) |
 | 9. docs-audit | `docs-audit` | HIGH/MEDIUM/LOW findings or clean verdict; loop back to docs-sync on HIGH/MEDIUM |
 | 9½. reconcile-epic | `reconcile-epic` | **epic-gated** (spawned only when the proposal carries an `epic:` key; skipped+recorded otherwise): syncs the member's epic under [`docs/epics/`](../epics/README.md) and cascades invalidated content into its pending sibling proposals — the edits ride this run's PR |
@@ -139,7 +139,7 @@ follow the skill-authoring conventions in
   artifacts) in context — `ship-spec` spawns them. Each skill declares its
   **Inputs / Outputs**. Independent implementation tasks run as parallel,
   worktree-isolated subagents.
-- **Reviewers, `docs-sync`, and `docs-audit` all run as fresh-context subagents spawned by the orchestrator.** The review angles run once, post-implementation, over the cumulative branch diff — each angle its own subagent (no anchoring on the implementers' reasoning). `docs-sync` (edit) and `docs-audit` (verify) are sibling stages between review and finalize. Each receives only its declared inputs (diff + AC + named docs + `spec.md`) — never the producing agent's commit messages, `STATUS.md`, or other reviewers' outputs.
+- **Reviewers, `docs-sync`, and `docs-audit` all run as fresh-context subagents spawned by the orchestrator.** The post-implementation review angles run once, over the cumulative branch diff — each angle its own subagent (no anchoring on the implementers' reasoning). The stage-review angles run earlier, at their own stage's point (design, pre-gate; architecture, pre-`plan-tasks`) — see `ship-spec/SKILL.md` § Stage reviews (design & architecture). `docs-sync` (edit) and `docs-audit` (verify) are sibling stages between review and finalize. Each receives only its declared inputs (diff + AC + named docs + `spec.md`) — never the producing agent's commit messages, `STATUS.md`, or other reviewers' outputs.
 - **Every stage commits + pushes** its artifact and updates `STATUS.md` as it
   finishes, so a fresh session can pull and continue.
 - **Resume:** re-invoking `ship-spec` reads `STATUS.md`, finds the first

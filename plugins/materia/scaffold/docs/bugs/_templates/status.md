@@ -65,6 +65,24 @@
 
 <!-- Anything the next subagent/session needs to know to pick up cleanly. -->
 
+<!-- Stage-review convention (ship-spec/SKILL.md § Stage reviews (design &
+     architecture) is the normative home for the loop, angle set, spawn, and
+     commit-subject format; fix-bug/SKILL.md § Bug-analysis stage review is
+     this lane's wiring — the exact line shapes below are pinned in both).
+     No `design-stage` point exists on this lane (a bug is scoped by its
+     reproduction, not a UX design — no `design` stage ever runs), so
+     `<point>` is always `architecture-stage` here — after `bug-analysis`
+     (stage 2) returns, before `plan-tasks` (stage 3). One line per outcome:
+       stage-review(architecture-stage): converged at round <N>
+       stage-review(architecture-stage): skipped (<reason>)
+       stage-review(architecture-stage): angle set adjusted — <reason>
+     A stage-review spawn may also carry a tier-override line, same format
+     as any other tier override (§ Tier routing):
+       tier-override: <unit> <artifact-value> → <override-value>
+     Stage reviews are orchestrator-lane phases like `review`
+     (post-implementation): no STATUS.md checkbox row changes and no new
+     retro touchpoints — only these § Notes lines. -->
+
 ## Forward-compatible defaults
 
 <!-- For bug runs created before these fields existed:

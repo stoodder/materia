@@ -97,6 +97,14 @@ does **not** re-derive the reproduction (that is `reproduce-bug`'s role).
    orchestrator owns both (see `ship-spec/SKILL.md` § STATUS.md ownership
    (orchestrator lane)); commit only `bug-analysis.md`.
 
+   In that lane, the returned `bug-analysis.md` is then run through the
+   architecture-stage review per `fix-bug/SKILL.md` § Bug-analysis stage
+   review (mechanics: `ship-spec/SKILL.md` § Stage reviews (design &
+   architecture) — § Architecture-stage review); a review revision arrives as
+   a re-spawn with the findings as feedback — produce a revised
+   `bug-analysis.md` consuming them. A standalone (operator-invoked) run has
+   no such loop.
+
 ## Scope
 
 This skill:

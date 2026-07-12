@@ -1,6 +1,6 @@
 ---
 name: ship-spec
-description: "Run the full spec-to-PR pipeline for a new product spec or feature request — intake → design → architecture → task breakdown → autonomous implementation → post-implementation multi-angle review → lint/typecheck/test gate → docs → pull request. Supports `--auto` (autopilot): operator checkpoints accept grounded defaults, and after the PR opens the orchestrator watches CI, fixes failures, resolves merge conflicts, and merges once green. Captures a per-run retrospective (`retro.md`) at each touchpoint so a downstream skill can aggregate them into pipeline improvements. Resumable across sessions. Interactive design-bearing runs pause at the human design gate (`--approve-design` or `--auto` skips it). Use when the user hands over a product spec or feature to build end-to-end."
+description: "Run the full spec-to-PR pipeline for a new product spec or feature request — intake → design (adversarially stage-reviewed before the human gate) → architecture (stage-reviewed) → task breakdown → autonomous implementation → post-implementation multi-angle review → lint/typecheck/test gate → docs → pull request. Supports `--auto` (autopilot): operator checkpoints accept grounded defaults, and after the PR opens the orchestrator watches CI, fixes failures, resolves merge conflicts, and merges once green. Captures a per-run retrospective (`retro.md`) at each touchpoint so a downstream skill can aggregate them into pipeline improvements. Resumable across sessions. Interactive design-bearing runs pause at the human design gate (`--approve-design` or `--auto` skips it). Use when the user hands over a product spec or feature to build end-to-end."
 ---
 
 # ship-spec — the spec-to-ship orchestrator
@@ -29,7 +29,8 @@ skill leans on (read at the phase that needs them):
 Spawn every stage with the Agent tool — pass it **only its inputs** (the prior
 artifacts + the stage skill), not the whole conversation, plus the standing
 rules from `resources/spawn-contract.md` (Block 1 always; Block 2 for
-stages/tasks; Block 3 for reviewers). Each stage skill declares its own
+stages/tasks; Block 3 for diff reviewers, Block 3a for artifact reviewers).
+Each stage skill declares its own
 **Inputs / Outputs**. After a stage subagent returns, verify it wrote its
 artifact and committed; if not, fix before continuing. Independent
 implementation tasks may run as **parallel worktree-isolated subagents**
@@ -219,7 +220,8 @@ the operator saying up front "don't wait for me."
     `> Autopilot run (--auto): operator checkpoints
     auto-accepted; this PR auto-merges once CI is green.`
 - **What does NOT change:** Blockers still stop the run. Autopilot never
-  overrides a `Blocker`, widens a loop bound (review ≤3, docs ≤2, gate ≤3,
+  overrides a `Blocker`, widens a loop bound (review ≤3, stage-review ≤3,
+  docs ≤2, gate ≤3,
   design-gate ≤3, architecture-bounce ≤2, CI-fix ≤3), skips a gate (e2e-coverage, screenshot-presence,
   epic, UI-surface, data-surface), force-pushes, or **merges under bootstrap
   grace** (§ Merge watch step 6 — graced CI is not green CI). Autopilot also
@@ -452,6 +454,11 @@ non-epic run it is skipped and the decision recorded in `STATUS.md`.
    UX artifact; a feature that ships no UI has nothing for it to design, and
    its technical planning belongs to `architecture`).
 
+   After `design` commits, the **design-stage review** runs first (§ Stage
+   reviews (design & architecture) — § Design-stage review): an adversarial
+   pass over the fresh `design.md` that converges — or routes its
+   non-convergence — before the gate arrives.
+
    On an **interactive** design-bearing run, the **design gate** (§ Design
    gate) pauses the run here — after design commits, before `ui-test-plan` — by
    ending the turn: the third pause-by-ending-turn checkpoint (proposal menu,
@@ -464,7 +471,9 @@ non-epic run it is skipped and the decision recorded in `STATUS.md`.
 4. **architecture** (`architecture`) → `architecture.md` (docs read order;
    reuse existing resources; on a non-UI run it also owns the operator-surface
    enumeration `design` would otherwise carry — see
-   `architecture/SKILL.md` § Non-product features).
+   `architecture/SKILL.md` § Non-product features). On an `ok` return the
+   **architecture-stage review** runs before `plan-tasks` (§ Stage reviews
+   (design & architecture) — § Architecture-stage review).
 5. **plan-tasks** (`plan-tasks`) → `tasks.md` (dependency-ordered; each task
    tagged with a docs-scope floor and a `Model/effort` tier).
 6. **implement** (`implement-task`, once per task, dependency order;
@@ -606,6 +615,17 @@ adapter.
 ### Gate arrival (interactive, design-bearing run)
 
 After `design` returns `design.md`:
+
+**Step 0 — the design-stage review runs first** (§ Stage reviews (design &
+architecture) — § Design-stage review). Before any of the numbered steps below
+act, the design-stage review loop runs to completion over the fresh
+`design.md`: the whole arrival sequence — chain resolution, block-writing,
+presentation — begins **only once that loop has converged** or exited per its
+non-convergence routing. On a human-visible gate that non-convergence exit
+hands its unresolved-findings summary into step 2's presentation (§ Presentation
+carries the duty); on a no-human gate it wrote a Blocker and ended the turn, so
+no arrival happens at all. The steps below are unchanged apart from this
+precondition.
 
 1. Resolve the chain above (`--auto` posture is handled in § Autopilot).
 2. **Gate ON and no auto-approval applies** — write the approval block into
@@ -816,8 +836,9 @@ follows the identical assignment: when MCP is operator-session-only, the
 orchestrator — which already executes the design stage's canvas-authoring
 plan onto the canvas over MCP in that world (`design/SKILL.md` § Canvas
 authoring & the paired artifact — "The lane split") — performs that first
-export itself too, immediately after authoring, before the gate-arrival
-commit-together step (§ Gate arrival) runs.
+export itself too, immediately after authoring, before the design-stage review
+spawns (§ Stage reviews (design & architecture) — § Design-stage review) — and
+thus before the gate-arrival commit-together step (§ Gate arrival) runs.
 
 **Precedence.** Operator hand-edits to the body are **authoritative** for the
 sections they touch; the sync unit re-derives **only** canvas-owned content and
@@ -862,7 +883,11 @@ concrete reason; the orchestrator intercepts that return (§ Architecture hand-o
 and routes the reason back through this gate as a **revision — the bounce**. The
 bounce is one of the revision channels this gate's bound counts (revise verb ·
 hand-edit re-present · detected canvas edit · **architecture bounce** — § Revision
-bound), with these mechanics:
+bound). A bounce revision does **not** re-trigger the design-stage review
+(§ Stage reviews (design & architecture) — § Design-stage review): that review
+runs once, before the gate's first arrival, whereas an architecture bounce is a
+later gate revision, and the bounced design still returns to the human gate.
+With these mechanics:
 
 - **One increment at dispatch.** Incrementing `approval.rounds` by one is this
   arrival's single increment (the one-per-arrival clamp — the bounce *is* the
@@ -949,6 +974,14 @@ human's canvas edits are taken as described feedback (§ The gate is ternary, th
 canvas channel), never read off a canvas the pipeline cannot sync. Never present
 a descriptive half that may silently lag the canvas.
 
+**Unresolved stage-review findings.** When the design-stage review exited
+**non-converged** into this human-visible gate (§ Stage reviews (design &
+architecture) — § Design-stage review), the presentation includes a short
+**summary of the unresolved findings** — the count plus one line each — so the
+operator judges the design with them in view and resolves them through the
+normal ternary verbs (approve over them, or revise to force another authoring
+round). On a converged review nothing is added here.
+
 Binding constraint for every rung, now and future: whatever is presented must
 be reviewable **after the turn ends** — the pause kills any process this
 invocation started; a cloud URL or a committed file qualifies, a localhost
@@ -1012,8 +1045,13 @@ the rounds bound or a set Blocker. Redundant-but-legal under `--auto`.
 `architecture` (stage 4) returns one of two outcomes — mirroring how § Intake
 hand-off intercepts intake's `partial`:
 
-- **`ok`** — `architecture.md` is written and committed; continue to `plan-tasks`
-  (stage 5) as always.
+- **`ok`** — `architecture.md` is written and committed; the orchestrator runs
+  the **architecture-stage review** over it (§ Stage reviews (design &
+  architecture) — § Architecture-stage review), then continues to `plan-tasks`
+  (stage 5) once that loop converges (on non-convergence it writes the
+  Blocker that section names and ends the turn). No stage review runs on the
+  `design-revision-requested` branch below — no `architecture.md` landed to
+  review.
 - **`design-revision-requested`** — on a UI run, architecture found the
   **approved** design infeasible: it cannot be built without contradicting
   `spec.md` or the design's own intent, so it returned a concrete reason
@@ -1032,6 +1070,13 @@ precedence between the two). This is the **active** half of § Course correction
 a design contradiction caught while the design stage can still be re-run is
 revised-and-re-approved, not banner-cordoned.
 
+A `design-revision-requested` can also arrive from an
+**architecture-stage-review revision re-spawn** — not only the first `ok`
+architecture pass. It routes here identically and **immediately**, and is
+**not** counted as a stage-review round; that artifact's stage-review loop ends,
+and a fresh `architecture.md` (after the design is re-approved) starts its own
+loop (§ Stage reviews (design & architecture) — § Architecture-stage review).
+
 ## Tier routing
 
 Every `Agent` spawn (stage, task, reviewer) is dispatched at a declared
@@ -1045,9 +1090,15 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
    `opus/high`, not the `implement-task` row — see § Tiers § Fallback);
    a review angle (canonical or repo-specific) → the `Tier`
    column of its row in `MATERIA.md` § Review angles — no review angle has a
-   § Skill routing row; the review-loop tiebreaker → its `ship-spec:
-   review/tiebreaker` row. An explicit operator override wins; record
-   `tier-override: <unit> <artifact-value> → <operator-value>`.
+   § Skill routing row; a **stage-review angle** (Gate `design-stage` /
+   `architecture-stage`) resolves identically via its § Review angles `Tier`
+   row, and the orchestrator may additionally **override that spawn's tier per
+   run** based on the work's complexity/risk (recorded `tier-override:`, per
+   § Stage reviews (design & architecture)); the review-loop tiebreaker → its
+   `ship-spec: review/tiebreaker` row. An explicit operator override wins;
+   record `tier-override: <unit> <artifact-value> → <override-value>` (the
+   same format serves both origins — an operator's explicit call and the
+   orchestrator's recorded stage-review override).
 2. **Resolve availability** against `MATERIA.md` § Tiers § Model set: a model
    listed there resolves as declared; a model absent from the table coerces to
    the fallback with `tier-fallback: <unit> <tier> → <fallback> (not in model
@@ -1126,6 +1177,10 @@ fresh-context reviewer this pipeline mandates is therefore
 - **Post-implementation review reviewers** — spawned by `ship-spec` after
   every task is `[x]`, over the cumulative branch diff. Implementers do not
   run review inside `implement-task`. See § Review.
+- **Stage-review reviewers** — spawned by `ship-spec` over a just-authored
+  artifact: the `design-stage` angles after `design` returns, and the
+  `architecture-stage` angles after `architecture` returns `ok`. The authoring
+  stage never spawns them. See § Stage reviews (design & architecture).
 - **`docs-sync` edit-pass subagent** — spawned by `ship-spec` after the review
   loop exits clean.
 - **`docs-audit` verify-pass subagent** — spawned by `ship-spec` after each
@@ -1192,6 +1247,208 @@ wait indefinitely:
   implement loop always has a dirty tree in flight; these fires are structural
   noise, not a recovery signal.
 
+## Stage reviews (design & architecture)
+
+Two adversarial **artifact reviews** the orchestrator runs at fixed points
+mid-pipeline — an early quality gate on a stage's just-authored artifact,
+before the pipeline builds on it. Unlike § Review (post-implementation), which
+reviews the cumulative code diff after the implement loop, a stage review reads
+the **artifact itself** (`design.md` / `architecture.md`; `bug-analysis.md` on
+the bug lane) with fresh context. Subagents cannot spawn subagents, so — like
+every fresh-context reviewer this pipeline mandates — stage-review reviewers are
+**orchestrator-spawned** (§ Fresh-context reviewer spawning), never
+stage-spawned.
+
+**The two points:**
+
+1. **design-stage** — after the `design` stage returns `design.md`, **before**
+   the design gate's first arrival (§ Design gate — Gate arrival): before the
+   approval block is written and before any presentation. Design-bearing runs
+   only (a non-UI run authors no design). See § Design-stage review.
+2. **architecture-stage** — after the `architecture` stage returns outcome `ok`
+   (§ Architecture hand-off), before `plan-tasks`; never on a
+   `design-revision-requested` return (no artifact landed that pass). This
+   point covers the **technical-plan artifact** — `architecture.md` here; the
+   bug lane's analogue reviews `bug-analysis.md` at the same point, its wiring
+   living in `fix-bug/SKILL.md`. See § Architecture-stage review.
+
+**The angle set (per point).** Iterate the `MATERIA.md § Review angles`
+registry rows whose Gate carries the point's stage token — `design-stage` for
+point 1, `architecture-stage` for point 2 — one reviewer per row. The registry
+rows are the **defaults**:
+
+- **Zero such rows** (an installed repo that never adopted the stage-review
+  angles) → **skip the review point**, recording
+  `stage-review(<point>): skipped (no <token> angles registered)` in § Notes;
+  never an error — the pipeline proceeds to the gate / `plan-tasks` as it
+  would have.
+- **A row whose `File` is missing or unreadable** in `.materia/review-angles/`
+  → mirror § Missing or malformed angle file's **gated-angle leniency**: skip
+  that angle and record it (`stage-review(<point>): <angle> file missing —
+  <path>`). A stage-token row is never an `always` row, so the
+  self-verify-inline path never applies here.
+- The orchestrator **MAY adjust the per-run angle set** — add an angle, drop
+  one — when the work warrants, recording
+  `stage-review(<point>): angle set adjusted — <reason>` in § Notes.
+- The orchestrator **MAY override a spawn's tier** for this run based on the
+  work's complexity/risk (the registry Tier is the default), recording a
+  `tier-override:` note per § Tier routing. Otherwise each angle spawns at its
+  resolved registry Tier via § Tier routing.
+
+**The spawn.** Spawn all applicable angles in a **single message**,
+fresh-context, at their resolved Tier, each carrying `spawn-contract.md`
+**Block 1 + Block 3a** (the artifact-reviewer block) **plus the angle file's
+body** as the review brief. Findings use the § Structured finding schema —
+`file` = the artifact path under review, `category` = the angle name — and the
+§ Severity rubric, both reused verbatim from § Review.
+
+**The loop.** Aggregate the round's findings across angles. Any non-dismissed
+**HIGH or MEDIUM** → **re-spawn the stage skill** (`design` / `architecture` /
+`bug-analysis`) with the findings as feedback — a revision producing a new
+artifact — then re-spawn the angles over the **revised** artifact. A MEDIUM may
+be dismissed with a recorded rationale line, exactly as the post-implementation
+loop's § Severity rubric governs. **Converged** = a round with no non-dismissed
+HIGH or MEDIUM. **Bound: ≤3 rounds.** Commit **per round**,
+orchestrator-committed (the stage subagent never commits in the orchestrator
+lane — § STATUS.md ownership), subject:
+
+```
+stage-review(<point>, <dated-slug>): r<N> — <H> HIGH, <M> MEDIUM addressed, <L> LOW noted
+```
+
+with `— converged` appended on the converging round, and the Blocker variants
+each subsection below names on non-convergence.
+
+**Recording — no new checkboxes or touchpoints.** Stage reviews are
+orchestrator-lane phases like § Review (post-implementation): **no STATUS.md
+checkbox row changes**, and no new retro touchpoints — the reviewer spawns are
+summarized in the orchestrator's own retro entries (§ Retrospective capture),
+as § Review's are. Decisions and rounds are recorded via § Notes lines —
+`stage-review(<point>): converged at round <N>` ·
+`stage-review(<point>): skipped (<reason>)` ·
+`stage-review(<point>): angle set adjusted — <reason>` — plus any
+`tier-override:` lines. Stage-token rows are **never** evaluated by § Review's
+§ Reviewer fan-out (that exclusion is stated there).
+
+### Design-stage review
+
+Point 1 — the `design-stage` angles over the freshly-authored design (the
+descriptive `design.md`, plus the **visual half** the `design-fidelity` angle
+also reviews — see below), run **once**, before the design gate's **first**
+arrival only. It does **not** re-run on the gate's operator revision rounds,
+and an **architecture bounce does not re-trigger it** (an intake decision — the
+bounced design still returns to the human gate; § Architecture bounce states
+the same in one line). The loop, angle set, spawn, and commit format are
+§ Stage reviews above; the design-point specifics:
+
+- **The visual half — what the `design-fidelity` reviewer sees.** The other two
+  `design-stage` angles read `design.md` alone; `design-fidelity`
+  (`MATERIA.md § Review angles`) also weighs the design's **visual half**. When
+  a committed snapshot exists at `docs/specs/<dated-slug>/design/` it is the
+  **primary** visual artifact the reviewer reviews (the live canvas only
+  supplementary) — whenever this review runs at all. What further canvas
+  evidence the reviewer gets is gated on `MATERIA.md § Design tool`'s `read`
+  **capability** together with its Reachable-from line — never reachability
+  alone:
+  1. Adapter has **`read`** **and** the Reachable-from line records MCP inside
+     Agent spawns → the reviewer reads canvas state directly.
+  2. Adapter has **`read`** but MCP is **operator-session-only** → the
+     orchestrator inlines its serialized canvas read-back into the reviewer's
+     brief (the § Gate-arrival sync Actor-split precedent for who holds the
+     canvas read; briefs carry inlined content — never a path into a forbidden
+     directory — per the design-conformance precedent in § Reviewer fan-out).
+  3. Adapter **lacks `read`** (e.g. a native-`export` tool with no read) → the
+     committed snapshot is the whole visual half the reviewer sees — consistent
+     with the no-`read` posture `MATERIA.md § Design tool` already takes (canvas
+     edits can't be seen), not a new rung.
+  4. **No visual half at all** — no `author` adapter (a repo-side design), or no
+     snapshot **and** no read path → the orchestrator **skips** the
+     `design-fidelity` angle and records
+     `stage-review(design-stage): design-fidelity skipped (<reason>)` in
+     § Notes; never an error (the two sibling `design-stage` angles still review
+     the descriptive half). A capability-driven per-angle skip, sibling to
+     § Stage reviews' missing-angle-file skip.
+
+  **Export ordering.** The first committed-snapshot export must complete
+  **before the design-stage review spawns**, so round 1 reviews it. When MCP is
+  reachable inside spawns the design stage's own step-9 export
+  (`design/SKILL.md` § Persist step 9) already precedes its return; when MCP is
+  operator-session-only the orchestrator performs that first export — the duty
+  pinned in § Gate-arrival sync's snapshot-export paragraph (the "and export
+  alike" rule; the paragraph `design/SKILL.md` § Sync mode forward-references
+  as the operator-only-MCP export duty's normative home). Each stage-review
+  revision
+  re-exports via the existing full-revision rule (`design/SKILL.md` § Persist
+  step 9's committed-snapshot paragraph), so every round reviews the current
+  snapshot.
+
+- **Pre-gate — the gate's counter is untouched.** This review runs before the
+  approval block exists (the design stage never writes it; the gate arrival
+  happens only *after* this loop exits), so `approval.rounds` is not
+  incremented and the gate's own **≤3 revision bound is not consumed** by a
+  stage-review revision. The stage-review loop counts on its **own** pre-gate
+  scale, distinct from the gate's rounds.
+- **Each revision is a design-stage re-spawn** with the findings as feedback.
+  The stage applies its existing visual-vs-descriptive judgment
+  (`design/SKILL.md` § Procedure step 9): **only findings expressing visual
+  intent re-author the canvas** — so the expected case touches the canvas
+  little or not at all. The revision appends a `## Feedback log` entry numbered
+  on the stage-review scale (`stage-review r<N>`, distinct from the gate's
+  rounds), **attributed to stage-review**.
+- **Canvas baseline refresh (canvas lane).** A stage-review revision commit is
+  **not** a gate commit (§ Gate commits), so its `canvas:` refresh duty is
+  stated here explicitly: each stage-review revision commit that touched the
+  canvas refreshes the `canvas:` frontmatter keys — the canvas-I/O owner does
+  it, per the `design/SKILL.md` lane split (mechanics: § Gate-arrival sync —
+  The `canvas:` baseline). This gives the **first gate arrival's** detection a
+  current baseline to diff against, so the stage-review edits are not
+  re-counted there (no double-count).
+- **Non-convergence after 3 rounds** routes on whether a human will see the
+  gate:
+  - **A human will see the gate** — the gate is ON and interactive with no
+    auto-approval applying (§ Gate resolution's chain yields no auto-approval
+    **and** autopilot posture is off): **proceed to the gate** with the
+    unresolved findings **summarized in the presentation** (§ Presentation
+    carries this duty). The operator absorbs the judgment through the normal
+    ternary verbs — approve over them, or revise to force a further authoring
+    round through the gate's own loop.
+  - **No human will see the gate** — autopilot posture is on, or § Gate
+    resolution resolves to an auto-approval: do **not** auto-approve over the
+    unresolved HIGH/MEDIUM findings. Write
+    `Blocker: design stage-review did not converge after 3 rounds (<summary>)`
+    and end the turn.
+
+### Architecture-stage review
+
+Point 2 — the `architecture-stage` angles over the technical-plan artifact, run
+on **every** `ok` architecture return (§ Architecture hand-off), before
+`plan-tasks`. It never runs on a `design-revision-requested` return — no
+artifact landed. The loop, angle set, spawn, and commit format are § Stage
+reviews above; the architecture-point specifics:
+
+- **One review per fresh artifact.** A run that bounced (§ Architecture bounce)
+  and re-ran `architecture` after re-approval gets its **new**
+  `architecture.md` reviewed too — each fresh `ok` artifact starts a **fresh
+  ≤3 bound** of its own.
+- **A revision re-spawn may itself bounce.** A stage-review revision re-spawn of
+  `architecture` may return `design-revision-requested` rather than a revised
+  `architecture.md` — it found the approved design infeasible under the
+  revision. That return routes through the existing § Architecture hand-off
+  bounce machinery **immediately** (§ Architecture bounce): it is **not**
+  counted as a stage-review round, and this artifact's stage-review loop
+  **ends** here — no artifact remains to review, and a new `architecture.md`
+  arrives later (once the design is re-approved) to start its own fresh loop.
+- **Non-convergence after 3 rounds** → write
+  `Blocker: architecture stage-review did not converge after 3 rounds
+  (<summary>)` and end the turn — mirroring the docs-audit loop's
+  non-convergence Blocker (§ Pipeline — stage 9). The architecture point has no
+  downstream operator gate, so there is no human-visible branch to defer into.
+
+The **bug lane** reaches this same point from `fix-bug`: after `bug-analysis`
+returns, the orchestrator runs the `architecture-stage` angles over
+`bug-analysis.md` under identical mechanics. That wiring lives in
+`fix-bug/SKILL.md`; this section is the normative home for the loop it drives.
+
 ## Review (post-implementation)
 
 Adversarial review runs once after the implement loop completes — not per
@@ -1212,17 +1469,22 @@ up-to-date base.
 ### Reviewer fan-out
 
 Spawn reviewers as a **single message**, one `Agent` call per **applicable**
-angle. **Iterate the `MATERIA.md` § Review angles registry** — the canonical
-seven ship pre-filled and any repo-specific rows append below, iterated the same
-way (one reviewer per applicable row; there is no separate "repo-specific
-angles" step). For each row:
+angle. **Iterate the `MATERIA.md` § Review angles registry** — of its twelve
+canonical rows the **seven post-implementation rows** iterate here (the five
+stage-review rows are excluded — see step 1), and any repo-specific rows append
+below, iterated the same way (one reviewer per applicable row; there is no
+separate "repo-specific angles" step). For each row:
 
 1. **Evaluate its Gate over the cumulative diff.** `always` → unconditional;
    `ui-affecting` → per § UI-surface gate; `data-affecting` → per § Data-surface
    gate; `design-bearing` → per the **design-conformance gate** (below);
-   a repo-specific predicate → as the row states. Record every negative
-   decision in `STATUS.md` (`<angle>-review: skipped (<reason>)`), exactly as
-   the UI/data gates already do.
+   a repo-specific predicate → as the row states. **A stage-review row — Gate
+   `design-stage` or `architecture-stage` — is never evaluated here:** those
+   angles run only at their own mid-pipeline points (§ Stage reviews (design &
+   architecture)), never in this post-implementation fan-out (analogous to how
+   `design-conformance` is the artifact-gated exception below). Record every
+   negative decision in `STATUS.md` (`<angle>-review: skipped (<reason>)`),
+   exactly as the UI/data gates already do.
 
 2. **For each positive angle**, load its definition from the row's `File` at
    `.materia/review-angles/<File>`, and spawn a reviewer at the row's **Tier**
@@ -1481,7 +1743,7 @@ Every reviewer returns findings as a list of JSON-shaped records:
   "line_start": 42,
   "line_end": 47,
   "severity": "HIGH" | "MEDIUM" | "LOW",
-  "category": "correctness" | "security" | "spec-adherence" | "regression" | "behavior" | "coverage" | "simplicity" | "ui" | "data-safety" | "design-conformance" | "<repo-specific angle>",  // category ∈ the kebab angle `name` from the MATERIA.md § Review angles registry, OR a documented sub-category (`coverage`/`simplicity` under `correctness`, `regression` under `spec-adherence`)
+  "category": "correctness" | "security" | "spec-adherence" | "regression" | "behavior" | "coverage" | "simplicity" | "ui" | "data-safety" | "design-conformance" | "design-coherence" | "design-feasibility" | "architecture-grounding" | "architecture-coverage" | "<repo-specific angle>",  // category ∈ the kebab angle `name` from the MATERIA.md § Review angles registry (post-implementation AND stage-review rows), OR a documented sub-category (`coverage`/`simplicity` under `correctness`, `regression` under `spec-adherence`)
   "recommendation": "revert" | "modify" | "keep_with_concern",
   "classification": "design-debt" | "not-checkable",  // OPTIONAL — the design-conformance angle only; absent on every other finding. `design-debt` = correct code, stale/infeasible design (not a code fix); `not-checkable` = a runtime-behaviour assertion whose only checker is the e2e lane (informational). Both are excluded from the fix loop AND the convergence aggregate and folded into the review retro entry — never a code-fix demand (§ Loop on findings).
   "description": "<one-sentence reason>"
