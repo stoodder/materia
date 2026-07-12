@@ -109,7 +109,7 @@ acting on them wastes context.
      persisted as `ui-proof/anchor-<screen-slug>.png` (same kebab-slug
      derivation). Anchor shots do **not** count against the ≤4-per-flow cap.
      When `design.md` has no `## Cohesion anchors` section (a run whose design
-     predates it), skip anchor capture and the step-5 comparison, and note
+     predates it), skip anchor capture and the step-4 comparison, and note
      `cohesion anchors absent (pre-cohesion design)` in the findings summary.
    - **Non-instability capture failure** (navigation timeout, write error
      mid-loop): write whatever was captured so far, commit the partial set in
