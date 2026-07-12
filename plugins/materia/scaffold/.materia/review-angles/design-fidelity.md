@@ -44,7 +44,7 @@ of the same document.
 Run inline as an Agent. The committed snapshot is the primary visual
 artifact when one exists; what other visual evidence you have is stated in
 your brief per the visibility rules in `ship-spec/SKILL.md` § Stage reviews
-(design & architecture) — a direct canvas read, an orchestrator-inlined
+(design & architecture) — § Design-stage review — a direct canvas read, an orchestrator-inlined
 canvas read-back, or the snapshot alone. Walk mandate 1 from `design.md`'s
 own screen/state/flow lists against the visual evidence you were given.
 Verify mandate 2 by opening the snapshot's files and reading the actual

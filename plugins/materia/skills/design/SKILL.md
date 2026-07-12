@@ -434,8 +434,9 @@ authoring run. The normative flow (when it fires, how the round is counted) is
   actually performs it in the operator-only-MCP world (where the spawned sync
   unit never touches MCP) follows the same actor-per-lane rule as everything
   else in this section (§ Canvas authoring & the paired artifact, "The lane
-  split") — `ship-spec/SKILL.md`'s Actor split paragraph is the normative home
-  for spelling that out, not restated here.
+  split") — `ship-spec/SKILL.md` § Gate-arrival sync's snapshot-export
+  paragraph (the continuation under its Actor split run-in) is the normative
+  home for spelling that out, not restated here.
 - **Precedence:** operator hand-edits are **authoritative** for the sections
   they touch. Sync re-derives **only** canvas-owned content and never overwrites
   operator-authored descriptive edits — the canvas cannot produce an
