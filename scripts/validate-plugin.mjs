@@ -425,6 +425,10 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
     // migrate joins the citers: its reference sweep re-runs the repo's check:docs gate,
     // resolved from MATERIA.md § Gate (the pin's own logic — a gate-runner must cite it).
     'migrate',
+    // janitor's Preflight verifies the full local gate is runnable and its verify
+    // step runs it — a gate-runner, so it must cite MATERIA.md § Gate in prose (its
+    // in-fence gate mention is blanked before matching, §1e's fence rule).
+    'janitor',
   ]
   for (const s of GATE_CITERS) {
     const f = `plugins/materia/skills/${s}/SKILL.md`

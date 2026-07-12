@@ -236,7 +236,7 @@ MUST:
 |---|---|---|
 | `bug-report` | `/materia:report-bug` | The operator's raw bug description, refined via in-memory Q&A; on approve it branches, writes the report, and opens a PR |
 | `retro-triage` | `/materia:triage-retros` | Unprocessed `retro.md` captures under `.materia/docs/specs/**` and `.materia/docs/bugs/**`; clusters defect signal in-memory into single-defect 13-section reports (folding duplicate signal about the same defect), de-duplicates against the pending queue + recent merge log, and on approve writes them directly into `.materia/docs/bugs/_reports/` (product improvements go to the sibling `.materia/docs/specs/_proposed/` queue in the same run) |
-| `janitor` | `/materia:janitor` | Legacy key — carried only by reports still pending in the queue; the janitor is now a maintainer that fixes drift directly and writes no new queue entries |
+| `janitor` | `/materia:janitor` | Behavioral faults found during a code sweep — a missing guard, wrong derivation, or contract violation with runtime impact, too behavioral to fix in a sweep (§ Maintainer lifecycle § Oversized findings, [`../../standards/skills.md`](../../standards/skills.md)); the bounded rest is fixed directly in the janitor's own PR. Also a legacy key on any report still pending from before the maintainer retrofit. |
 | `ui-inspection` | `/materia:ui-inspection` | The running app, driven across `.materia/docs/surface-map.md § Pages` at the canonical viewport (MATERIA.md § Eyes); judged against the repo's visual standards docs. Writes one consolidated checklist report; captures co-located in the report folder as `<surface-slug>.{png,html}`. |
 
 When a new producer is added, it MUST update this table with one row.
