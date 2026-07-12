@@ -244,8 +244,10 @@ package manifest and CI config.
   commit and the PR body. No rule to cite → skip.
 - **Behavior-preserving by construction.** A green gate is necessary, not
   sufficient — if a fix could change runtime behavior, a wire shape, or the
-  schema, it is a note, not a fix. When in doubt, note; a wrong fix in a code
-  PR costs more than a missed one.
+  schema, it is not fixed inline: it becomes a queue entry (a bug report, or
+  a proposed spec when it needs a product/design decision), or a needs-human
+  note when ambiguous (§ Classify & plan). When in doubt, note; a wrong fix
+  in a code PR costs more than a missed one.
 - **One root cause = one fix = one commit**, even across several files.
 - **Dedup is binding** — a finding substantially covered by a pending queue
   entry or recently shipped work is skipped naming the overlap; the queued

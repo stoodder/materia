@@ -323,31 +323,37 @@ The spine, in order:
     forfeits that privilege on any run that trips a forfeit (its § The
     docs-only envelope).
 
-A **zero-fix run** exits clean at classify — print the zero-drift report
-(including any notes) and end the turn: no branch, no PR, no review rounds. A
-run that plans only queue entries (no direct fixes) still branches and opens a
-PR to carry them.
+A run with **no fixes and no queue entries** planned exits clean at classify —
+print the zero-drift report (including any notes) and end the turn: no branch,
+no PR, no review rounds. A run that plans only queue entries (no direct fixes)
+still branches and opens a PR to carry them.
 
-**Pre-PR review rounds.** On a non-trivial diff, before the PR is opened, spawn
+#### Pre-PR review rounds
+
+On a non-trivial diff, before the PR is opened, spawn
 fresh-context adversarial reviewer(s) at the skill's `<skill>: reviewer`
 routing row (`MATERIA.md` § Tiers § Skill routing) on the sweep diff; fold
 their findings and re-verify (step 6) between rounds; **bounded at 3 rounds** to
 convergence (no material `Blocker`/`Major` left). The gate is the diff's size:
-a zero-fix run skips the rounds entirely (there is no branch or PR), and a run
-whose whole diff is one trivially small mechanical cluster may converge in a
-single round. A contested fix still unresolved after 3 rounds is dropped to a
-needs-human note and the rest proceeds. These rounds are separate from — and
-run before — the post-PR ride-to-green loop.
+a run with nothing to review skips the rounds entirely (there is no branch or
+PR), and a run whose whole diff is one trivially small mechanical cluster may
+converge in a single round. A contested fix still unresolved after 3 rounds is
+dropped to a needs-human note and the rest proceeds. These rounds are separate
+from — and run before — the post-PR ride-to-green loop.
 
-**Oversized findings — queue entries in the same PR.** A finding too large or
+#### Oversized findings — queue entries in the same PR
+
+A finding too large or
 too behavioral to fix inline does not vanish into a note: it becomes a **queue
 entry committed in the same sweep PR** — a proposed spec under the
 `.materia/docs/specs/_proposed/` contract, or a bug report under the
 `.materia/docs/bugs/_reports/` contract — carrying `source: <skill>` and
 following that queue's frontmatter, filename/folder, and id-minting rules (the
 queue READMEs are the one home for those rules; don't restate them). The
-maintainer registers its `source` key in the target queue's producers table
-(§ Registration surfaces), exactly as a producer does. **Librarian exception
+maintainer's `source` key is registered in the target queue's producers table
+(§ Registration surfaces), exactly as a producer's is — an authoring-time
+registration made once when the skill gains the capability, never a per-run
+edit by the sweep itself. **Librarian exception
 (binding):** the librarian files **proposed specs only** — a normative
 code-vs-doc conflict stays a needs-human PR-body note, never a bug report (its
 "nothing is the oracle for normative text" rule is unchanged); doc work too
