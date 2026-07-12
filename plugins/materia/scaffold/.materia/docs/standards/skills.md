@@ -164,7 +164,7 @@ anyway); passing both is legal and changes nothing.
 | **Orchestrator** | operator session | none (dispatches others) | `ship-spec`, `fix-bug`, `triage-retros` |
 | **Sub-skill** | a fresh-context subagent the orchestrator spawns | its row in `MATERIA.md` § Skill routing | `intake-spec`, `design`, `ui-test-plan`, `architecture`, `plan-tasks`, `implement-task`, `finalize`, `docs-sync`, `docs-audit`, `reproduce-bug`, `bug-analysis`, `ui-review` |
 | **Producer** | operator session | none | `propose-spec`, `propose-epic`, `report-bug`, `triage-retros` — each writes into a queue under that queue's contract (`.materia/docs/specs/_proposed/` for spec proposals; `.materia/docs/bugs/_reports/` for bug reports) with a distinct `source:` key. `triage-retros` writes into **both** queues in one run, under `source: retro-triage` |
-| **Maintainer** | operator session (or scheduled) | none | `librarian` (living docs) and `janitor` (code vs `.materia/docs/standards/`) — each fixes bounded drift directly, files oversized findings as queue entries, notes the rest, opens one PR after pre-PR review rounds (§ Maintainer lifecycle). Only the librarian **auto-merges**: the standing exception to the "no auto-merge" invariant, behind its docs-only envelope + green CI, forfeited on any forfeit-tripping run (§ The docs-only envelope); the janitor stops for review. `--auto` is a per-run exception (§ The `--auto` argument). |
+| **Maintainer** | operator session (or scheduled) | none | `librarian` (living docs), `janitor` (code vs `.materia/docs/standards/`), and the UI maintainers `curator` (visuals) / `concierge` (experience) — each fixes bounded drift directly, files oversized findings as queue entries, notes the rest, opens one PR after pre-PR review rounds (§ Maintainer lifecycle). Only the librarian **auto-merges**: the standing exception to the "no auto-merge" invariant, behind its docs-only envelope + green CI, forfeited on any forfeit-tripping run (§ The docs-only envelope); the janitor and the UI maintainers stop for review. `--auto` is a per-run exception (§ The `--auto` argument). |
 
 A producer additionally MUST conform to the queue's frontmatter/filename
 contract and register its `source` key — see § Registration surfaces. A
@@ -286,8 +286,9 @@ The spine, in order:
 6. **Verify** — re-establish that the diff is sound, by the maintainer's kind:
    a **code** maintainer runs the full local gate (`MATERIA.md` § Gate); a
    **docs** maintainer runs the docs gate; a **UI** maintainer re-drives each
-   affected surface and captures the result. A fix that can't be made sound is
-   reverted and demoted to a needs-human note.
+   affected surface and captures the result **and** still runs the full local
+   gate (re-capture is the primary evidence, not a substitute for the gate). A
+   fix that can't be made sound is reverted and demoted to a needs-human note.
 7. **Pre-PR review rounds** — before the PR exists, harden the diff with
    fresh-context adversarial reviewer(s) (§ Pre-PR review rounds, below).
 8. **One PR** — push the branch and open exactly one PR (open-PR op,
@@ -394,19 +395,33 @@ the one home for all shared UI-maintainer mechanics.
   skipped** — record it and continue to the next; the drive never aborts.
 - **The presentation-layer edit envelope (binding).** A UI maintainer's fixes
   touch the **presentation layer only** — markup structure, styles, design
-  tokens, component usage/props, and static display copy. It **never** edits
-  logic, data derivation, event handlers, schema, or wire shapes. Anything a
-  fix would need beyond that boundary is **oversized** (a queue entry,
-  § Oversized findings) or a needs-human note — the same "note, don't fix" line
-  the other maintainers draw, drawn here at the presentation boundary.
-- **Re-capture verification (binding — the UI verify step).** This IS the
-  spine's step-6 verify for a UI maintainer, and it is **primary over the
-  diff-review rounds**. After each fix, **re-drive the affected surface and
-  capture it again**; the before/after capture pairs ride the PR — committed
-  under the sweep branch in a run folder the skill names and links from the PR
-  body — so the human gate judges **observed output**, not the diff alone. A
-  fix whose re-capture does not show the intended change (or shows a regression)
-  is reverted and demoted to a needs-human note.
+  tokens, component usage and **presentational** props (a prop that gates
+  behavior or data flow is out of envelope), and static display copy. It
+  **never** edits logic, data derivation, event handlers, schema, or wire
+  shapes. Anything a fix would need beyond that boundary is **oversized** (a
+  queue entry, § Oversized findings) or a needs-human note — the same "note,
+  don't fix" line the other maintainers draw, drawn here at the presentation
+  boundary.
+- **Sibling routing — a drop is a note, never a discard.** When a finding
+  belongs to the sibling UI maintainer's territory, "drop" means a
+  **named-overlap note in the PR body** — never a silent discard. And the
+  routing carries an observability exception: a finding owned by the sibling
+  but observable **only in this skill's own drive** (a token or spacing defect
+  that manifests only in an error/disabled state or mid-flow, which a
+  default-render drive never renders) is **not** dropped — the skill that saw
+  it surfaces it itself, as a needs-human note or a queue entry naming the
+  owner, because the owner's sweep will never observe it.
+- **Re-capture verification (binding — the UI verify step).** This is the
+  heart of the spine's step-6 verify for a UI maintainer — run alongside the
+  full local gate (`MATERIA.md` § Gate), which still must pass — and it is
+  **primary over the diff-review rounds**. After each fix, **re-drive the
+  affected surface and capture it again**; the before/after capture pairs ride
+  the PR — committed under the sweep branch in the run's capture folder,
+  `.materia/captures/<skill>-sweep-<YYYY-MM-DD>/` (a committed run output
+  outside the docs trees, linked from the PR body; the operator may delete it
+  once the PR is decided) — so the human gate judges **observed output**, not
+  the diff alone. A fix whose re-capture does not show the intended change (or
+  shows a regression) is reverted and demoted to a needs-human note.
 - **Instability degrade.** If provisioning fails or the § Eyes drive exits with
   a signature `MATERIA.md` § Eyes names as known environment instability (not a
   product bug), print a short note, tear down anything the run started, and stop

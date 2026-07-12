@@ -146,9 +146,10 @@ finding lands with exactly one of them:
   color-a11y findings), and microcopy.
 
 A contrast or other a11y-adjacent color finding is **concierge's** — drop it
-with a named-overlap note rather than fixing it here. Dedup every finding
-against **both** live queues, the recent merge log, **and** the sibling
-maintainers' open sweep PRs before fixing.
+with a named-overlap note rather than fixing it here (a drop is a note, never
+a discard — § Maintainer lifecycle § UI maintainers, sibling routing). Dedup
+every finding against **both** live queues, the recent merge log, **and** the
+sibling maintainers' open sweep PRs before fixing.
 
 ## Scope (what this skill does NOT do)
 
@@ -156,10 +157,11 @@ maintainers' open sweep PRs before fixing.
   hand-off; a human merges (a UI diff has no mechanical envelope, unlike the
   librarian's docs-only diff).
 - **NEVER edits outside the presentation layer.** Markup, styles, tokens,
-  component usage/props, and static copy only — never logic, data derivation,
-  handlers, schema, or wire shapes (§ Maintainer lifecycle § UI maintainers —
-  the live-app envelope). A fix that would need any of those is oversized (a
-  queue entry) or a needs-human note.
+  component usage and presentational props (a prop that gates behavior or data
+  flow is out of envelope), and static copy only — never logic, data
+  derivation, handlers, schema, or wire shapes (§ Maintainer lifecycle § UI
+  maintainers — the live-app envelope). A fix that would need any of those is
+  oversized (a queue entry) or a needs-human note.
 - **Does NOT own experience findings** — interaction states, flows, a11y
   (including contrast), and microcopy are `/materia:concierge`'s; the curator
   drops them with an overlap note (§ Overlap & dedup).

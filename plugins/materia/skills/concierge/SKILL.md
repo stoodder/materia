@@ -148,18 +148,23 @@ finding lands with exactly one of them:
   semantic color-role usage.
 
 A pure token, spacing, or component-styling finding is **curator's** — drop it
-with a named-overlap note rather than fixing it here. Dedup every finding
-against **both** live queues, the recent merge log, **and** the sibling
-maintainers' open sweep PRs before fixing.
+with a named-overlap note rather than fixing it here — **unless** it is
+visible only in a state or flow this sweep drives (curator's default-render
+drive will never render it): then this run surfaces it itself, as a
+needs-human note or a queue entry naming curator, per the sibling-routing
+rule (§ Maintainer lifecycle § UI maintainers). A drop is a note, never a
+discard. Dedup every finding against **both** live queues, the recent merge
+log, **and** the sibling maintainers' open sweep PRs before fixing.
 
 ## Scope (what this skill does NOT do)
 
 - **NEVER auto-merges and never pushes to the trunk** — the green PR is the
   hand-off; a human merges (a UI diff has no mechanical envelope, unlike the
   librarian's docs-only diff).
-- **NEVER edits outside the presentation layer.** Markup, component usage/props,
-  and **static display copy** only — never validation logic, event handlers,
-  data derivation, schema, or wire shapes (§ Maintainer lifecycle
+- **NEVER edits outside the presentation layer.** Markup, component usage and
+  presentational props (a prop that gates behavior or data flow is out of
+  envelope), and **static display copy** only — never validation logic, event
+  handlers, data derivation, schema, or wire shapes (§ Maintainer lifecycle
   § UI maintainers — the live-app envelope). A microcopy fix is a change to a
   **literal display string**; a message a code path *assembles* or derives is
   oversized (a queue entry) or a needs-human note, never edited inline.
