@@ -1,6 +1,6 @@
 ---
 name: fix-bug
-description: Drive a reported bug from .materia/docs/bugs/_reports/ to a merged TDD fix — reproduce RED first, then bug-analysis (adversarially stage-reviewed) → plan-tasks → implement-task → review → docs-sync → finalize to fix GREEN and open one PR. Consumes a bug report (menu or named <id>); produces one PR with the fix, the reproduction tests, and the dequeued report. Use when the operator wants to drive a captured bug report through the full fix pipeline.
+description: Drive a reported bug from .materia/docs/bugs/_reports/ to a merged TDD fix — reproduce RED first, then bug-analysis (adversarially stage-reviewed) → plan-tasks → implement-task → review → docs-sync → finalize to fix GREEN and open one PR, then watch that PR to green (fixing CI, resolving conflicts) and surface it for the human to review + merge. Consumes a bug report (menu or named <id>); produces one PR with the fix, the reproduction tests, and the dequeued report. Use when the operator wants to drive a captured bug report through the full fix pipeline.
 ---
 
 # fix-bug — the bug-fix orchestrator
@@ -242,6 +242,11 @@ spawn, resolve the tier first and pass it as the `model` override — see
 After each stage: update `STATUS.md` (tick the stage, set `Next`), then
 commit + push.
 
+After finalize opens the one PR, the run does **not** stop there: the
+orchestrator continues into § PR watch (its notify terminal) — so the pipeline
+ends at **PR surfaced green for review + merge**, not merely "PR opened". The
+watch opens no second PR.
+
 ## RED gate
 
 **The orchestrator independently verifies the RED, then ticks stage 1 itself
@@ -471,6 +476,31 @@ The dequeue commit message pattern: `fix-bug(stake): dequeue report <id> from _r
 The PR description links: `.materia/docs/bugs/<dated-slug>/` artifacts (STATUS.md,
 reproduction.md, bug-analysis.md, tasks.md), the reproduction test path(s), and
 the bug report via git history (the report file is removed in this PR).
+
+## PR watch
+
+Notify terminal only — fix-bug has no autopilot. After § Finalize opens the one
+PR, the orchestrator continues into `ship-spec/SKILL.md` § PR watch — **its
+notify terminal only**. fix-bug has no
+`--auto`/autopilot: per `.materia/docs/standards/skills.md` § "The `--auto`
+argument", `--auto` semantics live entirely in `ship-spec` and are a documented
+no-op in every other skill. So the **merge terminal never applies here** — the
+watch runs, but it always ends by **surfacing at green**, never merging. fix-bug
+still ends with the human reviewing and merging the PR.
+
+Cite that section as the one home — do **not** duplicate the watch machinery.
+Reused verbatim: poll CI, fix failures on the branch (**≤3 fix rounds**), and
+resolve merge conflicts by merging `<baseline>` into the branch (**never rebase,
+never force-push**); its stuck-pending bound and human-engaged exit apply as
+defined there. On green, take the **notify terminal**: set `Next: review +
+merge` in `STATUS.md`, note the `pr-watch:` line in § Notes, surface the PR link
+in the final-turn message, and **stop** — the human reviews and merges. The run
+does not open a second PR (§ Rules keeps "exactly one PR (in finalize)" true).
+
+**Bug-run STATUS vocabulary:** the notify terminal's `pr-watch:` § Notes lines
+(watching, then green-ready), identical to ship-spec's notify terminal. Never
+emit the autopilot `auto-merge:` / `Next: merge (autopilot)` vocabulary — this
+lane has no merge terminal.
 
 ## Course corrections (mid-pipeline)
 
