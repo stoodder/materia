@@ -317,7 +317,9 @@ the same value.
   also pays a reconstruction-read cost for the committed snapshot — paginated
   `read_file` calls, per the init-comment catalog below — but this rides the
   same cadence, so the existing ≤4-touch bound already caps it; no separate
-  counter needed.
+  counter needed. A pre-gate stage-review touch that re-authored the canvas
+  pays the same per-touch reconstruction-read cost, capped by that loop's own
+  ≤3 bound — so the worst-case total is 4 + 3 touches, each priced alike.
 
 **Capability meanings** — the contract skills gate on:
 

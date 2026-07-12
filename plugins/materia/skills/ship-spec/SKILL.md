@@ -29,7 +29,8 @@ skill leans on (read at the phase that needs them):
 Spawn every stage with the Agent tool — pass it **only its inputs** (the prior
 artifacts + the stage skill), not the whole conversation, plus the standing
 rules from `resources/spawn-contract.md` (Block 1 always; Block 2 for
-stages/tasks; Block 3 for reviewers). Each stage skill declares its own
+stages/tasks; Block 3 for diff reviewers, Block 3a for artifact reviewers).
+Each stage skill declares its own
 **Inputs / Outputs**. After a stage subagent returns, verify it wrote its
 artifact and committed; if not, fix before continuing. Independent
 implementation tasks may run as **parallel worktree-isolated subagents**
@@ -1094,7 +1095,9 @@ model + effort tier. Vocabulary, model availability, fallback, and coercion:
    run** based on the work's complexity/risk (recorded `tier-override:`, per
    § Stage reviews (design & architecture)); the review-loop tiebreaker → its
    `ship-spec: review/tiebreaker` row. An explicit operator override wins;
-   record `tier-override: <unit> <artifact-value> → <operator-value>`.
+   record `tier-override: <unit> <artifact-value> → <override-value>` (the
+   same format serves both origins — an operator's explicit call and the
+   orchestrator's recorded stage-review override).
 2. **Resolve availability** against `MATERIA.md` § Tiers § Model set: a model
    listed there resolves as declared; a model absent from the table coerces to
    the fallback with `tier-fallback: <unit> <tier> → <fallback> (not in model
@@ -1368,7 +1371,7 @@ design-point specifics:
     round through the gate's own loop.
   - **No human will see the gate** — autopilot posture is on, or § Gate
     resolution resolves to an auto-approval: do **not** auto-approve over the
-    unresolved HIGH findings. Write
+    unresolved HIGH/MEDIUM findings. Write
     `Blocker: design stage-review did not converge after 3 rounds (<summary>)`
     and end the turn.
 
