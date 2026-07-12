@@ -1,6 +1,6 @@
 # MATERIA.md — the stack adaptation surface
 
-Fixture stub for a **tracked** Materia install (artifact schema 2). Trimmed to
+Fixture stub for a **tracked** Materia install (artifact schema 4). Trimmed to
 the identity of a Materia-enabled repo; not a full companion doc.
 
 ## Identity

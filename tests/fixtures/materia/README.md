@@ -5,7 +5,7 @@ Minimal, self-contained sample project trees that back the script-backed
 They are **not** app templates — they carry just enough Materia artifacts to
 exercise detection and state-tracking logic.
 
-Three shapes, each carrying a distinct story about the release/artifact contract:
+Four shapes, each carrying a distinct story about the release/artifact contract:
 
 - **`legacy-0.1.0-project/`** — a pre-tracking (`artifactSchema` 1) install as it
   looked before the release/artifact contract existed, and the **adopted-drift-filter
@@ -29,11 +29,26 @@ Three shapes, each carrying a distinct story about the release/artifact contract
 
 - **`tracked-current-project/`** — the current tracked shape a fresh
   `/materia:init` produces: it carries `.materia/project.json` at `artifactSchema`
-  3 and the gate script at its canonical `.materia/scripts/check-docs.sh`. Its
-  `project.json` mirrors exactly what the bundled scaffold ships today
-  (`pluginVersion: null`, `source: "scaffold"`), i.e. an unstamped freshly-init'd
-  project. `check-docs-sh-present` and `check-docs-sh-location` both report `ok` and
-  the repo reads fully `healthy` (schema current, nothing outstanding).
+  4, the gate script at its canonical `.materia/scripts/check-docs.sh`, and the
+  agent-docs router at `.materia/docs/README.md`. Its `project.json` matches the
+  bundled scaffold's core fields (`pluginVersion: null`, `source: "scaffold"`),
+  i.e. an unstamped freshly-init'd project — but deliberately **omits** the
+  scaffold's pre-filled `acknowledgedChanges` (absent reads as `[]`), so §7's
+  windowless "available to adopt" listing is non-empty for this fixture (the
+  all-acknowledged twin is a §7 synthetic case, not a committed fixture).
+  `check-docs-sh-present`, `check-docs-sh-location`, and `docs-location` all
+  report `ok` and the repo reads fully `healthy` (schema current, nothing
+  outstanding).
+
+- **`legacy-docs-layout-project/`** — a tracked schema-3 install whose agent
+  docs still sit at the legacy repo-root `docs/` (a `docs/README.md` router
+  with a tree-escaping `../MATERIA.md` link; `.materia/docs/` absent), and the
+  **docs-relocation drift carrier** for the 0.4.0 `docs/` -> `.materia/docs/`
+  move: `docs-location` reports the drift, and §8 copies it to a temp dir to
+  exercise the `relocate-docs` apply — the auto-move, the stale-roots gate
+  refresh (old bytes backed up to `.materia/scripts/check-docs.sh.pre-schema4`),
+  the schema-4 stamp, and the refreshed gate flagging the now-short escaped
+  link for by-hand repair (the committed fixture is never mutated).
 
 - **`gnarly-legacy-project/`** — a REAL early dogfood install from deep inside the
   pre-tracking `0.1.0` range, and the **required-drift carrier**. It is

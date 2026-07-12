@@ -86,6 +86,11 @@ because the plugin shipped — bump it when the installed-artifact contract move
   changed, but the canonical location is part of the installed-artifact contract, so the
   schema moves — which is what lets the ledger's schema-window machinery surface the
   relocation to a behind repo at all.
+- `0.4.0` = schema 4 because the agent-facing docs tree's **canonical location** changed
+  (from the repo-root `docs/` to `.materia/docs/`) — the same reasoning as the 0.3.0
+  gate-script relocation: the tree moves intact, but its canonical location is part of
+  the installed-artifact contract, so the schema moves and the window machinery can
+  surface the (breaking) relocation to a behind repo.
 
 ### doctorChecks double as adoption signals
 
