@@ -1,6 +1,6 @@
 ---
 name: fix-bug
-description: Drive a reported bug from docs/bugs/_reports/ to a merged TDD fix — reproduce RED first, then reuse plan-tasks → implement-task → review → docs-sync → finalize to fix GREEN and open one PR. Consumes a bug report (menu or named <id>); produces one PR with the fix, the reproduction tests, and the dequeued report. Use when the operator wants to drive a captured bug report through the full fix pipeline.
+description: Drive a reported bug from docs/bugs/_reports/ to a merged TDD fix — reproduce RED first, then bug-analysis (adversarially stage-reviewed) → plan-tasks → implement-task → review → docs-sync → finalize to fix GREEN and open one PR. Consumes a bug report (menu or named <id>); produces one PR with the fix, the reproduction tests, and the dequeued report. Use when the operator wants to drive a captured bug report through the full fix pipeline.
 ---
 
 # fix-bug — the bug-fix orchestrator
@@ -201,7 +201,11 @@ spawn, resolve the tier first and pass it as the `model` override — see
    ticks stage 1 before advancing to stage 2 (see § RED gate).
 
 2. **bug-analysis** (`bug-analysis`) → `bug-analysis.md`. Spawned only after
-   the RED gate passes.
+   the RED gate passes. After it returns and its artifact is verified +
+   committed, the orchestrator runs the `architecture-stage` review over the
+   returned `bug-analysis.md`, before `plan-tasks` spawns — see § Bug-analysis
+   stage review (mechanics: `ship-spec/SKILL.md` § "Stage reviews (design &
+   architecture)" — § "Architecture-stage review").
 
 3. **plan-tasks** (`plan-tasks`) → `tasks.md`. See § plan-tasks input
    substitution for the exact spawn prompt.
@@ -272,6 +276,52 @@ Two and only two `Blocker:` returns from `reproduce-bug`:
 Either means the RED is unconfirmed, stage 1 stays unticked, and the pipeline
 must pause.
 
+## Bug-analysis stage review
+
+After `bug-analysis` (stage 2) returns and its `bug-analysis.md` is verified
+and committed (per § "Each stage runs as a subagent"), and before
+`plan-tasks` (stage 3) spawns, the orchestrator runs the `architecture-stage`
+angles over `docs/bugs/<dated-slug>/bug-analysis.md` — the bug lane's arrival
+at `ship-spec/SKILL.md` § "Stage reviews (design & architecture)" —
+§ "Architecture-stage review" Point 2, which names this file as the wiring's
+home. The angle set (`MATERIA.md` § Review angles registry rows carrying the
+`architecture-stage` token), the spawn (Block 1 + Block 3a), the ≤3-round
+loop, revision (re-spawn `bug-analysis` with the findings as feedback), the
+commit-subject format (`stage-review(architecture-stage, <dated-slug>): r<N> —
+<H> HIGH, <M> MEDIUM addressed, <L> LOW noted`, with `— converged` appended on
+the converging round), the § Notes recording vocabulary, the
+zero-rows/missing-file degradation, and the non-convergence
+`Blocker: architecture stage-review did not converge after 3 rounds
+(<summary>)` are all that section's, reused verbatim — this skill adds only
+the bug-lane wiring below.
+
+No `design-stage` point exists on this lane: a bug is scoped by its
+reproduction, not a UX design (§ Scope) — no `design` stage ever runs, so no
+`design-stage` angle rows are evaluated here.
+
+**Bug-lane deltas:**
+
+- **Input substitution (oracle remap).** The artifact under review is
+  `docs/bugs/<dated-slug>/bug-analysis.md`. Every angle spawn for this point
+  carries the following remap, mirroring § plan-tasks input substitution's
+  style:
+
+  > The artifact under review is `docs/bugs/<dated-slug>/bug-analysis.md`.
+  > Your intent oracle — where `spawn-contract.md` Block 3a names `spec.md`
+  > (and `design.md` for an `architecture.md` review) — is instead the bug
+  > report body (frontmatter stripped) plus
+  > `docs/bugs/<dated-slug>/reproduction.md` plus the reproduction test
+  > path(s) it names. There is no `spec.md` or `design.md` on this lane.
+
+- **The angle checks apply unchanged.** Both `architecture-stage` registry
+  rows — `architecture-grounding` and `architecture-coverage` — already carry
+  their bug-lane variant inline (each angle file's own "Bug lane:" paragraph:
+  grounding requires the Affected-files list to be grounded in the
+  reproduction evidence; coverage requires the root cause to fully explain the
+  RED evidence and the fix scope to cover the whole affected surface, not just
+  the one reproducing case). No instruction beyond the oracle remap above is
+  needed.
+
 ## plan-tasks input substitution
 
 `plan-tasks` receives `bug-analysis.md` in place of `architecture.md` as its
@@ -327,7 +377,10 @@ resolve→availability→map→spawn steps are identical. The new sub-skills'
 tiers resolve from `MATERIA.md` § Tiers § Skill routing (rows
 `reproduce-bug`, `bug-analysis`), with availability checked per
 `MATERIA.md` § Tiers § Model set and the fallback per `MATERIA.md` § Tiers
-§ Fallback.
+§ Fallback. The § Bug-analysis stage review angle spawns are not among these
+rows — like every review angle, they carry their own `Tier` in the
+`MATERIA.md` § Review angles registry, with the orchestrator's per-run
+override, per `ship-spec/SKILL.md` § "Tier routing".
 
 ## Fresh-context reviewer spawning
 
@@ -457,7 +510,10 @@ This skill:
 - **Does NOT** replace `ship-spec` — bugs and features stay distinct loops
   sharing the reusable mid-stages.
 - **Does NOT** add design or architecture stages — a bug is scoped by its
-  reproduction, not by a UX design.
+  reproduction, not by a UX design. § Bug-analysis stage review is not a new
+  pipeline stage and does not change any review angle's definition: it
+  reviews the *existing* bug-analysis stage's own artifact, reusing the
+  `architecture-stage` review point ship-spec already defines.
 - **Does NOT** modify `triage-retros` or any of the reused stages — it
   only changes the *inputs* a bug run feeds them.
 - **Does NOT** change the behavior of `plan-tasks`, `implement-task`, the
