@@ -250,7 +250,7 @@ flowchart TD
   R2[("retro.md — fix-bug runs")] --> HARVEST
   HARVEST["harvest + cluster<br/>(in-memory)"] --> DEDUP{"de-dup against<br/>both queues + merge log"}
   DEDUP --> CONFIRM["one confirmation<br/>(approve / edit / drop / cancel)"]
-  CONFIRM -->|edit / drop| HARVEST
+  CONFIRM -->|"edit / drop — adjust drafts,<br/>re-present (no re-harvest)"| CONFIRM
   CONFIRM -->|approve| SPECS["proposed specs<br/>(source: retro-triage)"]
   CONFIRM -->|approve| BUGS["bug reports<br/>(source: retro-triage)"]
   CONFIRM -->|approve| RENAME["retro.md → retro.processed.md"]
@@ -281,7 +281,7 @@ against your queues, and every consumed retro is renamed to
 | **The gate** | `MATERIA.md` § Gate — the full local check (lint, typecheck, tests, `check:docs`) that every `finalize` run and every maintainer sweep must pass before opening its PR. | `MATERIA.md` § Gate |
 | **Eyes** | `MATERIA.md` § Eyes — the browser/capture toolchain that drives the live app and takes canonical-viewport screenshots, used by UI-gated review angles and the UI maintainers. | `MATERIA.md` § Eyes |
 | **Surface map** | `.materia/docs/surface-map.md` — the canonical, ordered list of pages (or CLI commands) a UI maintainer or design-conformance check must drive. | `.materia/docs/surface-map.md` |
-| **Retro** | `retro.md` — the per-run retrospective every `ship-spec`/`fix-bug` run appends to, one entry per stage; harvested by `triage-retros` and then renamed `retro.processed.md`. | [`specs/README.md` § Resumable, run by subagents](plugins/materia/scaffold/.materia/docs/specs/README.md#resumable-run-by-subagents) |
+| **Retro** | `retro.md` — the per-run retrospective every `ship-spec`/`fix-bug` run appends to, one entry per stage; harvested by `triage-retros` and then renamed `retro.processed.md`. | [`specs/README.md` § Closing the loop](plugins/materia/scaffold/.materia/docs/specs/README.md#closing-the-loop--triage-retros-retro-triage) |
 | **Epic** | A multi-spec initiative under `.materia/docs/epics/`, decomposed into member proposals wired by a `depends_on` graph and kept in sync by `reconcile-epic` as members ship. | [`epics/README.md`](plugins/materia/scaffold/.materia/docs/epics/README.md) |
 | **Artifact schema vs. plugin semver** | Independent axes: `pluginVersion` is the plugin's semver (bumps on every release); `artifactSchema` is an integer tracking the installed-artifact contract (bumps only when that contract itself changes). | [`release/README.md`](plugins/materia/release/README.md) |
 | **Release ledger** | The machine-readable `plugins/materia/release/` tree — the source of truth `doctor`/`migrate` read; changelog prose summarizes it but never overrides it. | [`release/README.md`](plugins/materia/release/README.md) |
