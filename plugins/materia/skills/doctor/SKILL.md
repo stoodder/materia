@@ -86,10 +86,16 @@ action-needed, `2` blocked).
    when it sits at EITHER the canonical `.materia/scripts/check-docs.sh` OR a
    legacy `scripts/check-docs.sh` a not-yet-relocated install still carries (and
    `warning` at neither), while `check-docs-sh-location` is `ok` only at the
-   canonical location and `warning` when it is root-only. Relay the script's own
-   remediation wording — it is schema-aware (it points at `/materia:migrate
-   --plan` for a behind repo, or "move it by hand" for one already at the latest
-   schema).
+   canonical location and `warning` when it is root-only. A further check,
+   `docs-location`, concerns the agent-facing docs tree: it is `ok` when the tree
+   sits at the canonical `.materia/docs/` (or when there is nothing materia-shaped
+   to relocate — no `.materia/docs/` and no legacy `docs/README.md` router, so a
+   docs-less repo is never nagged), and `blocked` (breaking drift) when a legacy
+   `docs/README.md` router is present with `.materia/docs/` absent. Relay each
+   check's own remediation wording — it is schema-aware (it points at
+   `/materia:migrate --plan` for a behind repo migrate can move/stamp, or "move it
+   by hand" / "move the docs tree to .materia/docs/ by hand" for a state migrate
+   will not modify).
 
 3. **Recommend the next step the script named** — no more. Common cases:
    - **`healthy`** — schema is current; nothing required. Note that a healthy

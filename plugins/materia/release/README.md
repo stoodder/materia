@@ -16,15 +16,18 @@ installed plugin cache.
 
 > **Status: v0, dogfood-grade.** `/materia:doctor` ships and reads this ledger to report
 > drift **read-only** (it consumes the `doctorChecks` IDs — `project-state-present`,
-> `check-docs-sh-present`, `check-docs-sh-location`); it writes nothing and runs no
-> migration. It also surfaces same-schema "windowless" changes informationally — see
+> `check-docs-sh-present`, `check-docs-sh-location`, `docs-location`); it writes nothing and
+> runs no migration. It also surfaces same-schema "windowless" changes informationally — see
 > Windowless adoption surfacing and `acknowledgedChanges`, below — never affecting status
 > or exit. `/materia:migrate` ships too — **plan-first** — and consumes the `migrations`
-> IDs: v0 implements two, `init-project-state` (reserved in `0.2.0-project-state-file`),
-> which initializes `.materia/project.json` for a pre-tracking install, and
-> `install-check-docs` (reserved in `0.3.0-check-docs-sh-gate` + `0.3.0-scripts-relocation`),
-> which puts the check:docs gate script at its canonical `.materia/scripts/check-docs.sh` and
-> stamps schema 3. Any other `migrations` ID below is a reserved identifier no handler
+> IDs: v0 implements three, `init-project-state` (reserved in `0.2.0-project-state-file`),
+> which initializes `.materia/project.json` for a pre-tracking install; `install-check-docs`
+> (reserved in `0.3.0-check-docs-sh-gate` + `0.3.0-scripts-relocation`), which puts the
+> check:docs gate script at its canonical `.materia/scripts/check-docs.sh` and stamps schema
+> 3; and `relocate-docs` (reserved in `0.4.0-docs-relocation`), which moves the agent-facing
+> docs tree from the legacy root `docs/` to `.materia/docs/`, refreshes a stale-roots gate
+> script from the scaffold (old bytes backed up to `.materia/scripts/check-docs.sh.pre-schema4`),
+> and stamps schema 4. Any other `migrations` ID below is a reserved identifier no handler
 > consumes yet; migrate reports it as manual/skipped. A third mode, `--acknowledge
 > <change-id>`, is a targeted write to `acknowledgedChanges` — not a ledger-declared
 > migration — that quiets a windowless entry once adopted or considered.
@@ -38,7 +41,7 @@ release/
     0.1.0.json           pre-tracking baseline (schema 1; a range of pre-tracking shapes, see its notes)
     0.2.0.json           introduces this contract (schema 2)
     0.3.0.json           relocates the gate script to .materia/scripts/ (schema 3)
-    0.4.0.json           staged eight-chapter init interview + grown product brief (schema 3, no bump)
+    0.4.0.json           staged init interview + grown product brief + agent-docs relocation to .materia/docs/ (schema 4)
 ```
 
 - `latest.json` — `{ pluginVersion, artifactSchema, latestVersionFile }`. Its
