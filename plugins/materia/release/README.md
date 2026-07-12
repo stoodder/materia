@@ -38,6 +38,7 @@ release/
     0.1.0.json           pre-tracking baseline (schema 1; a range of pre-tracking shapes, see its notes)
     0.2.0.json           introduces this contract (schema 2)
     0.3.0.json           relocates the gate script to .materia/scripts/ (schema 3)
+    0.4.0.json           staged eight-chapter init interview + grown product brief (schema 3, no bump)
 ```
 
 - `latest.json` — `{ pluginVersion, artifactSchema, latestVersionFile }`. Its

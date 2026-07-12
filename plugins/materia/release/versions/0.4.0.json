@@ -1,0 +1,18 @@
+{
+  "pluginVersion": "0.4.0",
+  "artifactSchema": 3,
+  "summary": "Restructures /materia:init's intake into a staged eight-chapter interview (AskUserQuestion-driven, every non-essential question skippable) and grows the scaffold product brief it materializes: § Goals & success, a tagline slot, Brand & color slots, and the 'Not yet decided' honest-gap convention.",
+  "changes": [
+    {
+      "id": "0.4.0-init-staged-intake",
+      "summary": "The scaffold product brief (docs/product.md) gains a § Goals & success section, a tagline slot, explicit Brand & color slots, and a 'Not yet decided' skip convention; /materia:init's intake becomes a staged eight-chapter interview that fills them.",
+      "impact": "optional",
+      "surfaces": ["scaffold"],
+      "detectable": false,
+      "detectionNotes": "docs/product.md is materialized once at init and thereafter user-owned prose the repo freely edits; the absence of the new sections/slots in an installed brief is indistinguishable from a deliberate local edit, so no doctor check can honestly flag it. The interview behavior itself lives in the plugin skill and updates with the plugin.",
+      "migratable": false,
+      "manualMigration": "Update the materialized docs to match the current scaffold if desired: in docs/product.md add § Goals & success (why it exists / success metrics / milestones / business model), the Tagline slot under § Name & positioning, and the Brand & color bullet under § Design feel & taste — filling each from your own answers, or with an explicit 'Not yet decided — <what was asked>.' line; then extend the brief-content enumerations in CLAUDE.md, docs/README.md, and docs/standards/docs.md with goals. The staged-interview behavior lives in the plugin skill and updates with the plugin — no repo action needed for that part.",
+      "notes": "Discoverability: surfaced to schema-current repos in /materia:doctor's informational availableAdoptions listing (status/exit unaffected; absent from /materia:migrate output, which lists only mechanical steps) — acknowledge via /materia:migrate --acknowledge once adopted or considered (see 0.3.0-acknowledged-changes-field). No artifactSchema bump — a content change to a materialized, user-owned doc; no canonical-location or installed-artifact-set move. Classified optional (operator decision at intake): nothing in this plugin version consumes the new brief sections yet, so an installed repo loses no capability by keeping its older brief — the design/propose-spec grounding reads sections that already existed. Also folded under this entry: survey→interview rewording of init comments in the scaffold's MATERIA.md, glossary.md, and surface-map.md (comments deleted at materialization time)."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-<!-- init: fill every {{slot}} from the survey + generated standards, then
+<!-- init: fill every {{slot}} from the interview + generated standards, then
      delete these comments. Keep this file lean — depth lives in docs/. -->
 
 The always-loaded guide. Keep it lean — depth lives in `docs/`. Read this,
@@ -12,8 +12,8 @@ then follow the context protocol below **before writing anything**.
 (local + prod). Mirrors MATERIA.md § Identity but written for a working
 agent's orientation.}}
 
-Product depth — audience, market, design feel & taste, voice, principles:
-[docs/product.md](docs/product.md).
+Product depth — goals, audience, market, design feel & taste, voice,
+principles: [docs/product.md](docs/product.md).
 
 ## Context protocol — build context in this order, every time
 

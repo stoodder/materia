@@ -1,6 +1,6 @@
 # MATERIA.md — the stack adaptation surface
 
-<!-- init: this file is written once by /materia:init from the survey answers and
+<!-- init: this file is written once by /materia:init from the interview answers and
      maintained thereafter like any other doc (librarian sweeps it; docs-sync
      updates it when the stack changes). Replace every {{slot}} and delete
      these comments. Every section heading below is a stable anchor that the
