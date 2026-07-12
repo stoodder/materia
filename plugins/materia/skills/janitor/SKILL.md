@@ -1,12 +1,12 @@
 ---
 name: janitor
-description: Maintenance sweep of the codebase against `docs/standards/` — statically scans for drift (duplication, dead code, kind-purity violations, pattern deviations), fixes the bounded, behavior-preserving findings directly, and opens one PR gated by the full local suite (lint + typecheck + tests + check:docs), riding it to green but never auto-merging. Findings too behavioral or too big to fix safely become needs-human notes in the PR body, never queue entries. The code counterpart to `/materia:librarian` (which sweeps the docs and auto-merges); the scan fans out to parallel read-only subagents. Fully autonomous; `--dry-run` previews; zero-drift runs exit clean with no branch or PR. Use on demand or on a schedule when the tree should be re-trued against the standards.
+description: Maintenance sweep of the codebase against `.materia/docs/standards/` — statically scans for drift (duplication, dead code, kind-purity violations, pattern deviations), fixes the bounded, behavior-preserving findings directly, and opens one PR gated by the full local suite (lint + typecheck + tests + check:docs), riding it to green but never auto-merging. Findings too behavioral or too big to fix safely become needs-human notes in the PR body, never queue entries. The code counterpart to `/materia:librarian` (which sweeps the docs and auto-merges); the scan fans out to parallel read-only subagents. Fully autonomous; `--dry-run` previews; zero-drift runs exit clean with no branch or PR. Use on demand or on a schedule when the tree should be re-trued against the standards.
 ---
 
 # janitor — standards-drift sweep that lands its own fix
 
 A single-shot, operator-run (or scheduled) **maintainer** skill that sweeps the
-**codebase** for drift against the `docs/standards/*` rules, applies the
+**codebase** for drift against the `.materia/docs/standards/*` rules, applies the
 bounded, behavior-preserving fixes directly, and drives one PR to a green CI
 state. It is the code counterpart to `/materia:librarian` — the librarian sweeps the
 docs, the janitor sweeps the code; both land their own fixes instead of filing
@@ -38,14 +38,14 @@ behavior-affecting fix is noted, never guessed at (§ Rules).
 
 ## Inputs
 
-- The in-scope `docs/standards/*.md` rules (all by default) and the source
+- The in-scope `.materia/docs/standards/*.md` rules (all by default) and the source
   folders they govern (see § Scan strategy).
-- `docs/contributing.md` — the
+- `.materia/docs/contributing.md` — the
   touch-X→update-Y map, so each fix carries its doc updates.
 - **Both live queues**, read for dedup (a finding already queued belongs to
   the pipeline run that will consume it):
-  `git ls-files 'docs/specs/_proposed/*.md'` and
-  `git ls-files 'docs/bugs/_reports/*/report.md'`, plus the recent merge log
+  `git ls-files '.materia/docs/specs/_proposed/*.md'` and
+  `git ls-files '.materia/docs/bugs/_reports/*/report.md'`, plus the recent merge log
   (`git log <trunk> --since='3 months ago' --pretty=oneline`; `<trunk>` per
   `MATERIA.md` § Version control).
 
@@ -113,7 +113,7 @@ git checkout -b janitor/sweep-<YYYY-MM-DD>   # hex-suffix on same-day rerun
 
 Apply the fixes in small scoped commits (`janitor: <what> (<rule it
 violated>)`), one commit per cluster, each carrying the doc updates
-`docs/contributing.md` maps to the files it touched. Fixes land
+`.materia/docs/contributing.md` maps to the files it touched. Fixes land
 **sequentially in one working tree** — a large mechanical cluster may be
 delegated to a single implementer subagent (**tier `sonnet/medium`**, row
 `janitor: implementer`, `MATERIA.md` § Tiers § Skill routing), but never two
@@ -129,7 +129,7 @@ gh pr create --title "janitor: standards-drift sweep <YYYY-MM-DD>" --body "<body
 ```
 
 The `<body>` closes with the Materia sigil naming `janitor` as the
-caster (`docs/standards/skills.md` § PR attribution — the Materia sigil).
+caster (`.materia/docs/standards/skills.md` § PR attribution — the Materia sigil).
 
 A gate failure a fix caused is fixed on the branch before pushing; a fix that
 can't be made green is reverted and demoted to a needs-human note. The PR body
@@ -166,9 +166,9 @@ groups, deferred remainder, PR URL — and end the turn.
 ## Scan strategy
 
 Derive the scan groups from the repo itself: one group per doc under
-`docs/standards/`, with that standard's primary source targets taken from the
+`.materia/docs/standards/`, with that standard's primary source targets taken from the
 folders/files the standard names (its "Where it lives" section) and the
-`docs/contributing.md` touch-X→update-Y map read in reverse. Typical shape:
+`.materia/docs/contributing.md` touch-X→update-Y map read in reverse. Typical shape:
 the architecture standard scans all folders (placement, naming, layering);
 each layer standard scans its layer's folders; the testing standard scans
 test files against their source modules; the workflow standard scans the
@@ -183,15 +183,15 @@ package manifest and CI config.
 - **Writes no queue entries** — notes in the PR body replace the old
   proposal/report filing; the operator escalates with `/materia:report-bug` or
   `/materia:propose-spec` when a note warrants it.
-- **NEVER edits** the historical trees (`docs/specs/**`, `docs/bugs/**`,
-  `docs/epics/**`, `docs/research/**`) or the Materia plugin skills (installed
+- **NEVER edits** the historical trees (`.materia/docs/specs/**`, `.materia/docs/bugs/**`,
+  `.materia/docs/epics/**`, `.materia/docs/research/**`) or the Materia plugin skills (installed
   read-only under `${CLAUDE_PLUGIN_ROOT}/skills/`).
 - **Not a linter replacement** — it targets cross-file drift, duplication,
   dead code, and standards conformance the `lint` gate cannot express.
 
 ## Rules
 
-- **Ground every fix in a specific `docs/standards/*` rule**, named in the
+- **Ground every fix in a specific `.materia/docs/standards/*` rule**, named in the
   commit and the PR body. No rule to cite → skip.
 - **Behavior-preserving by construction.** A green gate is necessary, not
   sufficient — if a fix could change runtime behavior, a wire shape, or the
@@ -202,8 +202,8 @@ package manifest and CI config.
   entry or recently shipped work is skipped naming the overlap; the queued
   pipeline run owns it.
 - **Docs ride the same commit** — every fix applies the
-  `docs/contributing.md` touch-X→update-Y map, and doc edits follow
-  `docs/standards/docs.md`.
+  `.materia/docs/contributing.md` touch-X→update-Y map, and doc edits follow
+  `.materia/docs/standards/docs.md`.
 - **Subagents scan; the parent writes.** Scan fan-out returns findings only;
   fixes are applied and committed by the parent (or one delegate at a time).
 - **Idempotent + schedulable** — a run against a clean tree is a no-op; safe

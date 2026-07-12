@@ -1,6 +1,6 @@
 ---
 name: propose-epic
-description: "Take a user's raw idea for a large, multi-spec feature-set and develop it into an epic — iterative brainstorm Q&A with the operator, a parallel web-research fan-out run on low-tier subagents, then decomposition into 2–N single-shippable-unit spec proposals with an explicit dependency graph. Produces docs/epics/<dated-slug>/ (epic.md + research.md) plus one member proposal per spec in docs/specs/_proposed/ (source: epic), all in one PR. Use when an idea is too big for /propose-spec's one-shot draft; as members ship, ship-spec's epic gate (reconcile-epic in pipeline mode) keeps the epic and its remaining members in sync automatically."
+description: "Take a user's raw idea for a large, multi-spec feature-set and develop it into an epic — iterative brainstorm Q&A with the operator, a parallel web-research fan-out run on low-tier subagents, then decomposition into 2–N single-shippable-unit spec proposals with an explicit dependency graph. Produces .materia/docs/epics/<dated-slug>/ (epic.md + research.md) plus one member proposal per spec in .materia/docs/specs/_proposed/ (source: epic), all in one PR. Use when an idea is too big for /propose-spec's one-shot draft; as members ship, ship-spec's epic gate (reconcile-epic in pipeline mode) keeps the epic and its remaining members in sync automatically."
 ---
 
 # propose-epic — develop a big idea into an epic + member specs
@@ -8,9 +8,9 @@ description: "Take a user's raw idea for a large, multi-spec feature-set and dev
 The big sibling of [`propose-spec`](../propose-spec/SKILL.md). Where that
 skill turns an idea into **one** proposal in a single drafting turn, this one
 turns an idea into an **epic**: a researched, operator-refined initiative
-document under `docs/epics/` (`docs/epics/README.md`)
+document under `.materia/docs/epics/` (`.materia/docs/epics/README.md`)
 plus a set of member spec proposals in the shared queue at
-`docs/specs/_proposed/` (`docs/specs/_proposed/README.md`), each
+`.materia/docs/specs/_proposed/` (`.materia/docs/specs/_proposed/README.md`), each
 scoped to one shippable PR and wired together by a dependency graph.
 
 **Philosophy: converge, then decompose.** `propose-spec`'s "defaults beat
@@ -22,14 +22,14 @@ project context already answers; the questions spent on the operator are the
 genuinely open ones.
 
 **Lifecycle:** interactive checkpoint · branch-at-approve — per the shared
-producer contract at `docs/standards/skills.md` § Producer lifecycle (reply
+producer contract at `.materia/docs/standards/skills.md` § Producer lifecycle (reply
 verbs, cancel semantics, id minting, link integrity, one PR + tooling, no
 session survival). Brainstorming, research syntheses, and drafts are all
 in-memory; nothing touches the repo until `approve`.
 
-Read `docs/epics/README.md`
+Read `.materia/docs/epics/README.md`
 (the epic contract — folder shape, `epic.md` format, linkage keys),
-`docs/specs/_proposed/README.md`
+`.materia/docs/specs/_proposed/README.md`
 (the queue contract every member proposal must hit), and
 `${CLAUDE_PLUGIN_ROOT}/skills/intake-spec/SKILL.md` § Detect the input shape (the
 structured-body shape) before changing this skill.
@@ -38,8 +38,8 @@ structured-body shape) before changing this skill.
 
 | | |
 |---|---|
-| **Inputs** | The operator's raw epic idea (argument text or prompted); project context (`CLAUDE.md`, `docs/`, existing specs + epics); web research gathered by subagents during the run. |
-| **Outputs** | One PR landing `docs/epics/<dated-slug>/epic.md` + `research.md`, and 2–N member proposal files in `docs/specs/_proposed/` (`source: epic`, linked per the epic contract). |
+| **Inputs** | The operator's raw epic idea (argument text or prompted); project context (`CLAUDE.md`, `.materia/docs/`, existing specs + epics); web research gathered by subagents during the run. |
+| **Outputs** | One PR landing `.materia/docs/epics/<dated-slug>/epic.md` + `research.md`, and 2–N member proposal files in `.materia/docs/specs/_proposed/` (`source: epic`, linked per the epic contract). |
 
 ## Procedure
 
@@ -62,12 +62,12 @@ decomposes into one member spec is `propose-spec` with extra steps.
 ### 2. Read project context (silently, before any questions)
 
 Same read set as `propose-spec` step 2 (always: `CLAUDE.md`,
-`docs/README.md`, `docs/glossary.md`, the `_proposed/` contract;
+`.materia/docs/README.md`, `.materia/docs/glossary.md`, the `_proposed/` contract;
 selectively: the standards matching the idea's surface area; 1–2 shipped
 specs as exemplars), **plus**:
 
-- `docs/epics/README.md` — the contract this run's artifacts must hit.
-- Existing epics under `docs/epics/*/epic.md` — overlap with a live
+- `.materia/docs/epics/README.md` — the contract this run's artifacts must hit.
+- Existing epics under `.materia/docs/epics/*/epic.md` — overlap with a live
   epic is a step-7 "things to know" item, same as proposal overlap.
 - Validate identifiers + freshness against the live codebase per
   `propose-spec` step 2 (grep intended names, already-shipped scan, stable
@@ -108,7 +108,7 @@ tier each question to the cheapest pair that can do the job, picking from
 - `haiku/low` — default: gather-and-summarize questions ("what are the
   standard approaches to X", "how do comparable apps present Y").
 - `sonnet/medium` — questions needing judgment or synthesis across
-  conflicting sources ("which of these approaches fits this product's constraints per docs/product.md").
+  conflicting sources ("which of these approaches fits this product's constraints per .materia/docs/product.md").
 - Never above `sonnet/medium` — a question that seems to need `opus` is
   really the orchestrator's synthesis job (step 5), not a gathering job.
 
@@ -175,7 +175,7 @@ reasonable PR). Then wire the graph:
 
 Mint ids (one for the epic, one per member — lifecycle minting command +
 collision rules), then draft everything in-memory: `epic.md` and
-`research.md` per the epic contract (`docs/epics/README.md`)
+`research.md` per the epic contract (`.materia/docs/epics/README.md`)
 formats (`research.md` cites primary sources as bare URLs per that
 contract's citation conventions), and each member proposal per § File
 format below. Member bodies
@@ -220,8 +220,8 @@ On `approve` (nothing has touched the repo before this):
    per `MATERIA.md` § Version control), then branch off `<trunk>`:
    `git checkout -b epic/<epic-id>-<kebab-slug>` (dirty-pull + collision
    handling per the lifecycle).
-2. Write `docs/epics/<dated-slug>/epic.md` + `research.md`, then each
-   member proposal to `docs/specs/_proposed/<YYYY-MM-DD-HHMMSS>-<id>-<slug>.md`.
+2. Write `.materia/docs/epics/<dated-slug>/epic.md` + `research.md`, then each
+   member proposal to `.materia/docs/specs/_proposed/<YYYY-MM-DD-HHMMSS>-<id>-<slug>.md`.
 3. Verify link integrity per the lifecycle invariant, then commit — one
    commit for the epic folder, one for the member proposals, message prefix
    `propose-epic:`.
@@ -246,7 +246,7 @@ filename pattern, kebab-slug algorithm — with these deltas:
 ```yaml
 source: epic
 source_refs:
-  - docs/epics/<dated-slug>/epic.md
+  - .materia/docs/epics/<dated-slug>/epic.md
 epic: <epic-id>
 depends_on: []            # or [<sibling proposal id>, …]
 surfaces: [ui]            # optional; per-member — infer from THIS member's own scope, not the epic's
@@ -254,7 +254,7 @@ surfaces: [ui]            # optional; per-member — infer from THIS member's ow
 
 Members of one epic can touch different surfaces — infer `surfaces:` per
 member from that member's own scope, same suggestion-only semantics as
-`propose-spec` § File format (`docs/specs/_proposed/README.md` § Field roles
+`propose-spec` § File format (`.materia/docs/specs/_proposed/README.md` § Field roles
 → `surfaces`).
 
 and one extra body section, **last, after `## Open questions`**, so
@@ -263,7 +263,7 @@ and one extra body section, **last, after `## Open questions`**, so
 ```markdown
 ## Epic context
 
-Member <#> of epic "<title>" — see docs/epics/<dated-slug>/epic.md.
+Member <#> of epic "<title>" — see .materia/docs/epics/<dated-slug>/epic.md.
 Builds on: <sibling id — title, or "nothing (root member)">.
 Depended on by: <sibling ids — titles, or "nothing">.
 While this proposal is queued, /materia:reconcile-epic may revise it if an

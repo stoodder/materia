@@ -64,13 +64,13 @@ invariant governs only in-scope spec/bug signal.
 
 The bigger 2026-07 change: `triage-retros` stopped writing intermediate
 hand-off buckets and became a **single-hop producer**. Previously it triaged
-into a `docs/specs/_improvements/<slug>/` folder — `product-suggestions.md`,
+into a `.materia/docs/specs/_improvements/<slug>/` folder — `product-suggestions.md`,
 `bug-reports.md`, and an always-emitted `pipeline-health.md` rollup — which two
 downstream skills (`suggestions-to-specs`, `bugs-to-reports`) later turned into
 proposed specs and filed bug reports. That indirection is gone: the two
 downstream skills and the `_improvements` buckets were removed, and
 `triage-retros` now clusters retro signal **in-memory** and authors the proposed
-specs (into `docs/specs/_proposed/`) and bug reports (into `docs/bugs/_reports/`)
+specs (into `.materia/docs/specs/_proposed/`) and bug reports (into `.materia/docs/bugs/_reports/`)
 itself, both with `source: retro-triage`, following the `propose-spec` /
 `report-bug` practice — one hop from retro to reviewable proposal/report, one PR.
 
@@ -94,7 +94,7 @@ fragment specs or produce multi-defect reports `fix-bug` can't consume.
 
 ## Producer de-duplication is mandatory (new queue-contract debt)
 
-Both `docs/specs/_proposed/README.md` and `docs/bugs/_reports/README.md` require
+Both `.materia/docs/specs/_proposed/README.md` and `.materia/docs/bugs/_reports/README.md` require
 a producer to not duplicate an item already pending in the queue or recently
 shipped/fixed. The old retro loop was **not** a queue producer, so it never did
 this — the absorbed `suggestions-to-specs` (its §3 overlap filter) did. Now that
@@ -105,7 +105,7 @@ one behaviour most likely to be forgotten in the retarget.
 
 ## Lifecycle is the in-memory producer pattern; no file-derived resumability
 
-`triage-retros` adopts the shared producer lifecycle (`docs/standards/skills.md`
+`triage-retros` adopts the shared producer lifecycle (`.materia/docs/standards/skills.md`
 § Producer lifecycle): harvest + synthesize + draft + de-dup all in-memory,
 present **one** confirmation, and on `approve` branch → write → rename → commit →
 push → open one PR in a single shot. It is classified as a **branch-at-approve**

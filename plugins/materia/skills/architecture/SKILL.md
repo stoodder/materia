@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: From a spec (and, on UI runs, a design), produce a technical architecture document grounded in the repo docs — reusing existing resources wherever possible — at docs/specs/<dated-slug>/architecture.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export). Stage 4 of the ship-spec pipeline.
+description: From a spec (and, on UI runs, a design), produce a technical architecture document grounded in the repo docs — reusing existing resources wherever possible — at .materia/docs/specs/<dated-slug>/architecture.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export). Stage 4 of the ship-spec pipeline.
 ---
 
 # architecture — the technical plan, grounded in the docs
@@ -11,8 +11,8 @@ usable standalone.
 
 ## Inputs
 
-- `docs/specs/<dated-slug>/spec.md` + `design.md`; the docs read order
-  (`CLAUDE.md` → `docs/README.md` → standards + resource docs).
+- `.materia/docs/specs/<dated-slug>/spec.md` + `design.md`; the docs read order
+  (`CLAUDE.md` → `.materia/docs/README.md` → standards + resource docs).
 - `design.md` exists only on UI-affecting runs — the design stage is
   UI-gated (`ship-spec/SKILL.md` § Review — § UI-surface gate). On a non-UI
   run, work from `spec.md` alone and own the operator-surface enumeration
@@ -29,7 +29,7 @@ acting on them wastes context.
 
 ## Outputs
 
-- `docs/specs/<dated-slug>/architecture.md` — `STATUS.md` updated, committed and pushed.
+- `.materia/docs/specs/<dated-slug>/architecture.md` — `STATUS.md` updated, committed and pushed.
 
 ## Environment
 
@@ -43,12 +43,12 @@ standalone runs apply it on first use.
 ## Procedure
 
 1. **Build context in the docs read order** (this is the whole point of the docs
-   system): `CLAUDE.md` → `docs/README.md` → the relevant `docs/standards/*`
-   and `docs/resources/*` → only then the code. Use
-   `docs/standards/request-lifecycle.md` to see how a feature flows across layers.
+   system): `CLAUDE.md` → `.materia/docs/README.md` → the relevant `.materia/docs/standards/*`
+   and `.materia/docs/resources/*` → only then the code. Use
+   `.materia/docs/standards/request-lifecycle.md` to see how a feature flows across layers.
 
 2. **Map to existing resources first.** For each thing the feature needs, find
-   the resource that already covers it (`docs/resources/*`, `docs/surface-map.md`)
+   the resource that already covers it (`.materia/docs/resources/*`, `.materia/docs/surface-map.md`)
    and document how it changes. Only add a **new** resource when nothing fits.
 
    **Precedent-invariant check.** When you cite an existing pattern as the
@@ -87,7 +87,7 @@ standalone runs apply it on first use.
    § Non-product features (no product surface) for the skeleton variant, rather
    than re-deriving the product structure here. The bullets below are the
    typical product layers — use the layer vocabulary the repo's
-   `docs/standards/*` set actually defines, citing each layer's standard:
+   `.materia/docs/standards/*` set actually defines, citing each layer's standard:
    - **Data model & migration** — schema changes + unique indexes for upserts
      (the repo's data standard).
    - **API surface** — new/changed routes: METHOD · path · auth · contract ·
@@ -100,7 +100,7 @@ standalone runs apply it on first use.
 4. **Call out** risks/trade-offs, the test strategy (`testing.md`), and explicit
    out-of-scope/follow-ups.
 
-5. **Write** `docs/specs/<dated-slug>/architecture.md` from the template.
+5. **Write** `.materia/docs/specs/<dated-slug>/architecture.md` from the template.
 
 6. **Pre-task scope validation (grep).** For each area architecture
    anticipates as a task (the changes specified in step 3 plus any
@@ -140,16 +140,16 @@ standalone runs apply it on first use.
 
 7. **Cross-link sanity check (pre-commit).** Before committing, grep
    `architecture.md` for relative markdown links (`](./` or `](../` or
-   `](docs/`) and verify each target resolves on disk. Catches broken
+   `](.materia/docs/`) and verify each target resolves on disk. Catches broken
    cross-links at the source rather than several stages downstream when
    `docs-sync` runs the `check:docs` gate (`MATERIA.md § Gate`) over the whole branch.
 
    **Convention for to-be-created docs.** When `architecture.md`
    references a doc that this PR will create in a later stage (e.g. a
    new standards doc named in step 3 under "Specify changes"), use a
-   backtick path (`` `docs/standards/visual-language.md` ``) rather
+   backtick path (`` `.materia/docs/standards/visual-language.md` ``) rather
    than a markdown link
-   (`[visual-language](docs/standards/visual-language.md)`). The
+   (`[visual-language](.materia/docs/standards/visual-language.md)`). The
    markdown form will fail this step's check at architecture-commit
    time (target doesn't exist yet) but the backtick form is
    human-readable prose and is ignored by the link-checker. After the
@@ -227,8 +227,8 @@ matters more than the section labels**.
   / `Contracts & models` / `Client state` / `UI`.
 - **Map "existing resources" (step 2)** to whatever the equivalent is —
   sibling skills under `${CLAUDE_PLUGIN_ROOT}/skills/`, related templates under
-  `docs/specs/_templates/`, prior decisions captured in pending proposals under
-  `docs/specs/_proposed/`.
+  `.materia/docs/specs/_templates/`, prior decisions captured in pending proposals under
+  `.materia/docs/specs/_proposed/`.
 - **Enumerate the operator surface.** The design stage is UI-gated and does
   not run for these features, so this doc carries what design would have:
   the operator-facing phases the feature produces (e.g. Discovery →

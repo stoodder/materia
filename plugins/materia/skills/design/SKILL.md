@@ -1,12 +1,12 @@
 ---
 name: design
-description: From a feature spec, produce a UX design — authored on the design tool's canvas when an author-capable adapter is configured (MATERIA.md § Design tool), paired with a descriptive design.md (user flows, screens, their loading/empty/error/ready states, and pass/fail assertions) at docs/specs/<dated-slug>/design.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export); with no such adapter the stage authors design.md directly. Stage 2 of the ship-spec pipeline (UI-gated — spawned only when the feature ships UI; skipped and recorded on non-UI runs); usable standalone after a spec exists.
+description: From a feature spec, produce a UX design — authored on the design tool's canvas when an author-capable adapter is configured (MATERIA.md § Design tool), paired with a descriptive design.md (user flows, screens, their loading/empty/error/ready states, and pass/fail assertions) at .materia/docs/specs/<dated-slug>/design.md (where <dated-slug> is the timestamped folder name minted at intake, e.g. 2026-06-13-142530-ab24f9-csv-export); with no such adapter the stage authors design.md directly. Stage 2 of the ship-spec pipeline (UI-gated — spawned only when the feature ships UI; skipped and recorded on non-UI runs); usable standalone after a spec exists.
 ---
 
 # design — UX flows & screens from a spec
 
 Design the feature's screens, flows, and states inside the product's taste
-(`docs/product.md`) — on the design tool's canvas when the adapter can
+(`.materia/docs/product.md`) — on the design tool's canvas when the adapter can
 `author`, otherwise into `design.md` directly. Either way the stage produces
 `design.md`, the descriptive half of a paired artifact (§ Canvas authoring &
 the paired artifact). Runs as a subagent in `ship-spec`; usable standalone
@@ -24,7 +24,7 @@ features).
 
 **The primary lane is the canvas.** When `MATERIA.md § Design tool` records an
 `author`-capable adapter, this stage designs on that tool's canvas: the same
-inputs as a repo-side run (`spec.md`, the `docs/product.md` taste sections, the
+inputs as a repo-side run (`spec.md`, the `.materia/docs/product.md` taste sections, the
 UI standards, and the design system the adapter returns through its `tokens`
 capability), but the deliverable is a real visual design driven over MCP —
 flows, screens, and states authored as canvas artifacts. With **no** `author`
@@ -54,10 +54,10 @@ depends on.
 
 **The committed snapshot's directory contract.** When export or
 export-via-read applies, the snapshot lands at
-`docs/specs/<dated-slug>/design/`, a sibling of `design.md` — never inside it,
+`.materia/docs/specs/<dated-slug>/design/`, a sibling of `design.md` — never inside it,
 never a substitute for it. It must be **self-contained**: assets inlined or
 co-located under that directory as relative paths, no network fetches, such
-that opening `docs/specs/<dated-slug>/design/index.html` straight from disk
+that opening `.materia/docs/specs/<dated-slug>/design/index.html` straight from disk
 (no dev server, no auth) renders correctly. When the tool's own export isn't
 self-contained, inline the assets **at write time** — never commit a snapshot
 that silently 404s half its assets the moment someone opens it offline.
@@ -98,9 +98,9 @@ a current baseline to diff against.
 
 ## Inputs
 
-- `docs/specs/<dated-slug>/spec.md`; `docs/product.md` (§ Design feel &
+- `.materia/docs/specs/<dated-slug>/spec.md`; `.materia/docs/product.md` (§ Design feel &
   taste + § Voice & tone — the taste oracle every screen must land inside);
-  `docs/standards/ui-components.md`; `docs/standards/visual-language.md`
+  `.materia/docs/standards/ui-components.md`; `.materia/docs/standards/visual-language.md`
   (the binding visual rules); relevant resource docs for screens you'll
   touch.
 - **The design tool**, per `MATERIA.md § Design tool`: when it has `tokens`,
@@ -117,7 +117,7 @@ acting on them wastes context.
 
 ## Outputs
 
-- `docs/specs/<dated-slug>/design.md` — the descriptive half of the paired
+- `.materia/docs/specs/<dated-slug>/design.md` — the descriptive half of the paired
   artifact (the canvas is the visual half when an `author` adapter is
   configured). When an adapter exists, the `canvas:` pointer keys are recorded
   in `design.md` frontmatter by the canvas-I/O owner (§ Canvas authoring & the
@@ -144,11 +144,11 @@ standalone runs apply it on first use.
    `ship-spec` only spawns this stage on a UI-affecting diff, so the check
    passes and the procedure below runs.
 
-1. **Read** `docs/specs/<dated-slug>/spec.md`, `docs/specs/_templates/design.md`,
-   `docs/product.md` (§ Design feel & taste, § Voice & tone, § Product
-   principles — the judgement baseline), `docs/standards/ui-components.md`
-   (conventions), `docs/standards/visual-language.md` (the binding visual
-   rules), and `docs/glossary.md`. Skim related resource docs for screens
+1. **Read** `.materia/docs/specs/<dated-slug>/spec.md`, `.materia/docs/specs/_templates/design.md`,
+   `.materia/docs/product.md` (§ Design feel & taste, § Voice & tone, § Product
+   principles — the judgement baseline), `.materia/docs/standards/ui-components.md`
+   (conventions), `.materia/docs/standards/visual-language.md` (the binding visual
+   rules), and `.materia/docs/glossary.md`. Skim related resource docs for screens
    you'll touch. Also read `MATERIA.md § Design tool` to settle your authoring
    lane (canvas vs repo-side) and, in the canvas lane, pull the design system
    through the adapter's `tokens` capability — § Canvas authoring & the paired
@@ -162,7 +162,7 @@ standalone runs apply it on first use.
 
 2. **Flows.** For each user story, write the step-by-step path the user takes
    (entry → actions → outcome), grounded in the usage context from
-   `docs/product.md` § Audience & market.
+   `.materia/docs/product.md` § Audience & market.
 
 3. **Screens & states.** For every screen/route, define purpose, key elements,
    its **visual hierarchy** — what's primary (the one thing the screen wants
@@ -220,7 +220,7 @@ standalone runs apply it on first use.
    `none` repo are held to it identically. Exempt: the non-UI skeleton variant
    and the code-only shape — neither has a rendered screen to assert against.
 
-8. **Write** `docs/specs/<dated-slug>/design.md` — the descriptive half. In the
+8. **Write** `.materia/docs/specs/<dated-slug>/design.md` — the descriptive half. In the
    canvas lane the visual design already lives on the canvas; `design.md`
    captures what the canvas cannot say (§ Canvas authoring & the paired
    artifact), never a transcription of it. Flag any genuinely open design
@@ -290,7 +290,7 @@ standalone runs apply it on first use.
    this step.
 
    Before writing the directory, run
-   `git check-ignore docs/specs/<dated-slug>/design/`. A match is a **hard
+   `git check-ignore .materia/docs/specs/<dated-slug>/design/`. A match is a **hard
    stop** — never a silent skip and never a quiet no-commit: write
    `Blocker: design snapshot path is git-ignored — <path> — remove or adjust
    the local ignore rule, then resume` to `STATUS.md` and end the turn (the
@@ -306,21 +306,21 @@ standalone runs apply it on first use.
    hard rule).
 
    Alongside the exported assets, write `README.md` from
-   `docs/specs/_templates/design-snapshot-readme.md` (read that template, do
+   `.materia/docs/specs/_templates/design-snapshot-readme.md` (read that template, do
    not inline its content here), filled in with this run's specifics: the
    `semantic-structure: yes/no` line **verified against the actual exported
    markup** (never asserted from how the design merely looks on the canvas),
    and — only when this adapter is `export: via-read` — the honesty clause
    naming which of the three fabrication-contract properties (`fabricated`,
    `faithful`, `semantic structure`) this reconstruction actually preserves.
-   This README lives under `docs/specs/**`, so it is bound by the
+   This README lives under `.materia/docs/specs/**`, so it is bound by the
    spawn-contract's no-live-markdown-links rule (arrow form only,
    `text → path`) — `ship-spec/resources/spawn-contract.md` Block 1.
 
    The snapshot is a **sibling directory**, never `design.md` itself: this
    changes nothing about the sole-writer split above or the `design_hash`
    recipe (frontmatter-excluded, body-only, per `ship-spec/SKILL.md`
-   § `design_hash`). Like `docs/specs/<dated-slug>/ui-proof/`, the directory's
+   § `design_hash`). Like `.materia/docs/specs/<dated-slug>/ui-proof/`, the directory's
    presence is checked directly — it gets no frontmatter pointer of its own;
    the `canvas:` keys' job is change-detection, not snapshot-existence.
 
@@ -352,7 +352,7 @@ standalone runs apply it on first use.
      default (absent section or knob → on). The invocation-flag rung
      (`--approve-design`) cannot apply in this lane.
    - **No `STATUS.md` at all** — a hand-created spec folder may have none: seed
-     one from `docs/specs/_templates/status.md` — fill `Slug:` (the folder
+     one from `.materia/docs/specs/_templates/status.md` — fill `Slug:` (the folder
      name), leave `Branch:` at the template placeholder (`ship-spec`'s resume
      backfills it on any route, gate pending or already auto-approved —
      § Design gate — Standalone-first lane and § Resume step 3's
@@ -427,7 +427,7 @@ authoring run. The normative flow (when it fires, how the round is counted) is
   content (flow reasoning, cohesion anchors, assertions) is never re-derived.
 - **Snapshot re-export.** When the adapter can `export` (or reconstruct via
   `read`), sync mode's outputs also include a re-derived committed snapshot
-  at `docs/specs/<dated-slug>/design/` (§ Canvas authoring & the paired
+  at `.materia/docs/specs/<dated-slug>/design/` (§ Canvas authoring & the paired
   artifact's directory contract) plus its `README.md`, from the same serialized
   canvas read-back that re-derives the body above — same inputs, same
   self-contained requirement, same git-ignore guard (§ Persist step 9). Who

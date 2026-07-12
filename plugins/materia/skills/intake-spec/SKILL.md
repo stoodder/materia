@@ -1,6 +1,6 @@
 ---
 name: intake-spec
-description: Turn a raw product spec or feature request into a structured spec.md under docs/specs/<dated-slug>/, asking clarifying questions to resolve gaps. First stage of the ship-spec pipeline; also usable standalone before any design/build work.
+description: Turn a raw product spec or feature request into a structured spec.md under .materia/docs/specs/<dated-slug>/, asking clarifying questions to resolve gaps. First stage of the ship-spec pipeline; also usable standalone before any design/build work.
 ---
 
 # intake-spec — normalize a raw spec
@@ -16,10 +16,10 @@ Runs as a subagent in `ship-spec`; usable standalone.
 - **The spec body** — either the raw freeform spec / feature request from
   the operator (text, doc, or link) or a **structured proposal body**
   passed in by `ship-spec` after it stripped the frontmatter from a
-  `docs/specs/_proposed/` file. The body comes through one channel; this
+  `.materia/docs/specs/_proposed/` file. The body comes through one channel; this
   skill's drafting branch decides whether it's freeform or already-shaped
   (see procedure step 3 and step 3').
-- **Optional: `pre-created-folder: docs/specs/<dated-slug>/`** —
+- **Optional: `pre-created-folder: .materia/docs/specs/<dated-slug>/`** —
   `ship-spec` signals this when it has already minted the dated-slug,
   created the folder, and seeded `STATUS.md` (incl. the `## Provenance`
   block) as part of staking a proposal claim. When present, intake
@@ -42,9 +42,9 @@ acting on them wastes context.
 
 ## Outputs
 
-- `docs/specs/<dated-slug>/spec.md` and — standalone, or on the orchestrator
-  lane's ad-hoc path (creation only) — `docs/specs/<dated-slug>/STATUS.md`
-  (from `_templates/`), the spec registered in `docs/specs/README.md` —
+- `.materia/docs/specs/<dated-slug>/spec.md` and — standalone, or on the orchestrator
+  lane's ad-hoc path (creation only) — `.materia/docs/specs/<dated-slug>/STATUS.md`
+  (from `_templates/`), the spec registered in `.materia/docs/specs/README.md` —
   committed and pushed. On the proposal path under an orchestrator, folder and
   `STATUS.md` already exist and intake never touches `STATUS.md` (step 7).
 
@@ -86,13 +86,13 @@ standalone runs apply it on first use.
 ## Procedure
 
 1. **Read the raw input** the user provided (text, a doc, a link). Read
-   `docs/specs/_templates/spec.md` for the shape, and skim `docs/glossary.md` so
+   `.materia/docs/specs/_templates/spec.md` for the shape, and skim `.materia/docs/glossary.md` so
    you use the project's vocabulary.
 
 2. **Mint the `<dated-slug>` (skipped on the proposal path).** Per the rule
    above (the UTC creation timestamp + a fresh 6-char base36 token + a short kebab slug), create
-   `docs/specs/<dated-slug>/` and seed `STATUS.md` from
-   `docs/specs/_templates/status.md`, filling `Slug:` with the full dated
+   `.materia/docs/specs/<dated-slug>/` and seed `STATUS.md` from
+   `.materia/docs/specs/_templates/status.md`, filling `Slug:` with the full dated
    folder name and the `## Provenance` block with `—` in every field (ad-hoc
    run).
 
@@ -116,7 +116,7 @@ standalone runs apply it on first use.
 
    If all four conditions hold, the input is **structured** — almost
    certainly a proposal body that `ship-spec` stripped from a
-   `docs/specs/_proposed/` file. Skip the drafting step entirely:
+   `.materia/docs/specs/_proposed/` file. Skip the drafting step entirely:
 
    - **Adopt the body verbatim as `spec.md`.** Do not rewrite the H1, do
      not re-flow paragraphs, do not insert template scaffolding.
@@ -133,9 +133,9 @@ standalone runs apply it on first use.
 3'. **Draft the spec** from the template (freeform path only): problem,
    goals, non-goals, users & context, user stories with **testable
    acceptance criteria**, constraints. Assume the app's universal usage
-   context (`docs/product.md` § Audience & market; one-liner at `MATERIA.md`
+   context (`.materia/docs/product.md` § Audience & market; one-liner at `MATERIA.md`
    § Identity) unless the input says otherwise, and keep copy/naming inside
-   `docs/product.md` § Voice & tone.
+   `.materia/docs/product.md` § Voice & tone.
 
 4. **Find the gaps and ASK.** Anything ambiguous or unstated that changes scope,
    UX, or data — ask the human via clarifying questions (use the AskUserQuestion
@@ -180,7 +180,7 @@ standalone runs apply it on first use.
    passes a `surfaces:` spawn signal (§ Inputs); resolve per its value — this
    settles the predictive UI-surface gate the orchestrator records
    (`ship-spec/SKILL.md` § Review — § UI-surface gate). Vocabulary and
-   "design-bearing" live in `docs/specs/_proposed/README.md` § Field roles →
+   "design-bearing" live in `.materia/docs/specs/_proposed/README.md` § Field roles →
    `surfaces` — reference, don't restate.
 
    - **Signal declared** (e.g. `surfaces: [ui]`) → do **not** ask; the value
@@ -206,7 +206,7 @@ standalone runs apply it on first use.
      ask "does this ship UI?" (or, if `AskUserQuestion` is absent, in the
      plain-text fallback) and write the `Surfaces:` and
      `ui-surface (predictive):` lines yourself, per
-     `docs/specs/_templates/status.md` § Notes.
+     `.materia/docs/specs/_templates/status.md` § Notes.
 
    **Transient `AskUserQuestion` failure → retry once, then degrade to Auto
    Mode.** `AskUserQuestion` can fail mid-checkpoint with a transient stream
@@ -258,17 +258,17 @@ standalone runs apply it on first use.
      names against the live schema + code; if a name was renamed since the
      proposal was drafted, correct it (or flag it) rather than carrying the
      dead name downstream; (b) **already-shipped / superseded** — scan
-     recently-shipped specs under `docs/specs/` for the same feature; if the
+     recently-shipped specs under `.materia/docs/specs/` for the same feature; if the
      work already shipped (possibly with a *changed* mapping), **halt with a
      Blocker** naming the shipped spec so the operator can drop or re-scope the
      proposal instead of rebuilding it; (c) **sibling references** — resolve any
-     `docs/specs/_proposed/<id>` cross-reference to the sibling's stable
-     `docs/specs/<dated-slug>/` path if that proposal has since been consumed.
+     `.materia/docs/specs/_proposed/<id>` cross-reference to the sibling's stable
+     `.materia/docs/specs/<dated-slug>/` path if that proposal has since been consumed.
 
-5. **Write** `docs/specs/<dated-slug>/spec.md`. Leave only genuinely deferred
+5. **Write** `.materia/docs/specs/<dated-slug>/spec.md`. Leave only genuinely deferred
    items under "Open questions" (flag them clearly).
 
-6. **Register** the spec: add a row under "Index" in `docs/specs/README.md`,
+6. **Register** the spec: add a row under "Index" in `.materia/docs/specs/README.md`,
    linking the full dated folder name.
 
 7. **Persist:** commit `spec.md`, the README index row, and — on the ad-hoc

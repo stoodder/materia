@@ -1,6 +1,6 @@
 ---
 name: reproduce-bug
-description: Write the failing test(s) that reproduce a reported bug and fill reproduction.md — consumes the bug report body (frontmatter stripped) and STATUS.md, produces test file(s) placed per the repo testing standard plus docs/bugs/<dated-slug>/reproduction.md, and records the RED evidence only after a real failing-test run confirms the bug on pre-fix code. Stage 1 of the fix-bug pipeline; usable standalone given a report body + folder.
+description: Write the failing test(s) that reproduce a reported bug and fill reproduction.md — consumes the bug report body (frontmatter stripped) and STATUS.md, produces test file(s) placed per the repo testing standard plus .materia/docs/bugs/<dated-slug>/reproduction.md, and records the RED evidence only after a real failing-test run confirms the bug on pre-fix code. Stage 1 of the fix-bug pipeline; usable standalone given a report body + folder.
 ---
 
 # reproduce-bug — confirm the bug is RED before anyone touches the fix
@@ -22,26 +22,26 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
 
 - Bug report body (frontmatter stripped) — the full description, affected
   surface, steps to reproduce, expected vs actual, and severity from the
-  report file in `docs/bugs/_reports/`.
-- `docs/bugs/<dated-slug>/STATUS.md` — the bug run's live state. **Standalone**,
+  report file in `.materia/docs/bugs/_reports/`.
+- `.materia/docs/bugs/<dated-slug>/STATUS.md` — the bug run's live state. **Standalone**,
   this skill ticks stage 1 here on success (or sets `Blocker:`); **in the
   `/materia:fix-bug` orchestrator lane it does not touch `STATUS.md`** — the
   orchestrator ticks stage 1 (or writes the `Blocker:`) after verifying the
   committed RED (see § Rules).
-- `docs/standards/testing.md` — the repo's testing standard: test placement
+- `.materia/docs/standards/testing.md` — the repo's testing standard: test placement
   (co-located or a separate test tree — whatever the standard says), naming,
   stubbing conventions, and the test runner's API.
 - The resource/standards docs for the affected surface — resolved by reading
   the report's "Affected surface / route / module" section and cross-referencing
-  `docs/surface-map.md` to find the matching `docs/resources/` and
-  `docs/standards/` docs. Read them before writing any test code.
+  `.materia/docs/surface-map.md` to find the matching `.materia/docs/resources/` and
+  `.materia/docs/standards/` docs. Read them before writing any test code.
 
 ## Outputs
 
 - One or more test file(s) that encode
-  the bug's expected-vs-actual contract, placed per `docs/standards/testing.md`.
-- `docs/bugs/<dated-slug>/reproduction.md` filled per
-  `docs/bugs/_templates/reproduction.md`: the linked test path(s) + `it(...)`
+  the bug's expected-vs-actual contract, placed per `.materia/docs/standards/testing.md`.
+- `.materia/docs/bugs/<dated-slug>/reproduction.md` filled per
+  `.materia/docs/bugs/_templates/reproduction.md`: the linked test path(s) + `it(...)`
   name(s), the restated repro steps, expected vs actual, the verbatim RED
   evidence (failing test output + command + SHA), and any notes for downstream
   stages.
@@ -54,13 +54,13 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
 ## Procedure
 
 1. **Load context.** Read the bug report body in full. Note the "Affected
-   surface / route / module" section. Cross-reference `docs/surface-map.md`
+   surface / route / module" section. Cross-reference `.materia/docs/surface-map.md`
    to find the matching resource and standards docs, then read them (per the
-   docs read order in `CLAUDE.md`). Read `docs/standards/testing.md`.
+   docs read order in `CLAUDE.md`). Read `.materia/docs/standards/testing.md`.
 
 2. **Identify the test surface.** Determine the exact module(s) whose behavior
    the bug violates. This is the module the failing test(s) must target
-   (placed per `docs/standards/testing.md`). Decide the test shape:
+   (placed per `.materia/docs/standards/testing.md`). Decide the test shape:
    one test file per layer or one integration test — whichever is the
    lowest-level surface that will catch the regression.
 
@@ -70,7 +70,7 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
    - Be named after the expected behavior, not the bug symptom — e.g.
      `it("returns 0 when no sets are logged")`, not
      `it("does not crash when sets is null")`.
-   - Follow all conventions in `docs/standards/testing.md`: test placement,
+   - Follow all conventions in `.materia/docs/standards/testing.md`: test placement,
      the repo's stubbing conventions and test-runner API, one test per
      distinct case.
    - Not import the fix (the fix does not exist yet — the test must fail on
@@ -97,7 +97,7 @@ those are subsequent stages (`bug-analysis`, then `plan-tasks` +
 
 5. **On RED confirmed — fill `reproduction.md`, commit, and (standalone) tick
    stage 1.** Write
-   `docs/bugs/<dated-slug>/reproduction.md` from the template, populating:
+   `.materia/docs/bugs/<dated-slug>/reproduction.md` from the template, populating:
    - `## Failing test(s)` — repo-root-relative paths + `it(...)` name(s).
    - `## Repro steps` — the report's steps to reproduce, restated (the report
      is dequeued at finalize; the steps must live here).
@@ -186,7 +186,7 @@ evidence is recorded.
 
 ## Standalone use
 
-Given a bug report body and a pre-created `docs/bugs/<dated-slug>/` folder
+Given a bug report body and a pre-created `.materia/docs/bugs/<dated-slug>/` folder
 (with `STATUS.md` seeded), this skill runs without the `/materia:fix-bug` orchestrator:
 
 1. Pass the report body (frontmatter stripped) as the input.

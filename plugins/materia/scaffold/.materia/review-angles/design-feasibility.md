@@ -23,7 +23,7 @@ design time instead of bouncing back from architecture. Findings use category
 ## How to run it
 
 Run inline as an Agent. Read `spec.md` and `design.md`, then ground-truth
-each claim against the repo's docs read order (`CLAUDE.md` → `docs/README.md`
+each claim against the repo's docs read order (`CLAUDE.md` → `.materia/docs/README.md`
 → the relevant standards/resource docs) and targeted greps of the code. Every
 infeasibility finding must carry the concrete constraint that blocks it (a
 file or doc citation as evidence), mirroring the what/why/what-change bar

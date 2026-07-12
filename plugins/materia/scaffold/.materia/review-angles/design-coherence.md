@@ -18,15 +18,15 @@ it. Findings use category `design-coherence`.
   vs runtime (belongs to the e2e lane, not a static check).
 - `## Cohesion anchors` names 1–3 apt existing screens for each new or
   changed screen.
-- Taste alignment with `docs/product.md` (§ Design feel & taste, § Voice &
+- Taste alignment with `.materia/docs/product.md` (§ Design feel & taste, § Voice &
   tone).
 - Scope purity — no technical-planning creep (data-model or API mapping
   belongs to architecture, not design).
 
 ## How to run it
 
-Run inline as an Agent. Read `docs/specs/<dated-slug>/spec.md`,
-`docs/specs/<dated-slug>/design.md`, `docs/product.md`, and the repo's UI
+Run inline as an Agent. Read `.materia/docs/specs/<dated-slug>/spec.md`,
+`.materia/docs/specs/<dated-slug>/design.md`, `.materia/docs/product.md`, and the repo's UI
 standards. Verify each mandate above literally against `design.md`. Report
 findings against `design.md`'s own sections/lines.
 

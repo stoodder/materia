@@ -19,7 +19,7 @@ Findings use category `architecture-grounding`.
   reduced, merged, or removed, not left standing.
 - Relative links in the artifact resolve.
 
-Bug lane: when the artifact is `docs/bugs/<dated-slug>/bug-analysis.md`, the
+Bug lane: when the artifact is `.materia/docs/bugs/<dated-slug>/bug-analysis.md`, the
 Affected-files list must be grounded in the reproduction evidence
 (`reproduction.md` plus the failing tests), not asserted.
 

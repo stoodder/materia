@@ -30,11 +30,11 @@ set) is prepended before Block 1.
 > (`check:docs` extracts links from inline code spans). Describe such a
 > reference with an arrow instead (`text → path`).
 >
-> The safe idiom, binding for **all** `docs/specs/**` text — subagent returns
+> The safe idiom, binding for **all** `.materia/docs/specs/**` text — subagent returns
 > and the orchestrator's own hand-edits alike: never render the literal
 > bracket-then-paren sequence anywhere in that tree, even as an illustrative
 > example, even inside backticks; name it in prose ("the bracket-then-paren
-> form") instead. **One explicit carve-out:** the `docs/specs/README.md`
+> form") instead. **One explicit carve-out:** the `.materia/docs/specs/README.md`
 > Index-registration links written by intake's Index-registration step are
 > exempt — they are real, tooling-verified links that `check:docs` resolves
 > (the required syntax for that step, matching every existing Index row), not
@@ -113,9 +113,9 @@ design-stage and architecture-stage angle spawns.
 > `architecture.md`; on the bug lane, the bug report body **plus**
 > `reproduction.md` and the reproduction test path(s) it names, when the
 > artifact is `bug-analysis.md`); the **committed design snapshot**
-> (`docs/specs/<dated-slug>/design/`, its `README.md` fabrication contract
+> (`.materia/docs/specs/<dated-slug>/design/`, its `README.md` fabrication contract
 > included) when the artifact under review is `design.md`; the standards and
-> resource docs plus `docs/product.md`; and the **repo and its code**, to
+> resource docs plus `.materia/docs/product.md`; and the **repo and its code**, to
 > ground-truth the artifact's evidence and reuse claims. On a `design.md`
 > review you see the visual half per `ship-spec/SKILL.md` § Stage reviews
 > (design & architecture) — § Design-stage review: the canvas directly when the

@@ -3,13 +3,13 @@
 // `materia` plugin's bundled scaffold, then verifies it. No network, no AI.
 // The plugin lives at plugins/materia/: skills/ (all pipeline skills, at the
 // plugin root per the Claude Code plugin spec) and scaffold/ (the MATERIA.md +
-// CLAUDE.md + docs/ + check-docs.sh bundle that /materia:init writes into a
+// CLAUDE.md + .materia/docs/ + check-docs.sh bundle that /materia:init writes into a
 // user repo). The shipped checker is the portable POSIX-sh check-docs.sh; its
 // parity oracle (the Node reference implementation, repo-local, never bundled)
 // lives at scripts/check-docs-oracle.mjs and is exercised by the check-docs
 // parity harness (§1). Layers:
 //  1. check-docs parity harness: materialize the two real scaffold profiles
-//     exactly as /materia:init would (docs/ + root CLAUDE.md/MATERIA.md + the
+//     exactly as /materia:init would (.materia/docs/ + root CLAUDE.md/MATERIA.md + the
 //     standards stubs init generates; skills are NOT copied — installed
 //     plugins run from the read-only cache, not from .claude/skills/ in the
 //     user repo, so a scaffold doc that still LINKS into a skill file fails
@@ -116,7 +116,7 @@ const fail = (msg) => { console.error(`  ✗ ${msg}`); failures++ }
   }
 
   // ---- fixture corpus ----
-  // Each fixture is a self-contained doc tree (CLAUDE.md and/or docs/**); the
+  // Each fixture is a self-contained doc tree (CLAUDE.md and/or .materia/docs/**); the
   // checkers are invoked by ABSOLUTE path with cwd = the tree, so no checker copy
   // is materialized inside it. `expect` pins the oracle's own verdict (fail|clean)
   // so a mis-crafted fixture that stops exercising its branch is caught too — but
@@ -133,45 +133,45 @@ const fail = (msg) => { console.error(`  ✗ ${msg}`); failures++ }
 
   const fixtures = [
     // links + anchors
-    { name: 'broken-link', expect: 'fail', files: { 'CLAUDE.md': doc('# T', '', '[missing](docs/none.md)') } },
-    { name: 'valid-link', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[ok](docs/real.md)'), 'docs/real.md': doc('# Real') } },
-    { name: 'bad-anchor', expect: 'fail', files: { 'CLAUDE.md': doc('# T', '', '[a](docs/real.md#nope)'), 'docs/real.md': doc('# Real Heading') } },
-    { name: 'dup-heading-anchor', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[a](docs/d.md#dup)', '', '[b](docs/d.md#dup-1)'), 'docs/d.md': doc('# Dup', '', 'a', '', '# Dup', '', 'b') } },
-    { name: 'nested-bracket-link', expect: 'fail', files: { 'CLAUDE.md': doc('# T', '', '[see [weekId] path](docs/none.md)') } },
-    { name: 'heading-inline-link', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[a](docs/hl.md#see-docs)'), 'docs/hl.md': doc('# H', '', '## See [docs](http://x)', '', 'body') } },
+    { name: 'broken-link', expect: 'fail', files: { 'CLAUDE.md': doc('# T', '', '[missing](.materia/docs/none.md)') } },
+    { name: 'valid-link', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[ok](.materia/docs/real.md)'), '.materia/docs/real.md': doc('# Real') } },
+    { name: 'bad-anchor', expect: 'fail', files: { 'CLAUDE.md': doc('# T', '', '[a](.materia/docs/real.md#nope)'), '.materia/docs/real.md': doc('# Real Heading') } },
+    { name: 'dup-heading-anchor', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[a](.materia/docs/d.md#dup)', '', '[b](.materia/docs/d.md#dup-1)'), '.materia/docs/d.md': doc('# Dup', '', 'a', '', '# Dup', '', 'b') } },
+    { name: 'nested-bracket-link', expect: 'fail', files: { 'CLAUDE.md': doc('# T', '', '[see [weekId] path](.materia/docs/none.md)') } },
+    { name: 'heading-inline-link', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[a](.materia/docs/hl.md#see-docs)'), '.materia/docs/hl.md': doc('# H', '', '## See [docs](http://x)', '', 'body') } },
     { name: 'http-mailto-skipped', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[a](https://e.com) [b](mailto:x@y.z) [c](http://f)') } },
     // fences + inline code
-    { name: 'in-fence-ignored', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', TICK, '[bad](docs/none.md) was removed previously', TICK) } },
-    { name: 'between-fences-caught', expect: 'fail', files: { 'CLAUDE.md': doc('# T', '', TICK, 'a', TICK, '[bad](docs/none.md) was removed', TICK, 'b', TICK) } },
-    { name: 'interleaved-fences', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', TICK, 'code ' + TILDE + ' code', TICK, '', TILDE, 'more [x](docs/none.md) code', TILDE) } },
-    { name: 'inline-code-link', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', 'Use `[x](docs/none.md)` inline.') } },
+    { name: 'in-fence-ignored', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', TICK, '[bad](.materia/docs/none.md) was removed previously', TICK) } },
+    { name: 'between-fences-caught', expect: 'fail', files: { 'CLAUDE.md': doc('# T', '', TICK, 'a', TICK, '[bad](.materia/docs/none.md) was removed', TICK, 'b', TICK) } },
+    { name: 'interleaved-fences', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', TICK, 'code ' + TILDE + ' code', TICK, '', TILDE, 'more [x](.materia/docs/none.md) code', TILDE) } },
+    { name: 'inline-code-link', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', 'Use `[x](.materia/docs/none.md)` inline.') } },
     // narration (one per phrase) + wrap + NBSP surfaces
-    { name: 'narration-linewrap', expect: 'fail', files: { 'docs/w.md': doc('# T', '', 'The field was renamed', 'from foo.') } },
-    { name: 'nbsp-narration-caught', expect: 'fail', files: { 'docs/nb.md': doc('# T', '', 'The field was renamed' + NBSP + 'from foo.') } },
-    { name: 'nbsp-heading-clean', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[a](docs/h.md#foo-bar)'), 'docs/h.md': doc('# H', '', '## Foo' + NBSP + 'Bar', '', 'body') } },
+    { name: 'narration-linewrap', expect: 'fail', files: { '.materia/docs/w.md': doc('# T', '', 'The field was renamed', 'from foo.') } },
+    { name: 'nbsp-narration-caught', expect: 'fail', files: { '.materia/docs/nb.md': doc('# T', '', 'The field was renamed' + NBSP + 'from foo.') } },
+    { name: 'nbsp-heading-clean', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[a](.materia/docs/h.md#foo-bar)'), '.materia/docs/h.md': doc('# H', '', '## Foo' + NBSP + 'Bar', '', 'body') } },
     // long-line surfaces
-    { name: 'overlong-boundary', expect: 'fail', files: { 'docs/standards/o.md': doc('# T', '', line601, '', line600) } },
-    { name: 'dup-long-line', expect: 'fail', files: { 'docs/standards/dp.md': doc('# T', '', dupLine, dupLine) } },
+    { name: 'overlong-boundary', expect: 'fail', files: { '.materia/docs/standards/o.md': doc('# T', '', line601, '', line600) } },
+    { name: 'dup-long-line', expect: 'fail', files: { '.materia/docs/standards/dp.md': doc('# T', '', dupLine, dupLine) } },
     // glossary
-    { name: 'glossary-clean', expect: 'clean', files: { 'docs/glossary.md': doc('# Glossary', '', '## Alpha', '', '| Term | Def |', '| --- | --- |', '| **alpha** | 1 |', '| **beta** | 2 |', '| **gamma** | 3 |') } },
-    { name: 'glossary-disorder', expect: 'fail', files: { 'docs/glossary.md': doc('# Glossary', '', '| Term | Def |', '| --- | --- |', '| **apple** | a |', '| **Café** | b |', '| **cafe** | c |', '| **v2** | d |', '| **v10** | e |', '| **zebra** | f |', '| **aaa** | g |') } },
+    { name: 'glossary-clean', expect: 'clean', files: { '.materia/docs/glossary.md': doc('# Glossary', '', '## Alpha', '', '| Term | Def |', '| --- | --- |', '| **alpha** | 1 |', '| **beta** | 2 |', '| **gamma** | 3 |') } },
+    { name: 'glossary-disorder', expect: 'fail', files: { '.materia/docs/glossary.md': doc('# Glossary', '', '| Term | Def |', '| --- | --- |', '| **apple** | a |', '| **Café** | b |', '| **cafe** | c |', '| **v2** | d |', '| **v10** | e |', '| **zebra** | f |', '| **aaa** | g |') } },
     // ordering + sort boundary + exemption
-    { name: 'multi-violation-order', expect: 'fail', files: { 'docs/standards/m.md': doc('# M', '', '[bad](docs/none.md)', '', 'This was removed; it is no longer used.', '', line601, '', megaLine, megaLine) } },
-    { name: 'sort-boundary', expect: 'fail', files: { 'CLAUDE.md': doc('# C', '', '[bad](docs/none.md)'), 'docs/z.md': doc('# Z', '', '[bad](none2.md)') } },
-    { name: 'specs-exempt', expect: 'fail', files: { 'docs/specs/s.md': doc('# S', '', 'This was removed previously.', '', '[bad](none.md)', '', '[self](s.md#no-such)') } },
+    { name: 'multi-violation-order', expect: 'fail', files: { '.materia/docs/standards/m.md': doc('# M', '', '[bad](.materia/docs/none.md)', '', 'This was removed; it is no longer used.', '', line601, '', megaLine, megaLine) } },
+    { name: 'sort-boundary', expect: 'fail', files: { 'CLAUDE.md': doc('# C', '', '[bad](.materia/docs/none.md)'), '.materia/docs/z.md': doc('# Z', '', '[bad](none2.md)') } },
+    { name: 'specs-exempt', expect: 'fail', files: { '.materia/docs/specs/s.md': doc('# S', '', 'This was removed previously.', '', '[bad](none.md)', '', '[self](s.md#no-such)') } },
     // fully clean tree
-    { name: 'clean-tree', expect: 'clean', files: { 'CLAUDE.md': doc('# App', '', 'See [readme](docs/README.md) and [alpha](docs/glossary.md#alpha).'), 'docs/README.md': doc('# Readme'), 'docs/glossary.md': doc('# Glossary', '', '## Alpha', '', '| Term | Def |', '| --- | --- |', '| **alpha** | 1 |', '| **beta** | 2 |') } },
+    { name: 'clean-tree', expect: 'clean', files: { 'CLAUDE.md': doc('# App', '', 'See [readme](.materia/docs/README.md) and [alpha](.materia/docs/glossary.md#alpha).'), '.materia/docs/README.md': doc('# Readme'), '.materia/docs/glossary.md': doc('# Glossary', '', '## Alpha', '', '| Term | Def |', '| --- | --- |', '| **alpha** | 1 |', '| **beta** | 2 |') } },
     // coverage — branches otherwise unexercised by the corpus or scaffold profiles
     { name: 'self-anchor-clean', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', 'See [x](#section-two).', '', '## Section Two', '', 'body') } }, // empty-target self-link resolves
     { name: 'self-anchor-bad', expect: 'fail', files: { 'CLAUDE.md': doc('# T', '', 'See [x](#no-such).', '', '## Section Two') } },
-    { name: 'resources-style', expect: 'fail', files: { 'docs/resources/r.md': doc('# R', '', 'This was removed previously.') } }, // docs/resources/ isStyle branch
-    { name: 'templates-style', expect: 'fail', files: { 'docs/_templates/t.md': doc('# Tmpl', '', 'This was removed previously.') } }, // docs/_templates/ isStyle branch
-    { name: 'unpaired-fence', expect: 'fail', files: { 'docs/standards/uf.md': doc('# T', '', TICK, 'code', '', 'This was removed here.') } }, // unclosed fence → content not blanked
-    { name: 'multi-hash-fragment', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[x](docs/mh.md#foo#bar)'), 'docs/mh.md': doc('# H', '', '## Foo', '', 'body') } }, // fragment = first #-segment
+    { name: 'resources-style', expect: 'fail', files: { '.materia/docs/resources/r.md': doc('# R', '', 'This was removed previously.') } }, // .materia/docs/resources/ isStyle branch
+    { name: 'templates-style', expect: 'fail', files: { '.materia/docs/_templates/t.md': doc('# Tmpl', '', 'This was removed previously.') } }, // .materia/docs/_templates/ isStyle branch
+    { name: 'unpaired-fence', expect: 'fail', files: { '.materia/docs/standards/uf.md': doc('# T', '', TICK, 'code', '', 'This was removed here.') } }, // unclosed fence → content not blanked
+    { name: 'multi-hash-fragment', expect: 'clean', files: { 'CLAUDE.md': doc('# T', '', '[x](.materia/docs/mh.md#foo#bar)'), '.materia/docs/mh.md': doc('# H', '', '## Foo', '', 'body') } }, // fragment = first #-segment
   ]
   // one fixture per NARRATION phrase (each a lone violation in a style-checked doc)
   for (const p of NARRATION)
-    fixtures.push({ name: `narration:${p}`, expect: 'fail', files: { 'docs/n.md': doc('# T', '', `This ${p} here.`) } })
+    fixtures.push({ name: `narration:${p}`, expect: 'fail', files: { '.materia/docs/n.md': doc('# T', '', `This ${p} here.`) } })
 
   const corpus = mkdtempSync(join(tmpdir(), 'materia-parity-'))
   try {
@@ -203,11 +203,11 @@ const fail = (msg) => { console.error(`  ✗ ${msg}`); failures++ }
     for (const [label, standards] of profiles) {
       const dir = join(corpus, 'profile-' + label.replace(/[^\w.-]/g, '_'))
       mkdirSync(dir, { recursive: true })
-      cpSync('plugins/materia/scaffold/docs', join(dir, 'docs'), { recursive: true })
+      cpSync('plugins/materia/scaffold/.materia/docs', join(dir, '.materia', 'docs'), { recursive: true })
       cpSync('plugins/materia/scaffold/CLAUDE.md', join(dir, 'CLAUDE.md'))
       cpSync('plugins/materia/scaffold/MATERIA.md', join(dir, 'MATERIA.md'))
       for (const f of standards)
-        writeFileSync(join(dir, `docs/standards/${f}.md`), '# stub — generated by /materia:init\n')
+        writeFileSync(join(dir, '.materia', 'docs', 'standards', `${f}.md`), '# stub — generated by /materia:init\n')
       const ref = parity(`scaffold profile ${label}`, dir)
       if (ref.status !== 0)
         fail(`check-docs parity scaffold profile "${label}": oracle reports failures (expected clean):\n${snippet(ref.stderr)}`)
@@ -300,13 +300,13 @@ const fail = (msg) => { console.error(`  ✗ ${msg}`); failures++ }
 // The status templates are the source of truth; skills that hard-code a row
 // number must agree. Both sides are pinned here so drift fails CI.
 const canon = [
-  ['plugins/materia/scaffold/docs/specs/_templates/status.md', '- [ ] 4. architecture'],
-  ['plugins/materia/scaffold/docs/specs/_templates/status.md', '- [ ] 5. plan-tasks'],
-  ['plugins/materia/scaffold/docs/specs/_templates/status.md', '- [ ] 9. finalize'],
-  ['plugins/materia/scaffold/docs/bugs/_templates/status.md', '- [ ] 3. plan-tasks'],
-  ['plugins/materia/scaffold/docs/bugs/_templates/status.md', '- [ ] 6. docs-sync'],
-  ['plugins/materia/scaffold/docs/bugs/_templates/status.md', '- [ ] 7. docs-audit'],
-  ['plugins/materia/scaffold/docs/bugs/_templates/status.md', '- [ ] 8. finalize'],
+  ['plugins/materia/scaffold/.materia/docs/specs/_templates/status.md', '- [ ] 4. architecture'],
+  ['plugins/materia/scaffold/.materia/docs/specs/_templates/status.md', '- [ ] 5. plan-tasks'],
+  ['plugins/materia/scaffold/.materia/docs/specs/_templates/status.md', '- [ ] 9. finalize'],
+  ['plugins/materia/scaffold/.materia/docs/bugs/_templates/status.md', '- [ ] 3. plan-tasks'],
+  ['plugins/materia/scaffold/.materia/docs/bugs/_templates/status.md', '- [ ] 6. docs-sync'],
+  ['plugins/materia/scaffold/.materia/docs/bugs/_templates/status.md', '- [ ] 7. docs-audit'],
+  ['plugins/materia/scaffold/.materia/docs/bugs/_templates/status.md', '- [ ] 8. finalize'],
   ['plugins/materia/skills/architecture/SKILL.md', 'tick stage 4 in `STATUS.md`'],
   ['plugins/materia/skills/plan-tasks/SKILL.md', 'tick stage 5 in `STATUS.md`'],
   ['plugins/materia/skills/finalize/SKILL.md', 'row 9 in the spec template, row 8 in the bug template'],
@@ -333,7 +333,7 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
 // from the repo's existing default branch and must not cite the config it
 // writes), and `docs-sync`/`docs-audit` (they are HANDED the branch diff and run
 // no git of their own — they may mention § Version control but are not required
-// to). The shared producer-lifecycle standard docs/standards/skills.md IS pinned:
+// to). The shared producer-lifecycle standard .materia/docs/standards/skills.md IS pinned:
 // the producers inherit their PR-open/branch rules from it.
 //
 // The match mirrors the § audit's normalization (whitespace-collapsed text +
@@ -368,8 +368,8 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
     if (!cites(f))
       fail(`§ Version control pin: ${s}/SKILL.md does not cite \`MATERIA.md § Version control\` — it resolves trunk/remote/forge at runtime and must reference the config home (not re-hardcode main/origin)`)
   }
-  if (!cites('plugins/materia/scaffold/docs/standards/skills.md'))
-    fail('§ Version control pin: docs/standards/skills.md does not cite `MATERIA.md § Version control` — the shared producer-lifecycle rule routes trunk/remote/forge through the config home')
+  if (!cites('plugins/materia/scaffold/.materia/docs/standards/skills.md'))
+    fail('§ Version control pin: .materia/docs/standards/skills.md does not cite `MATERIA.md § Version control` — the shared producer-lifecycle rule routes trunk/remote/forge through the config home')
   if (failures === before)
     console.log(`  ✓ § Version control citation pin: 2 headings + ${VC_CITERS.length} skills + skills.md reference the config home`)
 }
@@ -444,7 +444,7 @@ console.log(`  ✓ stage-numbering canon: ${canon.length} pins hold`)
 // outside the contract"). The bundled scaffold must therefore ship ONLY the
 // _templates/ they are generated from plus the queue scaffolding — never a
 // materialized run output. A dated run folder, or a stray run-output file, under
-// any run-folder tree — scaffold/docs/{specs,bugs,epics,research}/ (specs+bugs
+// any run-folder tree — scaffold/.materia/docs/{specs,bugs,epics,research}/ (specs+bugs
 // runs, plus the epic.md/research.md an epic run mints; janitor/librarian treat
 // all four as one historical-run-artifact class) — would mean the scaffold
 // "declares" a per-run artifact it must not, so we fail closed. Pure over a
@@ -465,10 +465,10 @@ const lintScaffoldRunOutputs = (area, entries) => {
 {
   const before = failures
   const AREAS = [
-    'plugins/materia/scaffold/docs/specs',
-    'plugins/materia/scaffold/docs/bugs',
-    'plugins/materia/scaffold/docs/epics',
-    'plugins/materia/scaffold/docs/research',
+    'plugins/materia/scaffold/.materia/docs/specs',
+    'plugins/materia/scaffold/.materia/docs/bugs',
+    'plugins/materia/scaffold/.materia/docs/epics',
+    'plugins/materia/scaffold/.materia/docs/research',
   ]
   const readArea = (area) => readdirSync(area, { withFileTypes: true }).map((d) => ({ name: d.name, isDir: d.isDirectory() }))
   // The real scaffold must be clean.
@@ -606,7 +606,7 @@ console.log(`  ✓ mirror pins: ${MIRRORS.length} cross-table mirror(s) hold`)
 // Repurposes the former UI_PRUNE set (skill → first-side-effect anchor).
 const GATE_MARKER = '**UI self-gate'
 const UI_SELF_GATE = {
-  'design': 'docs/specs/_templates/design.md',            // step 1: first spec read
+  'design': '.materia/docs/specs/_templates/design.md',   // step 1: first spec read
   'ui-test-plan': 'Pure non-behavioral change',           // the zero-flow waiver short-circuit (first write)
   'ui-review': 'Provision the Eyes environment',          // step 1: Eyes provisioning
   'ui-inspection': 'Probe the running app for liveness',  // Phase 0 step 1: liveness probe / autostart

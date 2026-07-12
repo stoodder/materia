@@ -19,7 +19,7 @@ remediation task.
 
 ## Inputs
 
-- The task in `docs/specs/<dated-slug>/tasks.md` + `architecture.md`, and the
+- The task in `.materia/docs/specs/<dated-slug>/tasks.md` + `architecture.md`, and the
   standards/resource docs the task names (read in the docs read order).
 
 ## Harness noise
@@ -55,7 +55,7 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
 ## Procedure
 
 1. **Load context** in the docs read order: read the task in
-   `docs/specs/<dated-slug>/tasks.md`, then the standards + resource docs it
+   `.materia/docs/specs/<dated-slug>/tasks.md`, then the standards + resource docs it
    names, then the code those docs point to. Reuse existing resources — do not
    reinvent.
 
@@ -67,10 +67,10 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
    editing; never trust a cited line number as the primary locator. Runs that
    grep-by-content stay correct while ones that trust line numbers go stale.
 
-   **Widen the completeness grep to `docs/specs/**/*.md` for removals/renames.**
+   **Widen the completeness grep to `.materia/docs/specs/**/*.md` for removals/renames.**
    When the task removes or renames a resource (a model, type, route, or
    user-facing name), the completeness grep that confirms no dangling references
-   remain must reach **beyond product code** to include `docs/specs/**/*.md` —
+   remain must reach **beyond product code** to include `.materia/docs/specs/**/*.md` —
    older spec architecture files reference deleted resource names and carry
    link-rot a code-only grep misses, so widening the scope surfaces every hit in
    **one round** instead of bouncing back from a later review.
@@ -87,8 +87,8 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
    and the reviewer can trace it — don't silently follow the task letter.
 
 3. **Implement** to the standards and the Definition of Done
-   (`docs/contributing.md`): placement, layering, and every invariant the
-   task's cited `docs/standards/*` docs name.
+   (`.materia/docs/contributing.md`): placement, layering, and every invariant the
+   task's cited `.materia/docs/standards/*` docs name.
 
    **UI work matches its cohesion anchors.** When the task touches UI, read
    `design.md` § Cohesion anchors (when present) and build by **reusing the
@@ -104,14 +104,14 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
    statically-checkable ones; the e2e flows `ui-test-plan` derives check the
    runtime-behavior ones), but the requirement is set here for every line.
    When the run carries a committed design snapshot
-   (`docs/specs/<dated-slug>/design/`), treat it as the frozen visual
+   (`.materia/docs/specs/<dated-slug>/design/`), treat it as the frozen visual
    reference complementing the cohesion anchors — the design-conformance
    review compares the built screens against it, within what its `README.md`
    fabrication contract says is comparable — and never build from the live
    canvas.
 
 4. **Tests.** Add/extend tests for every source module you touch, following
-   the repo's testing standard (`docs/standards/testing.md`).
+   the repo's testing standard (`.materia/docs/standards/testing.md`).
 
    **AC→test traceability.** Name each test after the AC it covers — e.g.
    `it('AC-7: rejects a non-finite multiplier', …)` — and give each invalid
@@ -154,11 +154,11 @@ blocker into `STATUS.md` and stop (see § Guardrail); don't hang waiting on it.
    from a clean baseline.
 
 6. **Persist:** update **directly-touched** docs in the same change. Use
-   `docs/contributing.md`'s touch-X→update-Y rows applied to the actual diff
+   `.materia/docs/contributing.md`'s touch-X→update-Y rows applied to the actual diff
    to compute the set; if `plan-tasks` tagged this task with a docs-scope
    floor, your set is `floor ∪ derived-from-diff`. **Do NOT touch
-   cross-cutting docs** here — `CLAUDE.md`, `docs/README.md` index tables,
-   `docs/surface-map.md`, and `docs/glossary.md` are deferred to
+   cross-cutting docs** here — `CLAUDE.md`, `.materia/docs/README.md` index tables,
+   `.materia/docs/surface-map.md`, and `.materia/docs/glossary.md` are deferred to
    `finalize` → `docs-sync` to avoid cross-task drift. Then set the task to
    `[x]` in `tasks.md` and **tick that task's acceptance-criteria checkboxes to
    reflect what was actually built** — check the boxes your implementation

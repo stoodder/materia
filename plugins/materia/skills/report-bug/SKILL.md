@@ -1,31 +1,31 @@
 ---
 name: report-bug
-description: Take a raw bug description and produce a reproducible bug-report file in `docs/bugs/_reports/`. The skill reads project context (CLAUDE.md, docs/, surface-map) and uses sensible defaults to draft the full report in one shot, then asks the operator to confirm or adjust — minimizing the questions they have to answer. The Q&A is in-memory; once the operator confirms the draft, the skill syncs the latest trunk, branches, writes the report file, commits, pushes, and opens a PR.
+description: Take a raw bug description and produce a reproducible bug-report file in `.materia/docs/bugs/_reports/`. The skill reads project context (CLAUDE.md, .materia/docs/, surface-map) and uses sensible defaults to draft the full report in one shot, then asks the operator to confirm or adjust — minimizing the questions they have to answer. The Q&A is in-memory; once the operator confirms the draft, the skill syncs the latest trunk, branches, writes the report file, commits, pushes, and opens a PR.
 ---
 
 # report-bug — capture a bug, produce a report file
 
 A simple, single-shot skill that turns a raw bug description into a bug-report
 file in the queue at
-`docs/bugs/_reports/` (`docs/bugs/_reports/README.md`). Conforms to the
+`.materia/docs/bugs/_reports/` (`.materia/docs/bugs/_reports/README.md`). Conforms to the
 queue's contract (frontmatter shape, filename pattern, body shape).
 
 **Philosophy: defaults beat questions.** The operator's job is to describe the
 bug; the skill's job is to flesh it out using everything it can learn from the
-project — `CLAUDE.md`, `docs/glossary.md`, `docs/surface-map.md`, and the queue
+project — `CLAUDE.md`, `.materia/docs/glossary.md`, `.materia/docs/surface-map.md`, and the queue
 contract. The operator only answers what genuinely can't be inferred. A typical
 run is **one drafting turn followed by one confirmation turn** — not a
 multi-round interrogation.
 
 **Lifecycle:** interactive checkpoint · branch-at-approve — per the shared
-producer contract at `docs/standards/skills.md` § Producer lifecycle (reply
+producer contract at `.materia/docs/standards/skills.md` § Producer lifecycle (reply
 verbs, cancel semantics, id minting, link integrity, one PR + tooling, no
 session survival). The Q&A is in-memory — an abandoned conversation leaves no
 trace; on `approve` the skill branches, writes, commits, pushes, and opens the
 PR.
 
-Read `docs/bugs/_reports/README.md`
-(the queue contract) and `docs/bugs/README.md`
+Read `.materia/docs/bugs/_reports/README.md`
+(the queue contract) and `.materia/docs/bugs/README.md`
 before changing this skill.
 
 ## Procedure
@@ -51,15 +51,15 @@ breadth over depth — most defaults come from a few canonical docs.
 **Always read:**
 
 - `CLAUDE.md` — the project guide. Stack, conventions, the always-loaded rules.
-- `docs/glossary.md` — so you use the project's vocabulary in the report.
-- `docs/surface-map.md` — surface and route names to populate "Affected surface".
-- `docs/bugs/README.md` — the bugs tree overview.
-- `docs/bugs/_reports/README.md` — the queue contract this report must conform to.
+- `.materia/docs/glossary.md` — so you use the project's vocabulary in the report.
+- `.materia/docs/surface-map.md` — surface and route names to populate "Affected surface".
+- `.materia/docs/bugs/README.md` — the bugs tree overview.
+- `.materia/docs/bugs/_reports/README.md` — the queue contract this report must conform to.
 
 **Read selectively** based on the description's surface area:
 
-- Bug touches a specific route or page? → `docs/surface-map.md` (already above).
-- Bug mentions data or loading? → relevant `docs/resources/*.md`.
+- Bug touches a specific route or page? → `.materia/docs/surface-map.md` (already above).
+- Bug mentions data or loading? → relevant `.materia/docs/resources/*.md`.
 - Bug mentions a skill or pipeline step? → that skill's `SKILL.md`.
 
 On a missing required doc, note it inline in the draft as a caveat — do **not**
@@ -83,7 +83,7 @@ the project context makes the answer obvious:
 | **Actual** | Taken verbatim from description. |
 | **Reproducibility** | Default `intermittent`; rate `unknown` until operator says otherwise. |
 | **Severity & impact** | Default `medium` (surfaced in "Defaults I applied"). |
-| **Affected surface / route / module** | Inferred from description + `docs/surface-map.md`; open question if unresolvable. |
+| **Affected surface / route / module** | Inferred from description + `.materia/docs/surface-map.md`; open question if unresolvable. |
 | **Preconditions / data setup** | Inferred or `_None known._` |
 | **Evidence** | Operator-pasted text/logs from description; `_None provided._` otherwise. |
 | **Regression window** | `_Unknown._` unless description names a version, commit, or date. |
@@ -98,7 +98,7 @@ verbatim — an empty section signals to the reviewer that more detail is needed
 Glob the queue for potential duplicates:
 
 ```bash
-git ls-files 'docs/bugs/_reports/*/report.md'
+git ls-files '.materia/docs/bugs/_reports/*/report.md'
 ```
 
 For each existing report, read frontmatter + summary. Compare to the draft. If
@@ -116,7 +116,7 @@ Show the operator everything in one turn:
 ─────────────────────────────────────────────────────────────────────
 Drafted 1 bug report from your description + project context.
 
-  Will be written to: docs/bugs/_reports/<dated-slug>/report.md
+  Will be written to: .materia/docs/bugs/_reports/<dated-slug>/report.md
 
   <full inline body — frontmatter + all template sections>
 
@@ -185,7 +185,7 @@ above this step leaves no stray branch behind.
    (Dirty-pull and branch-name collisions per the lifecycle.)
 
 2. **Write the report file** with the `Write` tool to
-   `docs/bugs/_reports/<dated-slug>/report.md`.
+   `.materia/docs/bugs/_reports/<dated-slug>/report.md`.
 
    (Id-collision handling per the lifecycle.)
 
@@ -195,7 +195,7 @@ above this step leaves no stray branch behind.
    the command in `MATERIA.md § Gate`; fix any links the new file introduces), then commit:
 
    ```bash
-   git add docs/bugs/_reports/<dated-slug>/
+   git add .materia/docs/bugs/_reports/<dated-slug>/
    git commit -m "report-bug: add bug report <id>"
    ```
 
@@ -216,12 +216,12 @@ Print the closing report:
 
 ```
 Wrote 1 bug report:
-  - docs/bugs/_reports/<dated-slug>/report.md  (id <id>)
+  - .materia/docs/bugs/_reports/<dated-slug>/report.md  (id <id>)
 
 Branch: report-bug/<id>-<slug>
 PR:     <URL from the open-PR op>
 
-The report is queued in docs/bugs/_reports/ awaiting a fix run.
+The report is queued in .materia/docs/bugs/_reports/ awaiting a fix run.
 ```
 
 End the turn.
@@ -297,7 +297,7 @@ medium — <one-line impact statement>
 
 ## Affected surface / route / module
 
-<inferred from description + docs/surface-map.md, or "_Unknown — please clarify_">
+<inferred from description + .materia/docs/surface-map.md, or "_Unknown — please clarify_">
 
 ## Preconditions / data setup
 
@@ -333,9 +333,9 @@ without touching the body.
 ### Link paths
 
 Use **absolute-from-repo-root** link paths in report bodies (e.g.
-`docs/standards/visual-language.md`, not `../resources/today.md`). Report files
-live under `docs/bugs/_reports/<dated-slug>/report.md`, but a future `/materia:fix-bug`
-run may adopt the body into `docs/bugs/<dated-slug>/` at a different folder
+`.materia/docs/standards/visual-language.md`, not `../resources/today.md`). Report files
+live under `.materia/docs/bugs/_reports/<dated-slug>/report.md`, but a future `/materia:fix-bug`
+run may adopt the body into `.materia/docs/bugs/<dated-slug>/` at a different folder
 depth. Relative paths that resolve from `_reports/<dated-slug>/` would silently
 break there; absolute paths resolve identically from both locations.
 
@@ -344,11 +344,11 @@ break there; absolute paths resolve identically from both locations.
 The report lives at:
 
 ```
-docs/bugs/_reports/<YYYY-MM-DD-HHMMSS>-<id>-<slug>/report.md
+.materia/docs/bugs/_reports/<YYYY-MM-DD-HHMMSS>-<id>-<slug>/report.md
 ```
 
 `<slug>` is derived from the title via the **normative kebab-slug algorithm** in
-`docs/specs/_proposed/README.md`
+`.materia/docs/specs/_proposed/README.md`
 § Kebab-slug derivation — the same algorithm `ship-spec` uses. Do NOT invent a
 different algorithm.
 
@@ -359,7 +359,7 @@ different algorithm.
 - Does NOT branch, commit, push, or open a PR **before** the operator confirms
   the draft. The Q&A is in-memory; the git workflow only fires on `approve`
   (step 7).
-- Does NOT modify the `docs/bugs/_reports/` contract README. Contract changes
+- Does NOT modify the `.materia/docs/bugs/_reports/` contract README. Contract changes
   are a separate PR.
 - (Session interruption per the lifecycle: re-invoke fresh.)
 

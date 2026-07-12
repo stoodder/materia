@@ -7,7 +7,7 @@ description: "Periodic maintenance sweep of the living docs (docs root + resourc
 
 A single-shot, operator-run (or scheduled) maintenance skill that sweeps the
 **living docs** for drift against the code and against
-`docs/standards/docs.md`, applies the fixes
+`.materia/docs/standards/docs.md`, applies the fixes
 directly, and drives one docs-only PR all the way to merge. It is the docs
 counterpart to `/materia:janitor` — the janitor sweeps the code, the librarian sweeps
 the docs; both fix drift in place, but the librarian's docs-only diff is
@@ -37,21 +37,21 @@ ambiguous fix is skipped and noted, never guessed at (§ Rules).
 
 ## Inputs
 
-- The living docs: `docs/*.md` (root), `docs/resources/`, `docs/standards/`,
-  `docs/_templates/`, plus `CLAUDE.md`, `README.md`, and `MATERIA.md`
+- The living docs: `.materia/docs/*.md` (root), `.materia/docs/resources/`, `.materia/docs/standards/`,
+  `.materia/docs/_templates/`, plus `CLAUDE.md`, `README.md`, and `MATERIA.md`
   (swept for drift like any living doc — but any diff touching it downgrades
   the run to no-auto-merge; see § The docs-only envelope).
 - The codebase as the oracle: `git ls-files`, the source folders the
   standards docs name (routes, pages, schema, shared modules). The Materia
   skills themselves are cache-resident plugin files, not tracked in this repo,
   so they are outside the sweep.
-- `docs/standards/docs.md` (the authoring standard) and
-  `docs/contributing.md` (the touch-X→update-Y map, read in reverse: which
+- `.materia/docs/standards/docs.md` (the authoring standard) and
+  `.materia/docs/contributing.md` (the touch-X→update-Y map, read in reverse: which
   code would have demanded which doc).
 - the `check:docs` gate — its command in `MATERIA.md § Gate` (the mechanical gate).
 
-**Not inputs, never edited:** `docs/specs/**`, `docs/bugs/**`,
-`docs/epics/**`, `docs/research/**` — historical run artifacts, exempt by the
+**Not inputs, never edited:** `.materia/docs/specs/**`, `.materia/docs/bugs/**`,
+`.materia/docs/epics/**`, `.materia/docs/research/**` — historical run artifacts, exempt by the
 same rule that exempts them from `check:docs` style checks.
 
 ## Outputs
@@ -76,7 +76,7 @@ entirely when the forge is `none` (`MATERIA.md` § Version control § Forge).
 Verify that the `check:docs` gate command (`MATERIA.md § Gate`) is runnable — apply
 `${CLAUDE_PLUGIN_ROOT}/skills/ship-spec/resources/env-preflight.md` (and
 `MATERIA.md` § Environment preflight) recipes if not.
-Read `docs/standards/docs.md` and the doc indexes into context.
+Read `.materia/docs/standards/docs.md` and the doc indexes into context.
 
 ### 2. Scan — the drift taxonomy
 
@@ -90,11 +90,11 @@ that proves the doc wrong).
    path is drift: find where the thing lives now (rename) or remove the
    claim (deletion).
 2. **Inventory coverage, both directions.**
-   - `docs/surface-map.md` surfaces ⇄ their sources (routes ⇄ handlers and
+   - `.materia/docs/surface-map.md` surfaces ⇄ their sources (routes ⇄ handlers and
      pages ⇄ page files on a web stack; commands ⇄ command modules, exports ⇄
      public modules on others — the map's own table shape says which).
-   - `docs/README.md` Resources/Standards index tables ⇄ the files in
-     `docs/resources/` / `docs/standards/`.
+   - `.materia/docs/README.md` Resources/Standards index tables ⇄ the files in
+     `.materia/docs/resources/` / `.materia/docs/standards/`.
    - schema models ⇄ resource docs (a model with no doc is a
      needs-human note, not a doc the librarian invents; a doc for a dropped
      model is drift to fix).
@@ -104,7 +104,7 @@ that proves the doc wrong).
    sites that enforce them (derive the concrete pairs from this repo's
    standards docs). Sample broadly across
    docs rather than exhaustively within one.
-4. **Authoring-standard conformance.** The `docs/standards/docs.md` rules the
+4. **Authoring-standard conformance.** The `.materia/docs/standards/docs.md` rules the
    mechanical checker can't express: delta-appended prose ("now also
    supports…", change-log-shaped sections), facts duplicated across docs
    instead of linked to their one home, table-cell bloat, multi-sentence
@@ -136,7 +136,7 @@ plan (fixes, skips, needs-human notes) and exit.
 git checkout -b librarian/sweep-<YYYY-MM-DD>   # hex-suffix on same-day rerun
 ```
 
-Apply the fixes, writing every edit to `docs/standards/docs.md` (fold into
+Apply the fixes, writing every edit to `.materia/docs/standards/docs.md` (fold into
 present-state, one home per fact, cells stay short, glossary one-liners at
 alphabetical position). Commit in small scoped commits
 (`librarian: <what> (<why it was drift>)`).
@@ -152,7 +152,7 @@ gh pr create --title "librarian: docs-drift sweep <YYYY-MM-DD>" --body "<body>"
 ```
 
 The `<body>` closes with the Materia sigil naming `librarian` as the
-caster (`docs/standards/skills.md` § PR attribution — the Materia sigil).
+caster (`.materia/docs/standards/skills.md` § PR attribution — the Materia sigil).
 
 The PR body carries: the fix list (one line each, with the oracle that proved
 the drift), the skipped list with rationales, the needs-human notes, and the
@@ -223,14 +223,14 @@ Before **every push** and again **immediately before merge**, assert that
 CLAUDE.md
 README.md
 MATERIA.md                (sweepable — but touching it forfeits auto-merge)
-docs/*.md                 (root files)
-docs/resources/**
-docs/standards/**
-docs/_templates/**
+.materia/docs/*.md                 (root files)
+.materia/docs/resources/**
+.materia/docs/standards/**
+.materia/docs/_templates/**
 ```
 
 Anything else in the diff — any source or config file, anything under
-`.claude/`, `docs/specs/`, `docs/bugs/`, `docs/epics/`, `docs/research/` —
+`.claude/`, `.materia/docs/specs/`, `.materia/docs/bugs/`, `.materia/docs/epics/`, `.materia/docs/research/` —
 means the run has escaped its envelope: **revert the offending change and if
 the fix genuinely requires it, drop that fix with a needs-human note.** The
 auto-merge privilege exists only inside this envelope.
@@ -257,10 +257,10 @@ enforcement configuration, not prose; a human reviews every change to them.
 
 - **NEVER edits product code, tests, CI config, or skills** — even to "fix"
   CI. A CI failure that demands a non-docs change ends the run (§ Procedure 6).
-- **NEVER edits the historical trees** (`docs/specs/**`, `docs/bugs/**`,
-  `docs/epics/**`, `docs/research/**`).
+- **NEVER edits the historical trees** (`.materia/docs/specs/**`, `.materia/docs/bugs/**`,
+  `.materia/docs/epics/**`, `.materia/docs/research/**`).
 - **Writes no queue entries** — suspected code bugs become needs-human notes
-  in the PR body, not `docs/bugs/_reports/` files. If a note warrants a
+  in the PR body, not `.materia/docs/bugs/_reports/` files. If a note warrants a
   report, the operator runs `/materia:report-bug` afterward.
 - **Invents no docs.** A missing resource doc for a new entity is a
   needs-human note — authoring a doc from scratch needs intent the librarian
@@ -278,7 +278,7 @@ enforcement configuration, not prose; a human reviews every change to them.
 - **Conservative by construction** — there is no checkpoint, so when in doubt,
   skip and note. A wrong "fix" in an auto-merged PR costs more than a missed
   one.
-- **Every edit follows `docs/standards/docs.md`** — a librarian pass must
+- **Every edit follows `.materia/docs/standards/docs.md`** — a librarian pass must
   never itself introduce narration, duplication, or cell bloat.
 - **Idempotent + schedulable** — a run against undrifted docs is a clean
   no-op; safe to run on a cron (`/schedule`) or ad hoc.

@@ -15,7 +15,7 @@ file never re-prints a whole template. Defer:
   input shape") — the H1 + H2 set `intake-spec` matches to adopt a proposal body
   verbatim.
 - **Bug-report body** → `plugins/materia/skills/report-bug/SKILL.md` § Body and
-  `docs/bugs/_templates/bug-report.md` (the 13-section single-defect format).
+  `.materia/docs/bugs/_templates/bug-report.md` (the 13-section single-defect format).
 
 Reproduce those section orders and field labels character-for-character; this
 file covers only what is triage-specific (grounding the drafts in the retro
@@ -35,7 +35,7 @@ before `approve` discards it entirely (see design-notes: no session survival).
   "retros_consumed": [
     // one per consumed retro; the "retros to mark processed" list + the PR's
     // "retros consumed" line derive from this. Degraded ones are flagged.
-    { "path": "docs/specs/<slug>/retro.md", "slug": "<slug>", "run_kind": "spec run", "parse_status": "ok" }
+    { "path": ".materia/docs/specs/<slug>/retro.md", "slug": "<slug>", "run_kind": "spec run", "parse_status": "ok" }
   ],
   "drafted_specs": [
     {
@@ -91,18 +91,18 @@ Triage-specific rendering:
 - **Ground the acceptance criteria in the retro quotes.** The `supporting[]`
   quotes are the evidence the capability is wanted; write each AC so it is
   **literally testable** against the behaviour the quotes describe, not a vague
-  aspiration. Use the project's vocabulary (`docs/glossary.md`) and the relevant
+  aspiration. Use the project's vocabulary (`.materia/docs/glossary.md`) and the relevant
   standards.
 - **Tagline** — one sentence derived from the clustered signal.
 - **Link paths** follow `propose-spec` § Link paths: backtick/arrow prose
-  (`visual-language → docs/standards/visual-language.md`) **only** — never a
+  (`visual-language → .materia/docs/standards/visual-language.md`) **only** — never a
   live markdown link, relative or absolute-from-repo-root; both break
   `check-docs.sh` when `intake-spec` adopts the body at a different folder
   depth.
 
 ## Authored bug-report body
 
-Render the 13-section format `report-bug` § Body / `docs/bugs/_templates/bug-report.md`
+Render the 13-section format `report-bug` § Body / `.materia/docs/bugs/_templates/bug-report.md`
 define, every H2 verbatim and in order: `## Summary` · `## Environment` ·
 `## Steps to reproduce` · `## Expected` · `## Actual` · `## Reproducibility` ·
 `## Severity & impact` · `## Affected surface / route / module` ·
@@ -120,7 +120,7 @@ Triage-specific rendering:
 - The body **MUST NOT** repeat frontmatter metadata (no second `id:`, no heading
   duplicating the frontmatter `severity`).
 - **Link paths** are absolute-from-repo-root (`report-bug` § Link paths), so they
-  survive `fix-bug` adopting the body into a `docs/bugs/<dated-slug>/` run
+  survive `fix-bug` adopting the body into a `.materia/docs/bugs/<dated-slug>/` run
   folder.
 
 ## Per-artifact consolidation
@@ -169,7 +169,7 @@ friction).
   edit).
 - **`source_refs`** is **always a YAML list**, one entry per originating retro
   anchor, pointing at the retro's **post-run resting path**
-  (`docs/.../retro.processed.md § Entry N — <stage>`). The retro is renamed in
+  (`.materia/docs/.../retro.processed.md § Entry N — <stage>`). The retro is renamed in
   the **same commit** that writes the artifact, so the `.processed.md` path is the
   one that resolves — never the pre-rename `retro.md`.
 - The **anchor** is the retro heading's stable prefix through its stage (the
@@ -214,7 +214,7 @@ order and field labels intact (so the bodies stay verbatim-adoptable by
   prefix from a filename slug, split the remainder on `-`, and title-case it
   joined with spaces (`2026-06-21-134501-9c2a3-weekly-roundup` → `Weekly
   Roundup`). The kebab-slug itself is derived from the title via the normative
-  algorithm in `docs/specs/_proposed/README.md` § Kebab-slug derivation — do not
+  algorithm in `.materia/docs/specs/_proposed/README.md` § Kebab-slug derivation — do not
   invent a different one.
 - **Scoped formatting** — before staging the commit, run the repo formatter
   (`MATERIA.md` § Gate, lint row) scoped to **only the files the run actually
