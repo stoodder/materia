@@ -111,7 +111,8 @@ design-stage and architecture-stage angle spawns.
 > You may read: **the artifact under review**; its upstream inputs
 > (`spec.md`; also `design.md` when the artifact under review is
 > `architecture.md`; on the bug lane, the bug report body **plus**
-> `reproduction.md` when the artifact is `bug-analysis.md`); the standards and
+> `reproduction.md` and the reproduction test path(s) it names, when the
+> artifact is `bug-analysis.md`); the standards and
 > resource docs plus `docs/product.md`; and the **repo and its code**, to
 > ground-truth the artifact's evidence and reuse claims. You must NOT read:
 > `STATUS.md`, `retro.md`, other reviewers' outputs, prior-round reviewer

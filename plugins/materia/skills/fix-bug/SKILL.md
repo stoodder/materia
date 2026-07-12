@@ -301,17 +301,14 @@ reproduction, not a UX design (§ Scope) — no `design` stage ever runs, so no
 
 **Bug-lane deltas:**
 
-- **Input substitution (oracle remap).** The artifact under review is
-  `docs/bugs/<dated-slug>/bug-analysis.md`. Every angle spawn for this point
-  carries the following remap, mirroring § plan-tasks input substitution's
-  style:
-
-  > The artifact under review is `docs/bugs/<dated-slug>/bug-analysis.md`.
-  > Your intent oracle — where `spawn-contract.md` Block 3a names `spec.md`
-  > (and `design.md` for an `architecture.md` review) — is instead the bug
-  > report body (frontmatter stripped) plus
-  > `docs/bugs/<dated-slug>/reproduction.md` plus the reproduction test
-  > path(s) it names. There is no `spec.md` or `design.md` on this lane.
+- **No oracle remap is needed.** Unlike Block 3 (whose bug-lane intent-oracle
+  remap § Review below carries, because Block 3 unconditionally names
+  `spec.md`), Block 3a's own bug-lane clause already substitutes the intent
+  oracle — the bug report body plus `reproduction.md` and the reproduction
+  test path(s) it names, when the artifact is `bug-analysis.md`
+  (`spawn-contract.md` § Block 3a, the single home for that list). The spawn
+  brief only names the artifact path,
+  `docs/bugs/<dated-slug>/bug-analysis.md`.
 
 - **The angle checks apply unchanged.** Both `architecture-stage` registry
   rows — `architecture-grounding` and `architecture-coverage` — already carry
