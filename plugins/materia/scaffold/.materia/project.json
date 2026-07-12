@@ -17,6 +17,7 @@
     "0.3.0-queue-readme-prose",
     "0.3.0-review-angles-calibration-xref",
     "0.3.0-scripts-relocation",
-    "0.4.0-init-staged-intake"
+    "0.4.0-init-staged-intake",
+    "0.4.0-stage-reviews"
   ]
 }
